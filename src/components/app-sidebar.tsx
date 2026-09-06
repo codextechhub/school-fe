@@ -19,6 +19,7 @@ import { Link, useLocation } from "react-router";
 import {
   Bell,
   BookOpen,
+  Briefcase,
   Headset,
   CalendarClock,
   ShoppingCart,
@@ -285,6 +286,29 @@ export function AppSidebar({
     permission: P.BROWSE_STUDENTS,
   };
 
+  // The staff doors other than the directory, hoisted for the same reason the
+  // student ones are: the Staff item derives its exclusion from the doors that
+  // actually exist rather than from a list kept beside them.
+  //
+  // Empty today. Invitations, Posting & reach and Teaching duties join it in
+  // the phases that build them, each with its own key, and the design's live
+  // counts belong on Invitations and Teaching duties rather than here - this
+  // item is everybody employed, and a count of that is a fact rather than a job.
+  const staffDoors: NavItem[] = [];
+
+  const staffDoor: NavItem = {
+    // The people who work here: the bursar and the registrar as much as the
+    // teacher, which is why the item says Staff and not Teachers. The backend
+    // key is still `school.teachers.*`, because it is a primary key that four
+    // tables point at, so the word changed and the key did not.
+    title: "Staff",
+    url: routesPath.PROTECTED.STAFF.INDEX,
+    icon: Briefcase,
+    isActive: owns(routesPath.PROTECTED.STAFF.INDEX, staffDoors),
+    childActive: false,
+    permission: P.BROWSE_TEACHERS,
+  };
+
   const data: Record<string, NavItem[]> = {
     overview: [
       {
@@ -338,7 +362,7 @@ export function AppSidebar({
         childActive: false,
       },
     ],
-    people: [studentsDoor, ...peopleDoors],
+    people: [studentsDoor, ...peopleDoors, staffDoor, ...staffDoors],
     academics: [
       {
         // Academic Structure is the module: the overview and everything that

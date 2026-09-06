@@ -12,6 +12,7 @@ import { workflowRoutes } from "./workflow-routes";
 import { academicRoutes } from "./academic-routes";
 import { classesRoutes } from "./classes-routes";
 import { studentsRoutes } from "./students-routes";
+import { staffRoutes } from "./staff-routes";
 import { supportRoutes } from "./support-routes";
 import { financeRoutes } from "./finance-routes";
 import { procurementRoutes } from "./procurement-routes";
@@ -32,6 +33,7 @@ export const protectedRoutes = [
       ...academicRoutes,
       ...classesRoutes,
       ...studentsRoutes,
+      ...staffRoutes,
       ...supportRoutes,
       ...financeRoutes,
       ...procurementRoutes,

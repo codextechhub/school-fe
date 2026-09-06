@@ -21,6 +21,7 @@ import { branchesRoutes } from "@/routes/protected/branches-routes";
 import { classesRoutes } from "@/routes/protected/classes-routes";
 import { onboardingRoutes, onboardingWelcomeRoute } from "@/routes/protected/onboarding-routes";
 import { overviewRoutes } from "@/routes/protected/overview-routes";
+import { staffRoutes } from "@/routes/protected/staff-routes";
 import { studentsRoutes } from "@/routes/protected/students-routes";
 import { supportRoutes } from "@/routes/protected/support-routes";
 import { financeRoutes, FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
@@ -56,6 +57,7 @@ const SERVED_PATHS = new Set([
     ...academicRoutes,
     ...classesRoutes,
     ...studentsRoutes,
+    ...staffRoutes,
     ...supportRoutes,
   ]
     .map((route) => route.path)

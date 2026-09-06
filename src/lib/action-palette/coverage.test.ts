@@ -49,6 +49,7 @@ import {
   onboardingWelcomeRoute,
 } from "@/routes/protected/onboarding-routes";
 import { overviewRoutes } from "@/routes/protected/overview-routes";
+import { staffRoutes } from "@/routes/protected/staff-routes";
 import { studentsRoutes } from "@/routes/protected/students-routes";
 import { CONSOLE_CREATE_ACTIONS } from "./console-actions";
 import { ACTIONS } from "./registry";
@@ -161,6 +162,7 @@ const mountedSchoolPaths = [
   ...academicRoutes,
   ...classesRoutes,
   ...studentsRoutes,
+  ...staffRoutes,
 ]
   .map((route) => (route as { path?: string }).path)
   // A path with an :id is nobody's palette destination: there is no id to name

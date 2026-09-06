@@ -157,6 +157,24 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     gate: { perm: P.MANAGE_STUDENTS },
     run: { to: R.STUDENTS.PROMOTION },
   },
+  {
+    // The people who work here, not only the ones who teach. The aliases carry
+    // the job titles a reader actually types, because "staff" is the word the
+    // product uses and "teachers" is the word a head teacher reaches for -
+    // and the backend key is still `school.teachers.view`, which is the third
+    // spelling of the same thing and the one nobody types.
+    id: "view-staff",
+    label: "View staff",
+    aliases: [
+      "teachers", "employees", "personnel", "staff directory", "bursar",
+      "registrar", "who works here",
+    ],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    gate: { perm: P.BROWSE_TEACHERS },
+    run: { to: R.STAFF.INDEX },
+  },
 
   // ── Academics ──────────────────────────────────────────────────────────────
   {

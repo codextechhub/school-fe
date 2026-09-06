@@ -207,6 +207,32 @@ export const routesPath = {
       // mounts, so following it fell through to /students/:id and asked the
       // server for a student called "import".
     },
+    // Staff Management. One prefix, the same shape Students uses: the
+    // directory is the front door and everything else hangs off it.
+    //
+    // The profile is a route rather than a drawer because it is a page in its
+    // own right - seven tabs, its own actions - and because a head teacher
+    // sends a colleague a link to somebody's record.
+    //
+    // **No ROLES here.** The design draws a Roles & access screen and this app
+    // already has one, at /roles, which is the permanent door to the same
+    // catalogue. A second address onto it would be a second door, and the
+    // sidebar would offer two items that both say roles.
+    //
+    // No IMPORT either, for the reason the students prefix records: bulk
+    // import is a thing you do TO the directory rather than a place you go.
+    // Invitations, Posting & reach and Teaching duties are NOT here yet, and
+    // their absence is deliberate rather than an oversight. `/staff/:id` would
+    // swallow any literal segment declared beside it and unmounted: following
+    // `/staff/invitations` falls through to the profile route and asks the
+    // server for a staff member called "invitations". The students prefix
+    // carries the same warning because that is where it happened. Each name
+    // arrives with the screen that answers it.
+    STAFF: {
+      INDEX: "/staff",
+      PROFILE: "/staff/:id",
+      PROFILE_ID: (id: string | number) => `/staff/${id}`,
+    },
     // The academic calendar is its OWN module now, not a child of academic
     // management. Spelled correctly here; the old /academic/calender paths
     // redirect.
