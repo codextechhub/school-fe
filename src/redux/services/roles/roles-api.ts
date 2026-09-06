@@ -134,6 +134,55 @@ export const rolesApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * Give one person a role, at one branch or across the school.
+     *
+     * **`user` is the ACCOUNT's id, not the staff record's.** They are two
+     * different numbers on the same person, and sending the wrong one either
+     * refuses with "no such user" or, worse, lands on somebody else. Staff rows
+     * carry `user_id` for exactly this.
+     *
+     * `branch` null is a whole-school grant, which is a choice a school makes
+     * rather than a field it forgot: it reaches every branch, including ones
+     * opened later. A branch id pins it, and the same role may be pinned at two
+     * branches for one person - the schema was split in two to allow that, and
+     * both write paths were fixed to stop refusing it.
+     */
+    assignRole: builder.mutation<
+      Envelope<RoleHolder>,
+      { user: number; role: number; branch?: number | null }
+    >({
+      query: (body) => ({
+        url: `${scope()}/role-assignments/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      // The staff list carries a Role column and the profile carries the reach,
+      // so both move when a grant does.
+      invalidatesTags: ["Roles", "SchoolStaff"],
+    }),
+
+    /**
+     * Withdraw a grant, with a reason the audit trail keeps.
+     *
+     * The row is not deleted: "what could this person do before" is the
+     * question asked after something has gone wrong, and a deleted grant cannot
+     * answer it. The server requires the note, so the form does too.
+     */
+    revokeRoleAssignment: builder.mutation<
+      Envelope<RoleHolder>,
+      { id: number; reason_note: string }
+    >({
+      query: ({ id, reason_note }) => ({
+        url: `${scope()}/role-assignments/${id}/revoke/`,
+        method: "POST",
+        body: { reason_note },
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Roles", "SchoolStaff"],
+    }),
+
+    /**
      * Requests to change what a role reaches, newest first.
      *
      * Not an optional workflow. Every permission that bills a family or moves
@@ -200,6 +249,8 @@ export const {
   useUpdateSchoolRoleMutation,
   useSetSchoolRoleStatusMutation,
   useGetRoleHoldersQuery,
+  useAssignRoleMutation,
+  useRevokeRoleAssignmentMutation,
   useGetRoleChangeRequestsQuery,
   useCreateRoleChangeRequestMutation,
   useDecideRoleChangeRequestMutation,

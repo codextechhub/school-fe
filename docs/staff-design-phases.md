@@ -448,7 +448,30 @@ one.
 - The Invitation sent screen and its four exits.
 - The Invitations list: resend, revoke, view. No Mark accepted (ruling 1).
 
-### Phase 4 - Posting & reach, and the three role drawers
+### Phase 4 - Posting & reach, and the three role drawers — SHIPPED
+
+Driven against `holy-cross` at desktop, 390px and 820px, including real writes:
+a role granted through the single drawer and withdrawn again, a role granted
+through the bulk drawer and withdrawn again, and both verified back through the
+API to confirm the seeded school was left as it was found. No console errors, no
+overflow.
+
+**The role preview shows sentences, not keys.** It was built printing what the
+role payload carries - `payments.virtual_account.view` - which is not something
+a head teacher reads before handing somebody the money. The keys are joined
+against the permission catalogue, which is the one place they have labels, and
+a key the catalogue does not carry falls back to monospace so it reads as an
+identifier rather than as broken copy.
+
+**Posting is a pending surface after all.** The route was written closed on the
+reasoning that moving somebody between branches is an operation of a running
+school. The backend disagrees: both the roster read and the bulk move declare
+`pending_tenant_surface`, and the palette's readiness test caught the
+disagreement. The app mirrors the server; a route closed here over an endpoint
+that answers is a door locked from the inside.
+
+**What the phase's own plan said it would build, below.**
+
 
 Ruling 9 took a screen out of this phase, so what is left is the Posting screen
 plus the controls that finish phase 2's directory selection bar and the profile's

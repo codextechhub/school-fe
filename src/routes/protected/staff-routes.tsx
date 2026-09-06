@@ -9,6 +9,7 @@ const StaffDirectory = lazy(() => import("@/pages/protected/staff"));
 const StaffProfile = lazy(() => import("@/pages/protected/staff/profile"));
 const AddStaff = lazy(() => import("@/pages/protected/staff/add"));
 const StaffInvitations = lazy(() => import("@/pages/protected/staff/invitations"));
+const StaffPosting = lazy(() => import("@/pages/protected/staff/posting"));
 
 const S = routesPath.PROTECTED.STAFF;
 
@@ -58,6 +59,21 @@ export const staffRoutes = [
     Component: StaffInvitations,
     handle: {
       title: "Invitations",
+      lens: true,
+      lenses: "branch",
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+  {
+    // Open before go-live, because the backend opens it: both the roster read
+    // and the bulk move declare `pending_tenant_surface`. A school setting
+    // itself up is exactly when it decides who is based where, and this app
+    // mirrors the server rather than forming its own opinion - a route closed
+    // here over an endpoint that answers is a door locked from the inside.
+    path: S.POSTING,
+    Component: StaffPosting,
+    handle: {
+      title: "Posting & reach",
       lens: true,
       lenses: "branch",
       pendingSurface: true,

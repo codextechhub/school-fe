@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Briefcase, Search, UserPlus, X } from "lucide-react";
+import { Briefcase, Check, Search, UserPlus, X } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -49,9 +50,9 @@ import { PersonAvatar } from "../students/person-avatar";
  * draws it late - and because two calls that narrowed differently is how the
  * student directory once showed 87 over a table of 49.
  *
- * Bulk import, the selection bar and the row menu's Assign role and Manage
- * assignments are not here yet. They arrive with the screens and drawers that
- * answer them, rather than being drawn now and doing nothing.
+ * Bulk import and the row menu's Manage assignments are not here yet. They
+ * arrive with the screens and drawers that answer them, rather than being drawn
+ * now and doing nothing.
  */
 export default function StaffDirectory() {
   const navigate = useNavigate();
@@ -68,6 +69,7 @@ export default function StaffDirectory() {
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
+  const [picked, setPicked] = useState<number[]>([]);
 
   const { data, isLoading, isFetching, isError, refetch } = useGetStaffListQuery({
     page,
@@ -128,6 +130,9 @@ export default function StaffDirectory() {
   function resetTo(next: () => void) {
     next();
     setPage(1);
+    // A selection made under one filter must not survive into another, where
+    // those rows are off screen and the write would be invisible.
+    setPicked([]);
   }
 
   function clearAll() {
@@ -138,6 +143,7 @@ export default function StaffDirectory() {
     setSchoolWideOnly(false);
     setTeachingOnly(false);
     setPage(1);
+    setPicked([]);
   }
 
   if (isError) {
@@ -250,8 +256,45 @@ export default function StaffDirectory() {
         </p>
       )}
 
+      {/* Only where something is selected. A bar that is always there is a bar
+          that is usually empty, and its two buttons would be permanently
+          disabled - which reads as broken rather than as inapplicable. */}
+      {picked.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2.5 rounded-lg border border-primary bg-white-03 px-4 py-2.5">
+          <span className="text-[13px] font-medium text-black-01">
+            {picked.length} selected
+          </span>
+          {multiBranch && (
+            <PermissionGate permission={P.MODIFY_TEACHER}>
+              <Button
+                variant="outline"
+                onClick={() => setDrawer({ kind: "posting", staffIds: picked })}
+              >
+                Change posting
+              </Button>
+            </PermissionGate>
+          )}
+          <PermissionGate permission={P.ASSIGN_ROLE}>
+            <Button
+              variant="outline"
+              onClick={() => setDrawer({ kind: "bulkRole", staffIds: picked })}
+            >
+              Assign role
+            </Button>
+          </PermissionGate>
+          <button
+            type="button"
+            onClick={() => setPicked([])}
+            className="ml-auto text-xs text-primary underline-offset-2 hover:underline"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       <CustomTable
         tableHeaderList={[
+          "",
           "Staff member",
           "Staff ID",
           "Role",
@@ -283,6 +326,15 @@ export default function StaffDirectory() {
                 },
               ]
             : []),
+          ...(hasPermission(P.ASSIGN_ROLE)
+            ? [
+                {
+                  label: "Roles and access",
+                  onActionClick: (row: { _id: number }) =>
+                    setDrawer({ kind: "role" as const, staffId: row._id }),
+                },
+              ]
+            : []),
           ...(hasPermission(P.MANAGE_TEACHERS)
             ? [
                 {
@@ -297,6 +349,33 @@ export default function StaffDirectory() {
           // Carried so the row menu can find the person back; CustomTable hands
           // the DISPLAY row to onActionClick, not the source record.
           _id: person.id,
+          // Stops the row's own navigation: the click is a selection, not a
+          // request to open somebody's record.
+          "": (
+            <span onClick={(event) => event.stopPropagation()}>
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={picked.includes(person.id)}
+                aria-label={`Select ${person.full_name}`}
+                onClick={() =>
+                  setPicked((current) =>
+                    current.includes(person.id)
+                      ? current.filter((id) => id !== person.id)
+                      : [...current, person.id],
+                  )
+                }
+                className={cn(
+                  "grid size-4.75 place-content-center rounded-[5px] border-[1.5px] text-white",
+                  picked.includes(person.id)
+                    ? "border-primary bg-primary"
+                    : "border-gray-02 bg-white",
+                )}
+              >
+                {picked.includes(person.id) && <Check className="size-3" />}
+              </button>
+            </span>
+          ),
           "Staff member": (
             <span className="flex min-w-0 items-center gap-2.5">
               <PersonAvatar
@@ -372,7 +451,11 @@ export default function StaffDirectory() {
         }
       />
 
-      <StaffDrawers request={drawer} onClose={() => setDrawer(null)} />
+      <StaffDrawers
+        request={drawer}
+        onClose={() => setDrawer(null)}
+        onSaved={() => setPicked([])}
+      />
     </PageShell>
   );
 }

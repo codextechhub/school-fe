@@ -190,6 +190,22 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.STAFF.ADD },
   },
   {
+    id: "view-staff-posting",
+    label: "View postings and reach",
+    aliases: [
+      "who works at this branch", "move somebody", "based at", "branch roster",
+      "reassign a branch",
+    ],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    // The key the screen's own move button checks. Reading a roster and moving
+    // somebody are the same key here because the screen exists to do the
+    // second: a read-only roster is the directory with a branch filter.
+    gate: { perm: P.MODIFY_TEACHER },
+    run: { to: R.STAFF.POSTING },
+  },
+  {
     // Named apart from the onboarding action of nearly the same words, which is
     // a CHECKLIST STEP on a screen that disappears at go-live. This is the
     // module's permanent door, it is gated on the staff key rather than the

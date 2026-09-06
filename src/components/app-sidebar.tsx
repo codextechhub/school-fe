@@ -28,6 +28,7 @@ import {
   Wallet,
   CalendarRange,
   ArrowLeftRight,
+  Building2,
   Contact,
   GraduationCap,
   ListChecks,
@@ -42,6 +43,7 @@ import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { LensRail } from "./layout/lens-pills";
+import { useBranchLens } from "@/hooks/use-branch-lens";
 import { SchoolMark } from "./school-mark";
 
 // A nav item may declare a permission (single code or a list). When absent the
@@ -103,6 +105,9 @@ export function AppSidebar({
 
   const school = useAppSelector(selectSchool);
   const user = useAppSelector(selectUser);
+  // False at a one-branch school, where every branch-shaped control recedes.
+  // Shares the branch list with the lens rail below, so it costs no request.
+  const { applies: multiBranch } = useBranchLens();
 
   // The two live counts the design puts on the nav.
   //
@@ -302,10 +307,10 @@ export function AppSidebar({
   // student ones are: the Staff item derives its exclusion from the doors that
   // actually exist rather than from a list kept beside them.
   //
-  // Posting & reach and Teaching duties join it in the phases that build them.
-  // The design's live counts belong on these doors rather than on Staff itself:
-  // that item is everybody employed, and a count of it is a fact rather than a
-  // job, while an invitation nobody has accepted is work outstanding.
+  // Teaching duties joins it in the phase that builds it. The design's live
+  // counts belong on these doors rather than on Staff itself: that item is
+  // everybody employed, and a count of it is a fact rather than a job, while an
+  // invitation nobody has accepted is work outstanding.
   const staffDoors: NavItem[] = [
     {
       title: "Invitations",
@@ -316,6 +321,22 @@ export function AppSidebar({
       permission: P.BROWSE_TEACHERS,
       badge: waiting.invitations,
     },
+    // Absent at a one-branch school rather than disabled. A posting answers
+    // which site somebody is based at, and a school with one site has no
+    // question to put behind the door; the server answers 404 there for the
+    // same reason. The screen says so too, for anybody arriving by address.
+    ...(multiBranch
+      ? [
+          {
+            title: "Posting & reach",
+            url: routesPath.PROTECTED.STAFF.POSTING,
+            icon: Building2,
+            isActive: location.startsWith(routesPath.PROTECTED.STAFF.POSTING),
+            childActive: false,
+            permission: P.MODIFY_TEACHER,
+          },
+        ]
+      : []),
   ];
 
   const staffDoor: NavItem = {
