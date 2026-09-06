@@ -2,7 +2,9 @@ import { useState } from "react";
 
 import { useGetStaffMemberQuery } from "@/redux/services/staff/staff-api";
 
+import { AssignDutiesDrawer } from "./assign-duties-drawer";
 import { BulkRoleDrawer } from "./bulk-role-drawer";
+import { ClassTeacherDrawer } from "./class-teacher-drawer";
 import { EditDrawer } from "./edit-drawer";
 import { LeaveDrawer } from "./leave-drawer";
 import { PostingDrawer } from "./posting-drawer";
@@ -22,7 +24,21 @@ export type StaffDrawerRequest =
   | { kind: "role"; staffId: number }
   | { kind: "leave"; staffId: number; personName: string; isSelf: boolean }
   | { kind: "posting"; staffIds: number[]; personName?: string }
-  | { kind: "bulkRole"; staffIds: number[] };
+  | { kind: "bulkRole"; staffIds: number[] }
+  | {
+      kind: "duties";
+      staffId: number;
+      personName: string;
+      /** Pre-selected when the drawer opens from a cell in the coverage grid. */
+      classId?: number;
+      subjectId?: number;
+    }
+  | {
+      kind: "classTeacher";
+      schoolClassId: number;
+      className: string;
+      currentStaffId: number | null;
+    };
 
 /**
  * One host for every staff drawer, mounted once per screen.
@@ -96,6 +112,29 @@ export function StaffDrawers({
         staffIds={request.staffIds}
         personName={request.personName}
         onDone={() => onSaved?.()}
+        onClose={onClose}
+      />
+    );
+  }
+  if (request.kind === "duties") {
+    return (
+      <AssignDutiesDrawer
+        key={`duties-${request.staffId}`}
+        staffId={request.staffId}
+        personName={request.personName}
+        initialClassId={request.classId}
+        initialSubjectId={request.subjectId}
+        onClose={onClose}
+      />
+    );
+  }
+  if (request.kind === "classTeacher") {
+    return (
+      <ClassTeacherDrawer
+        key={`class-teacher-${request.schoolClassId}`}
+        schoolClassId={request.schoolClassId}
+        className={request.className}
+        currentStaffId={request.currentStaffId}
         onClose={onClose}
       />
     );

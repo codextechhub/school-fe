@@ -190,6 +190,21 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.STAFF.ADD },
   },
   {
+    id: "view-teaching-duties",
+    label: "View teaching duties",
+    aliases: [
+      "who teaches what", "coverage", "class teachers", "subject cover",
+      "assign a subject", "gaps",
+    ],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    // The read key, not the assign one. A head teacher checking which classes
+    // have nobody does not need to be able to staff them.
+    gate: { perm: P.BROWSE_TEACHERS },
+    run: { to: R.STAFF.TEACHING },
+  },
+  {
     id: "view-staff-posting",
     label: "View postings and reach",
     aliases: [
@@ -682,11 +697,11 @@ export const ACTIONS: ActionDef[] = [...SCHOOL_ACTIONS, ...CONSOLE_ACTIONS];
 const PENDING_SURFACE_PREFIXES: readonly string[] = [
   "/onboarding",
   "/notifications",
-  // The staff module. Adding colleagues and chasing their invitations is a step
-  // on a school's own checklist, so the directory, the record, the add form and
-  // the invitation list are all open before go-live - and the backend says so
-  // too, with `pending_tenant_surface` on each of them. What is closed is the
-  // rest: the lifecycle, leave and teaching duties, none of which is a screen.
+  // The staff module, minus one screen. Adding colleagues, chasing their
+  // invitations and deciding who is based where are all steps on a school's own
+  // checklist, and the backend declares `pending_tenant_surface` on each of
+  // them. Teaching duties is the exception and is EXCLUDED below: a duty
+  // belongs to an academic year and a school being set up has not started one.
   "/staff",
   // A school still being set up is exactly when it needs to ask for help, and
   // needs somewhere to read the answer.
@@ -703,7 +718,23 @@ const PENDING_SURFACE_PREFIXES: readonly string[] = [
  * detail: registry.test.ts holds it against every path the router mounts, so
  * this answer and `pendingSurface` on the route handle cannot drift apart.
  */
+/**
+ * Screens under a pending-surface prefix that are nonetheless closed.
+ *
+ * One entry, and it earns its exception: every other staff screen is open
+ * before go-live, so excluding the module wholesale would hide four working
+ * doors to spare one. Teaching duties needs an academic year, which a school
+ * being set up has not started, and its route handle says the same.
+ *
+ * Subtracted HERE rather than in the action filter below, because this is the
+ * one function that answers "does this path open before go-live" - and the
+ * test that checks the answer against every route handle reads it too. Applied
+ * anywhere else, the two directions would disagree.
+ */
+const LIVE_ONLY_PATHS: readonly string[] = ["/staff/teaching"];
+
 export const pathOpensBeforeGoLive = (to: string): boolean =>
+  !LIVE_ONLY_PATHS.includes(to) &&
   PENDING_SURFACE_PREFIXES.some(
     (prefix) => to === prefix || to.startsWith(`${prefix}/`),
   );

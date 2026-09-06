@@ -130,6 +130,16 @@ export interface SchoolClass extends Scoped {
   level_name: string;
   /** Subjects taught at this class's level - a real per-class figure. */
   subject_count: number;
+  /**
+   * The teacher responsible for this class, or null where nobody is.
+   *
+   * The designation is M12's and lives on the class because uniqueness is a
+   * property of the class: one class has one class teacher. `staff_id` is the
+   * STAFF record, not the account - a class teacher who has left stops being
+   * one when their record says so, rather than when somebody remembers to
+   * close a login.
+   */
+  class_teacher: { staff_id: number; name: string } | null;
 }
 
 export interface SubjectOffering {

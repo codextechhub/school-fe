@@ -488,7 +488,33 @@ Assign role button. Everything here is open before go-live.
   `role-assignments/?role=<key>&assignment_status=ACTIVE`, which is one call for
   one role - the expensive shape was the catalogue's, and the catalogue is gone.
 
-### Phase 5 - Teaching duties
+### Phase 5 - Teaching duties — SHIPPED, and no longer blocked
+
+Driven against `holy-cross` at desktop, 390px and 820px: all four cell states on
+screen at once, the duties drawer opening from a covered cell with the pairing
+pre-selected and its duplicate warning firing, the class-teacher drawer, and the
+nav badge reading 34. No console errors, no overflow.
+
+**The dependency was closed rather than worked around.**
+`SchoolClass.class_teacher` is now readable - one serializer field, the join
+added to the list queryset, and two tests. So the Class teachers panel is live
+rather than written blind. Backend commit `fefab12`.
+
+**Ruling 4 taken, and it can be reversed cheaply.** M14 shipped after the FRD
+declared the clash panel impossible, so `has_clash` per teacher is now real. The
+panel shows the teachers the timetable has double-booked to a reader holding
+`academics.timetable.view`, and to a reader without one it says where clashes
+will appear rather than showing an empty list that reads as "there are none". It
+still computes nothing: a clash is a fact about two timetable slots, and which
+two lessons collide is on the teacher's own grid, which is where the link goes.
+
+**Ruling 10 is untouched.** `/academic-structure/assignments` still says class
+teachers open "once at least one member of staff exists". They exist, and that
+screen is another module's, so it waits for the ruling rather than being
+redirected on the way past.
+
+**What the phase's own plan said it would build, below.**
+
 
 **Blocked on one backend field.** The coverage grid, the assign drawer and the
 clash panel are all unblocked; the Class teachers panel and the profile's class-

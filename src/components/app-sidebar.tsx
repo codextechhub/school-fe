@@ -14,7 +14,10 @@ import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavAccordionProvider, NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
 import { useGetStudentSummaryQuery } from "@/redux/services/students/students-api";
-import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
+import {
+  useGetStaffListQuery,
+  useGetTeachingCoverageQuery,
+} from "@/redux/services/staff/staff-api";
 import { useGetPendingApprovalsQuery } from "@/redux/services/dashboard/workflow-api";
 import { Link, useLocation } from "react-router";
 import {
@@ -140,6 +143,14 @@ export function AppSidebar({
     { employment_status: "INVITED", page: 1 },
     { skip: !hasPermission(P.BROWSE_TEACHERS) },
   );
+  // Pairings nobody teaches. Asked for as a page of one, because the figure is
+  // in the response body rather than in the rows - a school of forty classes
+  // and fifteen subjects is six hundred pairings and must not be fetched to
+  // count two of them. Skipped before go-live, where the endpoint refuses.
+  const { data: coverage } = useGetTeachingCoverageQuery(
+    { page: 1 },
+    { skip: onboarding || !hasPermission(P.BROWSE_TEACHERS) },
+  );
   const waiting = {
     applicants: summary?.data?.applicants,
     unassigned: summary?.data?.unassigned,
@@ -147,6 +158,7 @@ export function AppSidebar({
     // outstanding, and a nav item wearing a grey zero is noise on every screen.
     approvals: pendingApprovals?.results?.length || undefined,
     invitations: invited?.pagination?.totalItems || undefined,
+    coverageGaps: coverage?.coverage_gaps || undefined,
   };
 
   const schoolName =
@@ -321,6 +333,23 @@ export function AppSidebar({
       permission: P.BROWSE_TEACHERS,
       badge: waiting.invitations,
     },
+    // Closed before go-live, so absent then: a teaching duty belongs to an
+    // academic year and a school being set up has not started one. The badge
+    // counts pairings nobody teaches, which is work outstanding rather than a
+    // total - the kind of number that belongs on a door.
+    ...(onboarding
+      ? []
+      : [
+          {
+            title: "Teaching duties",
+            url: routesPath.PROTECTED.STAFF.TEACHING,
+            icon: GraduationCap,
+            isActive: location.startsWith(routesPath.PROTECTED.STAFF.TEACHING),
+            childActive: false,
+            permission: P.BROWSE_TEACHERS,
+            badge: waiting.coverageGaps,
+          },
+        ]),
     // Absent at a one-branch school rather than disabled. A posting answers
     // which site somebody is based at, and a school with one site has no
     // question to put behind the door; the server answers 404 there for the

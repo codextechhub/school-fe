@@ -10,6 +10,7 @@ const StaffProfile = lazy(() => import("@/pages/protected/staff/profile"));
 const AddStaff = lazy(() => import("@/pages/protected/staff/add"));
 const StaffInvitations = lazy(() => import("@/pages/protected/staff/invitations"));
 const StaffPosting = lazy(() => import("@/pages/protected/staff/posting"));
+const TeachingDuties = lazy(() => import("@/pages/protected/staff/teaching"));
 
 const S = routesPath.PROTECTED.STAFF;
 
@@ -77,6 +78,19 @@ export const staffRoutes = [
       lens: true,
       lenses: "branch",
       pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+  {
+    // Closed before go-live, and the screen says so rather than erroring: a
+    // teaching duty belongs to an academic year, and a school still being set
+    // up has not started one. The backend agrees - the coverage read and every
+    // teaching write declare no pending surface.
+    path: S.TEACHING,
+    Component: TeachingDuties,
+    handle: {
+      title: "Teaching duties",
+      lens: true,
+      lenses: "branch",
     } satisfies DashboardHandle,
   },
   {
