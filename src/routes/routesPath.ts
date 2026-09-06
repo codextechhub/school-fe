@@ -221,15 +221,21 @@ export const routesPath = {
     //
     // No IMPORT either, for the reason the students prefix records: bulk
     // import is a thing you do TO the directory rather than a place you go.
-    // Invitations, Posting & reach and Teaching duties are NOT here yet, and
-    // their absence is deliberate rather than an oversight. `/staff/:id` would
-    // swallow any literal segment declared beside it and unmounted: following
-    // `/staff/invitations` falls through to the profile route and asks the
-    // server for a staff member called "invitations". The students prefix
-    // carries the same warning because that is where it happened. Each name
-    // arrives with the screen that answers it.
+    // Posting & reach and Teaching duties are NOT here yet, and their absence
+    // is deliberate rather than an oversight. `/staff/:id` would swallow any
+    // literal segment declared beside it and unmounted: following
+    // `/staff/posting` falls through to the profile route and asks the server
+    // for a staff member called "posting". The students prefix carries the same
+    // warning because that is where it happened. Each name arrives with the
+    // screen that answers it.
+    //
+    // ADD is a page rather than a drawer, unlike the student enrol/import
+    // split: it is six sections and one transaction, it is the screen a school
+    // spends its first afternoon in, and it has an outcome screen of its own.
     STAFF: {
       INDEX: "/staff",
+      ADD: "/staff/add",
+      INVITATIONS: "/staff/invitations",
       PROFILE: "/staff/:id",
       PROFILE_ID: (id: string | number) => `/staff/${id}`,
     },

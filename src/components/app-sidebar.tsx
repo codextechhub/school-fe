@@ -14,6 +14,7 @@ import { HomeIcon, TeamMgtIcon } from "@/assets/navbar-svg";
 import { NavAccordionProvider, NavMain } from "./nav-main";
 import { routesPath } from "@/routes/routesPath";
 import { useGetStudentSummaryQuery } from "@/redux/services/students/students-api";
+import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import { useGetPendingApprovalsQuery } from "@/redux/services/dashboard/workflow-api";
 import { Link, useLocation } from "react-router";
 import {
@@ -21,6 +22,7 @@ import {
   BookOpen,
   Briefcase,
   Headset,
+  MailCheck,
   CalendarClock,
   ShoppingCart,
   Wallet,
@@ -124,12 +126,22 @@ export function AppSidebar({
   const { data: pendingApprovals } = useGetPendingApprovalsQuery(undefined, {
     skip: onboarding,
   });
+  // Invitations nobody has accepted. Asked for as a page of one, because the
+  // figure wanted is the total in the pagination block rather than the rows -
+  // fetching twenty-five people to count them would be a page of staff on every
+  // screen in the app. Open before go-live, so it is NOT skipped for a pending
+  // school: chasing invitations is most of what onboarding is.
+  const { data: invited } = useGetStaffListQuery(
+    { employment_status: "INVITED", page: 1 },
+    { skip: !hasPermission(P.BROWSE_TEACHERS) },
+  );
   const waiting = {
     applicants: summary?.data?.applicants,
     unassigned: summary?.data?.unassigned,
     // Undefined rather than 0 when there is nothing: the badge is for work
     // outstanding, and a nav item wearing a grey zero is noise on every screen.
     approvals: pendingApprovals?.results?.length || undefined,
+    invitations: invited?.pagination?.totalItems || undefined,
   };
 
   const schoolName =
@@ -290,11 +302,21 @@ export function AppSidebar({
   // student ones are: the Staff item derives its exclusion from the doors that
   // actually exist rather than from a list kept beside them.
   //
-  // Empty today. Invitations, Posting & reach and Teaching duties join it in
-  // the phases that build them, each with its own key, and the design's live
-  // counts belong on Invitations and Teaching duties rather than here - this
-  // item is everybody employed, and a count of that is a fact rather than a job.
-  const staffDoors: NavItem[] = [];
+  // Posting & reach and Teaching duties join it in the phases that build them.
+  // The design's live counts belong on these doors rather than on Staff itself:
+  // that item is everybody employed, and a count of it is a fact rather than a
+  // job, while an invitation nobody has accepted is work outstanding.
+  const staffDoors: NavItem[] = [
+    {
+      title: "Invitations",
+      url: routesPath.PROTECTED.STAFF.INVITATIONS,
+      icon: MailCheck,
+      isActive: location.startsWith(routesPath.PROTECTED.STAFF.INVITATIONS),
+      childActive: false,
+      permission: P.BROWSE_TEACHERS,
+      badge: waiting.invitations,
+    },
+  ];
 
   const staffDoor: NavItem = {
     // The people who work here: the bursar and the registrar as much as the

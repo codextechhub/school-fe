@@ -7,6 +7,8 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 // shipping in the main bundle. The Suspense fallback lives in routes/lazy-root.
 const StaffDirectory = lazy(() => import("@/pages/protected/staff"));
 const StaffProfile = lazy(() => import("@/pages/protected/staff/profile"));
+const AddStaff = lazy(() => import("@/pages/protected/staff/add"));
+const StaffInvitations = lazy(() => import("@/pages/protected/staff/invitations"));
 
 const S = routesPath.PROTECTED.STAFF;
 
@@ -41,9 +43,29 @@ export const staffRoutes = [
     } satisfies DashboardHandle,
   },
   {
-    // Ranked routing would put any static child of /staff above this, which is
-    // what makes adding one safe later. Nothing declares one yet - see the
-    // STAFF prefix in routesPath for why an unmounted name is worse than none.
+    path: S.ADD,
+    Component: AddStaff,
+    handle: {
+      title: "Add staff",
+      hasBack: true,
+      lens: true,
+      lenses: "branch",
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+  {
+    path: S.INVITATIONS,
+    Component: StaffInvitations,
+    handle: {
+      title: "Invitations",
+      lens: true,
+      lenses: "branch",
+      pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+  {
+    // Ranked routing puts the static children of /staff above this, so
+    // /staff/invitations can never be read as a person called "invitations".
     path: S.PROFILE,
     Component: StaffProfile,
     handle: {

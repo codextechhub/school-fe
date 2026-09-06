@@ -410,7 +410,35 @@ The two biggest screens, and between them 49 of the design's 189 states.
   server's own `balance_note` beside it so nobody reads it as a balance, and a
   link into My Submissions for a request that is still being decided.
 
-### Phase 3 - Add staff, and Invitations
+### Phase 3 - Add staff, and Invitations — SHIPPED
+
+Driven against `holy-cross` at desktop, 390px and 820px, including a real
+create: form validation, the POST, the confirmation screen, the sidebar badge
+moving 1 → 2, and the withdraw flow taking it back to 1. No console errors, no
+overflow.
+
+**Documents moved off the Add form.** The plan had them collected there and
+uploaded after the create returned an id. Built that way, a record is created
+and one attachment fails, and there is nowhere to retry: the Documents tab is
+read-only. So the form says plainly that documents are added on the record, and
+the upload control belongs on that tab.
+
+**The teaching step is gated more loosely than the design's.** The prototype
+matches the role name against `"Teacher"` and `"Lead Teacher"` exactly; this
+matches the word "teach" in either the name or the key, which also catches a
+Teaching Assistant, and the form says duties can be assigned later whether the
+step appears or not - so a school that calls its teachers something else loses a
+shortcut rather than a capability.
+
+**One palette collision, worth knowing about.** `view-staff-invitations` was
+already taken by the onboarding checklist's invitations tab, which is a
+different screen on a different key. The module's action is
+`view-pending-invitations`, and both are legitimately reachable while a school is
+being set up, so they are told apart by label and section rather than by hiding
+one.
+
+**What the phase's own plan said it would build, below.**
+
 
 - The six-section Add form as one transaction, with the photograph, the
   suggested staff number, the pre-live role narrowing, the role reach summary,

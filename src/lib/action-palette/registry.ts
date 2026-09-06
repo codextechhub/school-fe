@@ -175,6 +175,39 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     gate: { perm: P.BROWSE_TEACHERS },
     run: { to: R.STAFF.INDEX },
   },
+  {
+    // A page rather than a drawer, so it is a destination like any other - but
+    // it is an act rather than a view, and the row carries the Action chip to
+    // say so. Gated on the key the screen's own button is gated on, so nobody
+    // is offered a form the server would refuse to save.
+    id: "add-staff",
+    label: "Add a member of staff",
+    aliases: ["invite a teacher", "new employee", "hire", "onboard somebody"],
+    section: "People",
+    group: "Staff",
+    kind: "do",
+    gate: { perm: P.INVITE_TEACHER },
+    run: { to: R.STAFF.ADD },
+  },
+  {
+    // Named apart from the onboarding action of nearly the same words, which is
+    // a CHECKLIST STEP on a screen that disappears at go-live. This is the
+    // module's permanent door, it is gated on the staff key rather than the
+    // administrators one, and both are legitimately reachable while a school is
+    // still being set up - so they are told apart by their labels and their
+    // sections rather than by one of them being hidden.
+    id: "view-pending-invitations",
+    label: "View pending invitations",
+    aliases: [
+      "invitations", "who has not accepted", "resend an invitation",
+      "withdraw an invitation",
+    ],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    gate: { perm: P.BROWSE_TEACHERS },
+    run: { to: R.STAFF.INVITATIONS },
+  },
 
   // ── Academics ──────────────────────────────────────────────────────────────
   {
@@ -633,6 +666,12 @@ export const ACTIONS: ActionDef[] = [...SCHOOL_ACTIONS, ...CONSOLE_ACTIONS];
 const PENDING_SURFACE_PREFIXES: readonly string[] = [
   "/onboarding",
   "/notifications",
+  // The staff module. Adding colleagues and chasing their invitations is a step
+  // on a school's own checklist, so the directory, the record, the add form and
+  // the invitation list are all open before go-live - and the backend says so
+  // too, with `pending_tenant_surface` on each of them. What is closed is the
+  // rest: the lifecycle, leave and teaching duties, none of which is a screen.
+  "/staff",
   // A school still being set up is exactly when it needs to ask for help, and
   // needs somewhere to read the answer.
   "/support",

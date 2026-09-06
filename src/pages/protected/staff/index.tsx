@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Briefcase, Search, X } from "lucide-react";
+import { Briefcase, Search, UserPlus, X } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
+import PermissionGate from "@/components/custom/permission-gate";
+import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
@@ -47,9 +49,9 @@ import { PersonAvatar } from "../students/person-avatar";
  * draws it late - and because two calls that narrowed differently is how the
  * student directory once showed 87 over a table of 49.
  *
- * Add staff, bulk import, the selection bar and the row menu's Assign role and
- * Manage assignments are not here yet. They arrive with the screens and drawers
- * that answer them, rather than being drawn now and doing nothing.
+ * Bulk import, the selection bar and the row menu's Assign role and Manage
+ * assignments are not here yet. They arrive with the screens and drawers that
+ * answer them, rather than being drawn now and doing nothing.
  */
 export default function StaffDirectory() {
   const navigate = useNavigate();
@@ -154,15 +156,25 @@ export default function StaffDirectory() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-black-01">Staff Directory</h2>
-        {/* Named only when a branch is actually being read. `branchLabel` says
-            "All branches" when nothing is narrowed, and "employed at All
-            branches" reads like a place rather than an absence of one. */}
-        <p className="mt-1 text-sm text-gray-01">
-          Everybody employed at{" "}
-          {multiBranch && narrowed ? branchLabel : "this school"}.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-lg font-semibold text-black-01">
+            Staff Directory
+          </h2>
+          {/* Named only when a branch is actually being read. `branchLabel`
+              says "All branches" when nothing is narrowed, and "employed at All
+              branches" reads like a place rather than an absence of one. */}
+          <p className="mt-1 text-sm text-gray-01">
+            Everybody employed at{" "}
+            {multiBranch && narrowed ? branchLabel : "this school"}.
+          </p>
+        </div>
+        <PermissionGate permission={P.INVITE_TEACHER}>
+          <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
+            <UserPlus className="size-4" />
+            Add staff
+          </Button>
+        </PermissionGate>
       </div>
 
       <CountsHeader

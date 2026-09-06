@@ -113,6 +113,7 @@ const ROUTE_HANDLES = collectHandles([
   ...academicRoutes,
   ...classesRoutes,
   ...studentsRoutes,
+  ...staffRoutes,
   ...supportRoutes,
   ...financeRoutes,
   ...procurementRoutes,
