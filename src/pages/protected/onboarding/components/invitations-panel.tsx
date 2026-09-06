@@ -9,11 +9,11 @@ import { CustomNativeSelect } from "@/components/custom/custom-native-select";
 import PermissionGate from "@/components/custom/permission-gate";
 import { P } from "@/permissions";
 import {
-  useGetSchoolStaffQuery,
-  useInviteSchoolStaffMutation,
+  useCreateStaffMutation,
+  useGetStaffListQuery,
   useResendStaffInvitationMutation,
 } from "@/redux/services/staff/staff-api";
-import type { SchoolStaffMember } from "@/redux/services/staff/staff-types";
+import type { StaffListRow } from "@/redux/services/staff/staff-types";
 import { apiErrorMessage, fieldErrors, parseApiError } from "@/utils/api-error";
 import { OutlinedNotice } from "./outlined-notice";
 import { humanDate } from "../onboarding-format";
@@ -33,13 +33,26 @@ const COLUMNS = ["Name", "Email", "Role", "Status", "Action"];
 const EMPTY = { first_name: "", last_name: "", email: "", role: "" };
 
 /**
- * The account's state, in the words a school uses.
+ * The ACCOUNT's state, in the words a school uses.
  *
- * `PENDING` is the only one this screen creates, and it reads "Invited" rather
- * than "Pending activation": from the school's side the fact is that the
- * invitation went out, not that the platform is waiting.
+ * The account and not the employment record, because the question this panel
+ * answers is whether an invitation has landed. `PENDING` is the only state it
+ * creates, and it reads "Invited" rather than "Pending activation": from the
+ * school's side the fact is that the invitation went out, not that the platform
+ * is waiting.
+ *
+ * Total over its input, including an absent one. A chip is a label on a row and
+ * must never be the reason a table fails to render: a status this function has
+ * not heard of is a sentence a reader can act on, and a crash is not.
  */
-function StatusChip({ status }: { status: string }) {
+function StatusChip({ status }: { status?: string }) {
+  if (!status) {
+    return (
+      <Badge variant="inactive" className="text-xs">
+        Unknown
+      </Badge>
+    );
+  }
   if (status === "ACTIVE") {
     return (
       <Badge variant="success" className="text-xs">
@@ -73,8 +86,8 @@ export function InvitationsPanel() {
   const [form, setForm] = useState(EMPTY);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const list = useGetSchoolStaffQuery({ page });
-  const [invite, { isLoading: inviting }] = useInviteSchoolStaffMutation();
+  const list = useGetStaffListQuery({ page });
+  const [invite, { isLoading: inviting }] = useCreateStaffMutation();
   const [resend, { isLoading: resending }] = useResendStaffInvitationMutation();
 
   const people = useMemo(() => list.data?.data ?? [], [list.data]);
@@ -143,7 +156,7 @@ export function InvitationsPanel() {
     }
   };
 
-  const resendTo = async (person: SchoolStaffMember) => {
+  const resendTo = async (person: StaffListRow) => {
     try {
       await resend(person.id).unwrap();
       toast.success(
@@ -171,10 +184,16 @@ export function InvitationsPanel() {
         {person.email}
       </span>
     ),
+    // Plural on the record, because one person may hold the same role at two
+    // branches or two different roles. Joined rather than truncated to the
+    // first: a bursar who is also a branch admin is both, and showing one of
+    // them is how a reader concludes the other grant never landed.
     role: (
-      <span className="whitespace-nowrap text-gray-01">{person.role || "–"}</span>
+      <span className="whitespace-nowrap text-gray-01">
+        {person.roles.length ? person.roles.join(", ") : "–"}
+      </span>
     ),
-    status: <StatusChip status={person.status} />,
+    status: <StatusChip status={person.account_status} />,
   }));
 
   if (forbidden) {

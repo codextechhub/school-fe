@@ -20,7 +20,7 @@ import {
  *   AA = action         01=view   02=create  03=update  04=delete
  *                       05=approve 08=manage  09=suspend  10=reactivate
  *                       11=assign  12=start   13=end   14=run   15=execute
- *                       16=publish 17=import  18=export
+ *                       16=publish 17=import  18=export  19=apply
  *                       39=view_sensitive
  *
  * ── Adding a permission ───────────────────────────────────────────────────────
@@ -59,10 +59,23 @@ const REGISTRY: Record<string, string> = {
   "100339": "school.students.view_sensitive",
 
   // ── school / teachers  (MM=10, RR=04) ──────────────────────────────────────
+  // The resource is `teachers` and not `staff`: the key is a primary key that
+  // four backend tables point at, so it stays as it is and the description
+  // moved instead. These keys govern the bursar and the registrar too.
   "100401": "school.teachers.view",
   "100402": "school.teachers.create",
   "100403": "school.teachers.update",
   "100408": "school.teachers.manage",
+  "100411": "school.teachers.assign",
+
+  // ── school / staff leave  (MM=10, RR=10) ───────────────────────────────────
+  // A resource of its own rather than more teacher verbs, because who is off
+  // sick is not something every colleague may read: `.view` reaches the two
+  // admin roles only, while `.apply` reaches teachers as well, since applying
+  // for leave is the one thing every member of staff does.
+  "101001": "school.leave.view",
+  "101008": "school.leave.manage",
+  "101019": "school.leave.apply",
 
   // ── school / administrators  (MM=10, RR=05) ────────────────────────────────
   "100501": "school.administrators.view",
@@ -291,11 +304,19 @@ export const P = {
   EXPORT_STUDENTS:         "100318",  // export the directory as it is filtered
   VIEW_STUDENT_SENSITIVE:  "100339",  // read FLS-gated sensitive student fields
 
-  // ── Teacher Management ─────────────────────────────────────────────────────
-  BROWSE_TEACHERS:         "100401",  // view the teacher list and profiles
-  INVITE_TEACHER:          "100402",  // invite / add a new teacher
-  MODIFY_TEACHER:          "100403",  // edit an existing teacher's profile
-  MANAGE_TEACHERS:         "100408",  // teacher lifecycle and assignment management
+  // ── Staff Management ───────────────────────────────────────────────────────
+  // The backend resource is still `teachers`, and these keys govern every
+  // member of staff: the bursar and the registrar as much as the teacher.
+  BROWSE_TEACHERS:         "100401",  // read the staff directory and profiles
+  INVITE_TEACHER:          "100402",  // add somebody and invite them
+  MODIFY_TEACHER:          "100403",  // edit a record, its records and its posting
+  MANAGE_TEACHERS:         "100408",  // employment transitions and deletions
+  ASSIGN_TEACHING:         "100411",  // write a teaching duty, set a class teacher
+
+  // ── Staff Leave ────────────────────────────────────────────────────────────
+  VIEW_LEAVE:              "101001",  // read somebody else's leave
+  MANAGE_LEAVE:            "101008",  // file, correct or cancel it on their behalf
+  APPLY_FOR_LEAVE:         "101019",  // apply for your own
 
   // ── Administrator Management ───────────────────────────────────────────────
   BROWSE_ADMINISTRATORS:   "100501",  // view school administrators

@@ -476,7 +476,20 @@ export const baseApi = createApi({
     "Onboarding",
     "GoLiveRequests",
     "SchoolProfile",
+    // The staff list AND one person's record. They carry the same facts, and
+    // every write that moves one moves the other: a role grant changes a row's
+    // Role column, a teaching duty changes its load, a status change changes
+    // both of its chips. The four tags below are narrower only where a write
+    // would otherwise refetch the whole directory to update one profile tab.
     "SchoolStaff",
+    "StaffHistory",
+    // Qualifications and documents together: two tabs of typed rows and files
+    // that nothing outside the profile reads.
+    "StaffRecords",
+    "StaffLeave",
+    // Assignments and coverage are one tag because they are one dataset seen
+    // two ways, and every write to a duty moves both.
+    "StaffTeaching",
     "PermissionCatalogue",
     "Notifications",
     "ImportTemplates",

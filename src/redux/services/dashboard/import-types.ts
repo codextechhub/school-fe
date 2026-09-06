@@ -15,7 +15,12 @@ export type DatasetType =
   | "branches"
   | "cx_users"
   | "bank_statements"
-  | "students";
+  | "students"
+  // The school's own people. A secondary school opening with ninety staff is
+  // not a form somebody fills in ninety times, and every row is created through
+  // the same service a single add uses, so there is one set of rules about who
+  // may be created where rather than two that drift.
+  | "staff";
 
 export type FileFormat = "csv" | "xlsx" | "xls";
 

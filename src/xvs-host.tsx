@@ -21,7 +21,7 @@ import { ExportButton } from "@/components/custom/export-button";
 import { returnInitial } from "@/utils/helpers";
 
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
-import { useGetSchoolStaffQuery } from "@/redux/services/staff/staff-api";
+import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
 import { routesPath } from "@/routes/routesPath";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
@@ -36,17 +36,23 @@ export function useBranches(): HostQueryResult<HostBranch> {
   return { data: data?.data, isLoading, isError };
 }
 
-/** Everyone this caller may name on an approval. */
+/** Everyone this caller may name on an approval.
+ *
+ *  Three fields need translating rather than passing through. `id` is a number
+ *  on a staff row and a string in the contract, and an id that is sometimes
+ *  either is how a Map lookup starts silently missing. `role` is plural on the
+ *  record, because one person may hold several, and the contract shows one
+ *  beside a name to make an approver identifiable, so the first is what it
+ *  gets. And `status` is the ACCOUNT's, not the employment record's: the
+ *  contract uses it to gate delegation, and whether somebody may be handed
+ *  another person's approvals is a question about whether their login works.
+ *  A teacher on maternity leave still signs in; a suspended account does not.
+ */
 export function useDirectory(): HostQueryResult<HostPerson> {
-  const { data, isLoading, isError } = useGetSchoolStaffQuery();
-  // full_name, email, role and status line up with HostPerson already; `id`
-  // does not, because this app's staff row numbers people and the contract
-  // names them with a string. Mapped rather than widened: an id that is
-  // sometimes a number and sometimes a string is how a Map lookup starts
-  // silently missing.
+  const { data, isLoading, isError } = useGetStaffListQuery();
   const rows = data?.data.map((s) => ({
     id: String(s.id), full_name: s.full_name, email: s.email,
-    role: s.role, status: s.status,
+    role: s.roles[0] ?? "", status: s.account_status,
   }));
   return { data: rows, isLoading, isError };
 }
