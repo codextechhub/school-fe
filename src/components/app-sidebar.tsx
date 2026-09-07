@@ -683,13 +683,19 @@ export function AppSidebar({
               routesPath.PROTECTED.WORKFLOW.DELEGATIONS,
             ),
           },
-          {
-            title: "Approver Groups",
-            url: routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
-            isActive: location.startsWith(
-              routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
-            ),
-          },
+          // The three above are personal - your queue, your submissions, your
+          // delegations - and everybody signed in has them. This one is the
+          // school's own list of who approves what, and a teacher holds no key
+          // for it, so it was a door drawn on a wall.
+          ...(hasPermission(P.VIEW_APPROVER_GROUPS)
+            ? [{
+                title: "Approver Groups",
+                url: routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
+                isActive: location.startsWith(
+                  routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
+                ),
+              }]
+            : []),
           // Only somebody who can change an approval path is shown it. Reading
           // one without being able to adjust it is a screen that answers a
           // question nobody asked it: which ladder governs a document is
@@ -741,9 +747,15 @@ export function AppSidebar({
             affordance: true,
           }]
         : []),
-      // How rows arrive in bulk, and the record of every arrival. The wizard
-      // itself stays a drawer over the directory the rows land in - this door
-      // is the history, which is a different question asked months later.
+    ],
+    // How rows arrive in bulk and how they leave. Their own group rather than
+    // rows under Operations: Finance and Procurement are consoles, and opening
+    // one replaces this sidebar with that area's own. These two stay inside the
+    // school's shell, and they are the same question asked in both directions.
+    data: [
+      // The wizard itself is a drawer over the directory the rows land in, so
+      // this door is the RECORD of an import - a different question, asked
+      // months later: was the caretaker ever added?
       {
         title: "Data Imports",
         url: routesPath.PROTECTED.DATA_IMPORTS.BATCHES.INDEX,
@@ -752,34 +764,45 @@ export function AppSidebar({
         childActive: location.startsWith("/data-imports"),
         permission: P.VIEW_IMPORT_BATCHES,
       },
-      // How rows leave. Saved exports is the door: a teacher who may run and
-      // download but not save one still lands somewhere real, because the list
-      // is readable to anybody holding exports.definition.view and the controls
-      // that rewrite it gate themselves.
+      // Saved exports is the door rather than Files, because a saved export is
+      // the thing a reader names and returns to; a file is one run of one.
       {
         title: "Export Centre",
         url: routesPath.PROTECTED.EXPORT.SAVED,
         icon: FileDown,
         isActive: location.startsWith("/export"),
         childActive: location.startsWith("/export"),
-        items: [
-          {
-            title: "Exports",
-            url: routesPath.PROTECTED.EXPORT.SAVED,
-            isActive: location.startsWith(routesPath.PROTECTED.EXPORT.SAVED),
-          },
-          {
-            title: "Files",
-            url: routesPath.PROTECTED.EXPORT.FILES,
-            isActive: location.startsWith(routesPath.PROTECTED.EXPORT.FILES),
-          },
-          {
-            title: "Queues",
-            url: routesPath.PROTECTED.EXPORT.QUEUES,
-            isActive: location.startsWith(routesPath.PROTECTED.EXPORT.QUEUES),
-          },
-        ],
-        permission: P.VIEW_SAVED_EXPORTS,
+        items: (
+          [
+            {
+              title: "Exports",
+              url: routesPath.PROTECTED.EXPORT.SAVED,
+              isActive: location.startsWith(routesPath.PROTECTED.EXPORT.SAVED),
+              perm: P.VIEW_SAVED_EXPORTS,
+            },
+            {
+              title: "Files",
+              url: routesPath.PROTECTED.EXPORT.FILES,
+              isActive: location.startsWith(routesPath.PROTECTED.EXPORT.FILES),
+              perm: P.VIEW_EXPORT_RUNS,
+            },
+            {
+              title: "Queues",
+              url: routesPath.PROTECTED.EXPORT.QUEUES,
+              isActive: location.startsWith(routesPath.PROTECTED.EXPORT.QUEUES),
+              perm: P.VIEW_EXPORT_RUNS,
+            },
+          ] as { title: string; url: string; isActive: boolean; perm: PermissionCode }[]
+        )
+          .filter((sub) => hasPermission(sub.perm))
+          .map((sub) => ({ title: sub.title, url: sub.url, isActive: sub.isActive })),
+        // Any of the three, not the saved-exports key alone. Saved exports are
+        // school_admin's; a branch admin and a teacher hold the run and file
+        // keys and use Files and Queues legitimately, and the single-key gate
+        // hid the whole area from them - a menu missing from the people
+        // entitled to it, which is the quieter half of the same fault.
+        permission: [P.VIEW_SAVED_EXPORTS, P.VIEW_EXPORT_RUNS, P.DOWNLOAD_EXPORT_FILE],
+        permissionMode: "any",
       },
     ],
   };
@@ -792,6 +815,7 @@ export function AppSidebar({
   const academics = data.academics.filter(canSee);
   const administration = data.administration.filter(canSee);
   const business = data.business.filter(canSee);
+  const dataMovement = data.data.filter(canSee);
   const help = data.help.filter(canSee);
 
   const { state } = useSidebar();
@@ -856,6 +880,9 @@ export function AppSidebar({
               )}
               {business.length > 0 && (
                 <NavMain items={business} groupTitle="Operations" />
+              )}
+              {dataMovement.length > 0 && (
+                <NavMain items={dataMovement} groupTitle="Data" />
               )}
               {help.length > 0 && (
                 <NavMain items={help} groupTitle="Communication" />
