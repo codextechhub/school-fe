@@ -444,8 +444,8 @@ export default function StaffDirectory() {
           Employment: (
             <span className="flex flex-wrap items-center gap-1.5">
               <EmploymentBadge
-                status={person.employment_status}
-                label={person.employment_status_label}
+                status={person.display_employment_status}
+                label={person.display_employment_status_label}
               />
               <AccountFlagChip flag={person.account_flag} />
             </span>

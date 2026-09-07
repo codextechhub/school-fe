@@ -104,8 +104,25 @@ export interface StaffListRow {
   email: string;
   staff_number: string;
   job_title: string;
+  /**
+   * What was DECIDED about their employment. Never `ON_LEAVE`.
+   *
+   * Five values a person sets through a logged transition. Use it for history,
+   * for the lifecycle strip, and anywhere the question is what somebody did.
+   */
   employment_status: EmploymentStatus;
   employment_status_label: string;
+  /**
+   * What the row READS as, which is what a screen shows.
+   *
+   * The same value, except that an ACTIVE person whose approved leave covers
+   * today reads `ON_LEAVE`. Nobody sets that: a stored On Leave has no way
+   * back, because approval is an event and a leave ENDING is not one, and
+   * nothing here runs on a schedule to notice. Derived on every read instead,
+   * so it is right on the way in and on the way out.
+   */
+  display_employment_status: EmploymentStatus;
+  display_employment_status_label: string;
   employment_type: EmploymentType | "";
   account_status: AccountStatus;
   account_flag: StaffAccountFlag | null;
@@ -122,7 +139,10 @@ export interface StaffListRow {
   posted_school_wide: boolean | null;
   /** A count of assignments. There is no target to compare it against. */
   teaching_load: number;
-  /** Approved leave covering today, whatever the employment status says. */
+  /**
+   * Approved leave covering today. The reason `display_employment_status` and
+   * `employment_status` differ, and the only reason they can.
+   */
   on_leave_today: boolean;
   hire_date: string | null;
   /** The server's own answer, so a row's button never contradicts the API. */

@@ -28,6 +28,8 @@ const ROW: StaffListRow = {
   job_title: "Lead Teacher",
   employment_status: "ACTIVE",
   employment_status_label: "Active",
+  display_employment_status: "ON_LEAVE",
+  display_employment_status_label: "On Leave",
   employment_type: "FULL_TIME",
   account_status: "LOCKED",
   account_flag: {
@@ -40,7 +42,7 @@ const ROW: StaffListRow = {
   branch_name: "Lekki Branch",
   posted_school_wide: false,
   teaching_load: 4,
-  on_leave_today: false,
+  on_leave_today: true,
   hire_date: "2021-09-06",
   can_resend: false,
   invited_at: "2021-08-30T09:12:00Z",

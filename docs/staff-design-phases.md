@@ -266,15 +266,13 @@ either a gap in the design or an endpoint nobody will call.
 
 ### 2.6 Design elements nothing can serve, and rulings needed
 
-Eleven, **all settled**. Four you decided outright (3, 9, 10, 11); seven
+Twelve, **all settled**. Five you decided outright (3, 9, 10, 11, 12); seven
 carried a proposal that the phase acted on, and each of those says below what
 actually shipped, so reversing one is a matter of reading what it did rather
 than working out what it might have.
 
-One half of one ruling is still unbuilt and is called out under 2. Every staff
-row carries `on_leave_today` - approved leave covering today, whatever the
-employment status says - and **no screen reads it**. The field is fetched on
-every directory page and thrown away.
+A twelfth was added after the six phases shipped, and it changed a rule rather
+than a screen: **On Leave is derived, not set.** See 12.
 
 1. **"Mark accepted" on Invitations.** Activation is the invited person opening
    a single-use link and setting a password. The button moves the employment
@@ -290,15 +288,10 @@ every directory page and thrown away.
    field carries the hint "Their account stays open until an administrator
    closes it. Nothing closes it on this date."**
 
-   **The other half is NOT built.** FR-013 asks for a directory warning where
-   somebody's leave and their employment status disagree. The server's answer
-   is `on_leave_today` on every row: approved leave covering today, reported
-   rather than resolved, because a school may set either fact, both or neither.
-   Mrs. Olaniyan is on maternity leave to 5 January and nobody moved her to On
-   Leave, so her row reads Active and the flag says otherwise - and the
-   directory renders the chip and drops the flag. It is one chip beside the
-   employment badge, and it is the last field the API offers that no screen
-   shows.
+   **The other half dissolved into ruling 12.** FR-013 asked for a warning
+   where somebody's leave and their employment status disagree. They can no
+   longer disagree: the status is derived from the leave, so there is nothing
+   to warn about.
 3. **Salary band. DECIDED: dropped.** The card is not built and the profile's
    Overview tab carries no money at all. Reading it would have meant giving a
    head teacher `finance.salary.view` to see one number, pulling the school's
@@ -585,3 +578,31 @@ do. The screen says what actually happens.
 serializer - was the only thing that could have parked a phase, and it was
 opened rather than worked around, so nothing was. What remains unbuilt is one
 chip: `on_leave_today`, described under ruling 2.
+
+12. **On Leave. DECIDED after the phases shipped: derived, never set.** The
+    status drawer offered a move to On Leave and approving a leave request did
+    nothing to the employment record, so the two facts drifted and
+    `on_leave_today` existed to report the drift.
+
+    Both halves were wrong. Approval is an event and code can hang off it, but
+    **a leave ENDING is not an event** and there is no scheduler in this
+    repository to notice one. Anything stored has no way back: Tunde Bakare's
+    study leave runs 17 August to 16 October, and a column set on approval would
+    still read On Leave the following March.
+
+    So `employment_status` holds five values a person sets through a logged
+    transition, and `display_employment_status` is what the row READS as -
+    On Leave exactly while approved leave covers today, computed on every read,
+    right on the way in and on the way out with nobody doing anything. It is
+    the same split `LeaveRequest` already kept for Completed.
+
+    One expression, `on_leave_expression()`, is behind the chip, the
+    `?employment_status=ON_LEAVE` facet and the header count, so the three
+    cannot disagree - and the facets stay disjoint, so the bar still sums to the
+    school. Migration `0003` empties the column of the value; the employment
+    EVENTS are left alone, because they are the log of what was decided under
+    the rule in force at the time.
+
+    **Not built, and worth knowing:** the chip says On Leave and not until when.
+    The end date is on the Leave tab, and putting it in a tooltip needs a field
+    the row does not carry yet.

@@ -187,8 +187,8 @@ export default function StaffProfile() {
                   <span className="inline-flex items-center gap-2">
                     <span className="text-xs text-gray-05">Employment</span>
                     <EmploymentBadge
-                      status={person.employment_status}
-                      label={person.employment_status_label}
+                      status={person.display_employment_status}
+                      label={person.display_employment_status_label}
                     />
                   </span>
                   <span className="inline-flex items-center gap-2">
