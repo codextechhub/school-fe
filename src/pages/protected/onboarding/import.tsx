@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 import { Check, Download, Search } from "lucide-react";
@@ -11,14 +11,17 @@ import { P } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
 import { usePermissions } from "@/hooks/use-permissions";
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
+import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
 import {
+  importDownloadUrls,
   useGetImportBatchesQuery,
   useGetImportTemplatesQuery,
-  useUploadImportFileMutation,
-  useValidateImportBatchMutation,
-} from "@/redux/services/import-data/import-api";
+} from "@/redux/services/dashboard/import-api";
 import { useTransitionOnboardingTaskMutation } from "@/redux/services/onboarding/onboarding-api";
-import type { ImportTemplateSummary } from "@/redux/services/import-data/import-types";
+import type {
+  DatasetType,
+  ImportTemplateListItem,
+} from "@/redux/services/dashboard/import-types";
 import { PageShell } from "@/components/layout/page-shell";
 
 /**
@@ -30,7 +33,7 @@ import { PageShell } from "@/components/layout/page-shell";
  * you upload" note. That order is deliberate in the design and kept here - the
  * progress card answers "am I done?" before the tables answer "what do I do?".
  *
- * Two things it does that the design could assume and this cannot.
+ * Three things it does that the design could assume and this cannot.
  *
  * **The templates table is whatever the server offers, never a hard-coded
  * list.** CodeX's own templates are withheld server-side and a request naming
@@ -39,17 +42,18 @@ import { PageShell } from "@/components/layout/page-shell";
  * branches the branch API refuses them, through this engine. A list written
  * here would drift from that rule in the dangerous direction.
  *
- * **Students is real now; staff and parents are not.** M11 seeded `students_v1`
- * and built the module behind it, so that row is a live template a school can
- * download and import against. The other two have no template and no model yet,
- * and the design's own empty state carries them: the Required datasets card
- * names all three regardless, so a school sees what is coming rather than a
- * screen that looks broken.
+ * **A dataset with no template still gets a row**, greyed, so a school sees
+ * what the step will eventually ask for rather than a screen that looks
+ * incomplete. The server's templates are merged OVER those placeholders by
+ * dataset slug, so seeding one lights up one row and leaves the rest alone with
+ * no edit here. `PLACEHOLDER_TEMPLATES` says which, and why the list is as
+ * short as it is.
  *
- * Note the two halves are independent. The card reads availability from the
- * server's list, and the table merges the server's templates over the
- * placeholders by dataset slug - so seeding one dataset lights up one row and
- * leaves the rest as they were, with no edit here.
+ * **The upload itself is the shared import wizard**, the same one the staff and
+ * student directories open and the same one the Data Imports console runs. This
+ * screen owns the checklist around an import - which datasets the step needs
+ * and how far they have got - and owns none of the importing. What an upload
+ * DID is read on the batch, under Data Imports, for the same reason.
  */
 
 /**
@@ -57,38 +61,45 @@ import { PageShell } from "@/components/layout/page-shell";
  *
  * Named here rather than read from the server because the step's requirements
  * are the step's, not the catalogue's: a school must load all three to close
- * it, whether or not a template exists for each yet. `state` reads "Not
- * available yet" for any the server does not offer, which today is staff and
- * parents - students has been live since M11 seeded `students_v1`.
+ * it, whether or not a template exists for each yet.
+ *
+ * The third is `guardians`, which is the dataset the design called "Parents".
+ * A guardian row IS a parent record - see `vs_import_data/datasets.py`, where
+ * the reason the dataset exists at all is that the student import carries only
+ * one guardian per child, so every second parent would otherwise be typed in by
+ * hand. The engine has no `parents` dataset and never had one, so requiring it
+ * under that name asked for something nothing could ever satisfy: the card sat
+ * at "Not available yet" and the step could not be finished.
  */
 const REQUIRED_DATASETS = [
   { slug: "students", name: "Students" },
   { slug: "staff", name: "Staff" },
-  { slug: "parents", name: "Parents" },
+  { slug: "guardians", name: "Guardians" },
 ] as const;
 
 /**
- * The templates this step is for, exactly as the design lists them.
+ * Rows for datasets the engine cannot serve yet.
  *
- * Written here for the datasets the backend cannot serve yet - there is no
- * Staff or Parent model to import into. A school still needs to see what the
- * step will ask for, so each is shown with its column counts and its controls
- * greyed out. When a template is seeded, the server's copy replaces the
- * placeholder by dataset slug and its controls come alive.
+ * A school needs to see what the step will eventually ask for, so a dataset
+ * with no template still gets a row, with its controls greyed. When a template
+ * is seeded the server's copy replaces the placeholder by dataset slug and the
+ * controls come alive.
  *
- * **Students is deliberately not among them.** It has a real template, so the
- * server supplies that row with its real fifteen columns. A placeholder would
- * only ever be seen in an environment where the migration has not run, and
- * there it would promise an invented eighteen - a number nothing can back.
+ * **A placeholder is only ever for a dataset that does not exist.** One written
+ * for a dataset the engine already serves shows twice: once greyed under the
+ * invented name and once live under the real one, so the step advertises as
+ * "coming" a thing the reader can already do on the row below. Staff, parents
+ * and classes each did that once their templates were seeded - the engine's
+ * list is `DatasetTypeChoices`, and anything on it belongs to the server.
+ *
+ * Historical records is the one left, because there is no dataset behind it:
+ * no `historical` in the engine's choices and no model to import into.
  *
  * The datasets CodeX loads on a school's behalf - schools, branches, CX users,
  * bank statements - are NOT here and are not offered by the server either.
  * They are not a school's to load, so listing them would only be noise.
  */
 const PLACEHOLDER_TEMPLATES = [
-  { slug: "staff", name: "Staff Import", code: "STF_V2", cols: 14, req: 8 },
-  { slug: "parents", name: "Parents Import", code: "PAR_V2", cols: 11, req: 6 },
-  { slug: "structure", name: "Classes / Structure Import", code: "STR_V1", cols: 9, req: 5 },
   { slug: "historical", name: "Historical Records Import", code: "HIS_V1", cols: 22, req: 7 },
 ] as const;
 
@@ -98,25 +109,57 @@ const REQUIRED_SLUGS = new Set(REQUIRED_DATASETS.map((d) => d.slug as string));
 const BATCH_COLUMNS = ["Batch", "File", "Rows", "Status", "Action"];
 const DATA_KEY = "INITIAL_DATA";
 
+/**
+ * What the import wizard can be pointed at.
+ *
+ * Bank statements are excluded because they are the finance module's own
+ * reconciliation flow rather than a dataset a school loads during setup, and
+ * BulkImportDrawer excludes them from its prop for the same reason.
+ */
+type ImportableDataset = Exclude<DatasetType, "bank_statements">;
+
+/**
+ * One row of the templates table: either a template the server offers, or a
+ * placeholder for a dataset that has none yet.
+ *
+ * `dataset_type` is a plain string rather than `DatasetType` because a
+ * placeholder names a dataset the engine does not know - "structure" and
+ * "historical" have no template and no model behind them. `placeholder` is what
+ * separates the two, and only a false one may be handed to the wizard, which
+ * takes a real dataset. The compiler enforces that at the one call site.
+ */
+type TemplateRow = {
+  id: number;
+  name: string;
+  code: string;
+  dataset_type: string;
+  total_columns: number;
+  required_columns: number;
+  default_file_format?: string;
+  can_import: boolean;
+  placeholder: boolean;
+};
+
 export default function OnboardingImport() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
-  const fileInput = useRef<HTMLInputElement>(null);
 
-  const templates = useGetImportTemplatesQuery();
-  const batches = useGetImportBatchesQuery();
+  const templates = useGetImportTemplatesQuery({ page_size: 100 });
+  const batches = useGetImportBatchesQuery({ page_size: 50 });
 
-  const [upload, uploadState] = useUploadImportFileMutation();
-  const [check] = useValidateImportBatchMutation();
   const [transition, transitionState] = useTransitionOnboardingTaskMutation();
 
   const [query, setQuery] = useState("");
-  const [pending, setPending] = useState<ImportTemplateSummary | null>(null);
+  // Which dataset the wizard is open on, or null when it is closed. The wizard
+  // is pointed at a DATASET rather than a template id because that is what it
+  // takes: it resolves the template itself and shows it as a settled fact.
+  const [importing, setImporting] = useState<ImportableDataset | null>(null);
 
   // Memoised, not `templates.data ?? []` inline: the fallback allocates a
   // new array on every render, so every memo below it recomputed on every
   // render and the memos were doing nothing at all.
-  const offered = useMemo(() => templates.data ?? [], [templates.data]);
+  const offered = useMemo(() => templates.data?.data ?? [], [templates.data]);
+  const batchRowsData = useMemo(() => batches.data?.data ?? [], [batches.data]);
   const canImport = hasPermission(P.UPLOAD_IMPORT_BATCH);
 
   /**
@@ -132,13 +175,27 @@ export default function OnboardingImport() {
    * a second copy meant casting a server value into the placeholder union,
    * which claimed a dataset we had never listed was one of the four we had.
    */
-  const rows = useMemo(() => {
-    const live = new Map(offered.map((t) => [t.dataset_type, t]));
-    const merged = PLACEHOLDER_TEMPLATES.map((entry) => {
+  const rows = useMemo<TemplateRow[]>(() => {
+    const fromServer = (t: ImportTemplateListItem): TemplateRow => ({
+      id: t.id,
+      name: t.name,
+      code: t.code,
+      dataset_type: t.dataset_type,
+      total_columns: t.total_columns,
+      required_columns: t.required_columns,
+      default_file_format: t.default_file_format,
+      can_import: t.can_import,
+      placeholder: false,
+    });
+
+    const live = new Map<string, ImportTemplateListItem>(
+      offered.map((t) => [t.dataset_type as string, t]),
+    );
+    const merged = PLACEHOLDER_TEMPLATES.map((entry): TemplateRow => {
       const real = live.get(entry.slug);
       if (real) {
         live.delete(entry.slug);
-        return { ...real, placeholder: false as const };
+        return fromServer(real);
       }
       return {
         id: -1,
@@ -147,7 +204,7 @@ export default function OnboardingImport() {
         dataset_type: entry.slug,
         total_columns: entry.cols,
         required_columns: entry.req,
-        placeholder: true as const,
+        placeholder: true,
         // Stated rather than left off. Without it the merged union has the
         // property on one arm only, every read of it is a type error, and the
         // row callback was widened to `any` to get at it - which turned off
@@ -158,7 +215,7 @@ export default function OnboardingImport() {
     // Anything the server offers that the design never listed still belongs on
     // the table - the server decides what a school may load, not this file.
     for (const extra of live.values()) {
-      merged.push({ ...extra, placeholder: false as const });
+      merged.push(fromServer(extra));
     }
     // Required first. A live template arrives through the loop above and would
     // otherwise land at the BOTTOM, under the optional placeholders - so the
@@ -189,7 +246,7 @@ export default function OnboardingImport() {
    * done would close the step on incomplete data.
    */
   const required = useMemo(() => {
-    const rows = batches.data ?? [];
+    const rows = batchRowsData;
     return REQUIRED_DATASETS.map((entry) => {
       const mine = rows.filter((b) => b.dataset_type === entry.slug);
       const done = mine.some((b) => b.status === "import_succeeded");
@@ -208,34 +265,10 @@ export default function OnboardingImport() {
               : "Not available yet",
       };
     });
-  }, [batches.data, offered]);
+  }, [batchRowsData, offered]);
 
   const doneCount = required.filter((r) => r.done).length;
   const allDone = doneCount === REQUIRED_DATASETS.length;
-
-  async function onFile(file: File) {
-    if (!pending) return;
-    const body = new FormData();
-    body.append("template_id", String(pending.id));
-    body.append("file", file);
-    try {
-      const created = await upload(body).unwrap();
-      const id = created?.data?.id;
-      if (!id) throw new Error("no batch");
-      // Checked straight away, then the reader is taken to the results. The
-      // design gives validation its own screen because the decision there -
-      // fix these rows, or proceed with warnings - is not a decision you can
-      // make from a summary line.
-      await check(id).unwrap();
-      navigate(routesPath.PROTECTED.ONBOARDING.IMPORT_VALIDATION(id));
-    } catch (error) {
-      const parsed = parseApiError(error);
-      toast.error(apiErrorMessage(parsed, "We could not read that file."));
-    } finally {
-      setPending(null);
-      if (fileInput.current) fileInput.current.value = "";
-    }
-  }
 
   async function finishDataSetup() {
     try {
@@ -273,10 +306,8 @@ export default function OnboardingImport() {
         ),
         Columns: (
           <span className="text-gray-01">
-            {template.total_columns ?? template.columns?.length ?? 0} columns
-            {typeof template.required_columns === "number"
-              ? ` · ${template.required_columns} required`
-              : ""}
+            {template.total_columns} columns
+            {` · ${template.required_columns} required`}
           </span>
         ),
         Action: (
@@ -297,7 +328,10 @@ export default function OnboardingImport() {
             </span>
             {!locked && (
               <a
-                href={`/api/v1/import/system-import-templates/${template.id}/download/`}
+                href={importDownloadUrls.templateDownload(
+                  template.id,
+                  template.default_file_format === "xlsx" ? "xlsx" : "csv",
+                )}
                 className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary hover:underline"
               >
                 <Download className="size-3.5" />
@@ -309,10 +343,9 @@ export default function OnboardingImport() {
                 size="sm"
                 onClick={() => {
                   if (locked) return;
-                  setPending(template);
-                  fileInput.current?.click();
+                  setImporting(template.dataset_type as ImportableDataset);
                 }}
-                disabled={locked || uploadState.isLoading}
+                disabled={locked}
                 title={locked ? "This template is not available yet" : undefined}
               >
                 Import
@@ -322,12 +355,12 @@ export default function OnboardingImport() {
         ),
         };
       }),
-    [visible, canImport, uploadState.isLoading],
+    [visible, canImport],
   );
 
   const batchRows = useMemo(
     () =>
-      (batches.data ?? []).map((batch) => ({
+      batchRowsData.map((batch) => ({
         Batch: (
           <span className="font-mono text-xs text-gray-05">#{batch.id}</span>
         ),
@@ -350,7 +383,9 @@ export default function OnboardingImport() {
               size="xs"
               className="text-primary"
               onClick={() =>
-                navigate(routesPath.PROTECTED.ONBOARDING.IMPORT_VALIDATION(batch.id))
+                navigate(
+                  routesPath.PROTECTED.DATA_IMPORTS.BATCHES.VIEW(String(batch.id)),
+                )
               }
             >
               {batch.has_critical_errors ? "Fix rows" : "View results"}
@@ -358,22 +393,11 @@ export default function OnboardingImport() {
           </div>
         ),
       })),
-    [batches.data, navigate],
+    [batchRowsData, navigate],
   );
 
   return (
     <PageShell className="gap-5" grid>
-      <input
-        ref={fileInput}
-        type="file"
-        accept=".csv,.xlsx,.xls"
-        className="sr-only"
-        onChange={(event) => {
-          const file = event.target.files?.[0];
-          if (file) void onFile(file);
-        }}
-      />
-
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 max-w-[62ch]">
           <h1 className="text-lg font-semibold text-black-01 font-mont text-balance">
@@ -526,6 +550,20 @@ export default function OnboardingImport() {
         </p>
       </section>
 
+      {/* The same wizard the staff and student directories open, and the same
+          one the Data Imports console runs. An onboarding upload is not a
+          different kind of import, so it is not a different implementation of
+          one: the step owns the checklist around it and nothing else. */}
+      {importing && (
+        <BulkImportDrawer
+          open
+          datasetType={importing}
+          title="Import your data"
+          description="Load this dataset from a spreadsheet. Nothing is written until you confirm."
+          returnLabel="Back to setup"
+          onClose={() => setImporting(null)}
+        />
+      )}
     </PageShell>
   );
 }

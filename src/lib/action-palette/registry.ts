@@ -673,6 +673,10 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.WORKFLOW.APPROVER_GROUPS },
   },
   {
+    // No "create workflow template" beside this one. A school adjusts the
+    // approval paths it was given rather than authoring new ones, so the
+    // builder is mounted only on EDIT and there is no address to send anybody
+    // to - see workflow-routes.tsx and createsWorkflowTemplates in xvs-host.
     id: "view-workflow-templates",
     label: "View workflow templates",
     aliases: ["approval rules", "workflow rules"],
@@ -681,16 +685,6 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: { module: ["workflow.template."] },
     run: { to: R.WORKFLOW.TEMPLATES },
-  },
-  {
-    id: "create-workflow-template",
-    label: "Create workflow template",
-    aliases: ["new workflow", "new approval rule"],
-    section: "Settings",
-    group: "Workflow",
-    kind: "do",
-    gate: { perm: P.MANAGE_WORKFLOW_TEMPLATES },
-    run: { to: R.WORKFLOW.TEMPLATE_NEW },
   },
 
   // ── Data Imports and the Export Centre ─────────────────────────────────────

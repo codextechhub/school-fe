@@ -3,24 +3,31 @@ import type { PaginatedResponse } from "./security-types";
 // ── Enums (mirrored from backend) ────────────────────────────────────────────
 
 /**
- * The datasets the import engine can load.
+ * Every dataset the import engine can load.
  *
- * The first four are console's, which is where this module was ported from.
- * `students` is school's, seeded by vs_import_data migration 0011 as
- * `students_v1` - the engine is shared, so the union is shared too and a
- * dataset missing from it is a dataset the wizard refuses to be pointed at.
+ * The whole of `vs_import_data.DatasetTypeChoices`, not the subset one product
+ * happens to use. The engine is shared and a batch carries its dataset on the
+ * wire, so a union narrower than the engine's is a type that lies about what
+ * can arrive: the console reads batches across every tenant, and the school app
+ * offers a template for each of the six a school may load.
+ *
+ * Which of them a given caller may actually import is a server decision, not a
+ * shape - see `vs_import_data/datasets.py`, which withholds the platform ones
+ * and refuses a caller that names one anyway.
  */
 export type DatasetType =
+  // CodeX loads these on a school's behalf.
   | "schools"
   | "branches"
   | "cx_users"
   | "bank_statements"
+  // A school loads these itself.
   | "students"
-  // The school's own people. A secondary school opening with ninety staff is
-  // not a form somebody fills in ninety times, and every row is created through
-  // the same service a single add uses, so there is one set of rules about who
-  // may be created where rather than two that drift.
-  | "staff";
+  | "staff"
+  | "guardians"
+  | "academic_structure"
+  | "subjects"
+  | "calendar_events";
 
 export type FileFormat = "csv" | "xlsx" | "xls";
 
@@ -127,6 +134,18 @@ export interface ImportTemplateListItem {
   default_file_format: FileFormat;
   is_download_enabled: boolean;
   total_columns: number;
+  /** How many of the columns the file must carry. */
+  required_columns: number;
+  /**
+   * Whether the CALLER's tenant may import this template.
+   *
+   * The catalogue lists every template, including the ones CodeX loads on a
+   * school's behalf, so a screen greys the rest rather than hiding them. A
+   * display hint only: the server asks the same question again on upload
+   * (vs_import_data/datasets.py), and a caller naming a template it may not use
+   * is refused there whatever this says.
+   */
+  can_import: boolean;
   published_at: string | null;
   created_at: string;
   updated_at: string;
@@ -173,6 +192,9 @@ export interface UpdateTemplatePayload {
 
 export interface ImportBatchListItem {
   id: number;
+  /** Which dataset the batch loads. Read from the batch's template, so it is
+   *  present whether or not the caller can see the template row itself. */
+  dataset_type: DatasetType;
   template: number | null;
   template_name: string | null;
   template_code: string | null;

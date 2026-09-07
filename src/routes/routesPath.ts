@@ -115,11 +115,11 @@ export const routesPath = {
       // so the tab is in the URL rather than in component state.
       ROLES: "/onboarding/roles",
       STAFF: "/onboarding/roles?tab=invitations",
+      // The step. The upload itself runs in the shared import wizard, and what
+      // an upload DID is read on the batch under DATA_IMPORTS - one import
+      // engine, one set of screens over it, whether a school is setting up or
+      // running.
       IMPORT: "/onboarding/import",
-      // Its own screen, as the design draws it: deciding between fixing rows
-      // and proceeding with warnings needs the rows on the page.
-      IMPORT_VALIDATION: (batchId: number | string) =>
-        `/onboarding/import/${batchId}/validation`,
       GO_LIVE: "/onboarding/go-live",
       // Where every TENANT_NOT_LIVE refusal lands, whichever closed surface
       // produced it. See the 403 branch in redux/services/base-api.ts.
