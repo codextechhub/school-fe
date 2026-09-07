@@ -4,6 +4,7 @@ import * as React from "react";
 import { EyeIcon, EyeOffIcon, Loader, Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +38,11 @@ export const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
   ) => {
     const [showPassword, setShowPassword] = React.useState(false);
     const isPasswordType = type === "password";
+    // A date field gets this app's own calendar, not the browser's. The native
+    // control looks different in every browser and matches nothing else on the
+    // screen, so a form built from CustomInput was consistent everywhere except
+    // its dates.
+    const isDateType = type === "date";
 
     return (
       <div
@@ -54,6 +60,15 @@ export const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
           </label>
         )}
         <div className="relative">
+          {isDateType ? (
+            <DatePickerInput
+              id={id}
+              className={className}
+              ref={ref}
+              {...props}
+              aria-invalid={error ? true : false}
+            />
+          ) : (
           <Input
             id={id}
             type={isPasswordType && showPassword ? "text" : type}
@@ -62,6 +77,7 @@ export const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
             {...props}
             aria-invalid={error ? true : false}
           />
+          )}
           {isPasswordType && (
             <Button
               type="button"
