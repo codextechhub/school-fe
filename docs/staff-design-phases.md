@@ -271,9 +271,10 @@ carried a proposal that the phase acted on, and each of those says below what
 actually shipped, so reversing one is a matter of reading what it did rather
 than working out what it might have.
 
-One half of one ruling is still unbuilt and is called out under 2: the server
-sends an FR-013 warning when somebody has leave running today and an employment
-status that is not On Leave, and no screen reads it.
+One half of one ruling is still unbuilt and is called out under 2. Every staff
+row carries `on_leave_today` - approved leave covering today, whatever the
+employment status says - and **no screen reads it**. The field is fetched on
+every directory page and thrown away.
 
 1. **"Mark accepted" on Invitations.** Activation is the invited person opening
    a single-use link and setting a password. The button moves the employment
@@ -287,9 +288,17 @@ status that is not On Leave, and no screen reads it.
    registry. Mr. Ayanwale's last day is 18 December; on 19 December he can still
    sign in, indefinitely. **DONE in phase 2: the status drawer's last-working-day
    field carries the hint "Their account stays open until an administrator
-   closes it. Nothing closes it on this date."** The FR-013 directory warning is
-   NOT surfaced - the server sends it and no screen reads it, which is the one
-   half of this ruling still on the table.
+   closes it. Nothing closes it on this date."**
+
+   **The other half is NOT built.** FR-013 asks for a directory warning where
+   somebody's leave and their employment status disagree. The server's answer
+   is `on_leave_today` on every row: approved leave covering today, reported
+   rather than resolved, because a school may set either fact, both or neither.
+   Mrs. Olaniyan is on maternity leave to 5 January and nobody moved her to On
+   Leave, so her row reads Active and the flag says otherwise - and the
+   directory renders the chip and drops the flag. It is one chip beside the
+   employment badge, and it is the last field the API offers that no screen
+   shows.
 3. **Salary band. DECIDED: dropped.** The card is not built and the profile's
    Overview tab carries no money at all. Reading it would have meant giving a
    head teacher `finance.salary.view` to see one number, pulling the school's
@@ -380,9 +389,14 @@ status that is not On Leave, and no screen reads it.
 
 ## 3. The phases
 
-Every phase builds, passes its tests, adds its palette actions and coverage-test
-entries, and is driven in a browser against the real API at 390px and desktop
-before it is called done.
+All six shipped. Each one builds, passes its tests, carries its palette actions
+and coverage-test entries, and was driven in a browser against the real API at
+390px and desktop before being called done.
+
+**What each entry records is what actually happened**, including where it
+departed from the plan and why. The plan text each phase was scoped from has
+been removed now that the phase is done: two accounts of the same work, one of
+them superseded, is two things to read and one of them wrong.
 
 ### Phase 1 - Fix the break, and lay the seam — SHIPPED
 
@@ -420,24 +434,6 @@ prefix carries a warning about.
 counted groups and join rows rather than people, reporting 6 staff where there
 were 12 and 1 Active where there were 7. Described in section 5.
 
-**What the phase's own plan said it would build, below.**
-
-
-The only phase with no new screen, and it ships a screen anyway: the onboarding
-Invitations panel, working again.
-
-- Fix `StaffListSerializer` drift in `staff-types.ts` and
-  `invitations-panel.tsx`: `status` -> `account_status`, `role` -> `roles[0]`,
-  and make `StatusChip` safe against an absent value.
-- Replace `staff-api.ts` with the full client: 24 endpoints, typed against the
-  serializers, `silent: true` on the ones whose refusals are field errors.
-- Add the four missing permission keys and the `"staff"` `DatasetType`.
-- Add `routesPath.PROTECTED.STAFF`; the sidebar group, **four items** with its
-  two live badges (ruling 9 drops the fifth); and the palette actions, each
-  gated on the same key its screen checks. `View staff`, `View invitations`,
-  `View postings`, `View teaching duties`, and one `kind: "do"` for
-  `/staff?action=new`.
-
 ### Phase 2 - Directory and Profile — SHIPPED
 
 Driven against `holy-cross` at desktop, 390px and 820px. No console errors, no
@@ -456,27 +452,6 @@ grey. `LeaveRequest.display_status` is derived rather than looked up, so it
 carries a CODE and no `*_label` comes with it, and the tone map was keyed on
 title case - so every status fell through to the neutral default. The type now
 names the five codes it can be, and the wording lives on the screen.
-
-**What the phase's own plan said it would build, below.**
-
-
-The two biggest screens, and between them 49 of the design's 189 states.
-
-- **Directory**: the six-count header with the side breakdown that switches from
-  branch to role at a one-branch school; the four-facet filter panel with the
-  account-status separation spelled out; chips; the selection bar (its two
-  actions land in phase 4); the row menu; the windowed paginator; empty,
-  no-match and single-person states.
-- **Profile**: header with both status chips, the account flag, Unlock and
-  Resend; the lifecycle strip and its off-path note; seven tabs with an empty
-  state each; the Overview bio / contact / employment rows.
-- **Status drawer**, including the named cover list.
-- **Edit drawer** - new, not in the design (ruling 5).
-- No salary card (ruling 3).
-- **Leave tab, writable** (ruling 11): Apply for a person's own leave, Record on
-  somebody's behalf, cancel a pending request, `days_taken` shown with the
-  server's own `balance_note` beside it so nobody reads it as a balance, and a
-  link into My Submissions for a request that is still being decided.
 
 ### Phase 3 - Add staff, and Invitations — SHIPPED
 
@@ -505,17 +480,6 @@ different screen on a different key. The module's action is
 being set up, so they are told apart by label and section rather than by hiding
 one.
 
-**What the phase's own plan said it would build, below.**
-
-
-- The six-section Add form as one transaction, with the photograph, the
-  suggested staff number, the pre-live role narrowing, the role reach summary,
-  and the teaching step gated on the role. **Documents upload after the create
-  returns an id** - the create serializer takes qualifications, subjects and
-  classes but not documents.
-- The Invitation sent screen and its four exits.
-- The Invitations list: resend, revoke, view. No Mark accepted (ruling 1).
-
 ### Phase 4 - Posting & reach, and the three role drawers — SHIPPED
 
 Driven against `holy-cross` at desktop, 390px and 820px, including real writes:
@@ -537,24 +501,6 @@ school. The backend disagrees: both the roster read and the bulk move declare
 `pending_tenant_surface`, and the palette's readiness test caught the
 disagreement. The app mirrors the server; a route closed here over an endpoint
 that answers is a door locked from the inside.
-
-**What the phase's own plan said it would build, below.**
-
-
-Ruling 9 took a screen out of this phase, so what is left is the Posting screen
-plus the controls that finish phase 2's directory selection bar and the profile's
-Assign role button. Everything here is open before go-live.
-
-- **Posting & reach**: the three roster groups with only the first selectable,
-  the bulk move, and the sentence that keeps posting and reach apart.
-- **Assign-role drawer**: roles held now with revoke, add a role, reach, the
-  duplicate check, and the pre-live narrowing to the two administrator roles.
-- **Bulk-role drawer**: one role, one reach, several people, with anybody who
-  already holds it named rather than silently skipped.
-- **Role preview drawer**, reached from the assign-role drawer's "See everything
-  it reaches". Its holder list needs
-  `role-assignments/?role=<key>&assignment_status=ACTIVE`, which is one call for
-  one role - the expensive shape was the catalogue's, and the catalogue is gone.
 
 ### Phase 5 - Teaching duties — SHIPPED, and no longer blocked
 
@@ -580,23 +526,6 @@ two lessons collide is on the teacher's own grid, which is where the link goes.
 teachers open "once at least one member of staff exists". They exist, and that
 screen is another module's, so it waits for the ruling rather than being
 redirected on the way past.
-
-**What the phase's own plan said it would build, below.**
-
-
-**Blocked on one backend field.** The coverage grid, the assign drawer and the
-clash panel are all unblocked; the Class teachers panel and the profile's class-
-teacher line need `class_teacher` on the class serializer (2.4). Build the rest
-and land that panel when the field arrives; it is a one-field change, not a
-module.
-
-- Coverage grid with four cell states, the only-gaps filter, the headline
-  sentence, and the two gap counts kept apart.
-- Assign duties drawer: lead / assistant, duplicate and lead-taken detection,
-  existing rows with promote, demote and remove.
-- By-teacher lens - and if the grouped read of 2.4 does not land, say plainly in
-  the phase notes that it is N+1 rather than shipping it quietly.
-- Clash panel per ruling 4.
 
 ### Phase 6 - Bulk import — SHIPPED
 
@@ -628,22 +557,11 @@ publish only part of the file." That is the shared engine's behaviour, the same
 one console and the student import get, and changing it is not this module's to
 do. The screen says what actually happens.
 
-**What the phase's own plan said it would build, below.**
-
-
-Mostly assembly: `import-wizard.tsx` already has all seven steps and
-`bulk-import-drawer.tsx` already wraps it. What is new is the staff dataset, the
-template card with its typed columns and required flags, the three
-before-you-upload notes, and the batch history with its four outcome chips.
-Shape per ruling 8.
-
----
-
 ## 4. Order, and why
 
-1. **Phase 1 first because something is broken.** An onboarding school hits the
-   Invitations panel today and the row render throws. Everything else in the
-   phase is seam work that every later phase needs anyway.
+1. **Phase 1 first because something was broken.** An onboarding school hit the
+   Invitations panel and the row render threw. Everything else in that phase was
+   seam work every later phase needed anyway.
 2. **No seed phase.** The usual rule is that scenario data comes before the
    screens that need it. It was already done: `seed_staff_scenarios` builds
    every tenant through the real services, so a state that cannot be reached
@@ -657,12 +575,13 @@ Shape per ruling 8.
    because the Add form is the only place a qualification can currently be
    entered.
 5. **Posting and the role drawers before Teaching** because they are open before
-   go-live, they read surfaces that already work, and they close the two
-   controls phase 2 leaves stubbed on the directory selection bar. Teaching is
-   the one phase with a backend dependency.
-6. **Import last** because it is assembly over a wizard that already exists, and
-   because its shape depends on a ruling rather than on code.
+   go-live and read surfaces that already worked, and because they close the two
+   controls the directory selection bar would otherwise have stubbed. Teaching
+   was the one phase with a backend dependency.
+6. **Import last** because it is assembly over a wizard that already existed,
+   and because its shape depended on a ruling rather than on code.
 
-**The critical path you control runs to the end of phase 6.** The one external
-dependency - `class_teacher` on the class serializer - blocks one panel inside
-phase 5 and nothing else. No phase is parked.
+**The order held.** The one external dependency - `class_teacher` on the class
+serializer - was the only thing that could have parked a phase, and it was
+opened rather than worked around, so nothing was. What remains unbuilt is one
+chip: `on_leave_today`, described under ruling 2.
