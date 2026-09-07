@@ -151,12 +151,13 @@ export default function BulkImportDrawer({
   onClose: () => void;
   onFinished?: (completion: ImportWizardCompletion) => void | Promise<void>;
   /**
-   * Where "view this import" goes, when the host app has somewhere to send it.
+   * Override where "view this import" goes.
    *
-   * Console has a batch-details screen and defaults to it. School does not, and
-   * navigating a school administrator to a route that does not exist is worse
-   * than not offering the trip - so a host without the page passes its own
-   * destination instead.
+   * The default is the batch's own detail screen, which both applications
+   * mount. This exists for a caller that wants to keep the reader where they
+   * are, and a caller supplying it takes on the whole job: returning a reader
+   * to the list they started from is not showing them the import, and the three
+   * rows a partly-imported batch skipped are only legible on the batch.
    */
   onViewBatch?: (batchId: number) => void;
 }) {

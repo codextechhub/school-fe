@@ -186,7 +186,7 @@ export default function StaffDirectory() {
               school.teachers.import: the dataset is reachable by the seven
               import keys a school already holds, which is what FR-016 means by
               needing a dataset rather than a new key. */}
-          <PermissionGate permission={P.START_IMPORT}>
+          <PermissionGate permission={P.UPLOAD_IMPORT_BATCH}>
             <Button variant="outline" onClick={() => setImporting(true)}>
               <Upload className="size-4" />
               Bulk import
@@ -491,10 +491,6 @@ export default function StaffDirectory() {
         description="Load your people from a spreadsheet. Everybody arrives Invited, and nothing is written until you confirm."
         returnLabel="Back to staff"
         onClose={() => setImporting(false)}
-        // No batch-details screen in this app, so "view this import" comes back
-        // to the directory the new rows are now in, which is what the person
-        // actually wanted to see.
-        onViewBatch={() => setImporting(false)}
         onFinished={() => {
           void refetch();
         }}

@@ -19,12 +19,24 @@
  * even if a page forgets to clean up.
  */
 
-import { createContext, useContext, useEffect } from "react";
+import { createContext, useContext, useEffect, useRef } from "react";
+
+/**
+ * Where the header's back affordance goes when a route declares one: `true`
+ * walks the history, a path string navigates there.
+ *
+ * A named destination is not the same as history-back. A reader who arrived at
+ * a batch from the notification bell has no import list behind them, so walking
+ * the history returns them to whatever they were reading before, while the
+ * screen's own parent is the list of imports.
+ */
+export type BackSpec = true | string;
 
 /** A runtime override, valid only for the location it was set under. */
 export type HeaderOverride = {
   key: string;
   title?: string;
+  back?: () => void;
 };
 
 /**
@@ -43,11 +55,12 @@ export function resolveHeaderTitle(
 
 export type DashboardHeaderApi = {
   setTitle: (title?: string) => void;
+  setBack: (back?: () => void) => void;
 };
 
-// Outside the layout (unit tests, isolated renders) the setter is inert rather
-// than throwing, so a page component stays mountable on its own.
-const INERT: DashboardHeaderApi = { setTitle: () => {} };
+// Outside the layout (unit tests, isolated renders) the setters are inert
+// rather than throwing, so a page component stays mountable on its own.
+const INERT: DashboardHeaderApi = { setTitle: () => {}, setBack: () => {} };
 
 export const DashboardHeaderContext = createContext<DashboardHeaderApi | null>(null);
 
@@ -65,4 +78,43 @@ export function useDashboardTitle(title?: string): void {
     setTitle(title);
     return () => setTitle(undefined);
   }, [setTitle, title]);
+}
+
+/**
+ * Resolve the back affordance the header renders, override before route handle.
+ *
+ * Same location rule as the title: an override set on one screen is dead the
+ * moment the reader moves, so a closure cannot survive into the next page and
+ * send them somewhere that screen knows nothing about.
+ */
+export function resolveHeaderBack(
+  handleBack: BackSpec | undefined,
+  override: HeaderOverride | null,
+  locationKey: string,
+): BackSpec | (() => void) | undefined {
+  const live = override && override.key === locationKey ? override : null;
+  return live?.back ?? handleBack;
+}
+
+/**
+ * Send the header's back affordance somewhere only this screen can work out.
+ *
+ * Static destinations belong in the route's `handle.back`; this is for the ones
+ * that close over state, such as returning to the list a drawer was opened
+ * from. The handler is read through a ref at click time, so an inline arrow
+ * function registers once rather than on every render.
+ */
+export function useDashboardBack(handler?: () => void): void {
+  const { setBack } = useDashboardHeader();
+  const latest = useRef(handler);
+  useEffect(() => {
+    latest.current = handler;
+  });
+
+  const enabled = Boolean(handler);
+  useEffect(() => {
+    if (!enabled) return;
+    setBack(() => latest.current?.());
+    return () => setBack(undefined);
+  }, [setBack, enabled]);
 }

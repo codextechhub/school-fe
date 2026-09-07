@@ -96,17 +96,17 @@ describe("Permission registry integrity", () => {
 describe("Export Centre permission registry", () => {
   it("resolves the two keys an export from a screen needs", () => {
     // Both, because exporting is two calls: translate the screen, then run it.
-    expect(resolvePermissionKey(P.BROWSE_EXPORT_CATALOGUE)).toBe(
+    expect(resolvePermissionKey(P.VIEW_EXPORT_CATALOGUE)).toBe(
       "exports.catalogue.view",
     );
     expect(resolvePermissionKey(P.RUN_EXPORT)).toBe("exports.run.create");
-    expect(resolvePermissionKey(P.DOWNLOAD_EXPORT)).toBe("exports.file.download");
+    expect(resolvePermissionKey(P.DOWNLOAD_EXPORT_FILE)).toBe("exports.file.download");
   });
 
   it("uses the same codes console-fe does for the same module", () => {
     // Same keys, same module, so the same MM/RR/AA. A second numbering for one
     // backend module is two maps to keep in step, and the second one drifts.
-    expect(P.BROWSE_EXPORT_CATALOGUE).toBe("920101");
+    expect(P.VIEW_EXPORT_CATALOGUE).toBe("920101");
     expect(P.RUN_EXPORT).toBe("920302");
   });
 });

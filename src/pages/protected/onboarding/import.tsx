@@ -117,7 +117,7 @@ export default function OnboardingImport() {
   // new array on every render, so every memo below it recomputed on every
   // render and the memos were doing nothing at all.
   const offered = useMemo(() => templates.data ?? [], [templates.data]);
-  const canImport = hasPermission(P.START_IMPORT);
+  const canImport = hasPermission(P.UPLOAD_IMPORT_BATCH);
 
   /**
    * The rows the table shows: the design's five, with any real template the
@@ -483,7 +483,7 @@ export default function OnboardingImport() {
       </section>
 
       {/* Batches */}
-      <PermissionGate permission={P.BROWSE_IMPORTS}>
+      <PermissionGate permission={P.VIEW_IMPORT_BATCHES}>
         <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
           <p className="mb-3 text-sm font-semibold font-mont text-black-01">
             Import batches

@@ -65,7 +65,7 @@ export function ExportButton({
 }) {
   const tenantIsPending = useAppSelector(selectTenantIsPending);
   const { hasAllPermissions } = usePermissions();
-  const canExport = hasAllPermissions(P.BROWSE_EXPORT_CATALOGUE, P.RUN_EXPORT);
+  const canExport = hasAllPermissions(P.VIEW_EXPORT_CATALOGUE, P.RUN_EXPORT);
   const [prepare, { isFetching: preparing }] = useLazyExportFromScreenQuery();
   const [run, { isLoading: running }] = useRunQuickExportMutation();
   const [pending, setPending] = useState<FromScreen | null>(null);

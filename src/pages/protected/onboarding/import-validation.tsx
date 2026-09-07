@@ -175,7 +175,7 @@ export default function OnboardingImportValidation() {
       </section>
 
       <section className="bg-white rounded-md px-3 py-4 sm:px-5 flex flex-wrap items-center gap-3">
-        <PermissionGate permission={P.COMMIT_IMPORT}>
+        <PermissionGate permission={P.EXECUTE_IMPORT_BATCH}>
           <Button
             className="h-10"
             disabled={blocked || commitState.isLoading}

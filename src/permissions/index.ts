@@ -151,10 +151,14 @@ const REGISTRY: Record<string, string> = {
   // own provisioning templates - the server withholds those, and a school that
   // names one anyway is refused. See backend vs_import_data/datasets.py.
   "400101": "import.templates.view",
+  "400102": "import.templates.create",
+  "400108": "import.templates.manage",
 
   // ── import / batches  (MM=40, RR=02) ───────────────────────────────────────
   "400201": "import.batches.view",
   "400202": "import.batches.create",
+  "400203": "import.batches.update",
+  "400204": "import.batches.delete",
   // Two separate verbs on purpose: checking a file is not importing it, and a
   // reader allowed to check may not be the one allowed to commit.
   "400214": "import.batches.run",
@@ -162,9 +166,23 @@ const REGISTRY: Record<string, string> = {
 
   // ── import / validations  (MM=40, RR=03) ───────────────────────────────────
   "400301": "import.validations.view",
+  "400303": "import.validations.update",
 
   // ── import / jobs  (MM=40, RR=04) ──────────────────────────────────────────
   "400401": "import.jobs.view",
+
+  // ── import / rollbacks, audit, notifications  (MM=40, RR=05..07) ───────────
+  // Registered, and deliberately held by no school role. The import screens are
+  // shared with the console, which does hold them, so every control they gate
+  // is written once and simply does not appear here. seed_import_permissions
+  // names each exclusion: a school corrects data by uploading a corrected file
+  // rather than rewriting or unwinding the record of what it already loaded,
+  // and the audit and notification logs are platform observability over every
+  // tenant's imports rather than one school's own history.
+  "400501": "import.rollbacks.view",
+  "400514": "import.rollbacks.run",
+  "400601": "import.audit.view",
+  "400701": "import.notifications.view",
 
   // ── academics / session  (MM=30, RR=01) ────────────────────────────────────
   "300101": "academics.session.view",
@@ -187,13 +205,24 @@ const REGISTRY: Record<string, string> = {
 
   // ── Export Centre  (MM=92) - vs_exports.constants.ExportPermission ─────────
   // The same codes console-fe uses, because it is the same module and the same
-  // keys. NOT held by any school role today: seed_exports_permissions grants
-  // these to platform roles on the codex tenant only, so every export surface
-  // here is absent rather than refused until that changes. Registered so the
-  // gate can be written once and start working the day the key is granted.
+  // keys. seed_exports_permissions grants the run-and-take set to all three
+  // prebuilt school roles and the saved-definition set to school_admin alone,
+  // so a school administrator holds the whole Export Centre and a teacher may
+  // run and download an export without being able to redefine one.
+  // exports.sensitive_field.export is held separately, by school_admin only,
+  // because it is the gate that decides whether restricted columns leave at all.
   "920101": "exports.catalogue.view",
+  "920201": "exports.definition.view",
+  "920202": "exports.definition.create",
+  "920203": "exports.definition.update",
+  "920204": "exports.definition.delete",
+  "920245": "exports.definition.share",
+  "920301": "exports.run.view",
   "920302": "exports.run.create",
+  "920328": "exports.run.cancel",
   "920446": "exports.file.download",
+  "920506": "exports.sensitive_field.export",
+  "920601": "exports.activity.view",
 
   // ── academics / structure  (MM=30, RR=04) ──────────────────────────────────
   // Departments, programs and levels. One resource because they are one screen
@@ -383,13 +412,35 @@ export const P = {
   REQUEST_GO_LIVE:         "200302",  // ask CodeX to take the school live
 
   // ── Data Import ────────────────────────────────────────────────────────────
-  BROWSE_IMPORT_TEMPLATES: "400101",  // see which datasets this school may load
-  BROWSE_IMPORTS:          "400201",  // read this school's upload history
-  START_IMPORT:            "400202",  // upload a file against a template
-  CHECK_IMPORT_FILE:       "400214",  // validate an upload without committing it
-  COMMIT_IMPORT:           "400215",  // commit a checked upload into real rows
-  VIEW_IMPORT_PROBLEMS:    "400301",  // read the row-by-row problems in a file
-  VIEW_IMPORT_PROGRESS:    "400401",  // watch a running import finish
+  // Named as the Data Imports screens name them, because those screens are
+  // shared with the console and resolve `@/permissions` against whichever app
+  // they run inside. A school-flavoured second name for the same code would be
+  // two ways to write one gate, and the registry test forbids it for that
+  // reason: one code, one name, one meaning.
+  //
+  // The codes are this app's own and differ from the console's - they are a
+  // local handle, and only the dotted key in REGISTRY above is shared. Several
+  // keys below are held by no school role at all, marked platform-only: the
+  // shared screens gate their controls on them, so those controls are simply
+  // absent here rather than being offered and refused.
+  VIEW_IMPORT_TEMPLATES:   "400101",  // see which datasets this school may load
+  CREATE_IMPORT_TEMPLATE:  "400102",  // platform-only: shape what a valid file is
+  MANAGE_IMPORT_TEMPLATES: "400108",  // platform-only: edit drafts, publish, retire
+  VIEW_IMPORT_BATCHES:     "400201",  // read this school's upload history
+  UPLOAD_IMPORT_BATCH:     "400202",  // upload a file against a template
+  EDIT_IMPORT_BATCH:       "400203",  // platform-only: edit batch metadata
+  DELETE_IMPORT_BATCH:     "400204",  // platform-only: erase the record of an import
+  // Two separate verbs on purpose: checking a file is not importing it, and a
+  // reader allowed to check may not be the one allowed to commit.
+  RUN_IMPORT_VALIDATION:   "400214",  // validate an upload without committing it
+  EXECUTE_IMPORT_BATCH:    "400215",  // commit a checked upload into real rows
+  VIEW_IMPORT_ISSUES:      "400301",  // read the row-by-row problems in a file
+  RESOLVE_IMPORT_ISSUE:    "400303",  // platform-only: resolve an issue in place
+  VIEW_IMPORT_JOBS:        "400401",  // watch a running import finish
+  VIEW_IMPORT_ROLLBACKS:   "400501",  // platform-only: rollback history
+  RUN_IMPORT_ROLLBACK:     "400514",  // platform-only: unwind live data
+  VIEW_IMPORT_AUDIT:       "400601",  // platform-only: per-batch audit log
+  VIEW_IMPORT_NOTIFICATIONS: "400701", // platform-only: per-batch notification log
 
   // ── Academic Sessions ──────────────────────────────────────────────────────
   BROWSE_SESSIONS:         "300101",  // view academic sessions / terms
@@ -431,9 +482,21 @@ export const P = {
 
   // ── Export Centre ──────────────────────────────────────────────────────────
   // No school role holds these yet - see the registry note.
-  BROWSE_EXPORT_CATALOGUE: "920101",  // see what this school may export
+  // Named as the shared Export Centre screens name them, for the same reason
+  // the import keys are. These codes DO match the console's, because the export
+  // module was numbered once and both apps took the same numbers.
+  VIEW_EXPORT_CATALOGUE:   "920101",  // see what this school may export
+  VIEW_SAVED_EXPORTS:      "920201",  // read this school's saved export definitions
+  CREATE_EXPORT:           "920202",  // define a new saved export
+  UPDATE_EXPORT:           "920203",  // edit a saved export
+  DELETE_EXPORT:           "920204",  // delete a saved export
+  SHARE_EXPORT:            "920245",  // share a saved export with colleagues
+  VIEW_EXPORT_RUNS:        "920301",  // read the history of export runs
   RUN_EXPORT:              "920302",  // run an export of a filtered screen
-  DOWNLOAD_EXPORT:         "920446",  // download a produced file
+  CANCEL_EXPORT_RUN:       "920328",  // stop a run that is still going
+  DOWNLOAD_EXPORT_FILE:    "920446",  // download a produced file
+  EXPORT_SENSITIVE_FIELDS: "920506",  // let restricted columns leave the school
+  VIEW_EXPORT_ACTIVITY:    "920601",  // read who exported what
 
 } as const;
 

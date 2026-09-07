@@ -30,6 +30,8 @@ const packageAlias: { find: string; replacement: string }[] = [
   { find: "@/redux/services/payments", replacement: pkg("src/redux/services/payments") },
   { find: "@/redux/services/tenants-api", replacement: pkg("src/redux/services/tenants-api.ts") },
   { find: "@/redux/features/finance", replacement: pkg("src/redux/features/finance") },
+  { find: "@/pages/protected/data-imports", replacement: pkg("src/pages/data-imports") },
+  { find: "@/pages/protected/export", replacement: pkg("src/pages/export") },
   { find: "@/pages/protected/finance", replacement: pkg("src/pages/finance") },
   { find: "@/pages/protected/procurement", replacement: pkg("src/pages/procurement") },
   { find: "@/pages/protected/workflow/components", replacement: pkg("src/components/workflow") },
@@ -80,6 +82,28 @@ const PACKAGE_SPECIFIERS = packageAlias.map((entry) => entry.find)
 // this app's own node_modules, where they are installed, so both setups resolve.
 const PACKAGE_ONLY_DEPS = ["date-fns"]
 
+/**
+ * How every `@/…` specifier resolves, for the dev server, the build AND the
+ * test runner.
+ *
+ * Exported because vitest.config.ts consumes it rather than keeping a second
+ * copy. Two hand-maintained tables drifted by eight entries, and the drift is
+ * invisible until a test happens to import one of the missing modules: the app
+ * ran, the build shipped, and the suite failed to resolve `@/utils/relative-date`
+ * the first time anything under test reached the notification bell. A test
+ * runner that resolves imports differently from the thing it is testing is not
+ * testing that thing.
+ */
+export const resolveAlias = [
+  { find: "@xvs-host", replacement: path.resolve(__dirname, "./src/xvs-host.tsx") },
+  // The barrel is a file, not the directory of the same name; it has to be
+  // matched exactly and before the directory rule.
+  { find: /^@\/components\/finance-ui$/, replacement: pkg("src/components/finance-ui/index.ts") },
+  ...packageAlias,
+  { find: "@/routes/routes-path", replacement: path.resolve(__dirname, "./src/routes/routesPath.ts") },
+  { find: "@", replacement: path.resolve(__dirname, "./src") },
+]
+
 // https://vite.dev/config/
 export default defineConfig({
   // Fixed port so the two apps can run side by side: 5174 is the school app.
@@ -100,15 +124,7 @@ export default defineConfig({
   resolve: {
     // See tsconfig: symlinked sibling checkout.
     preserveSymlinks: true,
-    alias: [
-      { find: "@xvs-host", replacement: path.resolve(__dirname, "./src/xvs-host.tsx") },
-      // The barrel is a file, not the directory of the same name; it has to be
-      // matched exactly and before the directory rule.
-      { find: /^@\/components\/finance-ui$/, replacement: pkg("src/components/finance-ui/index.ts") },
-      ...packageAlias,
-      { find: "@/routes/routes-path", replacement: path.resolve(__dirname, "./src/routes/routesPath.ts") },
-      { find: "@", replacement: path.resolve(__dirname, "./src") },
-    ],
+    alias: resolveAlias,
   },
   build: {
     rollupOptions: {

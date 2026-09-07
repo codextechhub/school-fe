@@ -29,6 +29,10 @@ import {
   procurementRoutes,
   PROCUREMENT_MOUNTED_PATHS,
 } from "@/routes/protected/procurement-routes";
+import { rolesRoutes } from "@/routes/protected/roles-routes";
+import { workflowRoutes } from "@/routes/protected/workflow-routes";
+import { dataImportRoutes } from "@/routes/protected/data-import-routes";
+import { exportRoutes } from "@/routes/protected/export-routes";
 import {
   ACTIONS,
   LIVE_ONLY_ACTION_IDS,
@@ -59,6 +63,10 @@ const SERVED_PATHS = new Set([
     ...studentsRoutes,
     ...staffRoutes,
     ...supportRoutes,
+    ...rolesRoutes,
+    ...workflowRoutes,
+    ...dataImportRoutes,
+    ...exportRoutes,
   ]
     .map((route) => route.path)
     .filter((path): path is string => typeof path === "string"),

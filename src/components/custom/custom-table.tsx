@@ -40,6 +40,8 @@ interface myComponentProps {
   actionButton?: string;
   actionButtonOnClick?: (param?: unknown) => void;
   dropDown?: boolean;
+  /** The row menu's items: a fixed array, or a function of the row when the
+   *  actions differ per row. */
   dropDownList?: any;
   width?: string;
   disabledDropdown?: boolean;
@@ -152,8 +154,16 @@ const CustomTable = ({
    * Defined once and used by both renderings. The table had it inline; the
    * phone card needs the same menu, and two copies of a menu is two places for
    * an action to be added to only one of them.
+   *
+   * `dropDownList` may be a function of the row rather than a fixed array, so a
+   * table can offer different actions per row: a cancelled import batch has
+   * nothing to roll back, and an array would have to offer the item to every
+   * row and refuse it on click.
    */
-  const RowActionsMenu = ({ item }: { item: any }) => (
+  const RowActionsMenu = ({ item }: { item: any }) => {
+    const actions =
+      typeof dropDownList === "function" ? dropDownList(item) : dropDownList;
+    return (
     <DropdownMenu>
       <DropdownMenuTrigger
         asChild
@@ -170,8 +180,8 @@ const CustomTable = ({
         align="end"
         style={{ width: width ? width : "170px" }}
       >
-        {dropDownList?.length > 0 &&
-          dropDownList?.map((child: any, idx: any) => (
+        {actions?.length > 0 &&
+          actions?.map((child: any, idx: any) => (
             <DropdownMenuItem
               key={idx}
               onClick={() => {
@@ -189,7 +199,8 @@ const CustomTable = ({
           ))}
       </DropdownMenuContent>
     </DropdownMenu>
-  );
+    );
+  };
 
   // Ghost geometry is derived from the real column definitions, so the loading
   // state previews the exact table that is about to render.

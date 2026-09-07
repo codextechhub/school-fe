@@ -17,6 +17,7 @@ import {
 } from "@/redux/services/notifications/notifications-api";
 import { useAppSelector } from "@/redux/store";
 import { selectTenantIsPending } from "@/redux/features/auth/auth-slice";
+import { canOpenNotification } from "@/lib/notification-destination";
 
 /**
  * The notification centre - a school's own feed over `/v1/notify/`.
@@ -74,16 +75,13 @@ export default function Notifications() {
   const rows = data?.data ?? [];
   const totalPages = data?.pagination?.totalPages ?? 0;
 
-  /** True for a route this build actually serves. */
-  const canOpen = (url: string) => !!url && url.startsWith("/onboarding");
-
   const open = (item: (typeof rows)[number]) => {
     // Fire-and-forget so navigation is not held on the mark-read round trip.
     if (!item.is_read) markRead({ ids: [item.id] });
     // An item pointing at a screen this app has not built is marked read where
     // it stands. The notification IS the message; nobody should be dropped on a
     // 404 for reading their own post.
-    if (canOpen(item.action_url)) navigate(item.action_url);
+    if (canOpenNotification(item.action_url)) navigate(item.action_url);
   };
 
   return (

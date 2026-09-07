@@ -84,9 +84,24 @@ export const routesPath = {
       EDIT_PATH: "/export/:id/edit",
       EDIT: (id: string | number) => `/export/${id}/edit`,
     },
+    // The shared Data Imports console, in the same shape console-fe mounts it.
+    // The batch detail is the destination a finished import's notification
+    // points at, so the path has to match what the server writes into
+    // `action_url` (vs_notifications/services/routing.py) exactly.
     DATA_IMPORTS: {
       BATCHES: {
+        INDEX: "/data-imports/batches",
+        NEW: "/data-imports/batches/new",
+        VIEW_PATH: "/data-imports/batches/:id/view",
         VIEW: (id: string) => `/data-imports/batches/${id}/view`,
+      },
+      TEMPLATES: {
+        INDEX: "/data-imports/templates",
+        NEW: "/data-imports/templates/new",
+        VIEW_PATH: "/data-imports/templates/:id/view",
+        VIEW: (id: string | number) => `/data-imports/templates/${id}/view`,
+        EDIT_PATH: "/data-imports/templates/:id/edit",
+        EDIT: (id: string | number) => `/data-imports/templates/${id}/edit`,
       },
     },
     // The onboarding surface. Reachable before the school goes live, and the

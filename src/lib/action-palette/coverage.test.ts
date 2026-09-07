@@ -41,16 +41,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { academicRoutes } from "@/routes/protected/academic-routes";
-import { branchesRoutes } from "@/routes/protected/branches-routes";
-import { classesRoutes } from "@/routes/protected/classes-routes";
-import {
-  onboardingRoutes,
-  onboardingWelcomeRoute,
-} from "@/routes/protected/onboarding-routes";
-import { overviewRoutes } from "@/routes/protected/overview-routes";
-import { staffRoutes } from "@/routes/protected/staff-routes";
-import { studentsRoutes } from "@/routes/protected/students-routes";
+import { protectedRoutes } from "@/routes/protected";
 import { CONSOLE_CREATE_ACTIONS } from "./console-actions";
 import { ACTIONS } from "./registry";
 
@@ -157,20 +148,42 @@ const SCHOOL_PAGES = "src/pages/protected";
 // screen.
 const PACKAGE_PAGES = "node_modules/@xvs/finance/src/pages";
 
-const mountedSchoolPaths = [
-  onboardingWelcomeRoute,
-  ...onboardingRoutes,
-  ...overviewRoutes,
-  ...branchesRoutes,
-  ...academicRoutes,
-  ...classesRoutes,
-  ...studentsRoutes,
-  ...staffRoutes,
-]
-  .map((route) => (route as { path?: string }).path)
+/**
+ * Every address the router serves, read from the router itself.
+ *
+ * Naming the route tables one by one is the failure this whole file exists to
+ * catch, one level up: a table added and not listed here makes the audit pass
+ * by having nothing to say about the screens it forgot. Walking
+ * `protectedRoutes` means a mounted screen is in scope the moment it is
+ * mounted, and the only way out is a recorded decision below.
+ */
+function pathsOf(routes: readonly unknown[]): string[] {
+  return routes.flatMap((route) => {
+    const node = route as { path?: string; children?: readonly unknown[] };
+    return [
+      ...(typeof node.path === "string" ? [node.path] : []),
+      ...(node.children ? pathsOf(node.children) : []),
+    ];
+  });
+}
+
+/**
+ * The two consoles, whose view actions are derived rather than written.
+ *
+ * `consoleActions` builds them from the same nav the sidebar draws, so a screen
+ * in the sidebar has an action by construction and cannot fall behind. Their
+ * section parents ("/finance/setup", "/procurement/vendors") are mounted only
+ * so a bare address resolves and each redirects to its first section, so they
+ * are nobody's destination either. Auditing this half would be auditing the
+ * derivation, not the decisions; the hand-written create half IS audited below.
+ */
+const DERIVED_PREFIXES = ["/finance/", "/procurement/"];
+
+const mountedSchoolPaths = pathsOf(protectedRoutes)
   // A path with an :id is nobody's palette destination: there is no id to name
   // from a search box. The student search above the actions covers profiles.
-  .filter((path): path is string => typeof path === "string" && !path.includes(":"));
+  .filter((path) => !path.includes(":"))
+  .filter((path) => !DERIVED_PREFIXES.some((prefix) => path.startsWith(prefix)));
 
 const destinations = new Set(
   ACTIONS.flatMap((action) =>

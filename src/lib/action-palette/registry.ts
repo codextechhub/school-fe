@@ -551,7 +551,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     // Matches the control room card's own openPermission: the screen's first
     // request is the template list, and a reader who cannot read that has
     // nothing to choose from.
-    gate: { perm: P.BROWSE_IMPORT_TEMPLATES },
+    gate: { perm: P.VIEW_IMPORT_TEMPLATES },
     run: { to: R.ONBOARDING.IMPORT },
   },
   {
@@ -595,6 +595,195 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     // now that the sidebar has no Help item, and the panel keeps the screen
     // being reported on visible behind it.
     run: { command: "help" },
+  },
+
+  // ── Administration ─────────────────────────────────────────────────────────
+  // The permanent doors under Administration, matching app-sidebar.tsx. Roles
+  // is gated on the same key its sidebar item is; the change-requests queue has
+  // no door of its own and is reached from the roles screen, so it is gated on
+  // the key that lets a reader act on one.
+  {
+    id: "view-school-roles",
+    label: "View roles and access",
+    aliases: ["rbac", "permissions", "who can do what", "access"],
+    section: "Settings",
+    group: "Administration",
+    kind: "view",
+    gate: { perm: P.VIEW_ROLES },
+    run: { to: R.ROLES.INDEX },
+  },
+  {
+    id: "view-role-change-requests",
+    label: "View role change requests",
+    aliases: ["maker checker", "role approvals", "pending role changes"],
+    section: "Settings",
+    group: "Administration",
+    kind: "view",
+    gate: { perm: P.APPROVE_ROLE_CHANGE },
+    run: { to: R.ROLES.CHANGE_REQUESTS },
+  },
+
+  // ── Workflow ───────────────────────────────────────────────────────────────
+  // The first four carry no gate, exactly as the sidebar's own items do not: an
+  // approval queue is the reader's own post, and a key would hide a document
+  // waiting on them. Templates are the rule everybody else is judged by, so
+  // they are gated on the module the sidebar tests for the same item.
+  {
+    id: "view-approvals",
+    // "View approvals" belongs to the Procurement console, which has an
+    // approvals screen of its own at /procurement/approvals. This is the
+    // school-wide inbox, so it says inbox; "approvals" stays an alias, and the
+    // two results sit under their own section headers when both match.
+    label: "View approval inbox",
+    aliases: ["approvals", "pending approvals", "waiting on me"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "view",
+    gate: null,
+    run: { to: R.WORKFLOW.APPROVALS },
+  },
+  {
+    id: "view-my-submissions",
+    label: "View my submissions",
+    aliases: ["submissions", "what I sent", "waiting on others"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "view",
+    gate: null,
+    run: { to: R.WORKFLOW.MY_SUBMISSIONS },
+  },
+  {
+    id: "view-delegations",
+    label: "View delegations",
+    aliases: ["delegate approvals", "cover for me", "out of office"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "view",
+    gate: null,
+    run: { to: R.WORKFLOW.DELEGATIONS },
+  },
+  {
+    id: "view-approver-groups",
+    label: "View approver groups",
+    aliases: ["approver pools", "approval groups"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "view",
+    gate: null,
+    run: { to: R.WORKFLOW.APPROVER_GROUPS },
+  },
+  {
+    id: "view-workflow-templates",
+    label: "View workflow templates",
+    aliases: ["approval rules", "workflow rules"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "view",
+    gate: { module: ["workflow.template."] },
+    run: { to: R.WORKFLOW.TEMPLATES },
+  },
+  {
+    id: "create-workflow-template",
+    label: "Create workflow template",
+    aliases: ["new workflow", "new approval rule"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "do",
+    gate: { perm: P.MANAGE_WORKFLOW_TEMPLATES },
+    run: { to: R.WORKFLOW.TEMPLATE_NEW },
+  },
+
+  // ── Data Imports and the Export Centre ─────────────────────────────────────
+  // Both consoles ship in @xvs/finance and are shared with CodeX, but unlike
+  // Finance and Procurement they are a handful of screens rather than fifty, and
+  // this app mounts them from its own route table rather than from a package
+  // sidebar. So they are written out here, and each gate is the key its screen
+  // checks on arrival: a school holds none of the template-authoring keys, and
+  // those two actions simply never appear rather than appearing and refusing.
+  {
+    id: "view-import-batches",
+    label: "View import batches",
+    aliases: ["imports", "batches", "upload history", "data imports"],
+    section: "Data",
+    group: "Data Imports",
+    kind: "view",
+    gate: { perm: P.VIEW_IMPORT_BATCHES },
+    run: { to: R.DATA_IMPORTS.BATCHES.INDEX },
+  },
+  {
+    id: "upload-import-batch",
+    label: "Upload import batch",
+    aliases: ["new batch", "bulk upload", "import data", "csv", "spreadsheet"],
+    section: "Data",
+    group: "Data Imports",
+    kind: "do",
+    gate: { perm: P.UPLOAD_IMPORT_BATCH },
+    run: { to: R.DATA_IMPORTS.BATCHES.NEW },
+  },
+  {
+    id: "view-import-templates",
+    label: "View import templates",
+    aliases: ["templates", "import templates"],
+    section: "Data",
+    group: "Data Imports",
+    kind: "view",
+    gate: { perm: P.VIEW_IMPORT_TEMPLATES },
+    run: { to: R.DATA_IMPORTS.TEMPLATES.INDEX },
+  },
+  {
+    // Platform-only. A school picks a template; it does not write one, so
+    // nobody here holds import.templates.create and the action stays hidden.
+    id: "create-import-template",
+    label: "Create import template",
+    aliases: ["new template"],
+    section: "Data",
+    group: "Data Imports",
+    kind: "do",
+    gate: { perm: P.CREATE_IMPORT_TEMPLATE },
+    run: { to: R.DATA_IMPORTS.TEMPLATES.NEW },
+  },
+  {
+    id: "view-saved-exports",
+    label: "View exports",
+    aliases: ["saved exports", "export definitions", "my export list"],
+    section: "Data",
+    group: "Export",
+    kind: "view",
+    gate: { perm: P.VIEW_SAVED_EXPORTS },
+    run: { to: R.EXPORT.SAVED },
+  },
+  {
+    id: "create-export",
+    label: "Create export",
+    aliases: ["new export", "export builder", "build export"],
+    section: "Data",
+    group: "Export",
+    kind: "do",
+    gate: { perm: P.CREATE_EXPORT },
+    run: { to: R.EXPORT.NEW },
+  },
+  {
+    id: "view-export-files",
+    label: "View export files",
+    aliases: ["files", "export runs", "generated files"],
+    section: "Data",
+    group: "Export",
+    kind: "view",
+    gate: { perm: P.VIEW_EXPORT_RUNS },
+    run: { to: R.EXPORT.FILES },
+  },
+  {
+    // No gate, because the screen has none: the queue is the caller's own work,
+    // and the server decides from the row's owner whether they may see beyond
+    // it. A key here would hide a reader's own exports from them.
+    id: "view-export-queues",
+    label: "View export queues",
+    aliases: ["queues", "my exports", "downloads"],
+    section: "Data",
+    group: "Export",
+    kind: "view",
+    gate: null,
+    run: { to: R.EXPORT.QUEUES },
   },
 
   // ── Account ────────────────────────────────────────────────────────────────

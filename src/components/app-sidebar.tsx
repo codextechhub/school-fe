@@ -35,6 +35,8 @@ import {
   Contact,
   GraduationCap,
   ListChecks,
+  DatabaseZap,
+  FileDown,
   Rocket,
   ShieldCheck,
   UserPlus,
@@ -735,6 +737,46 @@ export function AppSidebar({
             affordance: true,
           }]
         : []),
+      // How rows arrive in bulk, and the record of every arrival. The wizard
+      // itself stays a drawer over the directory the rows land in - this door
+      // is the history, which is a different question asked months later.
+      {
+        title: "Data Imports",
+        url: routesPath.PROTECTED.DATA_IMPORTS.BATCHES.INDEX,
+        icon: DatabaseZap,
+        isActive: location.startsWith("/data-imports"),
+        childActive: location.startsWith("/data-imports"),
+        permission: P.VIEW_IMPORT_BATCHES,
+      },
+      // How rows leave. Saved exports is the door: a teacher who may run and
+      // download but not save one still lands somewhere real, because the list
+      // is readable to anybody holding exports.definition.view and the controls
+      // that rewrite it gate themselves.
+      {
+        title: "Export Centre",
+        url: routesPath.PROTECTED.EXPORT.SAVED,
+        icon: FileDown,
+        isActive: location.startsWith("/export"),
+        childActive: location.startsWith("/export"),
+        items: [
+          {
+            title: "Exports",
+            url: routesPath.PROTECTED.EXPORT.SAVED,
+            isActive: location.startsWith(routesPath.PROTECTED.EXPORT.SAVED),
+          },
+          {
+            title: "Files",
+            url: routesPath.PROTECTED.EXPORT.FILES,
+            isActive: location.startsWith(routesPath.PROTECTED.EXPORT.FILES),
+          },
+          {
+            title: "Queues",
+            url: routesPath.PROTECTED.EXPORT.QUEUES,
+            isActive: location.startsWith(routesPath.PROTECTED.EXPORT.QUEUES),
+          },
+        ],
+        permission: P.VIEW_SAVED_EXPORTS,
+      },
     ],
   };
 

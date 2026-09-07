@@ -490,10 +490,6 @@ export default function StudentDirectory() {
         description="Load a roll from a spreadsheet. Nothing is written until you confirm."
         returnLabel="Back to students"
         onClose={() => setImporting(false)}
-        // School has no batch-details screen, so "view this import" comes back
-        // to the directory the new rows are now in - which is the thing the
-        // person actually wanted to see.
-        onViewBatch={() => setImporting(false)}
         onFinished={() => {
           void refetch();
         }}

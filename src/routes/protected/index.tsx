@@ -5,18 +5,8 @@ import { type RouteObject } from "react-router";
 // shared dependency of the lazy page chunks only - rollup hoisted it into its
 // own chunk that had to be fetched before the frame could be drawn at all.
 import DashboardLayout from "@/components/layout/dashboard-layout";
-import { overviewRoutes } from "./overview-routes";
-import { branchesRoutes } from "./branches-routes";
-import { rolesRoutes } from "./roles-routes";
-import { workflowRoutes } from "./workflow-routes";
-import { academicRoutes } from "./academic-routes";
-import { classesRoutes } from "./classes-routes";
-import { studentsRoutes } from "./students-routes";
-import { staffRoutes } from "./staff-routes";
-import { supportRoutes } from "./support-routes";
-import { financeRoutes } from "./finance-routes";
-import { procurementRoutes } from "./procurement-routes";
-import { onboardingRoutes, onboardingWelcomeRoute } from "./onboarding-routes";
+import { onboardingWelcomeRoute } from "./onboarding-routes";
+import { protectedChildren } from "./route-tables";
 
 export const protectedRoutes = [
   // Authenticated, but deliberately outside the shell - see the route's own
@@ -24,19 +14,6 @@ export const protectedRoutes = [
   onboardingWelcomeRoute,
   {
     Component: DashboardLayout,
-    children: [
-      ...onboardingRoutes,
-      ...overviewRoutes,
-      ...branchesRoutes,
-      ...rolesRoutes,
-      ...workflowRoutes,
-      ...academicRoutes,
-      ...classesRoutes,
-      ...studentsRoutes,
-      ...staffRoutes,
-      ...supportRoutes,
-      ...financeRoutes,
-      ...procurementRoutes,
-    ],
+    children: protectedChildren,
   },
 ] as RouteObject[];

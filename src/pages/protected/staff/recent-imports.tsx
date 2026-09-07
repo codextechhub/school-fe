@@ -63,7 +63,7 @@ function sentenceCase(code: string): string {
 
 export function RecentImports() {
   const { hasPermission } = usePermissions();
-  const canRead = hasPermission(P.BROWSE_IMPORTS);
+  const canRead = hasPermission(P.VIEW_IMPORT_BATCHES);
   const [open, setOpen] = useState(false);
 
   const { data } = useGetImportBatchesQuery(

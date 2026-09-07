@@ -25,6 +25,9 @@ import type { PermissionCode } from "@/permissions";
  * - "Settings"   - configuration screens the sidebar tucks under Finance.
  * - "Account"    - the header account menu (proxy, logout), which is not
  *                  navigation at all.
+ * - "Data"       - the Data Imports console and the Export Centre, which are
+ *                  one area to a school: both are how rows arrive and leave in
+ *                  bulk, and neither is a place its own sidebar group leads to.
  * Add a name here (and to SECTION_ORDER) when the app grows a new area.
  *
  * Finance and Procurement are two sections rather than one because they are two
@@ -39,6 +42,7 @@ export type ActionSection =
   | "Finance"
   | "Procurement"
   | "Settings"
+  | "Data"
   | "Onboarding"
   | "Account";
 

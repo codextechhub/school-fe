@@ -14,6 +14,8 @@ import { Outlet, useLocation, useMatches, useNavigate } from "react-router";
 import {
   DashboardHeaderContext,
   resolveHeaderTitle,
+  resolveHeaderBack,
+  type BackSpec,
   type HeaderOverride,
 } from "./dashboard-header";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
@@ -67,8 +69,18 @@ export type DashboardHandle = {
    * owns the CHOICE; the area still builds its own nav config.
    */
   sidebar?: SidebarKind;
-  /** Show the back affordance (defaults to history-back). */
+  /** Show the back affordance, walking the history. */
   hasBack?: boolean;
+  /**
+   * Show the back affordance and say where it goes: `true` walks the history,
+   * a path string navigates there.
+   *
+   * Preferred over `hasBack` on any screen reachable from outside its own area.
+   * A batch opened from the notification bell has no import list behind it, so
+   * history-back returns the reader to whatever they were reading before rather
+   * than to the list the screen belongs to.
+   */
+  back?: BackSpec;
   /**
    * Render the shell a school that has not gone live actually gets: the reduced
    * sidebar, the pending status strip, and NO branch switcher.
@@ -124,6 +136,7 @@ export default function DashboardLayout() {
   const {
     title: handleTitle,
     hasBack = false,
+    back: handleBack,
     onboarding: onboardingRoute = false,
     lens: showLens = false,
     pendingSurface = false,
@@ -152,8 +165,26 @@ export default function DashboardLayout() {
       }),
     [location.key],
   );
-  const headerApi = useMemo(() => ({ setTitle }), [setTitle]);
+  const setBack = useCallback(
+    (next?: () => void) =>
+      setOverride((current) => {
+        // Same guard as setTitle: the screen being left unmounts after the
+        // incoming one has registered, so a blind clear would wipe the new
+        // screen's own destination.
+        if (next === undefined && current && current.key !== location.key) return current;
+        return { ...current, key: location.key, back: next };
+      }),
+    [location.key],
+  );
+  const headerApi = useMemo(() => ({ setTitle, setBack }), [setTitle, setBack]);
   const title = resolveHeaderTitle(handleTitle, override, location.key);
+  // `hasBack` is the older spelling and means history-back, which is what
+  // `back: true` means, so the two fold into one resolved destination.
+  const back = resolveHeaderBack(
+    handleBack ?? (hasBack ? true : undefined),
+    override,
+    location.key,
+  );
 
   const dispatch = useAppDispatch();
 
@@ -255,11 +286,15 @@ export default function DashboardLayout() {
                 sliding under it. */}
             <div className="inline-flex min-w-0 flex-1 items-center gap-2.5 lg:max-w-[calc(50%-15rem)]">
               <SidebarTrigger className="size-7 rounded-full border border-white-02 text-gray-06 hover:text-primary" />
-              {hasBack && (
+              {back !== undefined && (
                 <>
                   <button
                     type="button"
-                    onClick={() => navigate(-1)}
+                    onClick={() => {
+                      if (typeof back === "function") back();
+                      else if (typeof back === "string") navigate(back);
+                      else navigate(-1);
+                    }}
                     className="uppercase font-light text-gray-01 text-sm inline-flex items-center cursor-pointer"
                   >
                     <ChevronLeft className="text-inherit size-5 mr-1" />

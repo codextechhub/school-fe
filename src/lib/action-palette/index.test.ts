@@ -19,6 +19,7 @@ describe("SECTION_ORDER", () => {
       "Finance",
       "Procurement",
       "Settings",
+      "Data",
       "Onboarding",
       "Account",
     ];

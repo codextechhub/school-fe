@@ -418,6 +418,12 @@ export const baseApi = createApi({
     "ExportRuns",
     "ImportJobs",
     "ImportValidationIssues",
+    // The worker's own view of asynchronous work, behind Export -> View Queues.
+    // Separate from ExportRuns because a run wraps a job: the run is the
+    // outcome and the job is the attempt, and a cancelled job leaves a run
+    // whose file never arrived.
+    "QueueJobs",
+    "QueueSummary",
     "ProcRequisitions",
     "WorkflowApproverGroups",
     "WorkflowDelegations",

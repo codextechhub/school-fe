@@ -48,11 +48,20 @@ function Button({
   size = "default",
   asChild = false,
   loading,
+  loadingText,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
     asChild?: boolean;
     loading?: boolean;
+    /**
+     * Name the work while it runs, instead of a bare spinner.
+     *
+     * Worth the extra prop where the wait is long enough to wonder about and
+     * the button could have started more than one thing: "Preparing export"
+     * says which of them is running, and a spinner alone does not.
+     */
+    loadingText?: string;
   }) {
   const Comp = asChild ? Slot.Root : "button";
 
@@ -65,9 +74,22 @@ function Button({
       {...props}
     >
       {loading ? (
-        <div className="inline-flex items-center">
-          <Loader2 className="animate-spin animation-duration-[0.8s] size-5" />
-        </div>
+        loadingText ? (
+          <span className="inline-flex items-center">
+            {loadingText}
+            <span className="loading-dot ml-0.5">.</span>
+            <span className="loading-dot" style={{ animationDelay: "0.2s" }}>
+              .
+            </span>
+            <span className="loading-dot" style={{ animationDelay: "0.4s" }}>
+              .
+            </span>
+          </span>
+        ) : (
+          <div className="inline-flex items-center">
+            <Loader2 className="animate-spin animation-duration-[0.8s] size-5" />
+          </div>
+        )
       ) : (
         props.children
       )}

@@ -102,7 +102,7 @@ const CATALOG: Record<string, TaskMeta> = {
       "Load your school's own records from a spreadsheet, as each dataset opens.",
     route: routesPath.PROTECTED.ONBOARDING.IMPORT,
     openLabel: "Open import",
-    openPermission: P.BROWSE_IMPORT_TEMPLATES,
+    openPermission: P.VIEW_IMPORT_TEMPLATES,
   },
   STAFF_INVITATIONS: {
     icon: UsersRound,

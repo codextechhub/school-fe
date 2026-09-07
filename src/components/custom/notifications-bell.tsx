@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { svgIcons } from "@/assets/svg";
 import { useNotifications } from "@/hooks/use-notifications";
+import { canOpenNotification } from "@/lib/notification-destination";
 import { NotificationEventIcon } from "@/components/custom/notification-event-icon";
 import {
   useMarkAllNotificationsReadMutation,
@@ -23,9 +24,10 @@ import { formatRelativeDate } from "@/utils/relative-date";
  * (a step verified, a go-live decision, a reply on a ticket).
  *
  * One deliberate departure from console's version: an item whose `action_url`
- * names a screen this app has not built yet is marked read where it stands
- * rather than navigated to. The notification IS the message, and a school
- * should not be dropped on a 404 for reading its own post.
+ * names a screen this app does not serve is marked read where it stands rather
+ * than navigated to. The notification IS the message, and a school should not
+ * be dropped on a 404 for reading its own post. What this app serves is decided
+ * by matching the router - see canOpenNotification.
  */
 export function NotificationsBell() {
   const navigate = useNavigate();
@@ -34,9 +36,6 @@ export function NotificationsBell() {
     useMarkNotificationsReadMutation();
   const [markAll, { isLoading: markingAll }] =
     useMarkAllNotificationsReadMutation();
-
-  /** True for a route this build actually serves. */
-  const canOpen = (url: string) => !!url && url.startsWith("/onboarding");
 
   return (
     <DropdownMenu>
@@ -106,7 +105,7 @@ export function NotificationsBell() {
                     // Fire-and-forget: navigation should not wait on the
                     // mark-read round trip.
                     markRead({ ids: [item.id] });
-                    if (canOpen(item.action_url)) navigate(item.action_url);
+                    if (canOpenNotification(item.action_url)) navigate(item.action_url);
                   }}
                   className="flex w-full gap-3 px-4 py-3 pr-12 text-left hover:bg-gray-03"
                 >
