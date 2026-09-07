@@ -690,7 +690,11 @@ export function AppSidebar({
               routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
             ),
           },
-          ...(hasModuleAccess("workflow.template.")
+          // Only somebody who can change an approval path is shown it. Reading
+          // one without being able to adjust it is a screen that answers a
+          // question nobody asked it: which ladder governs a document is
+          // already on the document's own approval panel.
+          ...(hasPermission(P.MANAGE_WORKFLOW_TEMPLATES)
             ? [{
                 title: "Templates",
                 url: routesPath.PROTECTED.WORKFLOW.TEMPLATES,

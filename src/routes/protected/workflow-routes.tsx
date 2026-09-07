@@ -32,8 +32,10 @@ export const workflowRoutes = [
   { path: W.SUBMISSION_DETAIL, Component: SubmissionDetail, handle: { title: "Submission", hasBack: true } satisfies DashboardHandle },
   { path: W.DELEGATIONS, Component: Delegations, handle: { title: "Delegations" } satisfies DashboardHandle },
   { path: W.APPROVER_GROUPS, Component: ApproverGroups, handle: { title: "Approver Groups" } satisfies DashboardHandle },
+  // No TEMPLATE_NEW. A school adjusts the approval paths it was given rather
+  // than authoring new ones, so the builder is reachable only through EDIT, on
+  // a template that already exists. See createsWorkflowTemplates in xvs-host.
   { path: W.TEMPLATES, Component: Templates, handle: { title: "Templates" } satisfies DashboardHandle },
-  { path: W.TEMPLATE_NEW, Component: TemplateBuilder, handle: { title: "New Template", hasBack: true } satisfies DashboardHandle },
   { path: W.TEMPLATE_DETAIL, Component: TemplateDetail, handle: { title: "Template", hasBack: true } satisfies DashboardHandle },
   { path: W.TEMPLATE_EDIT, Component: TemplateBuilder, handle: { title: "Edit Template", hasBack: true } satisfies DashboardHandle },
 ] as RouteObject[];

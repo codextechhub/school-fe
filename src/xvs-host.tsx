@@ -113,6 +113,14 @@ export const setupSections: readonly SetupSection[] = [
   "accounts", "periods", "tax-codes", "cost-centers",
 ] as const;
 
+/** A school adjusts the approval paths it was given; it does not author new ones.
+ *
+ *  Its templates arrive already published, and changing one forks it to this
+ *  school. A blank builder alongside them would be a second way to answer a
+ *  question that already has an answer. TEMPLATE_NEW is not routed here either,
+ *  so the address is unreachable as well as unadvertised. */
+export const createsWorkflowTemplates = false;
+
 /** When this school's fee bills fall due. */
 export { default as FeeDuePolicyPanel } from "@/pages/protected/school-finance/fee-due-policy";
 
