@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Briefcase, Check, Search, UserPlus, X } from "lucide-react";
+import { Briefcase, Check, Search, Upload, UserPlus, X } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
+import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
 import PermissionGate from "@/components/custom/permission-gate";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
@@ -21,6 +22,7 @@ import type {
 
 import { AccountFlagChip, EmploymentBadge } from "./badges";
 import { CountsHeader } from "./counts-header";
+import { RecentImports } from "./recent-imports";
 import { FiltersPopover } from "./filters-popover";
 import { StaffDrawers, type StaffDrawerRequest } from "./drawers";
 // Neither of these is student-specific, and a second copy is the thing to
@@ -50,9 +52,11 @@ import { PersonAvatar } from "../students/person-avatar";
  * draws it late - and because two calls that narrowed differently is how the
  * student directory once showed 87 over a table of 49.
  *
- * Bulk import and the row menu's Manage assignments are not here yet. They
- * arrive with the screens and drawers that answer them, rather than being drawn
- * now and doing nothing.
+ * **Bulk import opens over this list rather than at an address of its own.** It
+ * is a thing you do TO the directory, not a place you go, which is the same
+ * ruling the student directory carries. What it leaves behind - which file,
+ * how many rows, who was skipped and why - is a different question asked months
+ * later, so that lives in the folded panel above.
  */
 export default function StaffDirectory() {
   const navigate = useNavigate();
@@ -70,6 +74,7 @@ export default function StaffDirectory() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
   const [picked, setPicked] = useState<number[]>([]);
+  const [importing, setImporting] = useState(false);
 
   const { data, isLoading, isFetching, isError, refetch } = useGetStaffListQuery({
     page,
@@ -175,13 +180,27 @@ export default function StaffDirectory() {
             {multiBranch && narrowed ? branchLabel : "this school"}.
           </p>
         </div>
-        <PermissionGate permission={P.INVITE_TEACHER}>
-          <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
-            <UserPlus className="size-4" />
-            Add staff
-          </Button>
-        </PermissionGate>
+        <div className="flex flex-wrap gap-2.5">
+          {/* Gated on the ENGINE's key, not a staff one. There is no
+              school.teachers.import: the dataset is reachable by the seven
+              import keys a school already holds, which is what FR-016 means by
+              needing a dataset rather than a new key. */}
+          <PermissionGate permission={P.START_IMPORT}>
+            <Button variant="outline" onClick={() => setImporting(true)}>
+              <Upload className="size-4" />
+              Bulk import
+            </Button>
+          </PermissionGate>
+          <PermissionGate permission={P.INVITE_TEACHER}>
+            <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
+              <UserPlus className="size-4" />
+              Add staff
+            </Button>
+          </PermissionGate>
+        </div>
       </div>
+
+      <RecentImports />
 
       <CountsHeader
         counts={counts}
@@ -455,6 +474,28 @@ export default function StaffDirectory() {
         request={drawer}
         onClose={() => setDrawer(null)}
         onSaved={() => setPicked([])}
+      />
+
+      {/* The console's component, not a second implementation of it. Bulk
+          import is a thing you do TO the directory rather than a place you go,
+          so it opens over the list the rows will land in - the same shape the
+          student directory uses, and the same wizard behind it. The RECORD of
+          an import is a different question and lives in RecentImports above,
+          because "was the caretaker ever added?" is asked months later. */}
+      <BulkImportDrawer
+        open={importing}
+        datasetType="staff"
+        title="Import staff"
+        description="Load your people from a spreadsheet. Everybody arrives Invited, and nothing is written until you confirm."
+        returnLabel="Back to staff"
+        onClose={() => setImporting(false)}
+        // No batch-details screen in this app, so "view this import" comes back
+        // to the directory the new rows are now in, which is what the person
+        // actually wanted to see.
+        onViewBatch={() => setImporting(false)}
+        onFinished={() => {
+          void refetch();
+        }}
       />
     </PageShell>
   );

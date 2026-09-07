@@ -530,7 +530,38 @@ module.
   the phase notes that it is N+1 rather than shipping it quietly.
 - Clash panel per ruling 4.
 
-### Phase 6 - Bulk import
+### Phase 6 - Bulk import — SHIPPED
+
+Driven against `holy-cross` at desktop, 390px and 820px, with a real file taken
+all the way through: upload, a full header match, validation, confirm, import.
+Two rows written, the directory moving 13 → 15 behind the drawer, and a
+deliberately bad row refused by name. No console errors, no overflow.
+
+**Ruling 8 taken: drawer to import, history on the directory.** The wizard opens
+over the rows the staff will land in, matching the students ruling. The record
+of an import - which file, how many rows, who was skipped and why - sits in a
+folded panel above the header, because "was the caretaker ever added?" is asked
+months later and without a file in hand.
+
+**The template card the ruling worried about had somewhere to go after all.**
+It is step 1 of the wizard already: name, code, 12 columns, 4 required, the
+download, the instructions and a preview of the file's first rows. Nothing was
+lost by dropping the separate screen.
+
+**Two defects found and fixed, both on the backend.** The staff import could not
+import anybody (`3051f62`), and the template seeder leaves a renamed template
+active alongside its replacement (`406b072`). Both are described in section 5.
+
+**One thing the design promises that the engine does not do.** The design says
+"rows with errors are skipped with a reason, never guessed at", implying the
+good rows still import. The engine refuses the whole batch while any error
+stands: "Correct those rows and upload the file again. The wizard will not
+publish only part of the file." That is the shared engine's behaviour, the same
+one console and the student import get, and changing it is not this module's to
+do. The screen says what actually happens.
+
+**What the phase's own plan said it would build, below.**
+
 
 Mostly assembly: `import-wizard.tsx` already has all seven steps and
 `bulk-import-drawer.tsx` already wraps it. What is new is the staff dataset, the
