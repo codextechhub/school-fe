@@ -43,6 +43,7 @@ const ROW: StaffListRow = {
   posted_school_wide: false,
   teaching_load: 4,
   on_leave_today: true,
+  on_leave_until: "2026-10-16",
   hire_date: "2021-09-06",
   can_resend: false,
   invited_at: "2021-08-30T09:12:00Z",

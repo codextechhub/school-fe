@@ -21,6 +21,7 @@ import type {
 } from "@/redux/services/staff/staff-types";
 
 import { AccountFlagChip, EmploymentBadge } from "./badges";
+import { leaveNote } from "./leave-note";
 import { CountsHeader } from "./counts-header";
 import { RecentImports } from "./recent-imports";
 import { FiltersPopover } from "./filters-popover";
@@ -446,6 +447,7 @@ export default function StaffDirectory() {
               <EmploymentBadge
                 status={person.display_employment_status}
                 label={person.display_employment_status_label}
+                note={leaveNote(person)}
               />
               <AccountFlagChip flag={person.account_flag} />
             </span>

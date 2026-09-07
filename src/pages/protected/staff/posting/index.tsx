@@ -17,6 +17,7 @@ import { useGetStaffRosterQuery } from "@/redux/services/staff/staff-api";
 import type { StaffListRow } from "@/redux/services/staff/staff-types";
 
 import { EmploymentBadge } from "../badges";
+import { leaveNote } from "../leave-note";
 import { StaffDrawers, type StaffDrawerRequest } from "../drawers";
 import { PersonAvatar } from "../../students/person-avatar";
 
@@ -288,8 +289,9 @@ function RosterRow({
         </span>
       )}
       <EmploymentBadge
-        status={person.employment_status}
-        label={person.employment_status_label}
+        status={person.display_employment_status}
+        label={person.display_employment_status_label}
+        note={leaveNote(person)}
       />
     </li>
   );

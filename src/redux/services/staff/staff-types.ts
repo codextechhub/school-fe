@@ -144,6 +144,14 @@ export interface StaffListRow {
    * `employment_status` differ, and the only reason they can.
    */
   on_leave_today: boolean;
+  /**
+   * The last day of the leave that is running, or null when none is.
+   *
+   * The latest end date where two approved absences overlap today, because that
+   * is the day they actually return. Always null unless `on_leave_today` is
+   * true, so a screen cannot say somebody is away until a date that has passed.
+   */
+  on_leave_until: string | null;
   hire_date: string | null;
   /** The server's own answer, so a row's button never contradicts the API. */
   can_resend: boolean;

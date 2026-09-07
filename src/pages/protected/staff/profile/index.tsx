@@ -29,6 +29,7 @@ import {
 import type { StaffDetail } from "@/redux/services/staff/staff-types";
 
 import { AccountBadge, EmploymentBadge } from "../badges";
+import { leaveNote } from "../leave-note";
 import { PersonAvatar } from "../../students/person-avatar";
 import { formatDate } from "../../students/format";
 import { Lifecycle } from "./lifecycle";
@@ -189,6 +190,7 @@ export default function StaffProfile() {
                     <EmploymentBadge
                       status={person.display_employment_status}
                       label={person.display_employment_status_label}
+                      note={leaveNote(person)}
                     />
                   </span>
                   <span className="inline-flex items-center gap-2">

@@ -51,20 +51,41 @@ const EMPLOYMENT: Record<EmploymentStatus, BadgeVariant> = {
 export function EmploymentBadge({
   status,
   label,
+  note,
   className,
 }: {
   status: EmploymentStatus;
   /** The server's wording. Falls back to the code so a new status still shows. */
   label?: string;
+  /**
+   * Why the badge says what it says, on hover.
+   *
+   * Only On Leave has one today, and only because it is the one status nobody
+   * set: a reader seeing it wants to know until when, and the answer is
+   * otherwise two clicks away on the Leave tab. Never the ONLY place a fact
+   * lives - a tooltip is awkward to reach on a phone, so anything here is a
+   * shortcut to something the record already shows.
+   */
+  note?: string;
   className?: string;
 }) {
-  return (
+  const badge = (
     <Badge
       variant={EMPLOYMENT[status] ?? "inactive"}
       className={cn("rounded-full px-2 py-0.5 text-[11px]", className)}
     >
       {label || status}
     </Badge>
+  );
+  if (!note) return badge;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex">{badge}</span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-64">{note}</TooltipContent>
+    </Tooltip>
   );
 }
 
