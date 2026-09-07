@@ -28,7 +28,7 @@ import {
   useUpdateSchoolRoleMutation,
 } from "@/redux/services/roles/roles-api";
 import type { CataloguePermission } from "@/redux/services/roles/roles-types";
-import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
+import { writeErrorMessage, fieldErrors } from "@/utils/api-error";
 import { MODULE_LABEL } from "../onboarding-labels";
 
 /**
@@ -323,7 +323,7 @@ export function RoleDrawer({
         return;
       }
       toast.error(
-        apiErrorMessage(error, "We could not save that role. Try again."),
+        writeErrorMessage(error, "We could not save that role. Try again."),
       );
     }
   };
@@ -348,8 +348,13 @@ export function RoleDrawer({
           : `${detail.name} is back in use.`,
       );
     } catch (error) {
+      // `writeErrorMessage`, not `apiErrorMessage`: a serializer leaves
+      // `message` as the generic "An error occurred. Check the error details
+      // for more information." and puts the sentence that says what to do in
+      // `detail.<field>`. Reading only `message` showed the generic line and
+      // hid "this is the only role left that can administer roles here".
       toast.error(
-        apiErrorMessage(error, "We could not change that. Try again."),
+        writeErrorMessage(error, "We could not change that. Try again."),
       );
     }
   };
