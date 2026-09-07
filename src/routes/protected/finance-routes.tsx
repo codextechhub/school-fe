@@ -5,8 +5,9 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 // Static lists, so declaring the paths does not pull in the lazy page chunks.
 import {
   BUDGETS_SECTIONS, COLLECTIONS_SECTIONS, EXPENSES_SECTIONS,
-  FINANCE_SETTINGS_SECTIONS, RECEIVABLES_SECTIONS, REPORTS_SECTIONS,
+  RECEIVABLES_SECTIONS, REPORTS_SECTIONS,
 } from "@/pages/protected/finance/console-sections";
+import { financeSettingsSections, setupSections } from "@/xvs-host";
 
 // The finance screens come from @xvs/finance and are shared with the CodeX
 // console. Route-level code splitting: each area loads on first visit.
@@ -40,7 +41,10 @@ const F = routesPath.PROTECTED.FINANCE;
  * does not. Permission gating decides WHO sees a screen; it is the wrong tool
  * for deciding whether a screen belongs to this product at all.
  */
-const SCHOOL_SETUP_SECTIONS = ["accounts", "periods", "tax-codes", "cost-centers"] as const;
+// The one list, declared where the package can read it too. Building the routes
+// from the same array the host contract publishes is what stops the settings nav
+// advertising a section this table does not serve.
+const SCHOOL_SETUP_SECTIONS = setupSections;
 
 /**
  * The whole Payments area is unmounted for the same reason. Its sections are
@@ -97,7 +101,7 @@ export const financeRoutes: RouteObject[] = [
       { path: F.AUDIT, element: <FinanceAudit /> },
 
       { path: F.SETTINGS, element: <FinanceSettings /> },
-      ...FINANCE_SETTINGS_SECTIONS.filter((s) => s !== "entities").map((section) => ({
+      ...financeSettingsSections.map((section) => ({
         path: `${F.SETTINGS}/${section}`, element: <FinanceSettings section={section} />,
       })),
     ],

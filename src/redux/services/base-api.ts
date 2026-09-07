@@ -408,6 +408,9 @@ export const baseApi = createApi({
     // that this app consumes for @xvs/finance. RTK Query refuses a tag the
     // base api has not declared, so they are listed here rather than beside
     // the endpoints that use them.
+    // The school's own fee due rule (FAL), read and written by the Finance
+    // Settings fees section.
+    "FeeDuePolicy",
     "ExportCapabilities",
     "ExportCatalogue",
     "ExportDefinitions",

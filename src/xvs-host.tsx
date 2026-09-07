@@ -87,9 +87,34 @@ export const rolesHref = routesPath.PROTECTED.ROLES.INDEX;
  *
  *  Rendering nothing rather than omitting the tab: the shared screen decides
  *  its own layout, and an app that cannot fill a slot fills it with nothing. */
+import type {
+  FinanceSettingsSection, SetupSection,
+} from "@/pages/protected/finance/console-sections";
+
 export function ApprovalRolesTab() {
   return null;
 }
+
+/** Which Finance Settings sections this app routes.
+ *
+ *  The router's own list, so the settings nav cannot offer a section this app
+ *  does not serve. Entities is absent because a school keeps one set of books
+ *  and never creates another; "fees" is present and is school-only. */
+export const financeSettingsSections: readonly FinanceSettingsSection[] = [
+  "overview", "fiscal-calendar", "accounting", "documents",
+  "banking-cash", "reference-data", "approvals", "fees",
+] as const;
+
+/** Which Setup pages this app routes; see SCHOOL_SETUP_SECTIONS in the route
+ *  table, which is built from this. Dimensions and currencies are absent: a
+ *  school reports on branches and terms rather than analytical axes, and bills
+ *  in naira only. */
+export const setupSections: readonly SetupSection[] = [
+  "accounts", "periods", "tax-codes", "cost-centers",
+] as const;
+
+/** When this school's fee bills fall due. */
+export { default as FeeDuePolicyPanel } from "@/pages/protected/school-finance/fee-due-policy";
 
 /** The school's own mark, not the platform's.
  *
