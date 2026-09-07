@@ -1,5 +1,41 @@
 # CLAUDE.md - school-fe
 
+## The finance and procurement screens are not this app's to edit
+
+Everything under Finance, Procurement and Workflow comes from `@xvs/finance`
+(the `FinPro` repo), shared with the CodeX console. `@/pages/protected/finance/*`
+and its siblings are aliased into `node_modules/@xvs/finance`, in both
+`vite.config.ts` and `tsconfig.app.json`, so a file that looks local is not.
+
+Two rules follow.
+
+**A fix to a shared screen belongs in FinPro.** Edit it there, cut a version with
+its `release.sh`, and let it come back here through the pin. Editing under
+`node_modules` changes nothing durable: the next install overwrites it, and
+because this app holds a real copy rather than a symlink, the edit is invisible
+to the console the whole time it appears to work here.
+
+**A tag that only one application moved onto has released nothing.** The console
+symlinks the FinPro working tree, so an edit is live there the moment it is
+saved, while this app sees nothing until its pin moves and it reinstalls. The two
+apps therefore fail in opposite directions and neither notices alone:
+
+> Finance Settings was offering sections this app does not route. The fix was
+> tagged `v0.1.22`, this app was moved onto it, and console-fe was left pinned to
+> `v0.1.21`. Both typechecked clean, because the console was compiling against
+> its symlink rather than against what it pins. A fresh install anywhere else,
+> CI included, would have fetched `v0.1.21` and quietly not had the fix.
+
+So move both applications in the same change, with `release.sh`, and commit both
+lockfiles.
+
+**A school-only screen stays here.** Anything the console has no use for - the
+fee due policy is the example, because its endpoint is the FAL's and CodeX bills
+nobody school fees - lives under `src/pages/protected/school-finance/` and reaches
+the package through the host contract in `src/xvs-host.tsx`. It must not go under
+`src/pages/protected/finance/`: that path is aliased away to the package, so a
+file placed there is unreachable from this app.
+
 ## Pre-ship review (`ship-check`)
 
 When I say **`ship-check`** (or "run the ship-check") on a change, answer these
