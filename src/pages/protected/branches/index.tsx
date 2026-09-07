@@ -154,7 +154,7 @@ function BranchCard({
           <p className="text-xs truncate">{locationOf(branch)}</p>
         </div>
 
-        <hr className="my-3 border-gray-03 border-1.5" />
+        <hr className="my-3 border-white-02 border-1.5" />
 
         <div className="flex items-center justify-between px-1 xl:px-3">
           <Stat label="Students" value={branch.students_count} />

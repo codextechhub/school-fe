@@ -47,7 +47,7 @@ export function SkeletonRow({
       {Array.from({ length: count }).map((_, col) => (
         <TableCell
           key={col}
-          className={cn("border-gray-03 border-y-5 py-3.5", cellClassName)}
+          className={cn("border-white-02 border-y-5 py-3.5", cellClassName)}
         >
           {/* rowIndex * 3 keeps neighbouring rows out of phase with each other.
               min-w gives the ghost an intrinsic width: a percentage-only box
@@ -80,7 +80,7 @@ export function SkeletonCard({
     <div
       aria-hidden
       className={cn(
-        "space-y-2.5 border-b border-gray-03 px-3.5 py-3.5 last:border-0",
+        "space-y-2.5 border-b border-white-02 px-3.5 py-3.5 last:border-0",
         className,
       )}
     >
