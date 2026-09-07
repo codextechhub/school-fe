@@ -67,6 +67,9 @@ export interface NewRole {
   name: string;
   description?: string;
   permission_keys?: string[];
+  /** Required by the server whenever `permission_keys` is sent, empty list
+   *  included, and recorded on the audit entry for the change. */
+  reason?: string;
 }
 
 /** A change to an existing role. Everything named is replaced. */
@@ -76,6 +79,10 @@ export interface RoleUpdate {
   description?: string;
   /** A REPLACEMENT list, not an addition. */
   permission_keys?: string[];
+  /** Required by the server whenever `permission_keys` is sent, and recorded on
+   *  the audit entry for the change. Omitting it fails the save with a field
+   *  error on `reason`. */
+  reason?: string;
 }
 
 

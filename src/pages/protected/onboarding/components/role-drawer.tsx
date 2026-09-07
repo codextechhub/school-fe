@@ -97,6 +97,7 @@ export function RoleDrawer({
     ticked: Set<string>;
     name: string;
     description: string;
+    reason: string;
   } | null>(null);
 
   const baseline = useMemo(
@@ -113,6 +114,16 @@ export function RoleDrawer({
   const ticked = mine ? mine.ticked : baseline;
   const name = mine ? mine.name : (detail?.name ?? "");
   const description = mine ? mine.description : (detail?.description ?? "");
+  const reason = mine ? mine.reason : "";
+  // What the role reaches, as opposed to what it is called. The server records
+  // a reason for the first and not the second, so the box only appears when
+  // this save would actually change somebody's access.
+  const reachChanged = useMemo(() => {
+    if (!mine) return false;
+    if (mine.ticked.size !== baseline.size) return true;
+    for (const key of mine.ticked) if (!baseline.has(key)) return true;
+    return false;
+  }, [mine, baseline]);
   // Compared against the server's values rather than "has this reader touched
   // anything", so unticking a box that was just ticked greys Save again. The
   // old test was the presence of an edit object, which survived undoing every
@@ -138,10 +149,13 @@ export function RoleDrawer({
           ticked: baseline,
           name: detail?.name ?? "",
           description: detail?.description ?? "",
+          reason: "",
         };
 
   const patch = (
-    change: Partial<{ ticked: Set<string>; name: string; description: string }>,
+    change: Partial<{
+      ticked: Set<string>; name: string; description: string; reason: string;
+    }>,
   ) => setEdits({ ...from(), key: roleKey, ...change });
 
   // Built from the PREVIOUS edit, not the render-time set: two boxes ticked
@@ -157,6 +171,7 @@ export function RoleDrawer({
               ticked: baseline,
               name: detail?.name ?? "",
               description: detail?.description ?? "",
+              reason: "",
             };
       const next = new Set(base.ticked);
       if (next.has(key)) next.delete(key);
@@ -175,6 +190,7 @@ export function RoleDrawer({
               ticked: baseline,
               name: detail?.name ?? "",
               description: detail?.description ?? "",
+              reason: "",
             };
       const next = new Set(base.ticked);
       for (const entry of permissions) {
@@ -223,12 +239,25 @@ export function RoleDrawer({
       setErrors({ name: "Give the role a name." });
       return;
     }
+    // The server refuses an access change with no reason, and refusing here
+    // first puts the message beside the box instead of in a toast.
+    if ((creating || reachChanged) && !reason.trim()) {
+      setErrors({
+        reason: creating
+          ? "Say what this role is being created for."
+          : "Say why this is changing.",
+      });
+      return;
+    }
     try {
       if (creating) {
         await createRole({
           name: trimmed,
           description: description.trim(),
           permission_keys: [...ticked],
+          // Creating always sends permission_keys, an empty list included, and
+          // the server treats sending it at all as an access change.
+          reason: reason.trim(),
         }).unwrap();
         toast.success(`${trimmed} created.`);
       } else {
@@ -237,17 +266,29 @@ export function RoleDrawer({
           name: trimmed,
           description: description.trim(),
           permission_keys: [...ticked],
+          // Required by the server whenever permission_keys is sent, and sent
+          // only when it is: renaming a role is not an access change.
+          ...(reachChanged ? { reason: reason.trim() } : {}),
         }).unwrap();
         toast.success(`${trimmed} updated.`);
       }
       close();
     } catch (error) {
       const perField = fieldErrors(error);
-      if (Object.keys(perField).length) {
+      // Only fields this form actually renders can carry their own message. A
+      // complaint about anything else has nowhere to appear, and setting it
+      // silently is how a refused save looked like a save that did nothing:
+      // the spinner stopped, the drawer stayed open, and nothing said why.
+      // Those fall through to the toast instead.
+      const SHOWN = new Set(["name", "key", "description", "reason"]);
+      const placeable = Object.fromEntries(
+        Object.entries(perField).filter(([field]) => SHOWN.has(field)),
+      );
+      if (Object.keys(placeable).length) {
         // `key` is derived from the name, so its complaint belongs on the name.
         setErrors({
-          ...perField,
-          ...(perField.key ? { name: perField.key } : {}),
+          ...placeable,
+          ...(placeable.key ? { name: placeable.key } : {}),
         });
         return;
       }
@@ -354,6 +395,24 @@ export function RoleDrawer({
                 onChange={(event) => patch({ description: event.target.value })}
                 placeholder="Optional. Helps whoever assigns it later."
               />
+              {/* Only when this save changes what the role reaches. The server
+                  records it against the person saving, so the audit answers
+                  "why does the bursar have this?" rather than only "who ticked
+                  it". Renaming a role needs no such answer and is not asked. */}
+              {(creating || reachChanged) && (
+                <CustomInput
+                  id="role-reason"
+                  label={creating ? "Why is this role needed?" : "Why is this changing?"}
+                  isRequired
+                  value={reason}
+                  error={errors.reason}
+                  onChange={(event) => {
+                    patch({ reason: event.target.value });
+                    setErrors({});
+                  }}
+                  placeholder="e.g. Ada is covering fees while Ngozi is on leave"
+                />
+              )}
             </div>
           )}
 
