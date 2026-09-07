@@ -135,6 +135,7 @@ const LEGACY_REDIRECTS = new Set([
   "/academic",
   "/academic/session",
   "/academic/calender",
+  "/academic-structure/assignments",
   "/classes",
 ]);
 

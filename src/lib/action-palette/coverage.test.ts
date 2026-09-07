@@ -67,6 +67,9 @@ const NOT_A_DESTINATION: Record<string, string> = {
   "/academic/calender":
     "legacy address (and the old misspelling), redirects to the calendar",
   "/classes": "legacy address, redirects to Classes & Arms",
+  "/academic-structure/assignments":
+    "was a placeholder promising class teachers once staff existed; staff " +
+    "exist and Teaching duties answers it, so this redirects there",
 };
 
 /**

@@ -266,19 +266,30 @@ either a gap in the design or an endpoint nobody will call.
 
 ### 2.6 Design elements nothing can serve, and rulings needed
 
-Eleven, three of them decided. Each of the rest needs one line before the phase
-that touches it.
+Eleven, **all settled**. Four you decided outright (3, 9, 10, 11); seven
+carried a proposal that the phase acted on, and each of those says below what
+actually shipped, so reversing one is a matter of reading what it did rather
+than working out what it might have.
+
+One half of one ruling is still unbuilt and is called out under 2: the server
+sends an FR-013 warning when somebody has leave running today and an employment
+status that is not On Leave, and no screen reads it.
 
 1. **"Mark accepted" on Invitations.** Activation is the invited person opening
    a single-use link and setting a password. The button moves the employment
    status alone: Mrs. Okonkwo presses it on 20 October, Mr. Adeyemo reads Active
    on every screen in the school, and he still cannot sign in. FRD 3.4 rules it
-   out. **Proposed: drop the button; Resend is the control that helps.**
+   out. **DONE in phase 3: the button is not built.** Resend is the control
+   that helps, and the screen says in words why accepting on somebody's behalf
+   is not offered.
 2. **The status drawer's promise.** It says "The account stays usable until the
    last working day, then closes." Nothing closes it - there is no periodic task
    registry. Mr. Ayanwale's last day is 18 December; on 19 December he can still
-   sign in, indefinitely. **Proposed: reword to say an administrator closes it,
-   and surface the FR-013 warning on the directory.**
+   sign in, indefinitely. **DONE in phase 2: the status drawer's last-working-day
+   field carries the hint "Their account stays open until an administrator
+   closes it. Nothing closes it on this date."** The FR-013 directory warning is
+   NOT surfaced - the server sends it and no screen reads it, which is the one
+   half of this ruling still on the table.
 3. **Salary band. DECIDED: dropped.** The card is not built and the profile's
    Overview tab carries no money at all. Reading it would have meant giving a
    head teacher `finance.salary.view` to see one number, pulling the school's
@@ -288,21 +299,34 @@ that touches it.
    The Overview tab keeps bio, contact and employment rows only.
 4. **Timetable clashes panel.** M14 is now built, so this is no longer
    impossible - `has_clash` per teacher is real. It needs a timetable key the
-   reader may not hold. **Ruling needed: the empty panel with a line, or the
-   reduced live version behind a permission gate.**
-5. **Edit / Edit record with no drawer.** **Proposed: build an edit drawer; the
-   PATCH exists and `SELF_EDITABLE_FIELDS` already narrows it for self-edits.**
+   reader may not hold. **DONE in phase 5: the reduced live version, gated.**
+   A reader holding `academics.timetable.view` sees which teachers are
+   double-booked, with a link to the grid that shows which two lessons collide;
+   a reader without it sees where clashes will appear rather than an empty list
+   that would read as "there are none".
+5. **Edit / Edit record with no drawer. DONE in phase 2: the drawer is built.**
+   It sends only what changed, so a PATCH cannot rewrite a field nobody
+   touched.
 6. **Employment type picker omits Volunteer**, and the design's transition map
-   omits On Leave -> Suspended. The backend has both. **Proposed: follow the
-   backend; render the options the endpoint returns rather than a local table.**
+   omits On Leave -> Suspended. The backend has both. **DONE in phase 2: the
+   backend wins on both.** Volunteer is in the employment-type picker, and the
+   status drawer renders the moves `GET /staff/<id>/status/` returns rather than
+   a table on this side - so a rule changed on the server reaches the screen
+   without a release.
 7. **The coverage grid crosses every class with every subject.** The backend
    crosses `SubjectOffering` with the classes at that level. Indistinguishable
-   at four classes and three subjects; wrong at sixty. **Proposed: render what
-   the endpoint returns and build no cross product on the client.**
+   at four classes and three subjects; wrong at sixty. **DONE in phase 5: the
+   grid renders the cells the endpoint returns**, paginated, and builds no cross
+   product of its own.
 8. **Bulk import as a full screen.** The house ruling for students was the
    opposite: "bulk import is a thing you do TO the directory, not a place you go"
    (`routesPath.ts`), so it is a drawer over the list. This design gives it a
-   screen with a template card, guidance and batch history. **Ruling needed.**
+   screen with a template card, guidance and batch history. **DONE in phase 6:
+   a drawer to import, the history on the directory.** The wizard opens over the
+   rows the staff will land in; the record of an import sits in a folded panel
+   above the header, because "was the caretaker ever added?" is asked months
+   later without a file in hand. The template card was already step 1 of the
+   shared wizard, so nothing was lost by dropping the separate screen.
 9. **Roles & access. DECIDED: not built at all.** The design's screen 5 is out
    of scope. `/roles` already exists - "Roles & Permissions", mounted in the
    sidebar under Access on `P.VIEW_ROLES`, with the role drawer behind it - and
@@ -325,7 +349,14 @@ that touches it.
    Directory, Invitations, Posting & reach, Teaching duties.
 10. **`/academic-structure/assignments`** is a placeholder that says class
     teachers open "once at least one member of staff exists". They exist now.
-    **Ruling needed: redirect it to Teaching duties, or fill it.**
+    **DONE: deleted, and its address redirects to Teaching duties.** The page,
+    its route, its nav item, its palette action and the Assignments card on the
+    Academic Structure hub are all gone. The address stays answerable because
+    it sat in the nav for months and the bookmark is somebody's, and it lands
+    on Teaching duties rather than Classes & Transfers because the
+    class-teacher half is what it was drawn for. Its search words - "who
+    teaches what", "assignments", "subject teacher", "teaching load" - moved
+    onto the Teaching duties action, so the box lands where the bookmark does.
 11. **Leave. DECIDED: wire up Apply and Record in phase 2.** The tab gains two
     controls and stops being a list nothing can add to. **Apply** is a person
     filing their own, under `school.leave.apply`, which every member of staff
@@ -353,7 +384,44 @@ Every phase builds, passes its tests, adds its palette actions and coverage-test
 entries, and is driven in a browser against the real API at 390px and desktop
 before it is called done.
 
-### Phase 1 - Fix the break, and lay the seam
+### Phase 1 - Fix the break, and lay the seam — SHIPPED
+
+Driven against `brightfield-lekki`, the pending school where the break actually
+bit. Twelve rows render, zero console errors, no overflow at 390px or 820px.
+
+**The break had two victims, not one.** The plan named the onboarding
+Invitations panel. The same stale row type had a second consumer nobody had
+looked at: `xvs-host.tsx`'s `useDirectory` fed the shared approval screens a
+staff picker reading `s.role` and `s.status`, both of which the server had
+stopped sending. It did not throw, so nothing reported it - it simply showed a
+blank role and a blank status beside every name, and `status` there **gates
+delegation**. The rule that only an active person may be handed somebody else's
+approvals was running on `undefined`. Verified fixed by driving the delegation
+picker at `holy-cross`: 8 of 12 people offered, and the four withheld are
+exactly the locked, deactivated, suspended and never-activated accounts.
+
+**The root cause is a hand-written mirror of another repo's serializer**, which
+type-checks perfectly while being wrong. Fixed at the source rather than at the
+two call sites: `staff-types.ts` is now the whole module's mirror, read from
+`vs_staff/serializers.py`. Four shapes this plan had guessed were wrong and are
+read from the code instead - the counts breakdown, `days_taken`, the leave
+warning and the document row. `StatusChip` was also made total over its input: a
+chip is a label on a row and must never be the reason a table fails to render.
+
+**The client is 34 endpoints, not the 24 the plan estimated.**
+
+**Routes, sidebar and palette did NOT land here.** They moved to the phases that
+build their screens. A path constant with nothing mounted is worse than none:
+`/staff/invitations` would have fallen through to `/staff/:id` and asked the
+server for a person called "invitations", which is the exact bug the students
+prefix carries a warning about.
+
+**One defect found and fixed on the backend** (`e0ab33b`): the directory header
+counted groups and join rows rather than people, reporting 6 staff where there
+were 12 and 1 Active where there were 7. Described in section 5.
+
+**What the phase's own plan said it would build, below.**
+
 
 The only phase with no new screen, and it ships a screen anyway: the onboarding
 Invitations panel, working again.

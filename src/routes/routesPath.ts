@@ -180,7 +180,6 @@ export const routesPath = {
       CLASS_DETAILS_ID: (id: string | number) =>
         `/academic-structure/classes/${id}`,
       SUBJECTS: "/academic-structure/subjects",
-      ASSIGNMENTS: "/academic-structure/assignments",
     },
     // Student Management. One prefix for the whole module: the directory is
     // its front door and everything else hangs off it, the way Academic

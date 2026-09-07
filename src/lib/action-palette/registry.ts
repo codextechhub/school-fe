@@ -192,9 +192,13 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   {
     id: "view-teaching-duties",
     label: "View teaching duties",
+    // Carries the words the withdrawn Academic Structure > Assignments action
+    // answered. That screen was a placeholder and its address now redirects
+    // here, so the search box should land on the same place the bookmark does.
     aliases: [
       "who teaches what", "coverage", "class teachers", "subject cover",
-      "assign a subject", "gaps",
+      "assign a subject", "gaps", "assignments", "subject teacher",
+      "teaching load",
     ],
     section: "People",
     group: "Staff",
@@ -316,18 +320,6 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ACADEMIC_STRUCTURE.CLASSES },
   },
 
-  {
-    id: "view-assignments",
-    label: "View assignments",
-    aliases: ["who teaches what", "class teacher", "subject teacher", "teaching load"],
-    section: "Academics",
-    group: "Academic structure",
-    kind: "view",
-    // Gated on classes rather than structure, matching the sidebar child: this
-    // screen is about who teaches a class and who sits in it.
-    gate: { perm: P.BROWSE_CLASSES },
-    run: { to: R.ACADEMIC_STRUCTURE.ASSIGNMENTS },
-  },
   {
     id: "view-calendar-events",
     label: "View events",

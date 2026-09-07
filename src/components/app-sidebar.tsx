@@ -54,6 +54,18 @@ import { SchoolMark } from "./school-mark";
 // (default) or ALL of the listed codes.
 type NavPermission = PermissionCode | PermissionCode[] | null | undefined;
 
+/**
+ * Guardians is a RECORD, not a worklist.
+ *
+ * It sits in the student doors because it owns `/students/guardians` and the
+ * directory must not light up on it, and it renders under People because "who
+ * do we call about this family" is a lookup rather than a queue somebody is
+ * asked to empty. Matched by url so a rename of the label cannot silently move
+ * it into the wrong group.
+ */
+const isGuardians = (door: { url: string }) =>
+  door.url === routesPath.PROTECTED.STUDENTS.GUARDIANS;
+
 interface NavItem {
   /** Show a trailing arrow: this link opens a different area, and the sidebar
    *  changes under you. Finance and Procurement are separate consoles. */
@@ -229,7 +241,7 @@ export function AppSidebar({
     goLiveDoor,
   ].filter(canSee);
 
-  // The People doors other than the directory. Hoisted out of `data` so the
+  // The student doors other than the directory. Hoisted out of `data` so the
   // Students item can derive its exclusion from the doors that ACTUALLY
   // exist, rather than from a list kept beside them.
   //
@@ -239,7 +251,12 @@ export function AppSidebar({
   // a child had no answer to "where am I?". The onboarding group above
   // carries a comment about the same failure; this is it again, one group
   // down.
-  const peopleDoors: NavItem[] = [
+  //
+  // **This array is about URL ownership, not about which group a door is drawn
+  // in.** Guardians renders under People and the other three under Enrolment &
+  // duties, and all four stay here: Guardians owns /students/guardians, so the
+  // directory must not light up on it whichever heading it sits under.
+  const studentDoors: NavItem[] = [
     {
       title: "Applicants",
       url: routesPath.PROTECTED.STUDENTS.APPLICANTS,
@@ -310,7 +327,7 @@ export function AppSidebar({
     // could not see it. A screen no door claims at all - enrolling a student,
     // a profile - keeps the directory lit, because that is the list the
     // reader came from.
-    isActive: owns(routesPath.PROTECTED.STUDENTS.INDEX, peopleDoors),
+    isActive: owns(routesPath.PROTECTED.STUDENTS.INDEX, studentDoors),
     childActive: false,
     permission: P.BROWSE_STUDENTS,
   };
@@ -434,7 +451,17 @@ export function AppSidebar({
         childActive: false,
       },
     ],
-    people: [studentsDoor, ...peopleDoors, staffDoor, ...staffDoors],
+    // Two groups rather than nine items under one heading. The seam is what a
+    // reader is doing rather than which module owns the screen: People is the
+    // three records you look somebody up in, and Enrolment & duties is the six
+    // worklists somebody is asked to empty - which is also where every live
+    // count in the nav ends up, so the badges sit together instead of being
+    // scattered through a list of directories.
+    people: [studentsDoor, staffDoor, ...studentDoors.filter(isGuardians)],
+    duties: [
+      ...studentDoors.filter((door) => !isGuardians(door)),
+      ...staffDoors,
+    ],
     academics: [
       {
         // Academic Structure is the module: the overview and everything that
@@ -504,16 +531,6 @@ export function AppSidebar({
                 routesPath.PROTECTED.ACADEMIC_STRUCTURE.SUBJECTS,
               ),
               perm: P.BROWSE_SUBJECTS,
-            },
-            {
-              title: "Assignments",
-              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.ASSIGNMENTS,
-              isActive: location.startsWith(
-                routesPath.PROTECTED.ACADEMIC_STRUCTURE.ASSIGNMENTS,
-              ),
-              // Gated on classes, not structure: this screen is about who
-              // teaches a class and who is in it.
-              perm: P.BROWSE_CLASSES,
             },
           ] as { title: string; url: string; isActive: boolean; perm: PermissionCode }[]
         )
@@ -725,6 +742,7 @@ export function AppSidebar({
   // filtered out is dropped entirely (its label disappears with it).
   const overview = data.overview.filter(canSee);
   const people = data.people.filter(canSee);
+  const duties = data.duties.filter(canSee);
   const academics = data.academics.filter(canSee);
   const administration = data.administration.filter(canSee);
   const business = data.business.filter(canSee);
@@ -780,6 +798,9 @@ export function AppSidebar({
               )}
               {people.length > 0 && (
                 <NavMain items={people} groupTitle="People" />
+              )}
+              {duties.length > 0 && (
+                <NavMain items={duties} groupTitle="Enrolment & duties" />
               )}
               {academics.length > 0 && (
                 <NavMain items={academics} groupTitle="Academics" />

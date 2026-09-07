@@ -15,7 +15,6 @@ const SessionDetails = lazy(
 const Departments = lazy(() => import("@/pages/protected/academics/departments"));
 const Programs = lazy(() => import("@/pages/protected/academics/programs"));
 const Subjects = lazy(() => import("@/pages/protected/academics/subjects"));
-const Assignments = lazy(() => import("@/pages/protected/academics/assignments"));
 const CalendarOverview = lazy(() => import("@/pages/protected/calendar/overview"));
 const CalendarEvents = lazy(() => import("@/pages/protected/calendar/events"));
 const TermView = lazy(() => import("@/pages/protected/calendar/term-view"));
@@ -93,16 +92,6 @@ export const academicRoutes = [
     Component: Subjects,
     handle: {
       title: "Subjects",
-      lens: true,
-      pendingSurface: true,
-    } satisfies DashboardHandle,
-  },
-
-  {
-    path: S.ASSIGNMENTS,
-    Component: Assignments,
-    handle: {
-      title: "Assignments",
       lens: true,
       pendingSurface: true,
     } satisfies DashboardHandle,
@@ -205,5 +194,14 @@ export const academicRoutes = [
     ["/academic", S.INDEX],
     ["/academic/session", S.SESSIONS],
     ["/academic/calender", C.INDEX],
+    // Assignments was a placeholder: two panels saying class teachers and
+    // class lists would open once staff and student records existed. Both
+    // exist now and both have screens of their own, so the placeholder was
+    // left telling a school with fifteen staff that it had none. Redirected
+    // rather than removed, because it sat in the nav for months and the
+    // bookmark is somebody's - and to Teaching duties rather than to Classes &
+    // Transfers because the class-teacher half is the one this address was
+    // drawn for.
+    ["/academic-structure/assignments", routesPath.PROTECTED.STAFF.TEACHING],
   ]),
 ] as RouteObject[];
