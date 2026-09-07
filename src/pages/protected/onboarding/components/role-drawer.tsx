@@ -233,10 +233,37 @@ export function RoleDrawer({
     onClose();
   };
 
+  /** Put the field carrying a complaint in front of the person who has to read it.
+   *
+   *  The message renders beside its input, and the inputs sit above a permission
+   *  tree hundreds of rows tall, so a save refused while somebody is scrolled
+   *  down among the checkboxes reads as a save that did nothing: the drawer
+   *  stays open and the reason why is a screen and a half away. It is also
+   *  inside the "what it can reach" tab, so the input may not be rendered at all
+   *  when the refusal arrives.
+   *
+   *  Switching the tab first, then waiting a frame for the input to exist,
+   *  covers both. Focus rather than scroll alone, so it is also announced to a
+   *  screen reader and typed into straight away.
+   */
+  const reveal = (field: string) => {
+    const id = { name: "role-name", key: "role-name",
+                 description: "role-description", reason: "role-reason" }[field];
+    if (!id) return;
+    setTab("reach");
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.focus({ preventScroll: true });
+    });
+  };
+
   const commit = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
       setErrors({ name: "Give the role a name." });
+      reveal("name");
       return;
     }
     // The server refuses an access change with no reason, and refusing here
@@ -247,6 +274,7 @@ export function RoleDrawer({
           ? "Say what this role is being created for."
           : "Say why this is changing.",
       });
+      reveal("reason");
       return;
     }
     try {
@@ -290,6 +318,8 @@ export function RoleDrawer({
           ...placeable,
           ...(placeable.key ? { name: placeable.key } : {}),
         });
+        // Whichever field the server complained about first.
+        reveal(Object.keys(placeable)[0]);
         return;
       }
       toast.error(
