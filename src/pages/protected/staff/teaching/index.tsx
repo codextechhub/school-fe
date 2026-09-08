@@ -18,19 +18,21 @@ import {
   useGetTeachingCoverageQuery,
 } from "@/redux/services/staff/staff-api";
 import type { SchoolClass } from "@/redux/services/academics/academics-types";
+import type { CoverageCell } from "@/redux/services/staff/staff-types";
 
 import { StaffDrawers, type StaffDrawerRequest } from "../drawers";
 import { PersonAvatar } from "../../students/person-avatar";
 import { ClassTeachers } from "./class-teachers";
 import { ClashPanel } from "./clash-panel";
 import { CoverageGrid } from "./coverage-grid";
+import { PairingDrawer } from "./pairing-drawer";
 
 /**
  * Who teaches which subject to which class this session.
  *
  * **An assignment says WHAT; the timetable says when and where.** Nothing on
  * this screen schedules a lesson, and the only thing it can warn about is a
- * pairing with nobody on it, because that is the one question answerable by
+ * subject with nobody on it, because that is the one question answerable by
  * counting rows. It says nothing about whether the assigned teacher is a good
  * choice, how many periods a subject needs, or whether anybody is overloaded -
  * no specialism, no contract and no weekly frequency is recorded anywhere.
@@ -39,13 +41,26 @@ import { CoverageGrid } from "./coverage-grid";
  * class covered"; the by-teacher list answers "what does this person carry".
  * Showing both at once was noise, so the toggle picks one.
  *
- * **Two kinds of gap, counted apart.** A pairing nobody teaches, and a pairing
- * with assistants and no lead. The second looks covered until you ask who owns
- * the marks, and folding it into the first would hide it.
+ * **Two kinds of gap, counted apart.** A subject nobody teaches, and a subject
+ * being taught by people assisting with no main teacher over them. The second
+ * looks covered until you ask who enters its results, and folding it into the
+ * first would hide it.
+ *
+ * **One vocabulary, because two were being read as one.** The person carrying
+ * a subject in a class is its MAIN TEACHER and everybody else on it is
+ * ASSISTING; the person looking after the class itself is its CLASS TEACHER.
+ * Both were previously described as being responsible for the class, which is
+ * how a reader concludes that the two are the same designation.
  */
 export default function TeachingDuties() {
   const navigate = useNavigate();
   const [view, setView] = useState<"grid" | "teachers">("grid");
+  // Held as the cell that was pressed, but READ from the live list below, so a
+  // change made in the drawer shows in the drawer as well as behind it. The
+  // captured one is the fallback for the moment a filled square leaves a
+  // "Only gaps" list: the drawer stays open on what it was opened on rather
+  // than closing itself the instant the work succeeds.
+  const [pairing, setPairing] = useState<CoverageCell | null>(null);
   const [onlyGaps, setOnlyGaps] = useState(false);
   const [page, setPage] = useState(1);
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
@@ -81,14 +96,25 @@ export default function TeachingDuties() {
     );
   }
 
+  const openPairing =
+    pairing &&
+    (cells.find(
+      (cell) =>
+        cell.class_id === pairing.class_id &&
+        cell.subject_id === pairing.subject_id,
+    ) ??
+      pairing);
+
   return (
     <PageShell className="content-start gap-5" grid>
       <div className="min-w-0">
         <h2 className="text-lg font-semibold text-black-01">Teaching duties</h2>
         <p className="mt-1 max-w-2xl text-sm text-gray-01">
           Who teaches which subject to which class
-          {coverage.data ? ` in ${coverage.data.session.name}` : ""}. An
-          assignment says what; the timetable says when and where.
+          {coverage.data ? ` in ${coverage.data.session.name}` : ""}. Each
+          subject in a class has one main teacher, who enters its results, and
+          may have others assisting. This says what is taught; the timetable
+          says when and where.
         </p>
       </div>
 
@@ -101,12 +127,12 @@ export default function TeachingDuties() {
             <div className="mt-2.5 flex flex-wrap gap-2">
               <Figure
                 count={coverage.data?.coverage_gaps ?? 0}
-                label="with nobody teaching them"
+                label="with no teacher at all"
                 tone={coverage.data?.coverage_gaps ? "alert" : "plain"}
               />
               <Figure
                 count={coverage.data?.lead_gaps ?? 0}
-                label="taught with nobody owning the marks"
+                label="taught, but with no main teacher"
                 tone={coverage.data?.lead_gaps ? "warn" : "plain"}
               />
             </div>
@@ -163,30 +189,19 @@ export default function TeachingDuties() {
             <>
               <CoverageGrid
                 cells={cells}
-                onOpen={(cell) => {
-                  // The grid names a pairing, not a person, so opening a cell
-                  // has to ask who first. Sent to the by-teacher lens rather
-                  // than guessing: a pairing with nobody on it has nobody to
-                  // open a drawer for.
-                  if (cell.lead) {
-                    setDrawer({
-                      kind: "duties",
-                      staffId: cell.lead.staff_id,
-                      personName: cell.lead.name,
-                      classId: cell.class_id,
-                      subjectId: cell.subject_id,
-                    });
-                    return;
-                  }
-                  setView("teachers");
-                }}
+                // Every square opens the square that was pressed, empty or
+                // not. It used to open the main teacher's own duties where
+                // there was one and jump to the list of teachers where there
+                // was not - so the press that most needed answering, on a
+                // subject nobody teaches, was the one that threw away which
+                // subject in which class had just been chosen.
+                onOpen={setPairing}
               />
               {(pagination?.totalPages ?? 1) > 1 && (
                 <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white-02 pt-4">
                   <p className="text-xs text-gray-05">
-                    Page {pagination?.currentPage} of {pagination?.totalPages},
-                    {" "}
-                    {pagination?.totalItems} pairings in all
+                    Page {pagination?.currentPage} of {pagination?.totalPages},{" "}
+                    {pagination?.totalItems} class subjects in all
                   </p>
                   <div className="flex gap-2">
                     <Button
@@ -213,8 +228,8 @@ export default function TeachingDuties() {
           ) : (
             <p className="py-6 text-center text-[13px] text-gray-05">
               {onlyGaps
-                ? "Every pairing is covered and each has a lead."
-                : "No classes and subjects to pair up yet. They are built in Academic Structure."}
+                ? "Every subject has a teacher, and each one has a main teacher."
+                : "No classes and subjects yet. They are built in Academic Structure."}
             </p>
           )}
         </Surface>
@@ -275,8 +290,8 @@ export default function TeachingDuties() {
           Class teachers
         </h3>
         <p className="mb-4 text-xs text-gray-05">
-          The person responsible for each class, which is separate from teaching
-          it.
+          The person who looks after the class itself, its register and its day.
+          Teaching a subject to that class is a separate job, set above.
         </p>
         <ClassTeachers
           classes={classes}
@@ -307,9 +322,14 @@ export default function TeachingDuties() {
 
       <PermissionGate permission={P.ASSIGN_TEACHING}>
         <p className="text-xs text-gray-05">
-          Open a covered pairing or a teacher to change who carries it.
+          Open any subject above to change who teaches it, or a teacher to
+          change everything they carry.
         </p>
       </PermissionGate>
+
+      {openPairing && (
+        <PairingDrawer cell={openPairing} onClose={() => setPairing(null)} />
+      )}
 
       <StaffDrawers request={drawer} onClose={() => setDrawer(null)} />
     </PageShell>

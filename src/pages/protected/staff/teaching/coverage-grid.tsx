@@ -4,13 +4,14 @@ import { cn } from "@/lib/utils";
 import type { CoverageCell } from "@/redux/services/staff/staff-types";
 
 /**
- * Who covers each class-and-subject pairing, and the two ways one can be wrong.
+ * Who teaches each subject in each class, and the two ways one can be wrong.
  *
- * **A gap and a lead gap are different problems and are drawn differently.** A
- * gap is a pairing nobody teaches. A lead gap is a pairing being taught by
- * assistants with nobody owning the marks: it looks covered until you ask who
- * is responsible, which is exactly why it is the state a screen is most likely
- * to render wrongly. Amber for the second, because somebody IS in the room.
+ * **A subject nobody teaches and a subject with no main teacher are different
+ * problems and are drawn differently.** The first has nobody in the room at
+ * all. The second is being taught, by people who are assisting, with nobody
+ * set to enter its results - it looks covered until you ask who accounts for
+ * it, which is exactly why it is the state a screen is most likely to render
+ * wrongly. Amber for the second, because somebody IS in the room.
  *
  * **The cells come from the server and no cross product is built here.** The
  * server crosses each class with the subjects OFFERED at its level; crossing
@@ -26,11 +27,11 @@ export function CoverageGrid({
   onOpen,
 }: {
   cells: CoverageCell[];
-  /** Opens the assign drawer for this pairing. */
+  /** Opens the drawer for this class subject, taught or not. */
   onOpen: (cell: CoverageCell) => void;
 }) {
   // Grouped by class so the grid reads down a column the way a timetable does,
-  // rather than as a flat list of six hundred pairings.
+  // rather than as a flat list of six hundred class subjects.
   const byClass = new Map<number, { name: string; cells: CoverageCell[] }>();
   for (const cell of cells) {
     const group = byClass.get(cell.class_id) ?? {
@@ -61,13 +62,7 @@ export function CoverageGrid({
   );
 }
 
-function Cell({
-  cell,
-  onOpen,
-}: {
-  cell: CoverageCell;
-  onOpen: () => void;
-}) {
+function Cell({ cell, onOpen }: { cell: CoverageCell; onOpen: () => void }) {
   return (
     <button
       type="button"
@@ -92,7 +87,7 @@ function Cell({
           {cell.lead ? (
             <span className="flex min-w-0 items-center gap-1.5">
               <span className="rounded-full bg-[#DBE0EB] px-1.5 py-px text-[10px] font-medium text-[#4A659D]">
-                Lead
+                Main
               </span>
               <span className="truncate text-xs text-gray-01">
                 {cell.lead.name}
@@ -101,7 +96,7 @@ function Cell({
           ) : (
             <span className="flex items-center gap-1.5 text-xs font-medium text-amber-900">
               <AlertTriangle className="size-3 shrink-0" aria-hidden />
-              No lead, so nobody owns the marks
+              No main teacher, so nobody enters the results
             </span>
           )}
 
@@ -111,7 +106,11 @@ function Cell({
                 className="mt-0.5 size-3 shrink-0 text-gray-05"
                 aria-hidden
               />
+              {/* Named as what they are. A bare list of names under a main
+                  teacher read as a second main teacher, or as nothing in
+                  particular. */}
               <span className="min-w-0 text-xs text-gray-05">
+                Assisting:{" "}
                 {cell.assistants.map((person) => person.name).join(", ")}
               </span>
             </span>

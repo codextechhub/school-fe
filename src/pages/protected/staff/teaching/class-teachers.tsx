@@ -6,13 +6,18 @@ import { P } from "@/permissions";
 import type { SchoolClass } from "@/redux/services/academics/academics-types";
 
 /**
- * The teacher responsible for each class.
+ * The teacher who looks after each class itself.
  *
- * **A different fact from a teaching duty, and that is why it has its own
- * panel.** A duty says somebody teaches Mathematics to JSS1 A; being class
- * teacher says they are the person the school and the parents come to about
- * JSS1 A, whatever they teach. Somebody can be one without the other in both
- * directions.
+ * **A different fact from teaching the class, and that is why it has its own
+ * panel.** A teaching duty says somebody teaches Mathematics to JSS1 A; being
+ * class teacher says they are the person the school and the parents come to
+ * about JSS1 A, whatever they teach it. Somebody can be one without the other
+ * in both directions.
+ *
+ * The word "responsible" is deliberately not used here or above it. It was
+ * used for both this and a subject's main teacher, and one word for two
+ * designations is how a reader concludes that the main teacher for JSS1 A
+ * Mathematics is thereby JSS1 A's class teacher.
  *
  * It lives on the CLASS rather than on an assignment, because uniqueness is a
  * property of the class: JSS1 A has one class teacher. This panel sets it and
@@ -58,7 +63,7 @@ export function ClassTeachers({
               </span>
             ) : (
               <span className="block text-xs text-amber-700">
-                Nobody is responsible for this class
+                No class teacher yet
               </span>
             )}
           </span>

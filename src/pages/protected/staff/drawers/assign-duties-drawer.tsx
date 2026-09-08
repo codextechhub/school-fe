@@ -23,16 +23,22 @@ import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
 /**
  * What one person teaches, and the three ways it changes.
  *
- * **A duty is a pairing, and the pairing is the unit.** A subject in a class can
- * be taught by more than one person: one leads it and owns the marks, the
- * others assist. So this assigns a person to a pairing rather than handing them
- * a subject, and the part is asked for every time.
+ * **A duty is a subject in a class, and that is the unit.** One of them can be
+ * taught by more than one person: the main teacher enters its results, and
+ * anyone else on it is assisting. So this assigns a person to one subject in
+ * one class rather than handing them a subject outright, and the part is asked
+ * for every time.
  *
- * **At most one lead per pairing, and displacing one is deliberate.** The
- * server refuses a second lead and names the person who already has it, so
- * nobody discovers afterwards that the teacher who had SSS2 Physics no longer
- * does. Stepping the current lead back is the way to free it, which is a
+ * **At most one main teacher each, and displacing one is deliberate.** The
+ * server refuses a second and names the person who already has it, so nobody
+ * discovers afterwards that the teacher who had SSS2 Physics no longer does.
+ * Moving the current one to assisting is how the part is freed, which is a
  * separate act on a separate row.
+ *
+ * The same question asked of a class subject rather than of a person is the
+ * teaching screen's own drawer. Being a subject's main teacher is not being the
+ * class teacher: one carries a subject and its results, the other looks after
+ * the class itself.
  *
  * **An assignment says what, never when.** No day, no period, no room: that is
  * the timetable's, and a school with a paper timetable still needs this.
@@ -93,7 +99,7 @@ export function AssignDutiesDrawer({
       setClassId("");
       setSubjectId("");
     } catch (error) {
-      // The lead-already-set refusal names the holder, so it is worth showing
+      // The refusal for a second main teacher names the holder, so it is worth showing
       // whole rather than replacing with a generic sentence.
       toast.error(
         apiErrorMessage(error, "We could not record that duty. Try again."),
@@ -105,7 +111,9 @@ export function AssignDutiesDrawer({
     try {
       await setPart({ assignmentId: id, part: next }).unwrap();
       toast.success(
-        next === "LEAD" ? "They now lead it." : "They now assist with it.",
+        next === "LEAD"
+          ? "They are now its main teacher."
+          : "They are now assisting with it.",
       );
     } catch (error) {
       toast.error(
@@ -178,7 +186,7 @@ export function AssignDutiesDrawer({
                         onClick={() => void changePart(row.id, "LEAD")}
                       >
                         <ArrowUp className="size-3.5" />
-                        Make lead
+                        Make main
                       </Button>
                     ) : (
                       <Button
@@ -187,7 +195,7 @@ export function AssignDutiesDrawer({
                         onClick={() => void changePart(row.id, "ASSISTANT")}
                       >
                         <ArrowDown className="size-3.5" />
-                        Step back
+                        Move to assisting
                       </Button>
                     )}
                     <button
@@ -250,7 +258,7 @@ export function AssignDutiesDrawer({
             <Field
               label="Their part"
               required
-              hint="A lead owns the marks for this pairing. Assistants help with it, and a pairing can have several."
+              hint="The main teacher enters that subject's results for that class. Anyone else assisting also teaches it, and there can be several."
             >
               <NativeSelect
                 aria-label="Their part"
@@ -258,8 +266,8 @@ export function AssignDutiesDrawer({
                 onChange={(e) => setPartChoice(e.target.value as TeachingPart)}
                 className="h-9"
               >
-                <option value="LEAD">Lead</option>
-                <option value="ASSISTANT">Assistant</option>
+                <option value="LEAD">Main teacher</option>
+                <option value="ASSISTANT">Assisting</option>
               </NativeSelect>
             </Field>
 
