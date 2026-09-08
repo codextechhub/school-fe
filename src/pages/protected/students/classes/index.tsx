@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { Users } from "lucide-react";
 
+import { SearchSelect } from "@/components/custom/search-select";
 import CustomTable from "@/components/custom/custom-table";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -22,7 +23,11 @@ import {
   useGetClassRosterQuery,
   useGetUnplacedStudentsQuery,
 } from "@/redux/services/students/students-api";
-import type { BulkResultRow, StudentRow } from "@/redux/services/students/students-types";
+import type {
+  BulkResultRow,
+  ClassSeats,
+  StudentRow,
+} from "@/redux/services/students/students-types";
 
 import { StudentStatusBadge } from "../status-badge";
 import { TransferDrawer } from "../drawers/transfer-drawer";
@@ -42,6 +47,62 @@ type Tab = "unplaced" | "roster";
  * one "Done" would hide the two, and the unplaced children are the entire point
  * of the screen.
  */
+
+/**
+ * How full a class is, in the school's words rather than a percentage.
+ *
+ * Over capacity is a real state and not an error: a school takes a
+ * thirty-first child into a class of thirty when the alternative is turning
+ * them away, and the register has to say so plainly rather than clamp to full.
+ * A class with no capacity recorded is not full, which is why it says neither.
+ */
+function loadNote(c: ClassSeats): string {
+  if (c.capacity == null) return "No limit set";
+  if (c.used > c.capacity) return `Over by ${c.used - c.capacity}`;
+  if (c.remaining === 0) return "Full";
+  return `${c.remaining} free`;
+}
+
+/** The bar and the note for the one class the register is open on. */
+function ClassLoad({ c }: { c: ClassSeats }) {
+  const isOver = c.capacity != null && c.used > c.capacity;
+  const isFull = c.remaining === 0;
+  const pct = c.capacity
+    ? Math.min(100, Math.round((c.used / c.capacity) * 100))
+    : 0;
+
+  return (
+    <div className="min-w-0 flex-1 basis-48 pb-1.5 sm:max-w-64">
+      <div className="flex items-baseline justify-between gap-2">
+        <span
+          className={cn(
+            "text-xs",
+            isOver
+              ? "text-red-600"
+              : isFull
+                ? "text-amber-700"
+                : "text-gray-05",
+          )}
+        >
+          {loadNote(c)}
+        </span>
+        <span className="shrink-0 text-xs text-gray-06">
+          {c.capacity == null ? c.used : `${c.used}/${c.capacity}`}
+        </span>
+      </div>
+      <span className="mt-1.5 block h-[7px] overflow-hidden rounded-full bg-gray-04">
+        <span
+          className={cn(
+            "block h-full rounded-full",
+            isOver ? "bg-red-500" : isFull ? "bg-amber-500" : "bg-primary",
+          )}
+          style={{ width: `${isOver ? 100 : pct}%` }}
+        />
+      </span>
+    </div>
+  );
+}
+
 export default function ClassesAndTransfers() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
@@ -73,10 +134,10 @@ export default function ClassesAndTransfers() {
   // Default to the first class only once the list has arrived, so the roster
   // does not fetch against an empty id on the first render.
   const rosterClassId = Number(classParam) || classes[0]?.id;
-  const { data: rosterData, isFetching: rosterLoading } = useGetClassRosterQuery(
-    rosterClassId as number,
-    { skip: tab !== "roster" || !rosterClassId },
-  );
+  const { data: rosterData, isFetching: rosterLoading } =
+    useGetClassRosterQuery(rosterClassId as number, {
+      skip: tab !== "roster" || !rosterClassId,
+    });
   const roster = useMemo(() => rosterData?.data ?? [], [rosterData]);
 
   const [bulkAssign, { isLoading: assigning }] = useBulkAssignClassMutation();
@@ -109,6 +170,22 @@ export default function ClassesAndTransfers() {
   // pins to this endpoint (test_it_agrees_with_the_roster_it_is_meant_to
   // _replace). Reading both would be two sources for one number.
   const targetClass = classes.find((c) => String(c.id) === target);
+  const rosterClass = classes.find((c) => c.id === rosterClassId);
+  // The load rides on the label because it is what decides the choice, and a
+  // picker that named classes alone would send a reader back out to find which
+  // of them has room. It is searchable text too, so "free" reaches the ones
+  // with space.
+  const classOptions = useMemo(
+    () =>
+      classes.map((c) => ({
+        value: String(c.id),
+        label:
+          c.capacity == null
+            ? `${c.name} · ${c.used} enrolled`
+            : `${c.name} · ${c.used}/${c.capacity} · ${loadNote(c)}`,
+      })),
+    [classes],
+  );
 
   async function assign(allowOver = false) {
     if (!target || picked.length === 0) return;
@@ -134,7 +211,10 @@ export default function ClassesAndTransfers() {
         toast.warning(result.message);
       }
     } catch (error) {
-      const message = writeErrorMessage(error, "We could not assign those students.");
+      const message = writeErrorMessage(
+        error,
+        "We could not assign those students.",
+      );
       // Capacity is a question, not a fault: the server refuses once for the
       // whole selection, and the registrar decides whether to overfill.
       if (/capacit/i.test(message) && !allowOver) {
@@ -191,8 +271,9 @@ export default function ClassesAndTransfers() {
         <section className="rounded-xl border border-amber-300 bg-amber-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-sm font-semibold text-amber-900">
-              {refusals.length} {refusals.length === 1 ? "student was" : "students were"}{" "}
-              not placed
+              {refusals.length}{" "}
+              {refusals.length === 1 ? "student was" : "students were"} not
+              placed
             </h3>
             <button
               type="button"
@@ -205,7 +286,9 @@ export default function ClassesAndTransfers() {
           <ul className="mt-2 grid gap-1.5">
             {refusals.map((r) => (
               <li key={r.student} className="text-sm text-amber-900">
-                <span className="font-medium">{r.name || `Student ${r.student}`}</span>
+                <span className="font-medium">
+                  {r.name || `Student ${r.student}`}
+                </span>
                 {r.message ? ` - ${r.message}` : ""}
               </li>
             ))}
@@ -252,14 +335,19 @@ export default function ClassesAndTransfers() {
                   Student: s.full_name,
                   "Admission no.": s.student_number || "Not issued",
                   Status: (
-                    <StudentStatusBadge status={s.status} label={s.status_label} />
+                    <StudentStatusBadge
+                      status={s.status}
+                      label={s.status_label}
+                    />
                   ),
                   "Level applied for": s.level_name || "-",
                   "Primary guardian": s.primary_guardian || "None linked",
                 }))}
                 onRowClick={(student: StudentRow) => {
                   if (student?.id) {
-                    navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(student.id));
+                    navigate(
+                      routesPath.PROTECTED.STUDENTS.PROFILE_ID(student.id),
+                    );
                   }
                 }}
                 hidePagination
@@ -341,7 +429,8 @@ export default function ClassesAndTransfers() {
                     >
                       {targetClass.capacity == null
                         ? `Into ${targetClass.name} · no capacity set`
-                        : targetClass.used + picked.length > targetClass.capacity
+                        : targetClass.used + picked.length >
+                            targetClass.capacity
                           ? `${targetClass.name} holds ${targetClass.used} of ${targetClass.capacity}. These ${picked.length} would put it ${targetClass.used + picked.length - targetClass.capacity} over.`
                           : `Into ${targetClass.name} · ${targetClass.used} of ${targetClass.capacity} used, ${targetClass.capacity - targetClass.used} free`}
                     </span>
@@ -353,75 +442,26 @@ export default function ClassesAndTransfers() {
         </>
       ) : (
         <>
-          {/* The class picker IS the capacity list.
-              These are the four bars the directory used to carry as a summary.
-              Here they are not a summary - they are the thing you came for, so
-              they do the navigating too. A bare <select> naming twelve classes
-              made you pick one to find out how full it was, which is backwards:
-              the load is what tells you which one to open. */}
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-            {classes.map((c) => {
-              const chosen = c.id === rosterClassId;
-              const isOver = c.capacity != null && c.used > c.capacity;
-              const isFull = c.remaining === 0;
-              const pct = c.capacity
-                ? Math.min(100, Math.round((c.used / c.capacity) * 100))
-                : 0;
-              return (
-                <button
-                  key={c.id}
-                  type="button"
-                  aria-pressed={chosen}
-                  onClick={() => setRosterClass(String(c.id))}
-                  className={cn(
-                    "min-w-0 rounded-lg border px-3.5 py-3 text-left",
-                    chosen
-                      ? "border-primary bg-white-03"
-                      : "border-white-02 bg-white hover:border-primary/30 hover:bg-white-05",
-                  )}
-                >
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="truncate text-sm font-medium text-black-01">
-                      {c.name}
-                    </span>
-                    <span className="shrink-0 text-xs text-gray-06">
-                      {c.capacity == null ? c.used : `${c.used}/${c.capacity}`}
-                    </span>
-                  </span>
-                  <span className="mt-2 block h-[7px] overflow-hidden rounded-full bg-gray-04">
-                    <span
-                      className={cn(
-                        "block h-full rounded-full",
-                        isOver
-                          ? "bg-red-500"
-                          : isFull
-                            ? "bg-amber-500"
-                            : "bg-primary",
-                      )}
-                      style={{ width: `${isOver ? 100 : pct}%` }}
-                    />
-                  </span>
-                  <span
-                    className={cn(
-                      "mt-1.5 block text-xs",
-                      isOver
-                        ? "text-red-600"
-                        : isFull
-                          ? "text-amber-700"
-                          : "text-gray-05",
-                    )}
-                  >
-                    {c.capacity == null
-                      ? "No limit set"
-                      : isOver
-                        ? `Over by ${c.used - c.capacity}`
-                        : isFull
-                          ? "Full"
-                          : `${c.remaining} free`}
-                  </span>
-                </button>
-              );
-            })}
+          {/* A picker, and the load of the one it is on.
+              The load still leads the choice, which is why every option names
+              it: a bare class list makes you pick one to find out how full it
+              is, which is backwards. But a box per class does not survive a
+              real school - a secondary with six arms at each of six levels is
+              thirty-six boxes, eleven rows of them, and the register they
+              exist to open is pushed off the bottom of the screen before a
+              single name is read. Searchable, so the answer to "where is SSS2
+              C" is three keystrokes rather than a scan. */}
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <div className="min-w-0 flex-1 basis-64 sm:max-w-sm">
+              <SearchSelect
+                label="Showing"
+                options={classOptions}
+                value={rosterClassId ? String(rosterClassId) : ""}
+                onChange={(e) => setRosterClass(e.target.value)}
+                placeholder="Search for a class"
+              />
+            </div>
+            {rosterClass && <ClassLoad c={rosterClass} />}
           </div>
 
           <CustomTable
@@ -466,11 +506,7 @@ export default function ClassesAndTransfers() {
       )}
 
       {moving && (
-        <TransferDrawer
-          student={moving}
-          open
-          onClose={() => setMoving(null)}
-        />
+        <TransferDrawer student={moving} open onClose={() => setMoving(null)} />
       )}
     </PageShell>
   );
