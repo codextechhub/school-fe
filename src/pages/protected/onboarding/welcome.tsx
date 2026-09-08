@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router";
+import xvsLogo from "@/assets/svg/full-logo.svg";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,8 +42,8 @@ export default function OnboardingWelcome() {
     <main className="min-h-dvh bg-white-05 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-140 flex flex-col gap-4">
         <img
-          src="/svg/logo.svg"
-          alt="CodeX Vision"
+          src={xvsLogo}
+          alt="XVS"
           className="h-8 w-auto self-start"
           onError={(event) => {
             // The bundled mark is the fallback; a missing file must not leave a
@@ -51,14 +52,14 @@ export default function OnboardingWelcome() {
           }}
         />
 
-        <div className="bg-white rounded-md px-6 py-8 sm:px-9">
+        <div className="bg-white rounded-md border border-white-02 px-6 py-8 sm:px-9">
           <p className="text-xs font-medium uppercase tracking-[0.12em] text-gray-05 font-mont">
             School Onboarding
           </p>
           <h1 className="mt-2.5 text-2xl font-semibold text-black-01 leading-snug text-balance">
             Welcome, {greetingName}
           </h1>
-          <p className="mt-2.5 text-sm text-gray-01 max-w-[44ch] text-pretty">
+          <p className="mt-2.5 text-sm text-gray-01 text-pretty">
             Let's get {schoolName} ready to go live. Onboarding is a short
             checklist: you confirm what CodeX has already set up, fill in what
             only you know, and pick up where you left off.

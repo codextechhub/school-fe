@@ -6,7 +6,7 @@ import {
   useActivateAccountMutation,
 } from "@/redux/services/auth/auth-api";
 import { routesPath } from "@/routes/routesPath";
-import { resetPasswordSchema } from "@/schema/auth";
+import { PASSWORD_MIN_LENGTH, resetPasswordSchema } from "@/schema/auth";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
@@ -159,6 +159,16 @@ export default function ActivateAccount() {
                 }}
                 error={formik.touched.password ? formik.errors.password : ""}
               />
+              {/* Stated before it is needed. The rules are the server's, and
+                  finding them out by being refused is the slowest way to learn
+                  them - especially on activation, which somebody does once and
+                  under a link they were sent. */}
+              {!formik.errors.password && (
+                <p className="-mt-2 text-xs text-gray-01 font-mont">
+                  At least {PASSWORD_MIN_LENGTH} characters, with an uppercase
+                  letter, a lowercase letter, a number and a special character.
+                </p>
+              )}
               <CustomInput
                 label="Confirm Password"
                 id="confirm_password"
