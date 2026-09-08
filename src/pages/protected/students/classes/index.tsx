@@ -90,7 +90,11 @@ function ClassLoad({ c }: { c: ClassSeats }) {
           {c.capacity == null ? c.used : `${c.used}/${c.capacity}`}
         </span>
       </div>
-      <span className="mt-1.5 block h-[7px] overflow-hidden rounded-full bg-gray-04">
+      {/* Outlined, because the track is what says how much room the class has.
+          A pale fill on a white page shows only the part that is FULL, so a
+          class with two students in thirty reads as a short blue stub floating
+          in nothing, and there is no way to see it is two out of thirty. */}
+      <span className="mt-1.5 block h-[9px] overflow-hidden rounded-full border border-border bg-gray-04">
         <span
           className={cn(
             "block h-full rounded-full",

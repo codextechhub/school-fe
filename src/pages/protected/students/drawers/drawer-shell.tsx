@@ -129,7 +129,14 @@ export function Field({
   const note = error ?? hint;
 
   return (
-    <div className="grid gap-1.5">
+    // `content-start` because a grid's rows default to stretching into whatever
+    // space the row gives them. Two fields side by side in a form grid are the
+    // same height, so the one WITHOUT a hint under it shared the leftover
+    // between its label and its control and pushed the control down - which is
+    // why every row on a form mixing hinted and unhinted fields had its inputs
+    // at two different heights. Packed to the top, the extra space stays at the
+    // bottom where nobody can see it.
+    <div className="grid content-start gap-1.5">
       <label htmlFor={id} className="text-xs font-medium text-gray-05">
         {label}
         {required && (

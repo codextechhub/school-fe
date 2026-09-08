@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Info, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { PageShell } from "@/components/layout/page-shell";
 import { Panel as Surface } from "@/components/custom/surface";
@@ -213,13 +214,23 @@ export default function AddStaff() {
         roleLabel={chosenRole?.label ?? ""}
         onAddAnother={() => {
           setForm({
-            first_name: "", middle_name: "", last_name: "", gender: "",
-            date_of_birth: "", email: "", phone: "", staff_number: "",
-            job_title: "", employment_type: "", hire_date: "", branch: "",
+            first_name: "",
+            middle_name: "",
+            last_name: "",
+            gender: "",
+            date_of_birth: "",
+            email: "",
+            phone: "",
+            staff_number: "",
+            job_title: "",
+            employment_type: "",
+            hire_date: "",
+            branch: "",
             // The role and the posting are kept: a school adding six teachers
             // to one branch is the common case, and retyping them six times is
             // how the seventh gets it wrong.
-            role: form.role, role_branch: form.role_branch,
+            role: form.role,
+            role_branch: form.role_branch,
           });
           setPhoto(null);
           setQuals([]);
@@ -259,17 +270,17 @@ export default function AddStaff() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Middle name" error={errors.middle_name}>
-              <input
-                value={form.middle_name}
-                onChange={(e) => set("middle_name")(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
             <Field label="Last name" required error={errors.last_name}>
               <input
                 value={form.last_name}
                 onChange={(e) => set("last_name")(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+            <Field label="Middle name" error={errors.middle_name}>
+              <input
+                value={form.middle_name}
+                onChange={(e) => set("middle_name")(e.target.value)}
                 className={inputClass}
               />
             </Field>
@@ -284,14 +295,6 @@ export default function AddStaff() {
                 <option value="FEMALE">Female</option>
                 <option value="MALE">Male</option>
               </NativeSelect>
-            </Field>
-            <Field label="Date of birth" error={errors.date_of_birth}>
-              <input
-                type="date"
-                value={form.date_of_birth}
-                onChange={(e) => set("date_of_birth")(e.target.value)}
-                className={inputClass}
-              />
             </Field>
             <Field
               label="Email address"
@@ -312,6 +315,17 @@ export default function AddStaff() {
                 value={form.phone}
                 onChange={(e) => set("phone")(e.target.value)}
                 className={inputClass}
+              />
+            </Field>
+            <Field label="Date of birth" error={errors.date_of_birth}>
+              {/* h-9 to match everything else on this form. The control's own
+                  default is the app's taller one, which beside a 36px select
+                  reads as a mistake rather than as a choice. */}
+              <DatePickerInput
+                aria-label="Date of birth"
+                className="h-9"
+                value={form.date_of_birth}
+                onChange={(e) => set("date_of_birth")(e.target.value)}
               />
             </Field>
           </div>
@@ -365,11 +379,11 @@ export default function AddStaff() {
               error={errors.hire_date}
               hint="Length of service is worked out from this."
             >
-              <input
-                type="date"
+              <DatePickerInput
+                aria-label="Hire date"
+                className="h-9"
                 value={form.hire_date}
                 onChange={(e) => set("hire_date")(e.target.value)}
-                className={inputClass}
               />
             </Field>
             {branches.length > 1 && (
@@ -450,7 +464,9 @@ export default function AddStaff() {
           >
             <div className="grid gap-4">
               <div>
-                <p className="mb-2 text-xs font-medium text-gray-05">Subjects</p>
+                <p className="mb-2 text-xs font-medium text-gray-05">
+                  Subjects
+                </p>
                 <div className="flex flex-wrap gap-2">
                   {subjects.map((subject) => (
                     <ChipToggle
