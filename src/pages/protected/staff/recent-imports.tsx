@@ -21,7 +21,10 @@ import {
   useCancelImportBatchMutation,
   useGetImportBatchesQuery,
 } from "@/redux/services/dashboard/import-api";
-import type { BatchStatus } from "@/redux/services/dashboard/import-types";
+import type {
+  BatchStatus,
+  ImportBatchListItem,
+} from "@/redux/services/dashboard/import-types";
 
 import { formatDate } from "../students/format";
 
@@ -100,6 +103,29 @@ const CAN_END = new Set<BatchStatus>([
   "ready_to_import",
 ]);
 
+/**
+ * A batch that has not reached an outcome, whether or not it can be ended.
+ *
+ * Wider than CAN_END by the two execution states: an import already running is
+ * unfinished and belongs with the rest of the open work, it simply cannot be
+ * called off. Grouping on "is it done" while offering the control on "can it be
+ * stopped" keeps two different questions apart.
+ */
+const STILL_OPEN = new Set<BatchStatus>([
+  ...CAN_END,
+  "import_queued",
+  "import_running",
+]);
+
+/** A heading over one of the two lists. */
+function GroupLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="px-2.5 pb-1 pt-1.5 text-[11px] font-semibold tracking-wide text-gray-05 uppercase">
+      {children}
+    </p>
+  );
+}
+
 /** "ready_to_import" becomes "Ready to import". */
 function sentenceCase(code: string): string {
   const words = code.replace(/_/g, " ");
@@ -119,12 +145,27 @@ export function RecentImports() {
   const [cancelBatch, { isLoading: cancelling }] =
     useCancelImportBatchMutation();
 
+  // Deeper than the panel shows, because the newest five are not the
+  // interesting five. Five finished imports on top push an unfinished one off
+  // the bottom, and then the panel that exists to offer the End control is the
+  // reason the batch needing it cannot be seen.
   const { data } = useGetImportBatchesQuery(
-    { dataset_type: "staff", page_size: 5 },
+    { dataset_type: "staff", page_size: 20 },
     { skip: !canRead },
   );
 
   const batches = data?.data ?? [];
+  // Split rather than sorted. Work in progress and a record of something that
+  // happened are different kinds of row, and a list that merely ordered them
+  // would leave a reader counting down it to learn whether anything wanted
+  // them.
+  const unfinished = batches.filter((batch) => STILL_OPEN.has(batch.status));
+  // Only the recent history is worth a popover. The rest is what the footer's
+  // link is for.
+  const finished = batches
+    .filter((batch) => !STILL_OPEN.has(batch.status))
+    .slice(0, 5);
+
   if (!canRead || !batches.length) return null;
 
   async function end(id: number, filename: string) {
@@ -138,6 +179,111 @@ export function RecentImports() {
       );
     }
   }
+
+  /**
+   * One list of batches, shared by both groups.
+   *
+   * Every row prints its own status, so a reader who has scrolled past the
+   * heading can still tell an unfinished batch from a finished one.
+   */
+  const list = (items: ImportBatchListItem[]) => (
+    <ul className="grid gap-1">
+      {items.map((batch) => {
+        const outcome = OUTCOME[batch.status];
+        return (
+          <li key={batch.id}>
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                navigate(
+                  routesPath.PROTECTED.DATA_IMPORTS.BATCHES.VIEW(
+                    String(batch.id),
+                  ),
+                );
+              }}
+              className="flex w-full flex-wrap items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-gray-03"
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-[13px] text-black-01">
+                  {batch.original_filename}
+                </span>
+                <span className="block text-xs text-gray-05">
+                  {batch.total_rows} {batch.total_rows === 1 ? "row" : "rows"} ·{" "}
+                  {formatDate(batch.created_at)}
+                </span>
+              </span>
+
+              <span
+                className={cn(
+                  "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                  outcome?.tone ?? "bg-gray-04 text-gray-01",
+                )}
+              >
+                {/* A batch still mid-flight prints its own state rather
+                        than being forced into an outcome it has not reached. */}
+                {outcome?.label ?? sentenceCase(batch.status)}
+              </span>
+            </button>
+
+            {/* Outside the row's button rather than inside it: a link
+                    nested in a button is not clickable, and downloading the
+                    report is a different act from opening the batch. Same for
+                    ending it. */}
+            <span className="mx-2.5 mb-1 flex flex-wrap items-center gap-3">
+              {batch.error_count > 0 && (
+                <a
+                  href={importDownloadUrls.validationIssuesExport(batch.id)}
+                  className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
+                >
+                  <Download className="size-3" aria-hidden />
+                  {batch.error_count}{" "}
+                  {batch.error_count === 1 ? "problem" : "problems"}
+                </a>
+              )}
+
+              {canEnd && CAN_END.has(batch.status) && (
+                <button
+                  type="button"
+                  onClick={() => setEnding(batch.id)}
+                  className="inline-flex items-center gap-1 text-xs text-gray-05 underline-offset-2 hover:text-error-text hover:underline"
+                >
+                  <X className="size-3" aria-hidden />
+                  End this import
+                </button>
+              )}
+            </span>
+
+            {/* Confirmed in place rather than in a dialog. A dialog over a
+                    popover is two layers over the list somebody is reading, and
+                    the popover closes as the dialog opens - so the row being
+                    confirmed is no longer on screen. */}
+            {ending === batch.id && (
+              <span className="mx-2.5 mb-1.5 flex flex-wrap items-center gap-2 rounded-md bg-gray-04 px-2.5 py-2">
+                <span className="text-xs text-gray-01">
+                  End it? Nothing from this file has been written.
+                </span>
+                <Button
+                  variant="ghost"
+                  className="ml-auto h-7 px-2 text-xs"
+                  onClick={() => setEnding(null)}
+                >
+                  Keep
+                </Button>
+                <Button
+                  className="h-7 bg-red-600 px-2.5 text-xs hover:bg-red-700"
+                  disabled={cancelling}
+                  onClick={() => void end(batch.id, batch.original_filename)}
+                >
+                  {cancelling ? "Ending…" : "End"}
+                </Button>
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -153,8 +299,18 @@ export function RecentImports() {
         >
           <FileSpreadsheet className="size-4 shrink-0" aria-hidden />
           Recent imports
-          <span className="grid size-4.5 place-content-center rounded-full bg-gray-04 text-[11px] font-semibold text-gray-01">
-            {batches.length}
+          {/* Counts the unfinished ones when there are any, because that is the
+              number somebody can act on. A tally of everything ever imported
+              only ever goes up and never asks for anything. */}
+          <span
+            className={cn(
+              "grid size-4.5 place-content-center rounded-full text-[11px] font-semibold",
+              unfinished.length
+                ? "bg-amber-100 text-amber-700"
+                : "bg-gray-04 text-gray-01",
+            )}
+          >
+            {unfinished.length || finished.length}
           </span>
         </button>
       </PopoverTrigger>
@@ -174,107 +330,20 @@ export function RecentImports() {
             so the scrollbar floats over the content instead of taking width out
             of it and shifting every row as the list gets longer. */}
         <ScrollArea className="max-h-[calc(var(--radix-popover-content-available-height,24rem)-3.5rem)]">
-          <ul className="grid gap-1">
-            {batches.map((batch) => {
-              const outcome = OUTCOME[batch.status];
-              return (
-                <li key={batch.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setOpen(false);
-                      navigate(
-                        routesPath.PROTECTED.DATA_IMPORTS.BATCHES.VIEW(
-                          String(batch.id),
-                        ),
-                      );
-                    }}
-                    className="flex w-full flex-wrap items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-gray-03"
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] text-black-01">
-                        {batch.original_filename}
-                      </span>
-                      <span className="block text-xs text-gray-05">
-                        {batch.total_rows}{" "}
-                        {batch.total_rows === 1 ? "row" : "rows"} ·{" "}
-                        {formatDate(batch.created_at)}
-                      </span>
-                    </span>
-
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                        outcome?.tone ?? "bg-gray-04 text-gray-01",
-                      )}
-                    >
-                      {/* A batch still mid-flight prints its own state rather
-                        than being forced into an outcome it has not reached. */}
-                      {outcome?.label ?? sentenceCase(batch.status)}
-                    </span>
-                  </button>
-
-                  {/* Outside the row's button rather than inside it: a link
-                    nested in a button is not clickable, and downloading the
-                    report is a different act from opening the batch. Same for
-                    ending it. */}
-                  <span className="mx-2.5 mb-1 flex flex-wrap items-center gap-3">
-                    {batch.error_count > 0 && (
-                      <a
-                        href={importDownloadUrls.validationIssuesExport(
-                          batch.id,
-                        )}
-                        className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
-                      >
-                        <Download className="size-3" aria-hidden />
-                        {batch.error_count}{" "}
-                        {batch.error_count === 1 ? "problem" : "problems"}
-                      </a>
-                    )}
-
-                    {canEnd && CAN_END.has(batch.status) && (
-                      <button
-                        type="button"
-                        onClick={() => setEnding(batch.id)}
-                        className="inline-flex items-center gap-1 text-xs text-gray-05 underline-offset-2 hover:text-error-text hover:underline"
-                      >
-                        <X className="size-3" aria-hidden />
-                        End this import
-                      </button>
-                    )}
-                  </span>
-
-                  {/* Confirmed in place rather than in a dialog. A dialog over a
-                    popover is two layers over the list somebody is reading, and
-                    the popover closes as the dialog opens - so the row being
-                    confirmed is no longer on screen. */}
-                  {ending === batch.id && (
-                    <span className="mx-2.5 mb-1.5 flex flex-wrap items-center gap-2 rounded-md bg-gray-04 px-2.5 py-2">
-                      <span className="text-xs text-gray-01">
-                        End it? Nothing from this file has been written.
-                      </span>
-                      <Button
-                        variant="ghost"
-                        className="ml-auto h-7 px-2 text-xs"
-                        onClick={() => setEnding(null)}
-                      >
-                        Keep
-                      </Button>
-                      <Button
-                        className="h-7 bg-red-600 px-2.5 text-xs hover:bg-red-700"
-                        disabled={cancelling}
-                        onClick={() =>
-                          void end(batch.id, batch.original_filename)
-                        }
-                      >
-                        {cancelling ? "Ending…" : "End"}
-                      </Button>
-                    </span>
-                  )}
-                </li>
-              );
-            })}
-          </ul>
+          {unfinished.length > 0 && (
+            <>
+              {/* Labelled only when there is a second list to tell it apart
+                  from. One list of five needs no heading over it. */}
+              {finished.length > 0 && <GroupLabel>Not finished</GroupLabel>}
+              {list(unfinished)}
+            </>
+          )}
+          {finished.length > 0 && (
+            <>
+              {unfinished.length > 0 && <GroupLabel>Finished</GroupLabel>}
+              {list(finished)}
+            </>
+          )}
         </ScrollArea>
 
         <button

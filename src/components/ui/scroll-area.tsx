@@ -78,7 +78,17 @@ function ScrollArea({
       //
       // Every caller that swaps `overflow-*` for this component inherits the
       // same trap, so the fix belongs here rather than in each of them.
-      className={cn("relative min-h-0 min-w-0", className)}
+      //
+      // `flex flex-col` for the mirror-image trap on the other side. The
+      // viewport used to take its height from `h-full`, and a percentage height
+      // needs a DEFINITE height on the parent to resolve against. A caller
+      // sizing this with `max-h-*` gives it no such thing, so the viewport
+      // resolved to auto, grew to its content, and spilled out of a Root that
+      // does not clip - a 585px list inside a 344px box, nothing scrolling and
+      // the last rows drawn over whatever sat below. As a flex column the
+      // viewport is bounded by the Root's max-height instead of guessing at it,
+      // and callers that hand it a definite height are unaffected.
+      className={cn("relative flex min-h-0 min-w-0 flex-col", className)}
       {...props}
     >
       <ScrollAreaPrimitive.Viewport
@@ -89,7 +99,10 @@ function ScrollArea({
         // container instead of scrolling inside it. Same rule as the
         // DashboardLayout wrapper: horizontal page overflow is a bug.
         className={cn(
-          "size-full rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+          // `flex-1 min-h-0` rather than `h-full`: see the Root's note. The
+          // min-height floor is what lets it shrink below its content, which is
+          // the whole point of a scrolling box.
+          "w-full min-h-0 flex-1 rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
           "[&>div]:!block [&>div]:min-w-0",
           viewportClassName,
         )}
