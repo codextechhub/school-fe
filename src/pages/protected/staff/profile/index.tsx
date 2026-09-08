@@ -79,9 +79,12 @@ export default function StaffProfile() {
   const tab = params.get("tab") ?? "overview";
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
 
-  const { data, isLoading, isError, refetch } = useGetStaffMemberQuery(staffId, {
-    skip: !Number.isFinite(staffId),
-  });
+  const { data, isLoading, isError, refetch } = useGetStaffMemberQuery(
+    staffId,
+    {
+      skip: !Number.isFinite(staffId),
+    },
+  );
   const person = data?.data;
 
   const [resend, { isLoading: resending }] = useResendStaffInvitationMutation();
@@ -123,7 +126,10 @@ export default function StaffProfile() {
       );
     } catch (error) {
       toast.error(
-        apiErrorMessage(error, "We could not resend that invitation. Try again."),
+        apiErrorMessage(
+          error,
+          "We could not resend that invitation. Try again.",
+        ),
       );
     }
   }
@@ -222,7 +228,9 @@ export default function StaffProfile() {
               <PermissionGate permission={P.MODIFY_TEACHER}>
                 <Button
                   variant="outline"
-                  onClick={() => setDrawer({ kind: "edit", staffId: person.id })}
+                  onClick={() =>
+                    setDrawer({ kind: "edit", staffId: person.id })
+                  }
                 >
                   Edit record
                 </Button>
@@ -290,9 +298,7 @@ export default function StaffProfile() {
 }
 
 function Dot() {
-  return (
-    <span aria-hidden className="size-1 rounded-full bg-gray-02" />
-  );
+  return <span aria-hidden className="size-1 rounded-full bg-gray-02" />;
 }
 
 /**
@@ -344,7 +350,13 @@ function TabBody({
 
   if (tab === "access") {
     if (roles.isLoading || !roles.data) return <TabSkeleton />;
-    return <AccessTab roles={roles.data.data} />;
+    return (
+      <AccessTab
+        roles={roles.data.data}
+        staffId={person.id}
+        onOpenDrawer={onOpenDrawer}
+      />
+    );
   }
   if (tab === "teaching") {
     // Closed before go-live, and that is a refusal rather than an error: a

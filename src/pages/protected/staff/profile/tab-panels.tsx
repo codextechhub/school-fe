@@ -1,6 +1,8 @@
 import { CalendarPlus, FileText, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import PermissionGate from "@/components/custom/permission-gate";
+import { P } from "@/permissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type {
@@ -45,7 +47,9 @@ export function TabSkeleton() {
 }
 
 export function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="py-6 text-center text-[13px] text-gray-05">{children}</p>;
+  return (
+    <p className="py-6 text-center text-[13px] text-gray-05">{children}</p>
+  );
 }
 
 function SectionNote({ children }: { children: React.ReactNode }) {
@@ -70,12 +74,37 @@ function SectionNote({ children }: { children: React.ReactNode }) {
  * `school.user_overrides.view` - an empty block would answer the question the
  * restriction exists to withhold - so this renders the section only when the
  * server sent one.
+ *
+ * **Changing a grant happens here, not only from the directory.** This tab is
+ * where somebody comes to ask what a person may do, and it is the same visit
+ * they answer it in: reading that Mrs. Okafor holds nothing and having to go
+ * back to the list to give her something is the long way round a question she
+ * is already open on. The button opens the same drawer the directory's row menu
+ * opens, so a grant made from either place is one act with one confirmation,
+ * and it carries the same key the server checks rather than a looser one.
  */
-export function AccessTab({ roles }: { roles: StaffRoles }) {
+export function AccessTab({
+  roles,
+  staffId,
+  onOpenDrawer,
+}: {
+  roles: StaffRoles;
+  staffId: number;
+  onOpenDrawer: (request: { kind: "role"; staffId: number }) => void;
+}) {
+  const openRoles = () => onOpenDrawer({ kind: "role", staffId });
+
   return (
     <div className="grid gap-6">
       <section>
-        <h3 className="mb-1 text-sm font-semibold text-black-01">Roles held</h3>
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-black-01">Roles held</h3>
+          <PermissionGate permission={P.ASSIGN_ROLE}>
+            <Button size="sm" variant="outline" onClick={openRoles}>
+              Grant or withdraw
+            </Button>
+          </PermissionGate>
+        </div>
         <SectionNote>
           What a role can do is defined in access control, not here.
         </SectionNote>
@@ -86,7 +115,9 @@ export function AccessTab({ roles }: { roles: StaffRoles }) {
             ))}
           </ul>
         ) : (
-          <Empty>No role granted yet, so they can sign in and reach nothing.</Empty>
+          <Empty>
+            No role granted yet, so they can sign in and reach nothing.
+          </Empty>
         )}
       </section>
 
@@ -268,11 +299,7 @@ export function TeachingTab({ teaching }: { teaching: StaffTeaching }) {
 
 // ── Qualifications and documents ───────────────────────────────────────────
 
-export function QualificationsTab({
-  rows,
-}: {
-  rows: StaffQualification[];
-}) {
+export function QualificationsTab({ rows }: { rows: StaffQualification[] }) {
   return (
     <section>
       <SectionNote>
@@ -290,8 +317,9 @@ export function QualificationsTab({
                 {row.qualification}
               </p>
               <p className="mt-0.5 text-xs text-gray-05">
-                {[row.institution, row.year_obtained].filter(Boolean).join(" · ") ||
-                  "No institution recorded"}
+                {[row.institution, row.year_obtained]
+                  .filter(Boolean)
+                  .join(" · ") || "No institution recorded"}
               </p>
               {row.note && (
                 <p className="mt-1 text-xs text-gray-01">{row.note}</p>
