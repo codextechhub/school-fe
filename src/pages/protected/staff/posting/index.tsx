@@ -34,6 +34,15 @@ import { PersonAvatar } from "../../students/person-avatar";
  * of the three this screen can change. Somebody reaching Ikeja through a
  * branch-pinned Teacher grant is moved by changing that grant, not by moving
  * where they are based - and a checkbox on their row would promise otherwise.
+ * Each unmovable group says where it IS changed instead, because a group
+ * labelled only as not this screen's leaves a reader knowing they cannot do
+ * the thing and not who can.
+ *
+ * **The roster is who works here.** Somebody resigned or terminated is left
+ * out by the server: listing them says they still work at the branch, and the
+ * posted group is selectable, so it also offered to move a posting that no
+ * longer means anything. Suspended and on-leave staff stay, because both are
+ * still employed.
  *
  * **The screen does not exist at a one-branch school.** The server answers 404
  * there rather than a roster with one group and everybody in it, and the nav
@@ -121,8 +130,8 @@ export default function StaffPosting() {
 
           {roster && (
             <p className="pb-2.5 text-[13px] text-gray-05">
-              {roster.total} {roster.total === 1 ? "person" : "people"} appear on
-              this roster.
+              {roster.total} {roster.total === 1 ? "person" : "people"} appear
+              on this roster.
             </p>
           )}
 
@@ -132,10 +141,7 @@ export default function StaffPosting() {
                 <span className="text-[13px] text-black-01">
                   {picked.length} selected
                 </span>
-                <Button
-                  variant="outline"
-                  onClick={() => setPicked([])}
-                >
+                <Button variant="outline" onClick={() => setPicked([])}>
                   Clear
                 </Button>
                 <Button
@@ -173,9 +179,13 @@ export default function StaffPosting() {
               <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] font-medium text-gray-01">
                 {group.rows.length}
               </span>
-              {!group.movable && (
-                <span className="text-xs text-gray-05">
-                  Not this screen&apos;s to move
+              {/* Where it IS changed, from the server, rather than only that
+                  it is not here. A group labelled as somebody else's to move
+                  leaves a reader knowing they cannot do the thing and not who
+                  can. */}
+              {!group.movable && group.change_it && (
+                <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] text-gray-01">
+                  {group.change_it}
                 </span>
               )}
             </div>
@@ -191,9 +201,7 @@ export default function StaffPosting() {
                     picked={picked.includes(person.id)}
                     onToggle={() => toggle(person.id)}
                     onOpen={() =>
-                      navigate(
-                        routesPath.PROTECTED.STAFF.PROFILE_ID(person.id),
-                      )
+                      navigate(routesPath.PROTECTED.STAFF.PROFILE_ID(person.id))
                     }
                   />
                 ))}

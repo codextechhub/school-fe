@@ -1,7 +1,4 @@
-import type {
-  Envelope,
-  Pagination,
-} from "../onboarding/onboarding-types";
+import type { Envelope, Pagination } from "../onboarding/onboarding-types";
 
 /**
  * The shapes `/v1/i/me/staff/` speaks, mirrored from `vs_staff/serializers.py`.
@@ -22,12 +19,7 @@ import type {
 
 /** Does this person still work here. Set only by a logged transition. */
 export type EmploymentStatus =
-  | "INVITED"
-  | "ACTIVE"
-  | "ON_LEAVE"
-  | "SUSPENDED"
-  | "RESIGNED"
-  | "TERMINATED";
+  "INVITED" | "ACTIVE" | "ON_LEAVE" | "SUSPENDED" | "RESIGNED" | "TERMINATED";
 
 /**
  * May this login be used. The identity layer's, not this module's.
@@ -48,10 +40,7 @@ export type AccountStatus =
 
 /** What kind of contract, and nothing about its terms. */
 export type EmploymentType =
-  | "FULL_TIME"
-  | "PART_TIME"
-  | "CONTRACT"
-  | "VOLUNTEER";
+  "FULL_TIME" | "PART_TIME" | "CONTRACT" | "VOLUNTEER";
 
 export type DocumentType =
   | "CV"
@@ -502,6 +491,12 @@ export interface StaffRoster {
     title: string;
     note: string;
     movable: boolean;
+    /**
+     * Where a group that cannot be moved here IS changed, empty for one that
+     * can. Saying only that a group is not this screen's to move tells a
+     * reader they cannot do the thing without telling them who can.
+     */
+    change_it: string;
     rows: StaffListRow[];
   }[];
 }
