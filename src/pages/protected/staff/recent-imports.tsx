@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { ChevronDown, Download, FileSpreadsheet } from "lucide-react";
+import { useNavigate } from "react-router";
+import { ArrowRight, Download, FileSpreadsheet } from "lucide-react";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
+import { routesPath } from "@/routes/routesPath";
 import {
   importDownloadUrls,
   useGetImportBatchesQuery,
@@ -13,22 +20,29 @@ import type { BatchStatus } from "@/redux/services/dashboard/import-types";
 import { formatDate } from "../students/format";
 
 /**
- * What this school has imported, folded away under the directory.
+ * What this school has imported, one chip wide, on the directory's toolbar.
  *
  * **Here rather than on a screen of its own.** Bulk import is a thing you do TO
  * the directory rather than a place you go, which is why the wizard is a drawer
  * over these rows - but the RECORD of an import is a different question, asked
  * months later and without a file in hand: "was the caretaker ever added?" The
  * answer is three skipped rows and a reason, and shown once at step seven it is
- * gone. So the history lives beside the list the rows landed in.
+ * gone.
  *
- * **Collapsed by default, and absent entirely when there is nothing.** A school
- * imports twice a year; an always-open panel would put a stale September entry
- * above the directory every day until Christmas.
+ * **A chip and a popover, not a band and an accordion.** It was a full-width
+ * strip above the header, so a school that imported once in September carried
+ * its own filing cabinet across the top of the directory every day until
+ * Christmas - and opening it pushed the whole page down, moving the rows the
+ * reader was looking at. A popover costs one control's width and takes the page
+ * with it when it closes.
  *
- * The error report is the point of the row. A partly-imported batch is the one
- * a school has to act on, and its skipped rows are a file the engine already
- * exports.
+ * **Absent entirely when there is nothing.** A school that has never imported
+ * has no history, which is a different thing from a history that failed to
+ * load.
+ *
+ * The error report is the point of a row. A partly-imported batch is the one a
+ * school has to act on, and its skipped rows are a file the engine already
+ * exports - so it is offered on the row rather than only inside the batch.
  */
 
 /** Only the outcomes a finished import lands in. The rest are mid-flight. */
@@ -62,6 +76,7 @@ function sentenceCase(code: string): string {
 }
 
 export function RecentImports() {
+  const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const canRead = hasPermission(P.VIEW_IMPORT_BATCHES);
   const [open, setOpen] = useState(false);
@@ -72,77 +87,80 @@ export function RecentImports() {
   );
 
   const batches = data?.data ?? [];
-  // Nothing to say, so nothing drawn. Not an empty panel: a school that has
-  // never imported has no history, which is a different thing from a history
-  // that failed to load.
   if (!canRead || !batches.length) return null;
 
   return (
-    <section className="rounded-lg border border-white-02 bg-white">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center gap-2.5 px-4 py-3 text-left"
-      >
-        <FileSpreadsheet className="size-4 shrink-0 text-gray-05" aria-hidden />
-        <span className="text-[13.5px] font-medium text-black-01">
-          Recent imports
-        </span>
-        <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] font-medium text-gray-01">
-          {batches.length}
-        </span>
-        <ChevronDown
-          aria-hidden
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
           className={cn(
-            "ml-auto size-4 text-gray-05 transition-transform",
-            open && "rotate-180",
+            "inline-flex h-10.5 shrink-0 items-center gap-2 rounded-lg border px-3.5 text-[13.5px] font-medium",
+            open
+              ? "border-primary bg-white-03 text-primary"
+              : "border-white-02 bg-white text-gray-01 hover:bg-gray-03",
           )}
-        />
-      </button>
+        >
+          <FileSpreadsheet className="size-4 shrink-0" aria-hidden />
+          Recent imports
+          <span className="grid size-4.5 place-content-center rounded-full bg-gray-04 text-[11px] font-semibold text-gray-01">
+            {batches.length}
+          </span>
+        </button>
+      </PopoverTrigger>
 
-      {open && (
-        <ul className="grid gap-2 border-t border-white-02 px-4 py-3.5">
+      {/* Aligned to the trigger's right edge, because the chip sits on the
+          right of the toolbar and a left-aligned panel would hang off screen. */}
+      <PopoverContent align="end" className="w-88 p-2">
+        <ul className="grid gap-1">
           {batches.map((batch) => {
             const outcome = OUTCOME[batch.status];
             return (
-              <li
-                key={batch.id}
-                className="flex flex-wrap items-center gap-2.5 rounded-lg border border-white-02 px-3.5 py-2.5"
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-sm text-black-01">
-                    {batch.original_filename}
-                  </span>
-                  <span className="block text-xs text-gray-05">
-                    {batch.total_rows}{" "}
-                    {batch.total_rows === 1 ? "row" : "rows"} ·{" "}
-                    {formatDate(batch.created_at)}
-                  </span>
-                </span>
-
-                <span
-                  className={cn(
-                    "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                    outcome?.tone ?? "bg-gray-04 text-gray-01",
-                  )}
+              <li key={batch.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    navigate(
+                      routesPath.PROTECTED.DATA_IMPORTS.BATCHES.VIEW(
+                        String(batch.id),
+                      ),
+                    );
+                  }}
+                  className="flex w-full flex-wrap items-center gap-2 rounded-md px-2.5 py-2 text-left hover:bg-gray-03"
                 >
-                  {/* A batch still mid-flight prints its own state rather than
-                      being forced into an outcome it has not reached. Sentence
-                      case so it sits beside the finished ones rather than
-                      reading as a different kind of thing. */}
-                  {outcome?.label ?? sentenceCase(batch.status)}
-                </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[13px] text-black-01">
+                      {batch.original_filename}
+                    </span>
+                    <span className="block text-xs text-gray-05">
+                      {batch.total_rows}{" "}
+                      {batch.total_rows === 1 ? "row" : "rows"} ·{" "}
+                      {formatDate(batch.created_at)}
+                    </span>
+                  </span>
 
-                {/* The reason rows were skipped, as the engine wrote it. This
-                    is the whole point of keeping the history: it is the only
-                    place that answers who did not make it in. */}
+                  <span
+                    className={cn(
+                      "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
+                      outcome?.tone ?? "bg-gray-04 text-gray-01",
+                    )}
+                  >
+                    {/* A batch still mid-flight prints its own state rather
+                        than being forced into an outcome it has not reached. */}
+                    {outcome?.label ?? sentenceCase(batch.status)}
+                  </span>
+                </button>
+
+                {/* Outside the row's button rather than inside it: a link
+                    nested in a button is not clickable, and downloading the
+                    report is a different act from opening the batch. */}
                 {batch.error_count > 0 && (
                   <a
                     href={importDownloadUrls.validationIssuesExport(batch.id)}
-                    className="ml-auto inline-flex items-center gap-1.5 text-xs text-primary underline-offset-2 hover:underline"
+                    className="mx-2.5 mb-1 inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
                   >
-                    <Download className="size-3.5" />
+                    <Download className="size-3" aria-hidden />
                     {batch.error_count}{" "}
                     {batch.error_count === 1 ? "problem" : "problems"}
                   </a>
@@ -151,7 +169,19 @@ export function RecentImports() {
             );
           })}
         </ul>
-      )}
-    </section>
+
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            navigate(routesPath.PROTECTED.DATA_IMPORTS.BATCHES.INDEX);
+          }}
+          className="mt-1 flex w-full items-center justify-between gap-2 rounded-md border-t border-white-02 px-2.5 pb-1 pt-2.5 text-[13px] text-primary hover:bg-gray-03"
+        >
+          See every import
+          <ArrowRight className="size-3.5" aria-hidden />
+        </button>
+      </PopoverContent>
+    </Popover>
   );
 }

@@ -201,8 +201,6 @@ export default function StaffDirectory() {
         </div>
       </div>
 
-      <RecentImports />
-
       <CountsHeader
         counts={counts}
         loading={isLoading}
@@ -241,6 +239,14 @@ export default function StaffDirectory() {
           roles={roles}
           employmentStatuses={counts?.by_employment_status ?? []}
         />
+
+        {/* Pushed to the right of the toolbar rather than sitting above the
+            header in a band of its own. It is a record somebody consults, not
+            a fact about the school, so it belongs beside the other controls
+            and out of the way of the figures. */}
+        <div className="ml-auto">
+          <RecentImports />
+        </div>
       </div>
 
       {/* Two or more filters is where a reader loses track of what is applied,
@@ -482,7 +488,8 @@ export default function StaffDirectory() {
           import is a thing you do TO the directory rather than a place you go,
           so it opens over the list the rows will land in - the same shape the
           student directory uses, and the same wizard behind it. The RECORD of
-          an import is a different question and lives in RecentImports above,
+          an import is a different question and lives in RecentImports on the
+          toolbar,
           because "was the caretaker ever added?" is asked months later. */}
       <BulkImportDrawer
         open={importing}
