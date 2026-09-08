@@ -420,7 +420,7 @@ export default function OnboardingImport() {
       </div>
 
       {/* Required datasets: the progress card, before either table. */}
-      <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
+      <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5 min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-base font-semibold text-black-01 font-mont">
             Required datasets
@@ -493,7 +493,7 @@ export default function OnboardingImport() {
         </span>
       </div>
 
-      <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
+      <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5 min-w-0">
         <div className="overflow-x-auto">
           <CustomTable
             tableHeaderList={TEMPLATE_COLUMNS}
@@ -508,7 +508,7 @@ export default function OnboardingImport() {
 
       {/* Batches */}
       <PermissionGate permission={P.VIEW_IMPORT_BATCHES}>
-        <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
+        <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5 min-w-0">
           <p className="mb-3 text-sm font-semibold font-mont text-black-01">
             Import batches
           </p>
@@ -526,7 +526,7 @@ export default function OnboardingImport() {
       </PermissionGate>
 
       {/* Before you upload */}
-      <section className="bg-white rounded-md px-3 py-4 sm:px-5 min-w-0">
+      <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5 min-w-0">
         <p className="text-sm font-semibold text-black-01 font-mont">
           Before you upload
         </p>

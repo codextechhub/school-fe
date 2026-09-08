@@ -217,7 +217,7 @@ export function InvitationsPanel() {
         </p>
       }
     >
-      <section className="bg-white rounded-md px-4 py-5 sm:px-5">
+      <section className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-5">
         <p className="text-sm font-semibold font-mont text-black-01">
           Invite a user
         </p>
@@ -284,7 +284,7 @@ export function InvitationsPanel() {
       </section>
     </PermissionGate>
 
-    <section className="bg-white rounded-md px-3 py-4 sm:px-5">
+    <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5">
       <p className="mb-3 text-sm font-semibold font-mont text-black-01">
         Invitations sent
       </p>

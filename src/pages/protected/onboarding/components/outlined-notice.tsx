@@ -34,7 +34,7 @@ export function OutlinedNotice({
   return (
     <div
       className={cn(
-        "bg-white rounded-md px-6 py-14 flex flex-col items-center text-center gap-3.5",
+        "bg-white rounded-md border border-white-02 px-6 py-14 flex flex-col items-center text-center gap-3.5",
         className,
       )}
     >

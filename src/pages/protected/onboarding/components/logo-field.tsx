@@ -77,7 +77,7 @@ export function LogoField({
   };
 
   return (
-    <section className="bg-white rounded-md px-4 py-5 sm:px-6 max-w-200">
+    <section className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 max-w-200">
       <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
         Logo
       </p>

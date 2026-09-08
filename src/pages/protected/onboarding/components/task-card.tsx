@@ -89,7 +89,7 @@ export function TaskCard({
   return (
     <div
       id={`task-${task.key}`}
-      className="bg-white rounded-md px-4 py-4 sm:px-4.5 border border-transparent hover:border-pry-01 transition-colors scroll-mt-24"
+      className="bg-white rounded-md px-4 py-4 sm:px-4.5 border border-white-02 hover:border-pry-01 transition-colors scroll-mt-24"
     >
       {/* Wraps rather than shrinks. On a phone the action buttons cannot get
           any narrower (nowrap labels), so in a plain flex row they would take

@@ -225,7 +225,7 @@ export default function OnboardingRoles() {
             </PermissionGate>
           </div>
 
-          <section className="bg-white rounded-md px-3 py-4 sm:px-5">
+          <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5">
             <p className="mb-3 text-sm font-semibold font-mont text-black-01">
               Default role templates
             </p>
@@ -252,7 +252,7 @@ export default function OnboardingRoles() {
             </p>
           </section>
 
-          <section className="bg-white rounded-md px-3 py-4 sm:px-5">
+          <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5">
             <p className="mb-3 text-sm font-semibold font-mont text-black-01">
               Custom roles
             </p>

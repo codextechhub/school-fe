@@ -172,7 +172,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
       </div>
 
       {/* ── Progress summary ───────────────────────────────────────────── */}
-      <section className="bg-white rounded-md px-4 py-5 sm:px-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
+      <section className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
         <div className="flex items-center gap-5">
           <ProgressRing value={percent} />
           <div className="min-w-0">
@@ -246,7 +246,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
           <GoLivePanel state={state} titleOf={titleOf} />
 
           {nextTask && !isLive && (
-            <section className="bg-white rounded-md p-4.5">
+            <section className="bg-white rounded-md border border-white-02 p-4.5">
               <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
                 Next best action
               </p>
@@ -279,7 +279,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
             </section>
           )}
 
-          <section className="bg-white rounded-md p-4.5">
+          <section className="bg-white rounded-md border border-white-02 p-4.5">
             <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
               Required for go-live
             </p>
@@ -310,7 +310,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
             </div>
           </section>
 
-          <section className="bg-white rounded-md p-4.5">
+          <section className="bg-white rounded-md border border-white-02 p-4.5">
             <p className="text-sm font-semibold font-mont text-black-01">
               Need a hand?
             </p>
@@ -353,7 +353,7 @@ function GoLivePanel({
   const canReadRequests = hasPermission(P.VIEW_GO_LIVE_REQUESTS);
 
   return (
-    <section className="bg-white rounded-md p-4.5">
+    <section className="bg-white rounded-md border border-white-02 p-4.5">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm font-semibold font-mont text-black-01">
           Going live
@@ -493,7 +493,7 @@ function ControlRoomSkeleton() {
     <PageShell className="space-y-5" aria-busy>
       <span className="sr-only">Loading your onboarding checklist…</span>
       <Skeleton className="h-6 w-64" aria-hidden />
-      <div className="bg-white rounded-md px-4 py-5 sm:px-6" aria-hidden>
+      <div className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6" aria-hidden>
         <div className="flex items-center gap-5">
           <Skeleton className="size-24 rounded-full" />
           <div className="flex-1 space-y-2">

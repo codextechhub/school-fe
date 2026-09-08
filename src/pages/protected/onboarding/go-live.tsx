@@ -195,7 +195,7 @@ function GoLive({ state }: { state: OnboardingState }) {
       )}
       {!isLive && latest?.status === "FAILED" && <FailedCard request={latest} />}
 
-      <section className="bg-white rounded-md px-3 py-4 sm:px-5">
+      <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5">
         <div className="mb-3">
           <p className="text-sm font-semibold font-mont text-black-01">
             Request history
@@ -280,7 +280,7 @@ function GateCard({
   };
 
   return (
-    <section className="bg-white rounded-md px-4 py-5 sm:px-6 space-y-5">
+    <section className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <ReadinessChip state={readiness} />
@@ -478,7 +478,7 @@ function PendingBlock({ latest }: { latest: GoLiveRequest | null }) {
 function ActivatedCard({ state }: { state: OnboardingState }) {
   const navigate = useNavigate();
   return (
-    <section className="bg-white rounded-md px-4 py-8 sm:px-6 flex flex-col items-center text-center gap-3">
+    <section className="bg-white rounded-md border border-white-02 px-4 py-8 sm:px-6 flex flex-col items-center text-center gap-3">
       <span className="size-16 rounded-full bg-green-01/10 text-green-01 grid place-content-center">
         <CircleCheckBig className="size-8" strokeWidth={1.5} />
       </span>
@@ -511,7 +511,7 @@ function ActivatedCard({ state }: { state: OnboardingState }) {
  */
 function RejectedCard({ request }: { request: GoLiveRequest }) {
   return (
-    <section className="bg-white rounded-md px-4 py-5 sm:px-6">
+    <section className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6">
       <div className="flex flex-wrap items-center gap-2.5">
         <GoLiveStatusChip status="REJECTED" />
         <p className="text-sm font-semibold font-mont text-black-01">

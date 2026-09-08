@@ -186,7 +186,7 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
       )}
 
       {/* ── What CodeX set ────────────────────────────────────────────────── */}
-      <section className="bg-white rounded-md px-4 py-5 sm:px-6 max-w-200">
+      <section className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 max-w-200">
         <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
           Set by CodeX
         </p>
@@ -207,7 +207,7 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
       {/* ── What the school sets ──────────────────────────────────────────── */}
       <form
         onSubmit={formik.handleSubmit}
-        className="bg-white rounded-md px-4 py-5 sm:px-6 space-y-4 max-w-200"
+        className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 space-y-4 max-w-200"
       >
         <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
           Yours to confirm
