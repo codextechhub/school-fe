@@ -9,6 +9,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 /**
  * The frame all five student drawers sit in.
@@ -21,6 +22,16 @@ import { Button } from "@/components/ui/button";
  * `w-full sm:max-w-md` is the house rule - full bleed on a phone, a panel above
  * it. The body scrolls, the footer does not, so Save is reachable without
  * scrolling to the end of a long form on a small screen.
+ *
+ * The body scrolls through `ScrollArea` rather than natively. A native
+ * scrollbar takes its width out of the box, so a form is one width until it
+ * grows past the panel and a narrower one afterwards, and every field shifts
+ * left the moment one more row appears. How much it takes depends on the
+ * reader's machine - nothing on a Mac trackpad, about fifteen pixels on
+ * Windows with a mouse - so a drawer checked on one was never checked on the
+ * other. The padding rides on the viewport rather than on this element,
+ * because the scrolling box has to be the one that is padded or the last field
+ * sits against the footer.
  */
 export function DrawerShell({
   open,
@@ -61,9 +72,9 @@ export function DrawerShell({
           )}
         </SheetHeader>
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <ScrollArea className="min-h-0 flex-1" viewportClassName="px-5 py-4">
           {children}
-        </div>
+        </ScrollArea>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3">
           <Button variant="outline" onClick={onClose} disabled={saving}>

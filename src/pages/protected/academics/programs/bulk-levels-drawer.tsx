@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -49,12 +50,16 @@ export function BulkLevelsDrawer({
   }
 
   const existing = useMemo(
-    () => new Set((program?.levels ?? []).map((l) => l.name.trim().toLowerCase())),
+    () =>
+      new Set((program?.levels ?? []).map((l) => l.name.trim().toLowerCase())),
     [program],
   );
 
   const rows = useMemo(() => {
-    const names = text.split("\n").map((n) => n.trim()).filter(Boolean);
+    const names = text
+      .split("\n")
+      .map((n) => n.trim())
+      .filter(Boolean);
     const seen = new Set<string>();
     return names.map((name) => {
       const key = name.toLowerCase();
@@ -101,7 +106,7 @@ export function BulkLevelsDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
           <p className="mb-3 text-[13px] text-gray-06">
             Adding to{" "}
             <span className="font-medium text-black-01">{program?.name}</span>
@@ -167,7 +172,7 @@ export function BulkLevelsDrawer({
               </>
             )}
           </div>
-        </div>
+        </ScrollArea>
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
           <Button variant="ghost" onClick={onClose} disabled={isLoading}>

@@ -1,5 +1,6 @@
 import { GraduationCap, Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -37,9 +38,9 @@ export function BranchDrawer({
     <Sheet open={code != null} onOpenChange={(next) => !next && onClose()}>
       <SheetContent
         side="right"
-        className="w-full gap-0 bg-white p-0 sm:max-w-md overflow-y-auto"
+        className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-md"
       >
-        <SheetHeader className="border-b border-border px-5 pb-4 pt-5 pr-12 text-left">
+        <SheetHeader className="shrink-0 border-b border-border px-5 pb-4 pt-5 pr-12 text-left">
           <SheetTitle className="flex items-center gap-2.5 font-mont text-base min-w-0">
             <span className="grid size-8 shrink-0 place-content-center rounded-md bg-pry-01 text-primary">
               <GraduationCap className="size-4" />
@@ -51,7 +52,10 @@ export function BranchDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="px-5 py-5 min-w-0">
+        {/* The body scrolls, the header does not. It used to scroll the whole
+            panel, so the branch's own name left the screen on the way down the
+            record it names. */}
+        <ScrollArea className="min-h-0 flex-1" viewportClassName="px-5 py-5">
           {isLoading ? (
             <div className="grid gap-3">
               <Skeleton className="h-16 w-full" />
@@ -106,7 +110,7 @@ export function BranchDrawer({
               </p>
             </>
           )}
-        </div>
+        </ScrollArea>
       </SheetContent>
     </Sheet>
   );

@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -133,7 +134,9 @@ export function GenerateArmsDrawer({
       toast.success(result.message);
       onClose();
     } catch (error) {
-      toast.error(parseApiError(error).message || "Those could not be created.");
+      toast.error(
+        parseApiError(error).message || "Those could not be created.",
+      );
     }
   };
 
@@ -152,7 +155,7 @@ export function GenerateArmsDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
           <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
             Level *
           </label>
@@ -165,7 +168,8 @@ export function GenerateArmsDrawer({
             <select
               value={levelId ?? ""}
               onChange={(e) => {
-                const next = levels.find((l) => l.id === Number(e.target.value)) ?? null;
+                const next =
+                  levels.find((l) => l.id === Number(e.target.value)) ?? null;
                 setLevelId(next?.id ?? null);
                 setBranch(defaultBranch(next));
               }}
@@ -271,17 +275,21 @@ export function GenerateArmsDrawer({
             )}
             {rows.length > 0 && toCreate === 0 && (
               <p className="mt-2 text-xs text-gray-05 text-pretty">
-                Every one of these already exists at {level?.name}. Nothing to do.
+                Every one of these already exists at {level?.name}. Nothing to
+                do.
               </p>
             )}
           </div>
-        </div>
+        </ScrollArea>
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
           <Button variant="ghost" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={save} disabled={!level || toCreate === 0 || isLoading}>
+          <Button
+            onClick={save}
+            disabled={!level || toCreate === 0 || isLoading}
+          >
             {isLoading && <Loader2 className="size-4 animate-spin" />}
             {toCreate > 1 ? `Create ${toCreate} classes` : "Create class"}
           </Button>

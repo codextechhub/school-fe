@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Loader2, Plus, TriangleAlert, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -135,7 +136,10 @@ export function SessionDrawer({
   const [touchedName, setTouchedName] = useState(false);
   const [editedName, setEditedName] = useState(false);
   /** The server's duplicate refusal, shown under the field it names. */
-  const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(null);
+  const [refusal, setRefusal] = useState<{
+    field: string;
+    message: string;
+  } | null>(null);
 
   const { data: branchData } = useGetMyBranchesQuery();
   const branches = useMemo(() => branchData?.data ?? [], [branchData]);
@@ -178,15 +182,18 @@ export function SessionDrawer({
   // Per-row, because the message belongs under the term that is wrong.
   const termErrors = draft.terms.map((t) => {
     if (!t.start_date || !t.end_date || !draft.start || !draft.end) return "";
-    if (t.end_date < t.start_date) return `${t.name || "This term"} ends before it starts.`;
+    if (t.end_date < t.start_date)
+      return `${t.name || "This term"} ends before it starts.`;
     if (t.start_date < draft.start || t.end_date > draft.end) {
       return `${t.name || "This term"} falls outside the session dates.`;
     }
     return "";
   });
 
-  const datesBackwards = !!draft.start && !!draft.end && draft.end <= draft.start;
-  const noBranchPicked = multiBranch && !draft.schoolWide && draft.branchIds.length === 0;
+  const datesBackwards =
+    !!draft.start && !!draft.end && draft.end <= draft.start;
+  const noBranchPicked =
+    multiBranch && !draft.schoolWide && draft.branchIds.length === 0;
 
   const valid =
     !!draft.name.trim() &&
@@ -225,7 +232,10 @@ export function SessionDrawer({
       const parsed = parseApiError(error);
       // A duplicate names the field it hit, so it goes under that field rather
       // than into a toast that vanishes before the person looks up.
-      if (parsed.code === "DUPLICATE_NAME" || parsed.code === "DUPLICATE_CODE") {
+      if (
+        parsed.code === "DUPLICATE_NAME" ||
+        parsed.code === "DUPLICATE_CODE"
+      ) {
         setTouchedName(true);
         setRefusal({
           field: String(parsed.detail.field ?? "name"),
@@ -254,7 +264,7 @@ export function SessionDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
           <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
             Session name *
           </label>
@@ -313,7 +323,9 @@ export function SessionDrawer({
               borrowing one that cannot express "these two". */}
           {multiBranch && (
             <div className="mt-5 border-t border-white-02 pt-4">
-              <p className="mb-2 text-[13px] font-medium text-gray-06">Applies to *</p>
+              <p className="mb-2 text-[13px] font-medium text-gray-06">
+                Applies to *
+              </p>
               <div className="grid gap-2 sm:grid-cols-2">
                 <ScopeOption
                   on={draft.schoolWide}
@@ -328,8 +340,8 @@ export function SessionDrawer({
               </div>
               {draft.schoolWide ? (
                 <p className="mt-2 text-xs text-gray-05 text-pretty">
-                  Covers every branch this school has, including any opened while
-                  this year is running.
+                  Covers every branch this school has, including any opened
+                  while this year is running.
                 </p>
               ) : (
                 <>
@@ -434,8 +446,13 @@ export function SessionDrawer({
                       value={term.start_date}
                       min={draft.start || undefined}
                       max={draft.end || undefined}
-                      onChange={(e) => setTerm(i, { start_date: e.target.value })}
-                      className={cn("h-9.5", termErrors[i] && "border-error-01")}
+                      onChange={(e) =>
+                        setTerm(i, { start_date: e.target.value })
+                      }
+                      className={cn(
+                        "h-9.5",
+                        termErrors[i] && "border-error-01",
+                      )}
                     />
                     <DatePickerInput
                       aria-label={`${term.name || `Term ${i + 1}`} end date`}
@@ -443,7 +460,10 @@ export function SessionDrawer({
                       min={term.start_date || draft.start || undefined}
                       max={draft.end || undefined}
                       onChange={(e) => setTerm(i, { end_date: e.target.value })}
-                      className={cn("h-9.5", termErrors[i] && "border-error-01")}
+                      className={cn(
+                        "h-9.5",
+                        termErrors[i] && "border-error-01",
+                      )}
                     />
                   </div>
                   {termErrors[i] && (
@@ -457,8 +477,8 @@ export function SessionDrawer({
 
             {draft.terms.length === 0 && (
               <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-error-text">
-                <TriangleAlert className="size-3.5" />
-                A session needs at least one term.
+                <TriangleAlert className="size-3.5" />A session needs at least
+                one term.
               </p>
             )}
           </div>
@@ -468,7 +488,7 @@ export function SessionDrawer({
               {refusal.message}
             </p>
           )}
-        </div>
+        </ScrollArea>
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
           <Button variant="ghost" onClick={onClose} disabled={saving}>
@@ -503,7 +523,9 @@ function ScopeOption({
       aria-pressed={on}
       className={cn(
         "rounded-lg border px-3 py-2 text-left text-sm",
-        on ? "border-primary bg-pry-01 text-primary" : "border-white-02 text-gray-06",
+        on
+          ? "border-primary bg-pry-01 text-primary"
+          : "border-white-02 text-gray-06",
       )}
     >
       {label}

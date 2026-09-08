@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
@@ -117,8 +118,13 @@ export function EntityDrawer({
   /** Overrides the first-three-letters rule where a kind needs its own. */
   deriveCode?: (name: string) => string;
 }) {
-  const { applies: multiBranch, isTied, branch: tiedBranch, branches, label: tiedLabel } =
-    useBranchLens();
+  const {
+    applies: multiBranch,
+    isTied,
+    branch: tiedBranch,
+    branches,
+    label: tiedLabel,
+  } = useBranchLens();
 
   const [draft, setDraft] = useState<EntityDraft>(initial);
   /**
@@ -131,7 +137,9 @@ export function EntityDrawer({
    * CLICKING one, so the click landed on empty space and the drawer appeared to
    * ignore them. That is the bug this rule exists to prevent, not a nicety.
    */
-  const [touched, setTouched] = useState<{ name?: boolean; code?: boolean }>({});
+  const [touched, setTouched] = useState<{ name?: boolean; code?: boolean }>(
+    {},
+  );
   const [edited, setEdited] = useState<{ name?: boolean; code?: boolean }>({});
   /**
    * Whether the code in the box is OURS or THEIRS.
@@ -143,7 +151,10 @@ export function EntityDrawer({
    * behind and fails again for the same reason - which is exactly what it did.
    */
   const [codeIsOurs, setCodeIsOurs] = useState(!initial.code);
-  const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(null);
+  const [refusal, setRefusal] = useState<{
+    field: string;
+    message: string;
+  } | null>(null);
 
   // Re-seed on a different row, during render rather than in an effect: an
   // effect paints the previous row's values for a frame first.
@@ -205,7 +216,8 @@ export function EntityDrawer({
   const nameEmpty = !!touched.name && !shownName.trim();
   const branchMissing = multiBranch && draft.branch === -1;
 
-  const valid = !!shownName.trim() && !nameEmpty && !branchMissing && extrasValid;
+  const valid =
+    !!shownName.trim() && !nameEmpty && !branchMissing && extrasValid;
   // Extras count as changes, or picking a department on an untouched form
   // would leave Save greyed out. Re-baselined per row below, not at mount.
   const dirty =
@@ -237,7 +249,10 @@ export function EntityDrawer({
       onClose();
     } catch (error) {
       const parsed = parseApiError(error);
-      if (parsed.code === "DUPLICATE_NAME" || parsed.code === "DUPLICATE_CODE") {
+      if (
+        parsed.code === "DUPLICATE_NAME" ||
+        parsed.code === "DUPLICATE_CODE"
+      ) {
         const field = String(parsed.detail.field ?? "name");
         setTouched((t) => ({ ...t, [field]: true }));
         setRefusal({ field, message: parsed.message });
@@ -245,7 +260,10 @@ export function EntityDrawer({
       }
       // Anything else - a scope conflict, a validation error - is already a
       // sentence written for this reader, so it is shown rather than swallowed.
-      setRefusal({ field: "", message: parsed.message || "That could not be saved." });
+      setRefusal({
+        field: "",
+        message: parsed.message || "That could not be saved.",
+      });
     }
   };
 
@@ -256,13 +274,15 @@ export function EntityDrawer({
         className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-lg"
       >
         <SheetHeader className="border-b border-border px-5 pb-4 pt-5 pr-12 text-left">
-          <SheetTitle className="truncate font-mont text-base">{copy.title}</SheetTitle>
+          <SheetTitle className="truncate font-mont text-base">
+            {copy.title}
+          </SheetTitle>
           <SheetDescription className="text-[13px] text-gray-01 text-pretty">
             {copy.subtitle}
           </SheetDescription>
         </SheetHeader>
 
-        <div className="min-w-0 flex-1 overflow-y-auto px-5 py-5">
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
           {leading}
 
           <Field
@@ -284,7 +304,9 @@ export function EntityDrawer({
                 patch({ name: e.target.value });
               }}
               // Only once they have actually typed something here. See `touched`.
-              onBlur={() => edited.name && setTouched((t) => ({ ...t, name: true }))}
+              onBlur={() =>
+                edited.name && setTouched((t) => ({ ...t, name: true }))
+              }
               placeholder={copy.namePlaceholder}
               aria-invalid={nameEmpty || refusal?.field === "name" || undefined}
             />
@@ -334,7 +356,9 @@ export function EntityDrawer({
               and a control with one answer is a question nobody can act on. */}
           {multiBranch && (
             <div className="mt-5 border-t border-white-02 pt-4">
-              <p className="mb-2 text-[13px] font-medium text-gray-06">Applies to *</p>
+              <p className="mb-2 text-[13px] font-medium text-gray-06">
+                Applies to *
+              </p>
 
               {lock ? (
                 <div className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5">
@@ -371,7 +395,9 @@ export function EntityDrawer({
                         value={draft.branch === -1 ? "" : String(draft.branch)}
                         onChange={(e) =>
                           patch({
-                            branch: e.target.value ? Number(e.target.value) : -1,
+                            branch: e.target.value
+                              ? Number(e.target.value)
+                              : -1,
                           })
                         }
                         options={branches.map((b) => ({
@@ -409,7 +435,7 @@ export function EntityDrawer({
               {refusal.message}
             </p>
           )}
-        </div>
+        </ScrollArea>
 
         <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
           <Button variant="ghost" onClick={onClose} disabled={saving}>
@@ -463,7 +489,9 @@ function ScopeOption({
       aria-pressed={on}
       className={cn(
         "rounded-lg border px-3 py-2 text-left text-sm",
-        on ? "border-primary bg-pry-01 text-primary" : "border-white-02 text-gray-06",
+        on
+          ? "border-primary bg-pry-01 text-primary"
+          : "border-white-02 text-gray-06",
       )}
     >
       {label}
