@@ -1,3 +1,4 @@
+import { ClickableCard } from "@/components/custom/surface";
 import { cn } from "@/lib/utils";
 
 import { PersonAvatar } from "../person-avatar";
@@ -43,6 +44,12 @@ export function SiblingsPill() {
  * Both screens use the same card because they are the same object seen from
  * two directions, and a guardian that looked one way in a list and another way
  * on a page would read as two different records.
+ *
+ * Built on `ClickableCard` rather than on a button of its own. That component's
+ * note records four hand-rolled copies of a clickable card of which only two
+ * responded to a cursor, so half the academics screens read as not clickable;
+ * this was another, and the guardians and the children on a guardian's page sat
+ * still while every other card in the app moved under the pointer.
  */
 export function PersonCard({
   name,
@@ -71,18 +78,20 @@ export function PersonCard({
   onOpen: () => void;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      // A real border, not a transparent one. The prototype draws these on a
-      // grey page where a white card separates itself; this app's page is also
-      // white, so a transparent edge left the cards as floating text with no
-      // outline at all. Every other surface in the app carries `border-border`,
-      // and the hover deepens it rather than introducing it.
-      className="min-w-0 rounded-[10px] border border-border bg-white px-5 py-4.5 text-left transition-colors hover:border-primary/40"
+    <ClickableCard
+      onOpen={onOpen}
+      label={`Open ${name}`}
+      // Roomier and rounder than the shared default, which is the shape the
+      // design gives a person: a name, a photograph and a sentence underneath
+      // need more air than a one-line row of settings does.
+      className="rounded-[10px] px-5 py-4.5 text-left"
     >
       <span className="flex items-start gap-3">
-        <PersonAvatar name={name} photoUrl={photoUrl} className="size-9.5 shrink-0" />
+        <PersonAvatar
+          name={name}
+          photoUrl={photoUrl}
+          className="size-9.5 shrink-0"
+        />
         <span className="min-w-0 flex-1">
           <span className="block truncate text-[14.5px] font-semibold text-black-01">
             {name}
@@ -105,7 +114,7 @@ export function PersonCard({
           )}
         </span>
       )}
-    </button>
+    </ClickableCard>
   );
 }
 

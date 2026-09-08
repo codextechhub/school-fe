@@ -79,7 +79,11 @@ export function ClickableCard({
       }}
       className={cn(
         "h-fit w-full min-w-0 cursor-pointer rounded-md border border-border bg-white px-4 py-3",
-        "transition-all ease-linear hover:scale-98 hover:border-pry-01",
+        // Two responses, because they answer two questions. The hover says the
+        // card is a control at all, and a phone has no hover - so the press is
+        // the only feedback a touch reader ever gets, and without it a tap on a
+        // card that takes a moment to load looks like a tap that missed.
+        "transition-all ease-linear hover:scale-98 hover:border-pry-01 active:scale-[0.96]",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         className,
       )}

@@ -37,11 +37,12 @@ export default function Guardians() {
   const [page, setPage] = useState(1);
 
   const { lens, narrowed, label } = useStudentsLens();
-  const { data, isLoading, isFetching, isError, refetch } = useGetGuardiansQuery({
-    ...lens,
-    search: search.trim() || undefined,
-    page,
-  });
+  const { data, isLoading, isFetching, isError, refetch } =
+    useGetGuardiansQuery({
+      ...lens,
+      search: search.trim() || undefined,
+      page,
+    });
 
   const rows = useMemo(() => data?.data ?? [], [data]);
   const pagination = data?.pagination;
@@ -76,7 +77,12 @@ export default function Guardians() {
       </div>
 
       <div className="flex flex-wrap items-center gap-2.5">
-        <div className="relative min-w-0 flex-1 basis-52">
+        {/* Capped rather than left to fill the row. A search box the width of
+            the page reads as the page's main content, and this one narrows a
+            grid of cards below it; the count then sits beside the box it
+            belongs to instead of alone at the far edge. Full width on a phone,
+            where there is nothing to share the row with. */}
+        <div className="relative min-w-0 flex-1 basis-52 sm:max-w-sm">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
           <input
             value={search}
