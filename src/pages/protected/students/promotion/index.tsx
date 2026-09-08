@@ -60,12 +60,15 @@ export default function Promotion() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [target, setTarget] = useState("");
-  const [overrides, setOverrides] = useState<Record<string, PromotionOutcome>>({});
+  const [overrides, setOverrides] = useState<Record<string, PromotionOutcome>>(
+    {},
+  );
   const [plan, setPlan] = useState<PromotionPlan | null>(null);
   const [done, setDone] = useState<PromotionBatch | null>(null);
   const [confirming, setConfirming] = useState(false);
 
-  const { data: sessionsData, isLoading: sessionsLoading } = useGetSessionsQuery();
+  const { data: sessionsData, isLoading: sessionsLoading } =
+    useGetSessionsQuery();
   const [preview, { isLoading: previewing }] = usePreviewPromotionMutation();
   const [run, { isLoading: running }] = useRunPromotionMutation();
 
@@ -87,7 +90,9 @@ export default function Promotion() {
       setPlan(result.data);
       return result.data;
     } catch (error) {
-      toast.error(writeErrorMessage(error, "We could not preview that promotion."));
+      toast.error(
+        writeErrorMessage(error, "We could not preview that promotion."),
+      );
       return null;
     }
   }
@@ -184,11 +189,18 @@ export default function Promotion() {
           loose on the page background read as four labels rather than one
           progress indicator with a position in it.
 
+          Sized to the four steps rather than to the page. Stretched, the tray
+          was a white band across the whole width with its content in the first
+          third and nothing in the rest, which reads as a panel whose contents
+          failed to load. Bordered for the same reason the cards are: the page
+          is white too, so an unbordered white tray has no edge at all and the
+          steps float on the background the tray exists to lift them off.
+
           Hidden on phones, where the labels do not fit - the strip scrolls and
           a reader sees "Target yea / Review studer / Dor", clipped words that
           read as broken. Nothing is lost: the footer says "Step 2 of 4 · Review
           students" on every width. */}
-      <ol className="hidden max-w-full gap-1 overflow-x-auto rounded-lg bg-white p-1.5 sm:flex">
+      <ol className="hidden w-fit max-w-full gap-1 overflow-x-auto rounded-lg border border-border bg-white p-1.5 sm:flex">
         {STEPS.map((label, i) => (
           <li key={label} className="min-w-0">
             <span
@@ -219,7 +231,10 @@ export default function Promotion() {
       {step === 0 && (
         <section className="grid gap-4">
           <div className="max-w-sm">
-            <label htmlFor="target-year" className="text-xs font-medium text-gray-05">
+            <label
+              htmlFor="target-year"
+              className="text-xs font-medium text-gray-05"
+            >
               Promote into
             </label>
             <NativeSelect
@@ -366,7 +381,11 @@ export default function Promotion() {
               ["Graduated", done.graduated],
               ["Held", done.held],
             ].map(([label, value]) => (
-              <KpiCard key={String(label)} label={String(label)} value={value} />
+              <KpiCard
+                key={String(label)}
+                label={String(label)}
+                value={value}
+              />
             ))}
           </div>
           <p className="text-sm text-gray-05">
@@ -375,7 +394,9 @@ export default function Promotion() {
               ` ${done.failed} could not be written and were left where they are.`}
           </p>
           <div>
-            <Button onClick={() => navigate(routesPath.PROTECTED.STUDENTS.INDEX)}>
+            <Button
+              onClick={() => navigate(routesPath.PROTECTED.STUDENTS.INDEX)}
+            >
               Back to the directory
             </Button>
           </div>
@@ -406,7 +427,10 @@ export default function Promotion() {
                 </Button>
               )}
               {plan && (
-                <Button onClick={toReview} disabled={previewing || nothingToMove}>
+                <Button
+                  onClick={toReview}
+                  disabled={previewing || nothingToMove}
+                >
                   Review students
                 </Button>
               )}
@@ -432,12 +456,12 @@ export default function Promotion() {
                 </p>
               }
             >
-            <Button
-              onClick={() => setConfirming(true)}
-              disabled={running || counts?.candidates === 0}
-            >
-              Run promotion
-            </Button>
+              <Button
+                onClick={() => setConfirming(true)}
+                disabled={running || counts?.candidates === 0}
+              >
+                Run promotion
+              </Button>
             </PermissionGate>
           )}
         </div>
@@ -455,7 +479,9 @@ export default function Promotion() {
         onConfirm={execute}
         title={`Promote ${counts?.candidates ?? 0} students into ${plan?.to_session}?`}
         body={`This moves every student to their target class in one action and cannot be undone from here.${
-          counts?.graduate ? ` ${counts.graduate} will leave the roll as graduates.` : ""
+          counts?.graduate
+            ? ` ${counts.graduate} will leave the roll as graduates.`
+            : ""
         }`}
         confirmLabel="Run promotion"
         busy={running}
