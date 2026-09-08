@@ -197,11 +197,26 @@ export default function StaffPosting() {
                   <RosterRow
                     key={person.id}
                     person={person}
-                    selectable={group.movable}
+                    // The group says whether a posting is this screen's to
+                    // change; the row says whether this person still has one
+                    // to change. Somebody who has left keeps their place on
+                    // the roster and loses the tick, and the server refuses
+                    // the move as well - a greyed row is a courtesy, and the
+                    // refusal is what makes it true.
+                    selectable={group.movable && person.on_roll}
                     picked={picked.includes(person.id)}
                     onToggle={() => toggle(person.id)}
+                    viaRoles={person.via_roles}
+                    // Straight to the tab that changes the thing this group is
+                    // about. A row saying a role brings somebody here and then
+                    // opening on their overview leaves the reader to go and
+                    // find the roles themselves.
                     onOpen={() =>
-                      navigate(routesPath.PROTECTED.STAFF.PROFILE_ID(person.id))
+                      navigate(
+                        group.key === "reaching_here"
+                          ? `${routesPath.PROTECTED.STAFF.PROFILE_ID(person.id)}?tab=access`
+                          : routesPath.PROTECTED.STAFF.PROFILE_ID(person.id),
+                      )
                     }
                   />
                 ))}
@@ -231,24 +246,47 @@ export default function StaffPosting() {
   );
 }
 
+/**
+ * One person on a branch's roster.
+ *
+ * **Somebody who has left keeps their place and loses the tick.** Hiding them
+ * would take with them the only record on this screen that they were ever at
+ * the branch, which is the question a school asks in September about last
+ * year. Drawn faded, with their status chip carrying the reason, so the row
+ * reads as finished rather than as one more person at work.
+ *
+ * `viaRoles` is present only in the reaching group, where the row has to name
+ * what carries the person here: "reaching through a role" without the role is
+ * a fact nobody can go and change. It also says which of two kinds the role
+ * is, because they need different acts - unpinning a role pinned to this
+ * branch stops them reaching it, while narrowing a school-wide one takes them
+ * off every other branch's roster at the same time.
+ */
 function RosterRow({
   person,
   selectable,
   picked,
+  viaRoles,
   onToggle,
   onOpen,
 }: {
   person: StaffListRow;
   selectable: boolean;
   picked: boolean;
+  viaRoles?: { name: string; school_wide: boolean }[];
   onToggle: () => void;
   onOpen: () => void;
 }) {
+  const left = !person.on_roll;
+
   return (
     <li
       className={cn(
         "flex flex-wrap items-center gap-3 rounded-lg border px-3.5 py-2.5",
         picked ? "border-primary bg-white-03" : "border-white-02",
+        // Faded rather than hidden or struck through. A strikethrough reads as
+        // deleted, and the record is intact.
+        left && "bg-gray-03/40 opacity-70",
       )}
     >
       {selectable ? (
@@ -288,6 +326,21 @@ function RosterRow({
           {person.staff_number || "No staff ID"}
           {person.roles.length ? ` · ${person.roles.join(", ")}` : ""}
         </span>
+        {/* Wraps rather than truncating. The half that gets cut on a phone is
+            the half that decides what to do about it: "Teacher, which
+            reache..." is the same sentence for a role pinned to this branch
+            and one that reaches every branch, and those need opposite acts. */}
+        {viaRoles && viaRoles.length > 0 && (
+          <span className="mt-0.5 block text-xs text-primary">
+            {viaRoles
+              .map((role) =>
+                role.school_wide
+                  ? `${role.name}, which reaches every branch`
+                  : `${role.name}, pinned to this branch`,
+              )
+              .join(" · ")}
+          </span>
+        )}
       </button>
 
       {person.teaching_load > 0 && (

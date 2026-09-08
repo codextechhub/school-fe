@@ -94,6 +94,15 @@ export interface StaffListRow {
   staff_number: string;
   job_title: string;
   /**
+   * Still employed. False once somebody has resigned or been terminated.
+   *
+   * The server's own answer rather than a status comparison made here, so the
+   * two codes that mean "has left" are decided in one place. A screen drawing
+   * a finished row differently reads this rather than re-deriving the rule and
+   * getting it half right.
+   */
+  on_roll: boolean;
+  /**
    * What was DECIDED about their employment. Never `ON_LEAVE`.
    *
    * Five values a person sets through a logged transition. Use it for history,
@@ -497,7 +506,20 @@ export interface StaffRoster {
      * reader they cannot do the thing without telling them who can.
      */
     change_it: string;
-    rows: StaffListRow[];
+    /**
+     * Rows carry `via_roles` in the reaching group and nowhere else: the roles
+     * that bring that person to this branch. Per person rather than per group,
+     * because it differs per person and one sentence over the group could name
+     * nobody's.
+     *
+     * `school_wide` separates the two cases, which need different acts. A
+     * pinned role is unpinned and the person stops reaching this branch. A
+     * school-wide one reaches every branch by being pinned to none, so
+     * narrowing it takes them off every other branch's roster too.
+     */
+    rows: (StaffListRow & {
+      via_roles?: { name: string; school_wide: boolean }[];
+    })[];
   }[];
 }
 

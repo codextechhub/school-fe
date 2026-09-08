@@ -28,6 +28,7 @@ const ROW: StaffListRow = {
   job_title: "Lead Teacher",
   employment_status: "ACTIVE",
   employment_status_label: "Active",
+  on_roll: true,
   display_employment_status: "ON_LEAVE",
   display_employment_status_label: "On Leave",
   employment_type: "FULL_TIME",
