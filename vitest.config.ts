@@ -18,9 +18,16 @@ export default defineConfig({
     // the auth-session utilities under test.
     environment: "happy-dom",
     // Discovery skips node_modules by default; the package lives there now.
-    exclude: ["**/dist/**", "**/node_modules/**/node_modules/**"],
+    exclude: [
+      "**/dist/**",
+      "**/node_modules/**/node_modules/**",
+      // The school host replaces this cookie-based adapter at build time.
+      "node_modules/@xvs/finance/src/utils/finance-documents.test.ts",
+    ],
     include: [
-      "node_modules/@xvs/finance/src/**/*.test.{ts,tsx}","src/**/*.test.{ts,tsx}"],
+      "node_modules/@xvs/finance/src/**/*.test.{ts,tsx}",
+      "src/**/*.test.{ts,tsx}",
+    ],
     env: {
       VITE_BACKEND_URL: "http://test.local/v1",
     },
