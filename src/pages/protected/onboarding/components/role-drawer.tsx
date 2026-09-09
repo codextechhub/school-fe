@@ -227,19 +227,23 @@ export function RoleDrawer({
 
   // The catalogue as this school may see it: modules and permissions the plan
   // does not reach are dropped rather than dimmed, so a group left with nothing
-  // in it never draws a heading. A permission the role already holds survives
-  // the filter, because it must stay removable after a tier change.
-  const modules = useMemo(() => {
-    const held = mine ? mine.ticked : baseline;
-    return (catalogue.data?.data ?? [])
-      .map((group) => ({
-        ...group,
-        permissions: group.permissions.filter(
-          (entry) => entry.available || held.has(entry.key),
-        ),
-      }))
-      .filter((group) => group.permissions.length > 0);
-  }, [catalogue.data, mine, baseline]);
+  // in it never draws a heading.
+  //
+  // No exception for a permission the role already holds, because after a tier
+  // change it does not hold it: moving down a tier revokes the grants the new
+  // tier does not reach, in `apply_plan_entitlements`. Showing a row here for a
+  // grant that no longer exists would be the picker disagreeing with the
+  // product about what the school has.
+  const modules = useMemo(
+    () =>
+      (catalogue.data?.data ?? [])
+        .map((group) => ({
+          ...group,
+          permissions: group.permissions.filter((entry) => entry.available),
+        }))
+        .filter((group) => group.permissions.length > 0),
+    [catalogue.data],
+  );
   const searching = search.trim().length > 0;
 
   /** Groups narrowed by the search box, with empty ones dropped. */
@@ -622,33 +626,19 @@ export function RoleDrawer({
                         </button>
                       )}
                       <div className="flex flex-col gap-2">
-                        {group.permissions
-                          .filter((entry) => entry.available || ticked.has(entry.key))
-                          .map((entry) => {
+                        {group.permissions.map((entry) => {
                           const on = ticked.has(entry.key);
-                          // A permission the plan does not reach is not shown at
-                          // all. It was greyed with "Available once this module
-                          // is on your plan", which offered a school something
-                          // it cannot have from inside the product; what a
-                          // school could buy is a conversation with CodeX, not a
-                          // dead row in a picker.
-                          //
-                          // One exception, and it is not a compromise: a
-                          // permission the role ALREADY holds stays visible even
-                          // when the plan no longer reaches it. A school that
-                          // moves down a tier must be able to see and remove
-                          // what its roles still carry, and a row that vanishes
-                          // while remaining granted is a permission nobody can
-                          // find to take away.
-                          const disabled = readOnly || !entry.available;
+                          // Everything here is on the plan: the list above
+                          // dropped what is not. It was greyed with "Available
+                          // once this module is on your plan", which offered a
+                          // school something it cannot have from inside the
+                          // product; what a school could buy is a conversation
+                          // with CodeX, not a dead row in a picker.
+                          const disabled = readOnly;
                           return (
                             <label
                               key={entry.key}
-                              title={
-                                entry.available
-                                  ? entry.key
-                                  : "Granted before, and no longer on your plan"
-                              }
+                              title={entry.key}
                               className={cn(
                                 "flex items-start gap-2.5 text-[13px] text-pretty",
                                 on ? "text-black-01" : "text-gray-05",
