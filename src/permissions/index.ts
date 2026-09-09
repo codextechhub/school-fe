@@ -18,7 +18,8 @@ import {
  *                       92=exports (the Export Centre, shared with console-fe)
  *   RR = resource       01 02 03 … (assigned sequentially per module)
  *   AA = action         01=view   02=create  03=update  04=delete
- *                       05=approve 08=manage  09=suspend  10=reactivate
+ *                       05=approve 07=promote 08=manage  09=suspend
+ *                       10=reactivate
  *                       11=assign  12=start   13=end   14=run   15=execute
  *                       16=publish 17=import  18=export  19=apply
  *                       39=view_sensitive
@@ -57,6 +58,10 @@ const REGISTRY: Record<string, string> = {
   "100317": "school.students.import",
   "100318": "school.students.export",
   "100339": "school.students.view_sensitive",
+  // Moving a cohort up a level at the end of a session. Its own key, not part
+  // of `.manage`: a registrar who may withdraw one student is not therefore
+  // the person who may advance the whole school by a year.
+  "100307": "school.students.promote",
 
   // ── school / teachers  (MM=10, RR=04) ──────────────────────────────────────
   // The resource is `teachers` and not `staff`: the key is a primary key that
@@ -67,6 +72,16 @@ const REGISTRY: Record<string, string> = {
   "100403": "school.teachers.update",
   "100408": "school.teachers.manage",
   "100411": "school.teachers.assign",
+
+  // ── school / staff records  (MM=10, RR=11) ─────────────────────────────────
+  // Employment history, qualifications and contract documents, kept apart from
+  // the directory keys above for the same reason leave is: a colleague's
+  // salary grade and disciplinary record are not something everyone who may
+  // read the staff list may also read. There is no `.create` and no `.manage`
+  // - a record is written alongside the person it belongs to, and it is
+  // corrected rather than deleted.
+  "101101": "school.staff_records.view",
+  "101103": "school.staff_records.update",
 
   // ── school / staff leave  (MM=10, RR=10) ───────────────────────────────────
   // A resource of its own rather than more teacher verbs, because who is off
@@ -83,6 +98,8 @@ const REGISTRY: Record<string, string> = {
   "100503": "school.administrators.update",
   "100509": "school.administrators.suspend",
   "100510": "school.administrators.reactivate",
+  // Inviting a list of administrators from a file rather than one at a time.
+  "100517": "school.administrators.import",
 
   // ── school / fees  (MM=10, RR=06) ──────────────────────────────────────────
   "100601": "school.fees.view",
@@ -223,6 +240,12 @@ const REGISTRY: Record<string, string> = {
   "920446": "exports.file.download",
   "920506": "exports.sensitive_field.export",
   "920601": "exports.activity.view",
+  // A saved export that runs on its own timetable rather than when somebody
+  // presses a button. school_admin alone, because an export nobody watches is
+  // data leaving the school unattended.
+  "920701": "exports.schedule.view",
+  "920702": "exports.schedule.create",
+  "920708": "exports.schedule.manage",
 
   // ── academics / structure  (MM=30, RR=04) ──────────────────────────────────
   // Departments, programs and levels. One resource because they are one screen
@@ -233,6 +256,9 @@ const REGISTRY: Record<string, string> = {
   "300402": "academics.structure.create",
   "300403": "academics.structure.update",
   "300408": "academics.structure.manage",
+  // Loading a whole structure from a spreadsheet, which is how a school with
+  // forty levels arrives rather than typing them.
+  "300417": "academics.structure.import",
 
   // ── academics / subject  (MM=30, RR=05) ────────────────────────────────────
   // Subjects and the levels they are offered at. Editing offerings is `.update`,
@@ -243,11 +269,10 @@ const REGISTRY: Record<string, string> = {
   "300508": "academics.subject.manage",
 
   // ── academics / timetable  (MM=30, RR=06) ──────────────────────────────────
-  // Rooms, the bell schedule, class timetables and exam scheduling: one
-  // resource, because the backend seeds one. NOT four more uses of the calendar
-  // keys - adding a public holiday and rebuilding the school's entire timetable
-  // are not one act, and merging them would hand `academics.calendar.manage` to
-  // anyone who may edit a lesson.
+  // Rooms, the bell schedule and class timetables. NOT more uses of the
+  // calendar keys - adding a public holiday and rebuilding the school's entire
+  // timetable are not one act, and merging them would hand
+  // `academics.calendar.manage` to anyone who may edit a lesson.
   //
   // `.manage` is the DELETE verb here as everywhere else, and it is also what
   // "Clear this class's timetable" demands. `.publish` is its own action rather
@@ -258,6 +283,18 @@ const REGISTRY: Record<string, string> = {
   "300603": "academics.timetable.update",
   "300608": "academics.timetable.manage",
   "300616": "academics.timetable.publish",
+
+  // ── academics / exams  (MM=30, RR=07) ──────────────────────────────────────
+  // Exam scheduling: papers, their rooms and the timetable they are published
+  // on. A resource of its own rather than more timetable verbs, because the
+  // two are sold apart - a weekly lesson grid is part of Calendar at Plus and
+  // exam scheduling is Calendar at Advanced. Sharing a key would have meant
+  // one of the two was priced wrong for every school on the platform.
+  "300701": "academics.exam.view",
+  "300702": "academics.exam.create",
+  "300703": "academics.exam.update",
+  "300708": "academics.exam.manage",
+  "300716": "academics.exam.publish",
 
   // ── platform surfaces the shared screens reach  (MM=11) ────────────────────
   // Platform keys, deliberately outside the school namespace at MM=10, and the
@@ -332,6 +369,7 @@ export const P = {
   IMPORT_STUDENTS:         "100317",  // load a roll from a spreadsheet
   EXPORT_STUDENTS:         "100318",  // export the directory as it is filtered
   VIEW_STUDENT_SENSITIVE:  "100339",  // read FLS-gated sensitive student fields
+  PROMOTE_STUDENTS:        "100307",  // advance a cohort to the next level
 
   // ── Staff Management ───────────────────────────────────────────────────────
   // The backend resource is still `teachers`, and these keys govern every
@@ -341,6 +379,13 @@ export const P = {
   MODIFY_TEACHER:          "100403",  // edit a record, its records and its posting
   MANAGE_TEACHERS:         "100408",  // employment transitions and deletions
   ASSIGN_TEACHING:         "100411",  // write a teaching duty, set a class teacher
+
+  // ── Staff Records ──────────────────────────────────────────────────────────
+  // Employment history, qualifications and contract documents. Separate from
+  // the directory keys above: reading the staff list is not reading somebody's
+  // contract.
+  VIEW_STAFF_RECORDS:      "101101",  // read a colleague's employment record
+  UPDATE_STAFF_RECORD:     "101103",  // correct a record or attach a document
 
   // ── Staff Leave ────────────────────────────────────────────────────────────
   VIEW_LEAVE:              "101001",  // read somebody else's leave
@@ -353,6 +398,7 @@ export const P = {
   MODIFY_ADMINISTRATOR:    "100503",  // edit an administrator's profile
   SUSPEND_ADMINISTRATOR:   "100509",  // suspend an administrator account
   REACTIVATE_ADMINISTRATOR:"100510",  // reactivate a suspended administrator
+  IMPORT_ADMINISTRATORS:   "100517",  // invite a list of them from a file
 
   // ── Fees ───────────────────────────────────────────────────────────────────
   VIEW_FEES:               "100601",  // view fee structures and balances
@@ -466,6 +512,7 @@ export const P = {
   CREATE_STRUCTURE:        "300402",  // add a department, program or level (incl. bulk levels)
   MODIFY_STRUCTURE:        "300403",  // edit a department, program or level
   MANAGE_STRUCTURE:        "300408",  // delete a department, program or level
+  IMPORT_STRUCTURE:        "300417",  // load departments, programs and levels from a file
 
   // ── Subjects ───────────────────────────────────────────────────────────────
   BROWSE_SUBJECTS:         "300501",  // view subjects and where they are offered
@@ -473,15 +520,23 @@ export const P = {
   MODIFY_SUBJECT:          "300503",  // edit a subject, incl. the levels it is offered at
   MANAGE_SUBJECTS:         "300508",  // delete a subject
 
-  // ── Rooms, Bell Schedule, Timetables and Exams ─────────────────────────────
-  BROWSE_TIMETABLES:       "300601",  // view rooms, bells, class/teacher grids, exams
-  CREATE_TIMETABLE_ENTRY:  "300602",  // add a room, a period, a lesson or an exam paper
+  // ── Rooms, Bell Schedule and Timetables ────────────────────────────────────
+  BROWSE_TIMETABLES:       "300601",  // view rooms, bells and the class/teacher grids
+  CREATE_TIMETABLE_ENTRY:  "300602",  // add a room, a period or a lesson
   MODIFY_TIMETABLE_ENTRY:  "300603",  // edit one, and duplicate a class's week into another
-  MANAGE_TIMETABLES:       "300608",  // delete a room/period/paper, and clear a whole grid
-  PUBLISH_TIMETABLE:       "300616",  // publish a class timetable or an exam timetable
+  MANAGE_TIMETABLES:       "300608",  // delete a room or period, and clear a whole grid
+  PUBLISH_TIMETABLE:       "300616",  // publish a class timetable
+
+  // ── Exams ──────────────────────────────────────────────────────────────────
+  // Priced apart from the weekly grid above: lessons are Calendar at Plus and
+  // exams are Calendar at Advanced, so the two cannot share a key.
+  BROWSE_EXAMS:            "300701",  // view exam papers and the exam timetable
+  CREATE_EXAM:             "300702",  // add an exam paper and place it
+  MODIFY_EXAM:             "300703",  // edit a paper, its room or its slot
+  MANAGE_EXAMS:            "300708",  // delete a paper, clear an exam timetable
+  PUBLISH_EXAM_TIMETABLE:  "300716",  // publish the exam timetable to the school
 
   // ── Export Centre ──────────────────────────────────────────────────────────
-  // No school role holds these yet - see the registry note.
   // Named as the shared Export Centre screens name them, for the same reason
   // the import keys are. These codes DO match the console's, because the export
   // module was numbered once and both apps took the same numbers.
@@ -497,6 +552,9 @@ export const P = {
   DOWNLOAD_EXPORT_FILE:    "920446",  // download a produced file
   EXPORT_SENSITIVE_FIELDS: "920506",  // let restricted columns leave the school
   VIEW_EXPORT_ACTIVITY:    "920601",  // read who exported what
+  VIEW_EXPORT_SCHEDULES:   "920701",  // read exports that run on a timetable
+  CREATE_EXPORT_SCHEDULE:  "920702",  // put a saved export on a timetable
+  MANAGE_EXPORT_SCHEDULES: "920708",  // pause, edit or delete a scheduled export
 
 } as const;
 

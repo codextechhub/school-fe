@@ -43,6 +43,7 @@ import {
   Users,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useCapabilities } from "@/hooks/use-capabilities";
 import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
@@ -55,6 +56,11 @@ import { SchoolMark } from "./school-mark";
 // item always renders. `permissionMode` decides whether a list requires ANY
 // (default) or ALL of the listed codes.
 type NavPermission = PermissionCode | PermissionCode[] | null | undefined;
+
+// A nav item may also declare the plan capability its door needs. Permission
+// and capability are different questions - what this reader may do, and what
+// the school bought - and a door has to pass both. Most doors declare none,
+// because most of the product is on every plan.
 
 /**
  * Guardians is a RECORD, not a worklist.
@@ -78,6 +84,8 @@ interface NavItem {
   isActive: boolean;
   childActive: boolean;
   permission?: NavPermission;
+  /** Plan capability key, for a door that is sold rather than included. */
+  capability?: string;
   permissionMode?: "any" | "all";
   /** A live count of work waiting behind this item. Omitted when there is none. */
   badge?: number;
@@ -119,6 +127,10 @@ export function AppSidebar({
   const {
     hasPermission, hasAnyPermission, hasAllPermissions, hasModuleAccess,
   } = usePermissions();
+  // What the school bought, which is a separate question from what this reader
+  // may do. Unknown reads as allowed, so the nav never arrives empty while the
+  // answer is in flight - see the hook.
+  const { hasCapability } = useCapabilities();
 
   const school = useAppSelector(selectSchool);
   const user = useAppSelector(selectUser);
@@ -181,9 +193,12 @@ export function AppSidebar({
   // the hook fetches it with the token and returns a renderable blob: URL.
   const logoBlobUrl = useSchoolLogo();
 
-  // A nav item is visible when it declares no permission, or when the current
-  // user satisfies the declared permission(s) per the item's mode.
+  // A nav item is visible when the school's plan reaches it AND the reader's
+  // role allows it. Both, because either alone offers a door that opens onto a
+  // refusal: an administrator holds every key, so the role question is always
+  // yes for them and says nothing about whether the school bought the product.
   const canSee = (item: NavItem): boolean => {
+    if (!hasCapability(item.capability)) return false;
     const permission = item.permission;
     if (permission === null || permission === undefined) return true;
     const codes = Array.isArray(permission) ? permission : [permission];
@@ -227,6 +242,92 @@ export function AppSidebar({
     permission: P.VIEW_GO_LIVE_REQUESTS,
   };
 
+  /**
+   * Academic Structure, hoisted so onboarding can show the same door.
+   *
+   * Building the structure is a REQUIRED onboarding step with six screens
+   * under it, and the onboarding sidebar carried only the control room and the
+   * gate. A school setting up sessions, then departments, then programmes,
+   * then classes, then subjects had to return to the control room and reopen
+   * the card between each one. It is the same door in both places rather than
+   * a second copy, so a screen added below appears in onboarding too.
+   */
+  const academicStructureDoor: NavItem = {
+    // Academic Structure is the module: the overview and everything that
+    // hangs off it. Submenus appear as their screens land - a nav item that
+    // 404s is a door drawn on a wall, so Departments, Programmes, Subjects
+    // and Assignments join this list in the phases that build them.
+    title: "Academic Structure",
+    url: "#",
+    icon: BookOpen,
+    isActive: location.startsWith(
+      routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
+    ),
+    childActive: location.startsWith(
+      routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
+    ),
+    // The group opens for anyone who can read any part of the structure;
+    // each child is gated on its own key below.
+    permission: [P.BROWSE_STRUCTURE, P.BROWSE_SESSIONS, P.BROWSE_CLASSES],
+    permissionMode: "any",
+    items: (
+      [
+        {
+          title: "Overview",
+          url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
+          // Exact match: every child below starts with this path, so
+          // `includes` would light Overview on all of them.
+          isActive:
+            location === routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
+          perm: P.BROWSE_STRUCTURE,
+        },
+        {
+          title: "Sessions & Terms",
+          url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
+          isActive: location.startsWith(
+            routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
+          ),
+          perm: P.BROWSE_SESSIONS,
+        },
+        {
+          title: "Departments",
+          url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.DEPARTMENTS,
+          isActive: location.startsWith(
+            routesPath.PROTECTED.ACADEMIC_STRUCTURE.DEPARTMENTS,
+          ),
+          perm: P.BROWSE_STRUCTURE,
+        },
+        {
+          title: "Programmes & Levels",
+          url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,
+          isActive: location.startsWith(
+            routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,
+          ),
+          perm: P.BROWSE_STRUCTURE,
+        },
+        {
+          title: "Classes & Arms",
+          url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
+          isActive: location.startsWith(
+            routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
+          ),
+          perm: P.BROWSE_CLASSES,
+        },
+        {
+          title: "Subjects",
+          url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.SUBJECTS,
+          isActive: location.startsWith(
+            routesPath.PROTECTED.ACADEMIC_STRUCTURE.SUBJECTS,
+          ),
+          perm: P.BROWSE_SUBJECTS,
+        },
+      ] as { title: string; url: string; isActive: boolean; perm: PermissionCode }[]
+    )
+      .filter((sub) => hasPermission(sub.perm))
+      // `perm` is this file's gate, not part of the NavItem shape.
+      .map((sub) => ({ title: sub.title, url: sub.url, isActive: sub.isActive })),
+  };
+
   const onboardingNav: NavItem[] = [
     {
       title: "Control Room",
@@ -240,6 +341,7 @@ export function AppSidebar({
       childActive: false,
       permission: P.VIEW_ONBOARDING,
     },
+    academicStructureDoor,
     goLiveDoor,
   ].filter(canSee);
 
@@ -465,81 +567,7 @@ export function AppSidebar({
       ...staffDoors,
     ],
     academics: [
-      {
-        // Academic Structure is the module: the overview and everything that
-        // hangs off it. Submenus appear as their screens land - a nav item that
-        // 404s is a door drawn on a wall, so Departments, Programmes, Subjects
-        // and Assignments join this list in the phases that build them.
-        title: "Academic Structure",
-        url: "#",
-        icon: BookOpen,
-        isActive: location.startsWith(
-          routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
-        ),
-        childActive: location.startsWith(
-          routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
-        ),
-        // The group opens for anyone who can read any part of the structure;
-        // each child is gated on its own key below.
-        permission: [P.BROWSE_STRUCTURE, P.BROWSE_SESSIONS, P.BROWSE_CLASSES],
-        permissionMode: "any",
-        items: (
-          [
-            {
-              title: "Overview",
-              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
-              // Exact match: every child below starts with this path, so
-              // `includes` would light Overview on all of them.
-              isActive:
-                location === routesPath.PROTECTED.ACADEMIC_STRUCTURE.INDEX,
-              perm: P.BROWSE_STRUCTURE,
-            },
-            {
-              title: "Sessions & Terms",
-              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
-              isActive: location.startsWith(
-                routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
-              ),
-              perm: P.BROWSE_SESSIONS,
-            },
-            {
-              title: "Departments",
-              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.DEPARTMENTS,
-              isActive: location.startsWith(
-                routesPath.PROTECTED.ACADEMIC_STRUCTURE.DEPARTMENTS,
-              ),
-              perm: P.BROWSE_STRUCTURE,
-            },
-            {
-              title: "Programmes & Levels",
-              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,
-              isActive: location.startsWith(
-                routesPath.PROTECTED.ACADEMIC_STRUCTURE.PROGRAMS,
-              ),
-              perm: P.BROWSE_STRUCTURE,
-            },
-            {
-              title: "Classes & Arms",
-              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
-              isActive: location.startsWith(
-                routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
-              ),
-              perm: P.BROWSE_CLASSES,
-            },
-            {
-              title: "Subjects",
-              url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.SUBJECTS,
-              isActive: location.startsWith(
-                routesPath.PROTECTED.ACADEMIC_STRUCTURE.SUBJECTS,
-              ),
-              perm: P.BROWSE_SUBJECTS,
-            },
-          ] as { title: string; url: string; isActive: boolean; perm: PermissionCode }[]
-        )
-          .filter((sub) => hasPermission(sub.perm))
-          // `perm` is this file's gate, not part of the NavItem shape.
-          .map((sub) => ({ title: sub.title, url: sub.url, isActive: sub.isActive })),
-      },
+      academicStructureDoor,
       {
         // Its own module now, not a child of academics management. The design
         // splits it into two siblings - what a school DATES, and what runs
@@ -726,7 +754,7 @@ export function AppSidebar({
       // would hide the area from somebody who legitimately holds a different
       // part of it. hasModuleAccess reads the backend keys directly, which is
       // what the area's own sub-navigation already does with its prefixes.
-      ...(hasModuleAccess("finance.")
+      ...(hasModuleAccess("finance.") && hasCapability("finance")
         ? [{
             title: "Finance",
             url: routesPath.PROTECTED.FINANCE.INDEX,
@@ -737,7 +765,7 @@ export function AppSidebar({
           }]
         : []),
       // Procurement, gated the same way and for the same reason.
-      ...(hasModuleAccess("procurement.")
+      ...(hasModuleAccess("procurement.") && hasCapability("procurement")
         ? [{
             title: "Procurement",
             url: routesPath.PROTECTED.PROCUREMENT.INDEX,
@@ -763,6 +791,11 @@ export function AppSidebar({
         isActive: location.startsWith("/data-imports"),
         childActive: location.startsWith("/data-imports"),
         permission: P.VIEW_IMPORT_BATCHES,
+        // Loading rows from a file is sold, and an administrator holds the
+        // import keys whether or not their school bought it. Without this the
+        // door opens, the wizard runs, and the school learns it cannot import
+        // only once it has chosen a file.
+        capability: "bulk_import",
       },
       // Saved exports is the door rather than Files, because a saved export is
       // the thing a reader names and returns to; a file is one run of one.
@@ -803,6 +836,7 @@ export function AppSidebar({
         // entitled to it, which is the quieter half of the same fault.
         permission: [P.VIEW_SAVED_EXPORTS, P.VIEW_EXPORT_RUNS, P.DOWNLOAD_EXPORT_FILE],
         permissionMode: "any",
+        capability: "data_export",
       },
     ],
   };
