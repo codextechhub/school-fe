@@ -30,6 +30,11 @@ import { PersonAvatar } from "../../students/person-avatar";
  * registrar is theirs. She is not at Ikeja; she belongs to the school, and she
  * appears on every branch's roster.
  *
+ * **A group nobody is in is not drawn at all.** An empty box still costs a
+ * heading, a count of nought and a paragraph saying what would go in it, so a
+ * branch whose staff are all posted there read as two thirds absence and a
+ * reader had to check three boxes to find the one list with anybody on it.
+ *
  * **Only the first group can be selected**, because a posting is the only one
  * of the three this screen can change. Somebody reaching Ikeja through a
  * branch-pinned Teacher grant is moved by changing that grant, not by moving
@@ -169,29 +174,41 @@ export default function StaffPosting() {
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </Surface>
+      ) : !roster.total ? (
+        <OutlinedNotice
+          icon={Building2}
+          title="Nobody on this roster"
+          body="No one is based here, reaches here through a role, or belongs to the school as a whole. Post somebody here from their own record, or from another branch's roster."
+        />
       ) : (
-        roster.groups.map((group) => (
-          <Surface as="section" key={group.key} className="px-6 py-5">
-            <div className="flex flex-wrap items-baseline gap-2.5">
-              <h3 className="text-sm font-semibold text-black-01">
-                {group.title}
-              </h3>
-              <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] font-medium text-gray-01">
-                {group.rows.length}
-              </span>
-              {/* Where it IS changed, from the server, rather than only that
+        // Only the groups with somebody in them. An empty box still costs a
+        // heading, a count of nought and a paragraph explaining what would go
+        // in it, so a branch with one kind of person on it read as two thirds
+        // absence - and the reader had to check three boxes to find the one
+        // list that had anybody.
+        roster.groups
+          .filter((group) => group.rows.length > 0)
+          .map((group) => (
+            <Surface as="section" key={group.key} className="px-6 py-5">
+              <div className="flex flex-wrap items-baseline gap-2.5">
+                <h3 className="text-sm font-semibold text-black-01">
+                  {group.title}
+                </h3>
+                <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] font-medium text-gray-01">
+                  {group.rows.length}
+                </span>
+                {/* Where it IS changed, from the server, rather than only that
                   it is not here. A group labelled as somebody else's to move
                   leaves a reader knowing they cannot do the thing and not who
                   can. */}
-              {!group.movable && group.change_it && (
-                <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] text-gray-01">
-                  {group.change_it}
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-gray-05">{group.note}</p>
+                {!group.movable && group.change_it && (
+                  <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] text-gray-01">
+                    {group.change_it}
+                  </span>
+                )}
+              </div>
+              <p className="mt-1 text-xs text-gray-05">{group.note}</p>
 
-            {group.rows.length ? (
               <ul className="mt-4 grid gap-2.5">
                 {group.rows.map((person) => (
                   <RosterRow
@@ -221,13 +238,8 @@ export default function StaffPosting() {
                   />
                 ))}
               </ul>
-            ) : (
-              <p className="mt-4 text-[13px] text-gray-05">
-                Nobody in this group.
-              </p>
-            )}
-          </Surface>
-        ))
+            </Surface>
+          ))
       )}
 
       <p className="flex items-start gap-1.5 text-xs text-gray-05">
