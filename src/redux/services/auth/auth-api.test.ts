@@ -1,5 +1,4 @@
 import { configureStore } from "@reduxjs/toolkit";
-import Cookies from "js-cookie";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("sonner", () => ({
@@ -9,6 +8,7 @@ vi.mock("sonner", () => ({
 import { authSliceReducer } from "@/redux/features/auth/auth-slice";
 import { baseApi } from "../base-api";
 import { authApi } from "./auth-api";
+import { clearAccessToken, getAccessToken } from "@/utils/access-token";
 
 const makeStore = () =>
   configureStore({
@@ -20,7 +20,6 @@ const loginPayload = (tenantKind: string) => ({
   success: true,
   data: {
     access: "access-token",
-    refresh: "refresh-token",
     session_id: 1,
     user: { id: 1, email: "ada@bright-star.test", full_name: "Ada Obi", role: "teacher" },
     permissions: [],
@@ -42,8 +41,9 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
-  Cookies.remove("token");
-  Cookies.remove("refresh_token");
+  clearAccessToken();
+  sessionStorage.clear();
+  document.cookie = "csrftoken=; Max-Age=0; Path=/";
 });
 
 describe("a sign-in names the school it is addressed to", () => {
@@ -57,6 +57,7 @@ describe("a sign-in names the school it is addressed to", () => {
     );
 
     const request = fetchMock.mock.calls[0][0] as Request;
+    expect(request.credentials).toBe("include");
     // A body key, not the ?tenant= query assertion the authenticated endpoints
     // take: there is no token yet to check one against.
     expect(request.url).not.toContain("tenant=");
@@ -113,7 +114,7 @@ describe("the school portal refuses a platform account", () => {
       authApi.endpoints.login.initiate({ email: "staff@codexng.com", password: "pw" }),
     );
 
-    expect(Cookies.get("token")).toBeUndefined();
+    expect(getAccessToken()).toBe("");
     expect(store.getState().auth.user).toBeFalsy();
   });
 
@@ -126,7 +127,25 @@ describe("the school portal refuses a platform account", () => {
       authApi.endpoints.login.initiate({ email: "ada@bright-star.test", password: "pw" }),
     );
 
-    expect(Cookies.get("token")).toBe("access-token");
+    expect(getAccessToken()).toBe("access-token");
     expect(store.getState().auth.user).toBeTruthy();
+    expect(store.getState().auth).not.toHaveProperty("access");
+    expect(store.getState().auth).not.toHaveProperty("refresh");
+  });
+});
+
+describe("cookie-authenticated logout", () => {
+  it("sends CSRF with no credential in the body", async () => {
+    document.cookie = "csrftoken=csrf-value; Path=/";
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse({ success: true }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const store = makeStore();
+    await store.dispatch(authApi.endpoints.logout.initiate());
+
+    const request = fetchMock.mock.calls[0][0] as Request;
+    expect(request.credentials).toBe("include");
+    expect(request.headers.get("X-CSRFToken")).toBe("csrf-value");
+    expect(await new Request(request).json()).toEqual({});
   });
 });

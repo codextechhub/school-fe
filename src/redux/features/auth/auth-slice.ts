@@ -12,8 +12,6 @@ import {
 // Shape of the login / activation response's `data` envelope.
 interface AuthPayload {
   user: User | null;
-  access: string;
-  refresh?: string;
   session_id?: number;
   permissions?: string[];
   school?: SchoolInfo | null;
@@ -21,8 +19,6 @@ interface AuthPayload {
 }
 
 const initialState: Auth = {
-   access: "",
-   refresh: "",
    session_id: 0,
    user: null,
    permissions: [],
@@ -36,8 +32,8 @@ const initialState: Auth = {
  * the user tabs back - but the context it returns is almost always identical to
  * what is already in the store. Assigning unconditionally would hand every
  * `selectPermissions` / `selectTenant` consumer a brand-new reference on each of
- * those runs, re-rendering the whole protected tree and rewriting redux-persist
- * for nothing. Compare first and no-op when nothing actually changed; Immer then
+ * those runs, re-rendering the whole protected tree for nothing. Compare first
+ * and no-op when nothing actually changed; Immer then
  * returns the very same state object.
  */
 const samePermissions = (a: string[] | undefined, b: string[]): boolean =>
@@ -95,8 +91,6 @@ const authSlice = createSlice({
     reset: () => initialState,
     setAuthUser: (state, action: PayloadAction<AuthPayload>) => {
       state.user = action.payload.user;
-      state.access = action.payload.access;
-      state.refresh = action.payload.refresh || "";
       state.session_id = action.payload.session_id || 0;
       state.permissions = action.payload.permissions ?? [];
       state.school = action.payload.school ?? null;
@@ -105,8 +99,8 @@ const authSlice = createSlice({
     updateAuthUser: (state, action: PayloadAction<Partial<User>>) => {
       state.user = { ...(state.user as User), ...action.payload };
     },
-    setToken: (state, action: PayloadAction<string>) => {
-      state.access = action.payload;
+    setSessionId: (state, action: PayloadAction<number>) => {
+      state.session_id = action.payload;
     },
     updatePermissions: (state, action: PayloadAction<string[]>) => {
       if (samePermissions(state.permissions, action.payload)) return;
@@ -153,7 +147,7 @@ const authSlice = createSlice({
 
 export const {
   setAuthUser,
-  setToken,
+  setSessionId,
   updateAuthUser,
   updatePermissions,
   updateSchool,

@@ -1,6 +1,4 @@
 export interface Auth {
-  access?: string
-  refresh?: string
   session_id?: number
   user?: User | null
   permissions?: string[]

@@ -11,6 +11,7 @@ import {
   PURGE,
   REGISTER,
   REHYDRATE,
+  createMigrate,
   persistReducer,
   persistStore,
 } from "redux-persist";
@@ -20,8 +21,17 @@ import rootReducer, { type RootState } from "./features/root-reducer";
 
 const persistConfig = {
   key: "root",
+  version: 1,
   storage: localStorage,
-  whitelist: ["auth"],
+  whitelist: ["financeEntity"],
+  migrate: createMigrate({
+    1: (state) => {
+      if (!state) return state;
+      const safeState = { ...state };
+      delete (safeState as typeof safeState & { auth?: unknown }).auth;
+      return safeState;
+    },
+  }, { debug: false }),
 };
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

@@ -9,7 +9,6 @@ import {
   resetAuth,
   setAuthContext,
   setImpersonation,
-  setToken,
   updatePermissions,
   updateTenant,
 } from "../features/auth/auth-slice";
@@ -17,7 +16,6 @@ import type { ActiveImpersonation, TenantInfo } from "../features/auth/auth-type
 import { getTenantSlug } from "@/utils/tenant-context";
 import { toast } from "sonner";
 import { askToPostWithoutApproval } from "@/lib/approval-confirm";
-import Cookies from "js-cookie";
 import { routesPath } from "@/routes/routesPath";
 import { refreshTokenSingleFlight } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
@@ -30,11 +28,7 @@ import {
 } from "./api-endpoints";
 import { isIdentitySwapInProgress, runWithIdentitySwap } from "@/utils/identity-swap";
 import { FINANCE_TAG_TYPES } from "@xvs/finance/redux/tag-types";
-
-const getAccessToken = () => {
-  const token = Cookies.get("token");
-  return token && token !== "undefined" ? token : "";
-};
+import { getAccessToken } from "@/utils/access-token";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -306,10 +300,6 @@ export const baseQueryInterceptor: BaseQueryFn<
     const refreshed = await refreshTokenSingleFlight();
 
     if (refreshed.ok) {
-      // The singleton already updated cookies. Mirror access into Redux so any
-      // selector reading state.auth.access stays consistent.
-      api.dispatch(setToken(refreshed.access));
-
       // Role may have changed since last login - keep permissions + tenant fresh.
       const activeImpersonation = readImpersonation(api.getState);
       const fresh = await fetchFreshMe(refreshed.access, activeImpersonation);

@@ -21,6 +21,7 @@ export const AUTH_ENDPOINTS = new Set([
   "passwordResetConfirm",
   "activationPreview",
   "activateAccount",
+  "logout",
   // Paying an invoice from its email link. The payer holds no account, and the
   // signed token in the path is their whole authority. A Bearer token left over
   // from a staff session on the same browser must not ride along: the backend
@@ -35,7 +36,6 @@ export const AUTH_ENDPOINTS = new Set([
 // unauthenticated auth routes plus the self-service /me family and logout.
 export const TENANT_EXEMPT_ENDPOINTS = new Set([
   ...AUTH_ENDPOINTS,
-  "logout",
   "getMe",
   "getMySecurityStats",
   "getMyPasswordResets",

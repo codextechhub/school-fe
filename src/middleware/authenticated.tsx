@@ -1,8 +1,15 @@
-import { selectTenant, selectUser } from "@/redux/features/auth/auth-slice";
+import {
+  selectImpersonation,
+  selectTenant,
+  selectUser,
+  setAuthContext,
+  setImpersonation,
+  setSessionId,
+} from "@/redux/features/auth/auth-slice";
 import { useGetMeQuery } from "@/redux/services/auth/auth-api";
 import { routesPath } from "@/routes/routesPath";
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useCallback, useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Outlet } from "react-router";
 import { evaluateGate } from "@/utils/session-gate";
 import { endSession } from "@/utils/end-session";
@@ -12,6 +19,12 @@ import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { Button } from "@/components/ui/button";
 import { LoaderCircle, RefreshCw, TriangleAlert } from "lucide-react";
 import { getAuthContextGateState } from "@/utils/auth-context-gate";
+import {
+  isSessionRestoreBlocked,
+  refreshTokenSingleFlight,
+  type RefreshOutcome,
+} from "@/utils/token-refresh";
+import { getAccessToken } from "@/utils/access-token";
 
 const { LOGIN } = routesPath.AUTH;
 
@@ -30,22 +43,54 @@ const RETRY_BASE_DELAY_MS = 3000;
 const RETRY_MAX_DELAY_MS = 24000;
 
 export default function Authenticated() {
-  const [{ shouldRedirect, refreshExpired, idleTooLong }] = useState(evaluateGate);
+  const [{ idleTooLong }] = useState(evaluateGate);
+  const dispatch = useDispatch();
+  const [restoreState, setRestoreState] = useState<"ready" | "restoring" | "retry" | "invalid">(
+    () => idleTooLong || isSessionRestoreBlocked()
+      ? "invalid"
+      : getAccessToken()
+        ? "ready"
+        : "restoring",
+  );
+  const shouldRedirect = restoreState === "invalid";
   const user = useSelector(selectUser);
   const tenant = useSelector(selectTenant);
+  const impersonation = useSelector(selectImpersonation);
   const [retryAttempts, setRetryAttempts] = useState(0);
   // Auth-gated /media/ logo → renderable blob: URL (see use-school-logo).
   const logoBlobUrl = useSchoolLogo();
+
+  const finishRestore = useCallback((outcome: RefreshOutcome) => {
+    if (outcome.ok) {
+      if (outcome.sessionId) dispatch(setSessionId(outcome.sessionId));
+      setRestoreState("ready");
+      return;
+    }
+    if (outcome.reason === "network_error" || outcome.reason === "server_error") {
+      setRestoreState("retry");
+      return;
+    }
+    endSession("Your session has ended. Please sign in again.");
+    setRestoreState("invalid");
+  }, [dispatch]);
+
+  const restoreSession = useCallback(() => {
+    setRestoreState("restoring");
+    void refreshTokenSingleFlight().then(finishRestore);
+  }, [finishRestore]);
+
+  useEffect(() => {
+    if (restoreState !== "restoring" || getAccessToken()) return;
+    void refreshTokenSingleFlight().then(finishRestore);
+  }, [finishRestore, restoreState]);
 
   useEffect(() => {
     if (!shouldRedirect) return;
     // Only show the expiry banner + clean up when there was an actual session
     // to end. A missing cookie just means "go log in" - no banner needed.
-    if (refreshExpired || idleTooLong) {
+    if (idleTooLong) {
       endSession(
-        idleTooLong
-          ? "Your session expired due to inactivity. Please log in to continue."
-          : "Your session has expired. Please log in to continue."
+        "Your session expired due to inactivity. Please log in to continue."
       );
     }
     // Remember the page they were trying to reach so login can return them
@@ -57,7 +102,7 @@ export default function Authenticated() {
     // logout path consistent and prevents a stale token leaking into the next
     // login attempt.
     window.location.replace(LOGIN);
-  }, [shouldRedirect, refreshExpired, idleTooLong]);
+  }, [shouldRedirect, idleTooLong]);
 
   // Sync permissions on mount - catches role changes that happened while the
   // token was still valid. onQueryStarted in getMe dispatches updatePermissions.
@@ -71,11 +116,43 @@ export default function Authenticated() {
   // update reducers no-op when the context comes back unchanged (the common
   // case) - so the usual focus costs nothing beyond the request itself.
   const {
+    data: authContextResponse,
     isLoading: isLoadingContext,
     isFetching: isFetchingContext,
     isError: isContextError,
     refetch: refetchContext,
-  } = useGetMeQuery(undefined, { skip: shouldRedirect, refetchOnFocus: true });
+  } = useGetMeQuery(undefined, {
+    skip: restoreState !== "ready",
+    refetchOnFocus: true,
+  });
+
+  const restorableImpersonation = authContextResponse?.data.active_impersonation;
+  useEffect(() => {
+    if (!restorableImpersonation || impersonation) return;
+    const actor = {
+      user: authContextResponse.data.user,
+      school: authContextResponse.data.school ?? null,
+      tenant: authContextResponse.data.tenant ?? null,
+      permissions: authContextResponse.data.permissions,
+    };
+    dispatch(setImpersonation({
+      id: restorableImpersonation.id,
+      tenantSlug: restorableImpersonation.tenant_slug,
+      target: restorableImpersonation.target,
+      actor,
+    }));
+    dispatch(setAuthContext({
+      user: null,
+      school: null,
+      tenant: {
+        slug: restorableImpersonation.target.tenant_slug,
+        name: restorableImpersonation.target.tenant_name,
+        kind: restorableImpersonation.target.tenant_kind,
+      },
+      permissions: [],
+    }));
+    void refetchContext();
+  }, [authContextResponse, dispatch, impersonation, refetchContext, restorableImpersonation]);
 
   useEffect(() => {
     document.title = user?.first_name ? `${user.first_name} - XVS` : "XVS";
@@ -87,13 +164,19 @@ export default function Authenticated() {
     setFavicon(logoBlobUrl ?? DEFAULT_FAVICON);
   }, [logoBlobUrl]);
 
-  const contextGateState = getAuthContextGateState({
-    shouldRedirect,
-    hasTenant: !!tenant,
-    isLoading: isLoadingContext,
-    isFetching: isFetchingContext,
-    isError: isContextError,
-  });
+  const isRestoringImpersonation = !!restorableImpersonation && (
+    !impersonation || authContextResponse.data.user?.id === impersonation.actor.user?.id
+  );
+  const contextGateState = restoreState === "ready" && !isRestoringImpersonation
+    ? getAuthContextGateState({
+        shouldRedirect,
+        hasTenant: !!tenant,
+        tenantKind: tenant?.kind,
+        isLoading: isLoadingContext,
+        isFetching: isFetchingContext,
+        isError: isContextError,
+      })
+    : "loading";
 
   // A successful hydration clears the counter so a later glitch starts fresh.
   // Done as a guarded render-phase adjustment rather than in an effect: React's
@@ -108,6 +191,12 @@ export default function Authenticated() {
     if (contextGateState !== "logout") return;
     endSession("Your session has ended. Please sign in again.");
     captureReturnTo();
+    window.location.replace(LOGIN);
+  }, [contextGateState]);
+
+  useEffect(() => {
+    if (contextGateState !== "forbidden") return;
+    endSession("Please sign in through your school's portal.");
     window.location.replace(LOGIN);
   }, [contextGateState]);
 
@@ -143,9 +232,36 @@ export default function Authenticated() {
     return () => window.removeEventListener("online", onOnline);
   }, [contextGateState, refetchContext]);
 
-  if (contextGateState === "redirect") return null;
+  if (shouldRedirect || contextGateState === "forbidden") return null;
 
-  // Older persisted sessions pre-date tenant context in the auth slice. Do not
+  if (restoreState === "restoring" || restoreState === "retry") {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        {restoreState === "restoring" ? (
+          <div className="flex items-center gap-2 text-sm text-gray-01" role="status">
+            <LoaderCircle className="size-4 shrink-0 animate-spin" />
+            Restoring your session…
+          </div>
+        ) : (
+          <div className="w-full max-w-sm rounded-md border border-gray-100 bg-white p-6 text-center shadow-sm">
+            <TriangleAlert className="mx-auto mb-3 size-8 text-error-text" />
+            <p className="font-mont text-sm font-semibold text-black-01">
+              We couldn’t restore your session
+            </p>
+            <p className="mt-1 text-xs text-gray-01">
+              Check your connection and try again.
+            </p>
+            <Button type="button" variant="outline" className="mt-4 gap-2" onClick={restoreSession}>
+              <RefreshCw className="size-4" />
+              Retry
+            </Button>
+          </div>
+        )}
+      </main>
+    );
+  }
+
+  // A restored browser session starts with no local tenant context. Do not
   // mount protected screens until /me has hydrated it: otherwise their first
   // requests omit the mandatory `?tenant=` assertion, fail with 400, and stay
   // failed even after the tenant arrives because their query args did not

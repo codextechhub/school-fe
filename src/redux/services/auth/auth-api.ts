@@ -1,12 +1,19 @@
 import { resetAuth, setAuthContext, setAuthUser } from "@/redux/features/auth/auth-slice";
-import type { SchoolInfo, TenantInfo, User } from "@/redux/features/auth/auth-types";
+import type {
+  ProxyTargetIdentity,
+  SchoolInfo,
+  TenantInfo,
+  User,
+} from "@/redux/features/auth/auth-types";
 import { baseApi } from "../base-api";
 import { routesPath } from "@/routes/routesPath";
 import { recordActivity } from "@/utils/session-activity";
-import { resetSessionInvalidation, setAuthCookies } from "@/utils/token-refresh";
+import { resetSessionInvalidation } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
 import type { LoginResponse } from "./auth-types";
 import { currentSchoolSlug } from "@/utils/school-host";
+import { setAccessToken } from "@/utils/access-token";
+import { getCsrfToken } from "@/utils/csrf";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -24,6 +31,11 @@ export interface MeResponse {
     school: SchoolInfo | null;
     tenant: TenantInfo | null;
     permissions: string[];
+    active_impersonation?: {
+      id: number;
+      tenant_slug: string;
+      target: ProxyTargetIdentity;
+    };
   };
 }
 
@@ -42,6 +54,7 @@ export const authApi = baseApi.injectEndpoints({
         url: `/user/auth/login/`,
         method: "POST",
         body: { ...user, tenant: currentSchoolSlug() },
+        credentials: "include" as const,
       }),
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
         try {
@@ -50,9 +63,9 @@ export const authApi = baseApi.injectEndpoints({
 
           // Identity check: this portal is for school accounts only. A Codex
           // staff login succeeds at the backend (it's the shared endpoint),
-          // but we refuse to open a session here - write NO cookies and NO
-          // Redux state, and fire-and-forget a logout to blacklist the token
-          // pair the backend just issued. The login page inspects the same
+          // but we refuse to open a session here. Write no local state and
+          // fire-and-forget a logout to revoke the cookie the backend issued.
+          // The login page inspects the same
           // field and renders the console-redirect error.
           //
           // Read off the TENANT, not off the user. This used to test
@@ -62,27 +75,26 @@ export const authApi = baseApi.injectEndpoints({
           // the platform boundary an account sits on is a fact about its
           // tenant, and the tenant cannot be wrong about itself.
           if (data?.data?.tenant?.kind === "PLATFORM") {
-            const refresh = data?.data?.refresh;
-            if (refresh) {
-              fetch(`${baseUrl}/user/auth/logout/`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  accept: "application/json",
-                  Authorization: `Bearer ${data?.data?.access}`,
-                },
-                body: JSON.stringify({ refresh }),
-              }).catch(() => {
-                // Best-effort revocation - the pair simply ages out if it fails.
-              });
-            }
+            const csrfToken = await getCsrfToken();
+            fetch(`${baseUrl}/user/auth/logout/`, {
+              method: "POST",
+              credentials: "include",
+              headers: {
+                "Content-Type": "application/json",
+                accept: "application/json",
+                ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+              },
+              body: "{}",
+            }).catch(() => {
+              // Best-effort revocation leaves the cookie to age out on failure.
+            });
             return;
           }
 
           // A fresh, valid session - re-enable token refresh in case a prior
           // session in this JS context invalidated it.
           resetSessionInvalidation();
-          setAuthCookies(data?.data?.access || "", data?.data?.refresh || "");
+          setAccessToken(data?.data?.access || "");
           recordActivity();
           dispatch(setAuthUser(data?.data));
         } catch {
@@ -91,13 +103,19 @@ export const authApi = baseApi.injectEndpoints({
         }
       },
     }),
-    logout: builder.mutation({
-      query: (token) => ({
-        url: `/user/auth/logout/`,
-        method: "POST",
-         body: token,
-        credentials: "include" as const
-      }),
+    logout: builder.mutation<void, void>({
+      queryFn: async (_arg, _api, _extraOptions, baseQuery) => {
+        const csrfToken = await getCsrfToken();
+        const result = await baseQuery({
+          url: `/user/auth/logout/`,
+          method: "POST",
+          body: {},
+          credentials: "include" as const,
+          headers: csrfToken ? { "X-CSRFToken": csrfToken } : {},
+        });
+        if (result.error) return { error: result.error };
+        return { data: undefined };
+      },
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
         try {
           await queryFulfilled;

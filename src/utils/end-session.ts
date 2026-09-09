@@ -1,7 +1,6 @@
-import Cookies from "js-cookie";
 import { clearStorageItem } from "@/hooks/use-session-storage";
 import { clearActivity } from "./session-activity";
-import { markSessionInvalidated } from "./token-refresh";
+import { blockSessionRestore, markSessionInvalidated } from "./token-refresh";
 
 /**
  * Single client-side teardown for every "this session is over" path - logout,
@@ -11,13 +10,14 @@ import { markSessionInvalidated } from "./token-refresh";
  * was paths missing markSessionInvalidated, letting an in-flight refresh
  * resurrect cleared cookies).
  *
- * Order matters: clearStorageItem() wipes sessionStorage, so the banner is
- * written after it - the login page reads and clears it on mount.
+ * The restore block survives a browser restart. A failed server logout cannot
+ * allow a remaining HttpOnly cookie to restore the ended session later.
  */
 export function endSession(banner?: string): void {
   markSessionInvalidated();
-  Cookies.remove("token");
-  Cookies.remove("refresh_token");
+  // Remove only the obsolete access cookie from pre-migration builds. The
+  // refresh cookie is HttpOnly and can be cleared only by the backend.
+  document.cookie = "token=; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Path=/; SameSite=Strict";
   clearStorageItem();
   clearActivity();
   // Synchronously drop the persisted Redux state. Every endSession caller
@@ -27,5 +27,6 @@ export function endSession(banner?: string): void {
   // A synchronous removeItem is the only write that reliably beats the
   // navigation; the store is rebuilt from scratch on the next document load.
   localStorage.removeItem("persist:root");
+  blockSessionRestore();
   if (banner) sessionStorage.setItem("_auth_banner", banner);
 }

@@ -1,12 +1,12 @@
-import Cookies from "js-cookie";
 import { useEffect } from "react";
 import { useLocation } from "react-router";
 import { useDispatch } from "react-redux";
-import { resetAuth, setToken } from "@/redux/features/auth/auth-slice";
+import { resetAuth } from "@/redux/features/auth/auth-slice";
 import { routesPath } from "@/routes/routesPath";
 import { refreshTokenSingleFlight } from "@/utils/token-refresh";
 import { isJwtExpired } from "@/utils/jwt";
 import { endSession } from "@/utils/end-session";
+import { getAccessToken } from "@/utils/access-token";
 
 const REFRESH_BUFFER_SECONDS = 120; // refresh if token expires within 2 minutes
 
@@ -15,9 +15,8 @@ export function useTokenRefresh() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const accessToken = Cookies.get("token") || "";
-    const refreshToken = Cookies.get("refresh_token") || "";
-    if (!accessToken || !refreshToken) return;
+    const accessToken = getAccessToken();
+    if (!accessToken) return;
     if (!isJwtExpired(accessToken, REFRESH_BUFFER_SECONDS)) return;
 
     let cancelled = false;
@@ -26,9 +25,6 @@ export function useTokenRefresh() {
       if (cancelled) return;
 
       if (outcome.ok) {
-        // Cookies were already written by the singleton. Mirror access into
-        // Redux so selectors reading state.auth.access stay consistent.
-        dispatch(setToken(outcome.access));
         return;
       }
 

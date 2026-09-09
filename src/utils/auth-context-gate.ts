@@ -3,14 +3,14 @@ export type AuthContextGateState =
   | "loading"
   | "retry"
   | "logout"
+  | "forbidden"
   | "ready";
 
 /**
  * Decide whether tenant-scoped routes are safe to mount.
  *
- * Persisted sessions from before tenant context was introduced can still have
- * a valid token and user while `tenant` is empty. Those sessions must wait for
- * `/me` before any protected query is allowed to run.
+ * A browser-restored session begins with a valid in-memory access token while
+ * `tenant` is empty. It must wait for `/me` before any protected query runs.
  *
  * When `/me` settles without a tenant we distinguish two cases:
  *   - the request errored → likely transient (network/server): offer a retry;
@@ -19,18 +19,23 @@ export type AuthContextGateState =
 export function getAuthContextGateState({
   shouldRedirect,
   hasTenant,
+  tenantKind,
   isLoading,
   isFetching,
   isError,
 }: {
   shouldRedirect: boolean;
   hasTenant: boolean;
+  tenantKind?: string | null;
   isLoading: boolean;
   isFetching: boolean;
   isError: boolean;
 }): AuthContextGateState {
   if (shouldRedirect) return "redirect";
-  if (hasTenant) return "ready";
+  if (hasTenant) {
+    if (tenantKind && tenantKind !== "SCHOOL") return "forbidden";
+    return "ready";
+  }
   if (isLoading || isFetching) return "loading";
   return isError ? "retry" : "logout";
 }

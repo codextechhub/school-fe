@@ -15,12 +15,10 @@ import {
  * `/me` re-runs on mount, on token refresh and on window focus, almost always
  * returning the identical context. The reducers no-op in that case so Immer
  * hands back the very same state object - anything else re-renders the whole
- * protected tree and rewrites redux-persist for nothing. These tests pin that
+ * protected tree for nothing. These tests pin that
  * identity guarantee (toBe, not toEqual) because it is the entire point.
  */
 const stateWith = (partial: Partial<Auth>): Auth => ({
-  access: "acc",
-  refresh: "ref",
   session_id: 1,
   user: null,
   permissions: [],

@@ -1,30 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
-import Cookies from "js-cookie";
-import { resetAuth, setToken } from "@/redux/features/auth/auth-slice";
+import { resetAuth } from "@/redux/features/auth/auth-slice";
 import { routesPath } from "@/routes/routesPath";
 import { refreshTokenSingleFlight } from "@/utils/token-refresh";
 import { recordActivity } from "@/utils/session-activity";
 import { endSession } from "@/utils/end-session";
+import { getCsrfToken } from "@/utils/csrf";
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL as string;
 
-// Fire-and-forget: tells the backend to blacklist the current refresh token.
-// Accepts explicit tokens so the call still works after cookies have been cleared.
-// Intentionally not awaited - client-side logout proceeds regardless of outcome.
-function revokeSessionOnBackend(tokens?: { access: string; refresh: string }): void {
-  const access = tokens?.access ?? Cookies.get("token") ?? "";
-  const refresh = tokens?.refresh ?? Cookies.get("refresh_token") ?? "";
-  if (!refresh && !access) return;
-  fetch(`${BASE_URL}/user/auth/logout/`, {
+// Fire-and-forget revocation keeps local timeout handling independent of the
+// network while allowing the server to clear and blacklist its HttpOnly cookie.
+function revokeSessionOnBackend(): void {
+  void getCsrfToken().then((csrfToken) => fetch(`${BASE_URL}/user/auth/logout/`, {
     method: "POST",
+    credentials: "include",
+    keepalive: true,
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${access}`,
       accept: "application/json",
+      ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
     },
-    body: JSON.stringify({ refresh }),
-  }).catch(() => {});
+    body: "{}",
+  })).catch(() => {});
 }
 
 // Exported: the Authenticated gate derives its on-reload staleness window
@@ -62,9 +60,6 @@ export function useSessionTimeout() {
   const lastActivityRef = useRef<number>(0);
   const warningStartedAtRef = useRef<number | null>(null);
   const isWarningOpenRef = useRef(false);
-  // Tokens captured the moment the session expires so goToLogin can still
-  // call the backend blacklist even after cookies have been cleared.
-  const capturedTokensRef = useRef<{ access: string; refresh: string } | null>(null);
 
   const clearCountdown = () => {
     if (countdownRef.current) {
@@ -76,13 +71,7 @@ export function useSessionTimeout() {
   const expireSession = useCallback(() => {
     clearCountdown();
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    // Capture tokens before clearing cookies so goToLogin can retry the
-    // backend blacklist call even after the cookies are gone.
-    capturedTokensRef.current = {
-      access: Cookies.get("token") ?? "",
-      refresh: Cookies.get("refresh_token") ?? "",
-    };
-    revokeSessionOnBackend(capturedTokensRef.current);
+    revokeSessionOnBackend();
     endSession("Your session has expired due to inactivity. Please log in to continue.");
     dispatch(resetAuth());
     setOpen(false);
@@ -205,12 +194,6 @@ export function useSessionTimeout() {
   const onContinue = useCallback(async () => {
     clearCountdown();
 
-    const refreshToken = Cookies.get("refresh_token");
-    if (!refreshToken) {
-      window.location.href = routesPath.AUTH.LOGIN;
-      return;
-    }
-
     // Dismiss the modal immediately - don't wait for the network round-trip.
     warningStartedAtRef.current = null;
     isWarningOpenRef.current = false;
@@ -219,24 +202,18 @@ export function useSessionTimeout() {
 
     const outcome = await refreshTokenSingleFlight();
 
-    if (outcome.ok) {
-      dispatch(setToken(outcome.access));
-      return;
-    }
+    if (outcome.ok) return;
 
     if (outcome.reason === "token_invalid") {
       logout();
       return;
     }
     // transient error - user stays signed in; next 401 will retry the refresh
-  }, [dispatch, logout, resetIdleTimer]);
+  }, [logout, resetIdleTimer]);
 
   const goToLogin = useCallback(() => {
-    // Explicitly blacklist the session even though expireSession already tried -
-    // this covers the case where the first call failed (transient network error).
-    if (capturedTokensRef.current) {
-      revokeSessionOnBackend(capturedTokensRef.current);
-    }
+    // Retry revocation in case the expiry-time request hit a transient failure.
+    revokeSessionOnBackend();
     window.location.href = routesPath.AUTH.LOGIN;
   }, []);
 

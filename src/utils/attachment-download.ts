@@ -1,6 +1,6 @@
-import Cookies from "js-cookie";
 import { appendTenantQuery } from "./tenant-context";
 import { apiErrorMessage } from "./api-errors";
+import { getAccessToken } from "./access-token";
 
 /**
  * Two things make an attachment URL not directly openable in an <a href>:
@@ -40,7 +40,7 @@ export async function openAttachment(storedUrl: string, filename: string) {
   const win = window.open("", "_blank");
   if (!win) throw new Error("Allow pop-ups for this site to open the file.");
   try {
-    const token = Cookies.get("token");
+    const token = getAccessToken();
     const response = await fetch(buildAttachmentUrl(storedUrl), {
       headers: token && token !== "undefined" ? { Authorization: `Bearer ${token}` } : {},
     });
@@ -76,7 +76,7 @@ export async function openAttachment(storedUrl: string, filename: string) {
  * not-yours all come back as an error envelope this can read.
  */
 export async function downloadAuthorisedFile(path: string, filename: string): Promise<void> {
-  const token = Cookies.get("token");
+  const token = getAccessToken();
   const response = await fetch(appendTenantQuery(buildAttachmentUrl(path)), {
     headers: token && token !== "undefined" ? { Authorization: `Bearer ${token}` } : {},
   });

@@ -10,8 +10,8 @@ import type { RootStateType } from "@/redux/store";
 // somebody navigated, and the pill would then describe a filter that was no
 // longer being applied.
 //
-// NOT persisted. `persistConfig` whitelists "auth" only, and that is right: a
-// lens restored from last week would silently narrow a list to a branch the
+// Not persisted. Academic navigation state is rebuilt from the current route;
+// A lens restored from last week would silently narrow a list to a branch the
 // reader had forgotten they picked.
 // ─────────────────────────────────────────────────────────────────────────────
 

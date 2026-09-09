@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getAuthContextGateState } from "./auth-context-gate";
 
 describe("getAuthContextGateState", () => {
-  it("holds protected routes while a legacy session hydrates its tenant", () => {
+  it("holds protected routes while a browser session hydrates its tenant", () => {
     expect(getAuthContextGateState({
       shouldRedirect: false,
       hasTenant: false,
@@ -16,10 +16,22 @@ describe("getAuthContextGateState", () => {
     expect(getAuthContextGateState({
       shouldRedirect: false,
       hasTenant: true,
+      tenantKind: "SCHOOL",
       isLoading: false,
       isFetching: false,
       isError: false,
     })).toBe("ready");
+  });
+
+  it("refuses a platform session in the school application", () => {
+    expect(getAuthContextGateState({
+      shouldRedirect: false,
+      hasTenant: true,
+      tenantKind: "PLATFORM",
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+    })).toBe("forbidden");
   });
 
   it("offers a retry when /me fails (likely transient)", () => {

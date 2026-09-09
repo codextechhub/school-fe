@@ -1,38 +1,38 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import Cookies from "js-cookie";
 
 const freshImports = async () => {
   vi.resetModules();
   const endSessionMod = await import("./end-session");
   const tokenMod = await import("./token-refresh");
-  return { ...endSessionMod, ...tokenMod };
+  const accessMod = await import("./access-token");
+  return { ...endSessionMod, ...tokenMod, ...accessMod };
 };
 
 beforeEach(() => {
-  Cookies.set("token", "acc");
-  Cookies.set("refresh_token", "ref");
+  document.cookie = "token=legacy-access; Path=/";
   localStorage.setItem("_last_activity", String(Date.now()));
   localStorage.setItem("persist:root", '{"auth":"{}"}');
   sessionStorage.setItem("anything", "1");
 });
 
 afterEach(() => {
-  Cookies.remove("token");
-  Cookies.remove("refresh_token");
+  document.cookie = "token=; Max-Age=0; Path=/";
   localStorage.clear();
   sessionStorage.clear();
   vi.restoreAllMocks();
 });
 
 describe("endSession", () => {
-  it("clears cookies, storages and activity", async () => {
-    const { endSession } = await freshImports();
+  it("clears memory access, the legacy access cookie, storages and activity", async () => {
+    const { endSession, getAccessToken, setAccessToken } = await freshImports();
+    setAccessToken("memory-access");
     endSession();
 
-    expect(Cookies.get("token")).toBeUndefined();
-    expect(Cookies.get("refresh_token")).toBeUndefined();
+    expect(getAccessToken()).toBe("");
+    expect(document.cookie).not.toContain("token=");
     expect(sessionStorage.getItem("anything")).toBeNull();
     expect(localStorage.getItem("_last_activity")).toBeNull();
+    expect(localStorage.getItem("_auth_restore_blocked")).toBe("1");
   });
 
   it("synchronously removes the persisted Redux state (persist:root)", async () => {
@@ -57,8 +57,7 @@ describe("endSession", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     endSession();
-    // Even with a refresh cookie present, refresh must refuse to run.
-    Cookies.set("refresh_token", "stale");
+    // Even if the server still has a refresh cookie, this tab refuses restore.
     expect(await refreshTokenSingleFlight()).toEqual({ ok: false, reason: "no_token" });
     expect(fetchMock).not.toHaveBeenCalled();
   });
