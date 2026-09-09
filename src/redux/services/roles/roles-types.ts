@@ -25,6 +25,11 @@ export interface RolePermissionRow {
 
 /** A role with everything it holds. */
 export interface SchoolRoleDetail extends SchoolRole {
+  /** Whether the reader holds this role. A restricted addition to your own role
+   *  goes through approval; to anybody else's it saves, so the button has to
+   *  know before anything is pressed. The server computes it because a person
+   *  may hold several roles and the token carries one. */
+  held_by_me: boolean;
   description: string;
   role_permissions: RolePermissionRow[];
 }

@@ -26,6 +26,7 @@ import {
   useGetSchoolRoleQuery,
   useSetSchoolRoleStatusMutation,
   useUpdateSchoolRoleMutation,
+  useCreateRoleChangeRequestMutation,
 } from "@/redux/services/roles/roles-api";
 import type { CataloguePermission } from "@/redux/services/roles/roles-types";
 import { writeErrorMessage, fieldErrors } from "@/utils/api-error";
@@ -78,6 +79,8 @@ export function RoleDrawer({
   const catalogue = useGetPermissionCatalogueQuery(undefined, { skip: !open });
   const [createRole, { isLoading: saving }] = useCreateSchoolRoleMutation();
   const [updateRole, { isLoading: updating }] = useUpdateSchoolRoleMutation();
+  const [raiseRequest, { isLoading: raising }] =
+    useCreateRoleChangeRequestMutation();
 
   const detail = creating ? undefined : role.data?.data;
   const locked = detail?.is_locked ?? false;
@@ -115,6 +118,25 @@ export function RoleDrawer({
   const name = mine ? mine.name : (detail?.name ?? "");
   const description = mine ? mine.description : (detail?.description ?? "");
   const reason = mine ? mine.reason : "";
+
+  /** Restricted permissions this save would ADD, by key. */
+  const restrictedAdditions = useMemo(() => {
+    if (!mine) return [] as string[];
+    // The catalogue arrives grouped by module, so the flag lives on the
+    // permissions inside each group rather than on the group.
+    const restricted = new Set(
+      (catalogue.data?.data ?? [])
+        .flatMap((group) => group.permissions)
+        .filter((entry) => entry.is_restricted)
+        .map((entry) => entry.key),
+    );
+    return [...mine.ticked].filter((k) => restricted.has(k) && !baseline.has(k));
+  }, [mine, baseline, catalogue.data]);
+
+  // Approval is about who gains, not about the permission. Adding a restricted
+  // key to somebody else's role is the job `school.roles.update` exists for and
+  // saves outright; adding it to your own is the thing the restriction is for.
+  const needsApproval = Boolean(detail?.held_by_me) && restrictedAdditions.length > 0;
   // What the role reaches, as opposed to what it is called. The server records
   // a reason for the first and not the second, so the box only appears when
   // this save would actually change somebody's access.
@@ -288,6 +310,21 @@ export function RoleDrawer({
           reason: reason.trim(),
         }).unwrap();
         toast.success(`${trimmed} created.`);
+      } else if (needsApproval) {
+        // Not a refusal turned into a message: the same press does the thing
+        // that can actually be done. The reader stays on the screen they were
+        // on, and the request carries the keys they ticked.
+        await raiseRequest({
+          target_role: detail!.id,
+          justification: reason.trim(),
+          delta_items: restrictedAdditions.map((permission_key) => ({
+            permission_key,
+            operation: "ADD" as const,
+          })),
+        }).unwrap();
+        toast.success(
+          `Sent for approval. ${trimmed} changes once somebody approves it.`,
+        );
       } else {
         await updateRole({
           key: roleKey as string,
@@ -434,6 +471,19 @@ export function RoleDrawer({
                   records it against the person saving, so the audit answers
                   "why does the bursar have this?" rather than only "who ticked
                   it". Renaming a role needs no such answer and is not asked. */}
+              {/* Why the button below reads differently. Without this the label
+                  looks like the screen deciding something on its own. */}
+              {needsApproval && (
+                <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs leading-5 text-gray-01">
+                  You hold this role, so what you have added needs somebody
+                  else's approval:{" "}
+                  <span className="font-medium">
+                    {restrictedAdditions.join(", ")}
+                  </span>
+                  . The same change to a role you do not hold saves straight
+                  away.
+                </p>
+              )}
               {(creating || reachChanged) && (
                 <CustomInput
                   id="role-reason"
@@ -639,10 +689,14 @@ export function RoleDrawer({
             <Button
               className="flex-1"
               onClick={commit}
-              loading={saving || updating}
+              loading={saving || updating || raising}
               disabled={!creating && !dirty}
             >
-              {creating ? "Create role" : "Save changes"}
+              {creating
+                ? "Create role"
+                : needsApproval
+                  ? "Raise for approval"
+                  : "Save changes"}
             </Button>
           )}
         </div>
