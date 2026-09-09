@@ -120,6 +120,20 @@ export default function AddStaff() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [created, setCreated] = useState<StaffDetail | null>(null);
 
+  /**
+   * Where the new grant reaches, which follows the posting until it is chosen.
+   *
+   * `role_branch` empty means "not chosen", not "the whole school". The two
+   * were the same value, and the whole school was the FIRST option, so every
+   * person registered without anybody touching this field was granted access
+   * to every branch's records - which is how a school ends up with fifteen
+   * staff who all reach everywhere and nobody having decided that. The widest
+   * scope is the wrong thing to fall into by default; the branch somebody is
+   * posted to is the right one, and widening it stays one click away.
+   */
+  const SCHOOL_WIDE = "SCHOOL";
+  const roleReach = form.role_branch || form.branch || SCHOOL_WIDE;
+
   const set = (key: keyof typeof form) => (next: string) => {
     setForm((current) => ({ ...current, [key]: next }));
     setErrors((current) => {
@@ -171,7 +185,7 @@ export default function AddStaff() {
         hire_date: form.hire_date || null,
         branch: form.branch || null,
         role: form.role,
-        role_branch: form.role_branch || null,
+        role_branch: roleReach === SCHOOL_WIDE ? null : roleReach,
         // Blank rows are dropped rather than sent: an empty row is somebody
         // pressing Add and changing their mind, not a qualification.
         qualifications: quals.filter((q) => q.qualification.trim()),
@@ -225,10 +239,12 @@ export default function AddStaff() {
             job_title: "",
             employment_type: "",
             hire_date: "",
-            branch: "",
             // The role and the posting are kept: a school adding six teachers
             // to one branch is the common case, and retyping them six times is
-            // how the seventh gets it wrong.
+            // how the seventh gets it wrong. The posting itself was being
+            // cleared despite this note, so the seventh teacher landed
+            // school-wide while the six before them went to Lekki.
+            branch: form.branch,
             role: form.role,
             role_branch: form.role_branch,
           });
@@ -432,15 +448,15 @@ export default function AddStaff() {
               <Field
                 label="This role reaches"
                 error={errors.role_branch}
-                hint="A grant reaches one branch, or the whole school. It is a different fact from where they are based."
+                hint="Which records the role opens, not where they work. Set to match their posting; widen it only for somebody who genuinely works across branches."
               >
                 <NativeSelect
                   aria-label="This role reaches"
-                  value={form.role_branch}
+                  value={roleReach}
                   onChange={(e) => set("role_branch")(e.target.value)}
                   className="h-9"
                 >
-                  <option value="">Across the whole school</option>
+                  <option value={SCHOOL_WIDE}>Across the whole school</option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
