@@ -363,6 +363,7 @@ export function AppSidebar({
   const studentDoors: NavItem[] = [
     {
       title: "Applicants",
+      capability: "students",
       url: routesPath.PROTECTED.STUDENTS.APPLICANTS,
       icon: UserPlus,
       isActive:
@@ -378,6 +379,7 @@ export function AppSidebar({
       // unplaced list is a worklist somebody is asked to empty, not a view
       // of the directory.
       title: "Classes & Transfers",
+      capability: "students",
       url: routesPath.PROTECTED.STUDENTS.ASSIGN,
       icon: ArrowLeftRight,
       isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.ASSIGN),
@@ -391,6 +393,7 @@ export function AppSidebar({
       // The households. Its own door because "who do we call about this
       // family" is a question asked without a student in mind.
       title: "Guardians",
+      capability: "students",
       url: routesPath.PROTECTED.STUDENTS.GUARDIANS,
       icon: Contact,
       isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.GUARDIANS),
@@ -401,6 +404,7 @@ export function AppSidebar({
       // The end-of-session move. Its own door because it is a thing a school
       // does once a year, deliberately, and not a view of anything.
       title: "Promotion",
+      capability: "students_plus",
       url: routesPath.PROTECTED.STUDENTS.PROMOTION,
       icon: GraduationCap,
       isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.PROMOTION),
@@ -419,6 +423,7 @@ export function AppSidebar({
     // not here: this item is the whole roll, and a count of it is a fact
     // rather than a job.
     title: "Students",
+    capability: "students",
     url: routesPath.PROTECTED.STUDENTS.INDEX,
     icon: Users,
     // Every People screen lives under /students, so a bare startsWith lights
@@ -447,6 +452,7 @@ export function AppSidebar({
   const staffDoors: NavItem[] = [
     {
       title: "Invitations",
+      capability: "teachers",
       url: routesPath.PROTECTED.STAFF.INVITATIONS,
       icon: MailCheck,
       isActive: location.startsWith(routesPath.PROTECTED.STAFF.INVITATIONS),
@@ -463,6 +469,7 @@ export function AppSidebar({
       : [
           {
             title: "Teaching duties",
+            capability: "teachers_plus",
             url: routesPath.PROTECTED.STAFF.TEACHING,
             icon: GraduationCap,
             isActive: location.startsWith(routesPath.PROTECTED.STAFF.TEACHING),
@@ -479,6 +486,7 @@ export function AppSidebar({
       ? [
           {
             title: "Posting & reach",
+            capability: "teachers_plus",
             url: routesPath.PROTECTED.STAFF.POSTING,
             icon: Building2,
             isActive: location.startsWith(routesPath.PROTECTED.STAFF.POSTING),
@@ -495,6 +503,7 @@ export function AppSidebar({
     // key is still `school.teachers.*`, because it is a primary key that four
     // tables point at, so the word changed and the key did not.
     title: "Staff",
+    capability: "teachers",
     url: routesPath.PROTECTED.STAFF.INDEX,
     icon: Briefcase,
     isActive: owns(routesPath.PROTECTED.STAFF.INDEX, staffDoors),
@@ -578,6 +587,7 @@ export function AppSidebar({
         // rule the group above records: a nav item that 404s is a door drawn on
         // a wall.
         title: "Calendar",
+        capability: "calendar",
         url: "#",
         icon: CalendarRange,
         isActive: location.startsWith(
@@ -620,6 +630,7 @@ export function AppSidebar({
         // Class timetables, Teacher timetables and Exam scheduling join this
         // list in the phases that build them.
         title: "Timetables",
+        capability: "calendar_plus",
         url: "#",
         icon: CalendarClock,
         isActive: location.startsWith("/timetables"),
@@ -652,13 +663,17 @@ export function AppSidebar({
               routesPath.PROTECTED.TIMETABLES.TEACHERS,
             ),
           },
-          {
+          // Exam scheduling reaches deeper than the group around it -
+          // `calendar_advanced` against the group's `calendar_plus` - so a
+          // school on Plus gets timetables and not exams. Filtered here because
+          // sub-items carry no capability of their own.
+          ...(hasCapability("calendar_advanced") ? [{
             title: "Exam scheduling",
             url: routesPath.PROTECTED.TIMETABLES.EXAMS,
             isActive: location.startsWith(
               routesPath.PROTECTED.TIMETABLES.EXAMS,
             ),
-          },
+          }] : []),
         ],
       },
     ],
