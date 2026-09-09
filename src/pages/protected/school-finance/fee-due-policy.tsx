@@ -17,7 +17,7 @@
  * is the FAL's, and CodeX does not bill anybody school fees.
  */
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CalendarClock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import {
   useGetFeeDuePolicyQuery,
   useUpdateFeeDuePolicyMutation,
   type FeeDueBasis,
+  type FeeDuePolicy,
 } from "@/redux/services/school-finance/fee-due-policy-api";
 
 /** 12 December 2026, from the API's ISO date. */
@@ -44,32 +45,16 @@ function formatDue(iso: string) {
   });
 }
 
-export default function FeeDuePolicySettings() {
-  const { data, isLoading, isError } = useGetFeeDuePolicyQuery();
+/**
+ * Editable policy form seeded from one server snapshot.
+ *
+ * The parent keys the form by the saved values, so a successful refetch starts
+ * a fresh draft without copying query data into state from an effect.
+ */
+function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
   const [save, { isLoading: isSaving }] = useUpdateFeeDuePolicyMutation();
-
-  const policy = data?.data;
-  const [basis, setBasis] = useState<FeeDueBasis | null>(null);
-  const [days, setDays] = useState<string>("");
-
-  // Seed the form from the server once it answers, and again whenever it
-  // answers differently - after a save, the server's copy is the truth.
-  useEffect(() => {
-    if (!policy) return;
-    setBasis(policy.basis);
-    setDays(String(policy.days_after));
-  }, [policy?.basis, policy?.days_after]);
-
-  if (isLoading) {
-    return <p className="font-mont text-xs text-gray-05">Loading…</p>;
-  }
-  if (isError || !policy) {
-    return (
-      <p className="font-mont text-xs text-gray-05">
-        This school's fee due rule could not be loaded.
-      </p>
-    );
-  }
+  const [basis, setBasis] = useState<FeeDueBasis>(policy.basis);
+  const [days, setDays] = useState(String(policy.days_after));
 
   const daysNumber = Number(days);
   const daysValid =
@@ -193,5 +178,28 @@ export default function FeeDuePolicySettings() {
         </div>
       </SettingsPanel>
     </div>
+  );
+}
+
+export default function FeeDuePolicySettings() {
+  const { data, isLoading, isError } = useGetFeeDuePolicyQuery();
+  const policy = data?.data;
+
+  if (isLoading) {
+    return <p className="font-mont text-xs text-gray-05">Loading…</p>;
+  }
+  if (isError || !policy) {
+    return (
+      <p className="font-mont text-xs text-gray-05">
+        This school's fee due rule could not be loaded.
+      </p>
+    );
+  }
+
+  return (
+    <FeeDuePolicyForm
+      key={`${policy.basis}:${policy.days_after}`}
+      policy={policy}
+    />
   );
 }
