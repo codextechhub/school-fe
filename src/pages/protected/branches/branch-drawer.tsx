@@ -71,9 +71,6 @@ export function BranchDrawer({
                 <Badge variant={branch.is_main ? "blue" : "inactive"}>
                   {branch.is_main ? "Main branch" : "Branch"}
                 </Badge>
-                {branch.branch_type?.trim() && (
-                  <Badge variant="amber">{branch.branch_type}</Badge>
-                )}
                 <StatusChip status={branch.status} />
               </div>
 

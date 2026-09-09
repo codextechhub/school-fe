@@ -98,11 +98,6 @@ function BranchCard({
   branch: SchoolBranch;
   onView: () => void;
 }) {
-  // Free text on the server, and empty for most schools. A chip saying nothing
-  // is worse than no chip, so the main/branch distinction leads instead - that
-  // one is always true and is what a school actually asks about.
-  const type = branch.branch_type?.trim();
-
   return (
     // The whole card opens the branch, not just the button. The lift on hover
     // promises the card is clickable, so it has to be - a card that leans
@@ -129,11 +124,6 @@ function BranchCard({
           <GraduationCap className="size-5!" />
         </figure>
         <div className="flex flex-wrap items-center justify-end gap-1.5">
-          {type && (
-            <Badge variant="amber" className="text-xs py-0.5 h-fit rounded-lg">
-              {type}
-            </Badge>
-          )}
           <Badge
             variant={branch.is_main ? "blue" : "inactive"}
             className="text-xs py-0.5 h-fit rounded-lg"

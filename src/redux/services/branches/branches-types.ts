@@ -6,7 +6,6 @@ export interface SchoolBranch {
   name: string;
   is_main: boolean;
   /** Free text on the server: "Primary", "Secondary", or "" for many schools. */
-  branch_type: string;
   status: "ACTIVE" | "PENDING" | "SUSPENDED" | "INACTIVE" | "CLOSED" | string;
   address: string;
   email: string;
