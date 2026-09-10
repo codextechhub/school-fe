@@ -16,7 +16,6 @@
     "@base-ui/react": "^1.2.0",
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
-    "@fontsource/grand-hotel": "^5.3.0",
     "@reduxjs/toolkit": "^2.11.2",
     "@tailwindcss/vite": "^4.2.0",
     "@xvs/finance": "github:codextechhub/FinPro#v0.2.1",

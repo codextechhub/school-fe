@@ -67,10 +67,6 @@
      would restyle the console. Pointing the token at Geist here restyles this
      app and nothing else. */
   --font-mont: var(--font-geist);
-  /* The hand that writes the XVS wordmark on the sidebar mark. Grand Hotel,
-     because the CodeX console's wordmark is Grand Hotel outlines converted to
-     paths: the two products then sign themselves in the same hand. */
-  --font-script: 'Grand Hotel', 'Segoe Script', cursive;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -388,14 +384,14 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    The sidebar mark.
 
-   The school's logo, which turns over on hover to write the XVS wordmark and
-   turns back when the pointer leaves. Ported from console-fe's `.app-logo`: the
-   console flips to a hand-drawn "CodeX", and this flips to "XVS" set in the face
-   that wordmark was traced from.
+   The school's crest, which turns over on hover to write the XVS wordmark and
+   turns back when the pointer leaves. Ported from console-fe's `.app-logo`,
+   which writes "CodeX" the same way; the artwork is components/xvs-wordmark.
 
    Transitions rather than keyframes, for the reason the console records: they
    reverse from wherever they had got to, so flicking the pointer across the
-   logo never leaves it stranded side-on.
+   mark never leaves it stranded side-on, and the letters un-write in the order
+   opposite the one they were written in.
    ───────────────────────────────────────────────────────────────────────── */
 
 .school-mark {
@@ -404,9 +400,9 @@
   --draw-in: 760ms;
   --draw-out: 320ms;
   /* Hold the writing until the card is past side-on and the back face has come
-     round. Earlier and the name is being written while steeply foreshortened;
-     later and the mark sits blank for a beat mid-spin. Same hold the console
-     uses, for the same reason. */
+     round. Earlier and the letters are drawn while steeply foreshortened; later
+     and the mark sits blank for a beat mid-spin. Same hold the console uses,
+     for the same reason. */
   --draw-start: 210ms;
   --spin: cubic-bezier(0.2, 0.72, 0.24, 1);
 
@@ -456,69 +452,64 @@ button:focus-visible .school-mark__card {
 
 /* ── the writing ──────────────────────────────────────────────────────────────
 
-   The console hand-authors one pen stroke per letter and animates each one's
-   dash offset. Type has no strokes to author, so the same illusion is built the
-   other way round: the wordmark is already set, in a script face, and a
-   soft-edged band sweeps across it left to right so the letters arrive under
-   the pen.
+   The filled wordmark is painted through an SVG mask whose content is the pen
+   strokes, stroked thick and white. Walking a stroke's `stroke-dashoffset` down
+   to zero grows the mask along the stroke, so the letters emerge along the path
+   the pen travels rather than fading in or wiping across.
 
-   `@property` is what makes it a TRANSITION rather than a keyframe animation.
-   A custom property is not interpolable until it has been registered with a
-   syntax, and without that this could only have been an animation - which
-   would restart from the beginning every time the pointer crossed the mark
-   instead of reversing from wherever it had got to. */
+   `stroke-dasharray: 1 2` against `pathLength="1"` is one dash as long as the
+   whole stroke followed by a gap twice that, so the offset alone controls how
+   much of the stroke is painted and nothing wraps round.
 
-@property --school-mark-ink {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 0%;
-}
+   Each stroke carries its own slice of the shared duration in `--s` and `--l`,
+   both cut from its real arc length so the pen holds a constant speed instead of
+   dawdling over the short flourish. The delays are declared twice - in the
+   resting rule, which plays on the way out, and in the hover rule, the way in -
+   which is what makes the letters un-write from the S back to the X. */
 
-.school-mark__ink {
-  --school-mark-ink: 0%;
-  /* The band is 14% wide, so the edge of the reveal is a soft nib rather than a
-     guillotine. It starts and ends past the text on both sides so the first and
-     last letters are not born half-written. */
-  -webkit-mask-image: linear-gradient(
-    90deg,
-    #000 calc(var(--school-mark-ink) - 14%),
-    transparent var(--school-mark-ink)
-  );
-  mask-image: linear-gradient(
-    90deg,
-    #000 calc(var(--school-mark-ink) - 14%),
-    transparent var(--school-mark-ink)
-  );
-  transition: --school-mark-ink var(--draw-out) ease-in;
+.school-mark__pen {
+  fill: none;
+  stroke: #fff;
+  /* Wide enough to cover every letter to its edges, narrow enough that no
+     stroke reaches the next letter's ink and reveals it before the pen gets
+     there. 26 against the 100-unit-tall wordmark is the tested value; see
+     docs/XVS_WORDMARK.md for how to check a change to it. */
+  stroke-width: 26;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: var(--o);
+  transition: stroke-dashoffset calc(var(--draw-out) * var(--l)) linear
+    calc(var(--draw-out) * (1 - var(--s) - var(--l)));
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .school-mark:hover .school-mark__ink {
-    --school-mark-ink: 118%;
-    transition: --school-mark-ink var(--draw-in) ease-out var(--draw-start);
+  .school-mark:hover .school-mark__pen {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset calc(var(--draw-in) * var(--l)) linear
+      calc(var(--draw-start) + var(--draw-in) * var(--s));
   }
 }
 
-.school-mark:focus-visible .school-mark__ink,
-a:focus-visible .school-mark__ink,
-button:focus-visible .school-mark__ink {
-  --school-mark-ink: 118%;
-  transition: --school-mark-ink var(--draw-in) ease-out var(--draw-start);
+.school-mark:focus-visible .school-mark__pen,
+a:focus-visible .school-mark__pen,
+button:focus-visible .school-mark__pen {
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset calc(var(--draw-in) * var(--l)) linear
+    calc(var(--draw-start) + var(--draw-in) * var(--s));
 }
 
 /* Nothing here carries meaning that the motion is required to deliver: the
    school is named on the link that wraps the mark either way. So for a reader
-   who has asked for less movement, the card turns without turning, and the
-   wordmark is simply there. */
+   who has asked for less movement, the card turns without turning and the
+   wordmark is simply there, already written. */
 @media (prefers-reduced-motion: reduce) {
   .school-mark__card {
     transition: none;
   }
-  .school-mark__ink {
-    --school-mark-ink: 118%;
+  .school-mark__pen {
+    stroke-dashoffset: 0;
     transition: none;
-    -webkit-mask-image: none;
-    mask-image: none;
   }
 }
 

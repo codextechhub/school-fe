@@ -1,47 +1,41 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 
 import { cn } from "@/lib/utils";
+import { INK, PEN, WORDMARK_RATIO, WORDMARK_VIEWBOX } from "./xvs-wordmark";
 
 /**
- * A school's crest, which turns over on hover to write "XVS" and turns back
- * when the pointer leaves. The sidebar's mark and the sign-in page's are the
- * same object at two sizes.
+ * A school's crest, which turns over on hover and writes "XVS" underneath it,
+ * then turns back when the pointer leaves. The sidebar's mark and the sign-in
+ * page's are the same object at two sizes.
  *
  * The back face is the product's wordmark, not the school's name. A school's
- * name is arbitrary text - "Holy Cross College" sets happily at this size,
- * "Government Comprehensive Secondary School, Ikeja" does not at any size that
- * is still readable - so a face carrying it needs a rule for shrinking and
- * replacing it, and every school past the rule is shown something that is not
- * its name anyway. Three fixed letters need no rule: the flip always writes the
- * same word, at one size, in full.
+ * name is arbitrary text - "Holy Cross College" would set happily at this size,
+ * "Government Comprehensive Secondary School, Ikeja" at no size that is still
+ * readable - so a face carrying it needs a rule for shrinking and replacing it,
+ * and every school past the rule is shown something that is not its name anyway.
+ * Three fixed letters need no rule, and they can be drawn rather than set.
  *
- * The writing is Grand Hotel, which is the face the CodeX console's hand-drawn
- * "CodeX" wordmark was traced from, so the two products sign themselves in the
- * same hand. Set from the font rather than traced: the console can afford one
- * pen stroke per letter because its wordmark never changes shape, and a font
- * gets the same letters here without a second set of authored paths to keep.
+ * Everything here is CSS (see `.school-mark` in index.css): the flip is a
+ * transition on `transform`, and the write-on is a transition on each pen
+ * stroke's dash offset. Transitions rather than keyframes on purpose - they
+ * reverse from wherever they had got to, so flicking the pointer across the mark
+ * never leaves it stranded mid-spin, and the letters un-write in the reverse
+ * order they were written. No JS, no timers, no state.
  */
 
 /** Height of the crest, in px, where the caller names none. */
 const DEFAULT_SIZE = 30;
 
 /**
- * The wordmark and the flip box, as multiples of the crest's height.
+ * The wordmark's height, as a multiple of the crest's.
  *
- * "XVS" in Grand Hotel stands 0.75em of ink and runs 1.39em wide. Set at 1.07x
- * the crest, its ink lands a little short of the crest's height, which is the
- * allowance the console makes so the calligraphy does not tower over the
- * shield. The box is wider and taller than either face, so nothing shifts as it
- * turns and neither face is ever near an edge.
+ * A little shorter than the crest, so the calligraphy does not tower over the
+ * shield. The box is sized from the wordmark, which is the wider of the two
+ * faces, so the row cannot shift as the card turns.
  */
-const WORDMARK_SCALE = 1.07;
-const BOX_WIDTH_SCALE = 1.87;
-const BOX_HEIGHT_SCALE = 1.33;
+const WORDMARK_SCALE = 0.8;
 
-/** What the back face writes. The product, in every school's sidebar. */
-const WORDMARK = "XVS";
-
-/** The mark shown for a school with no crest of its own, and its name. */
+/** The mark shown for a school with no crest of its own. */
 const FALLBACK_SRC = "/image/logo.png";
 
 export function SchoolMark({
@@ -66,6 +60,8 @@ export function SchoolMark({
   animate?: boolean;
   className?: string;
 }) {
+  // Masks are referenced by id, and the mark renders more than once per page.
+  const maskId = useId();
   // A crest can be missing two ways: never given to us, or given and then
   // unfetchable - a file gone from storage, or a public endpoint answering 404
   // for a slug that is not a school. Both land on the product's own mark, so
@@ -85,29 +81,53 @@ export function SchoolMark({
 
   if (!animate) return crest(className);
 
+  const wordmarkHeight = size * WORDMARK_SCALE;
+
   return (
     <span
-      className={cn("school-mark", className)}
-      style={{
-        height: Math.round(size * BOX_HEIGHT_SCALE),
-        width: Math.round(size * BOX_WIDTH_SCALE),
-      }}
+      className={cn("school-mark text-primary", className)}
+      style={{ height: size, width: wordmarkHeight * WORDMARK_RATIO }}
     >
       <span className="school-mark__card">
         <span className="school-mark__face">{crest()}</span>
 
         <span className="school-mark__face school-mark__face--back">
-          <span
-            className="school-mark__ink whitespace-nowrap leading-none text-primary"
-            style={{
-              fontFamily: "var(--font-script)",
-              fontSize: Math.round(size * WORDMARK_SCALE),
-              fontWeight: 400,
-            }}
+          <svg
+            viewBox={WORDMARK_VIEWBOX}
+            className="w-full"
+            style={{ height: wordmarkHeight }}
             aria-hidden="true"
+            focusable="false"
           >
-            {WORDMARK}
-          </span>
+            <mask
+              id={maskId}
+              maskUnits="userSpaceOnUse"
+              x="-20"
+              y="-20"
+              width="230"
+              height="140"
+            >
+              {PEN.map((stroke, i) => (
+                <path
+                  key={i}
+                  className="school-mark__pen"
+                  d={stroke.d}
+                  pathLength={1}
+                  style={
+                    // Each stroke's slice of the write-on (as fractions of the
+                    // shared duration) and its hidden dash offset. Read by the
+                    // transition timings in the CSS.
+                    {
+                      "--s": stroke.s,
+                      "--l": stroke.l,
+                      "--o": stroke.o,
+                    } as React.CSSProperties
+                  }
+                />
+              ))}
+            </mask>
+            <path d={INK} fill="currentColor" mask={`url(#${maskId})`} />
+          </svg>
         </span>
       </span>
     </span>

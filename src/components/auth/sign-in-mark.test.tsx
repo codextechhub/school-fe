@@ -52,10 +52,10 @@ describe("SignInMark", () => {
     expect(render("")).toContain("mb-6");
   });
 
-  it("turns over to the wordmark, the way the sidebar's mark does", () => {
-    // The flip is the shared mark's; what this asserts is that the sign-in
+  it("writes the wordmark, the way the sidebar's mark does", () => {
+    // The write-on is the shared mark's; what this asserts is that the sign-in
     // page gets it rather than a plain crest.
-    expect(render("holy-cross")).toContain("school-mark__ink");
-    expect(render("")).toContain("school-mark__ink");
+    expect(render("holy-cross")).toContain("school-mark__pen");
+    expect(render("")).toContain("school-mark__pen");
   });
 });
