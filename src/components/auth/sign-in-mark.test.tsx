@@ -9,7 +9,7 @@ const { schoolLogoUrl } = await import("@/utils/school-brand");
 
 function render(forSlug: string) {
   slug.mockReturnValue(forSlug);
-  return renderToStaticMarkup(<SignInMark className="h-8" />);
+  return renderToStaticMarkup(<SignInMark className="mb-6" />);
 }
 
 describe("schoolLogoUrl", () => {
@@ -48,7 +48,14 @@ describe("SignInMark", () => {
   });
 
   it("keeps the class it was given either way", () => {
-    expect(render("holy-cross")).toContain('class="h-8"');
-    expect(render("")).toContain('class="h-8"');
+    expect(render("holy-cross")).toContain("mb-6");
+    expect(render("")).toContain("mb-6");
+  });
+
+  it("turns over to the wordmark, the way the sidebar's mark does", () => {
+    // The flip is the shared mark's; what this asserts is that the sign-in
+    // page gets it rather than a plain crest.
+    expect(render("holy-cross")).toContain("school-mark__ink");
+    expect(render("")).toContain("school-mark__ink");
   });
 });

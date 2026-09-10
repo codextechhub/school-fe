@@ -67,10 +67,10 @@
      would restyle the console. Pointing the token at Geist here restyles this
      app and nothing else. */
   --font-mont: var(--font-geist);
-  /* The hand that writes the school's name on the sidebar mark. Copperplate
-     rather than a casual script: a school's name belongs on a certificate, and
-     that is the register Great Vibes is in. */
-  --font-script: 'Great Vibes', 'Segoe Script', cursive;
+  /* The hand that writes the XVS wordmark on the sidebar mark. Grand Hotel,
+     because the CodeX console's wordmark is Grand Hotel outlines converted to
+     paths: the two products then sign themselves in the same hand. */
+  --font-script: 'Grand Hotel', 'Segoe Script', cursive;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -388,10 +388,10 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    The sidebar mark.
 
-   The school's logo, which turns over on hover to write the school's name and
-   turns back when the pointer leaves. Ported from console-fe's `.app-logo`,
-   minus the calligraphy: the console flips to a fixed hand-drawn wordmark, and
-   a school's name is arbitrary text that has to be set rather than drawn.
+   The school's logo, which turns over on hover to write the XVS wordmark and
+   turns back when the pointer leaves. Ported from console-fe's `.app-logo`: the
+   console flips to a hand-drawn "CodeX", and this flips to "XVS" set in the face
+   that wordmark was traced from.
 
    Transitions rather than keyframes, for the reason the console records: they
    reverse from wherever they had got to, so flicking the pointer across the
@@ -456,11 +456,11 @@ button:focus-visible .school-mark__card {
 
 /* ── the writing ──────────────────────────────────────────────────────────────
 
-   The console writes a fixed wordmark, so it can hand-author one pen stroke per
-   letter and animate each one's dash offset. A school's name is arbitrary text
-   and has no strokes to author, so the same illusion is built the other way
-   round: the name is already set, in a script face, and a soft-edged band
-   sweeps across it left to right so the letters arrive under the pen.
+   The console hand-authors one pen stroke per letter and animates each one's
+   dash offset. Type has no strokes to author, so the same illusion is built the
+   other way round: the wordmark is already set, in a script face, and a
+   soft-edged band sweeps across it left to right so the letters arrive under
+   the pen.
 
    `@property` is what makes it a TRANSITION rather than a keyframe animation.
    A custom property is not interpolable until it has been registered with a
@@ -506,9 +506,10 @@ button:focus-visible .school-mark__ink {
   transition: --school-mark-ink var(--draw-in) ease-out var(--draw-start);
 }
 
-/* Nothing here carries meaning that the motion is required to deliver: the name
-   is in the DOM and on the title either way. So for a reader who has asked for
-   less movement, the card turns without turning, and the name is simply there. */
+/* Nothing here carries meaning that the motion is required to deliver: the
+   school is named on the link that wraps the mark either way. So for a reader
+   who has asked for less movement, the card turns without turning, and the
+   wordmark is simply there. */
 @media (prefers-reduced-motion: reduce) {
   .school-mark__card {
     transition: none;

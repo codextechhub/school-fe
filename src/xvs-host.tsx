@@ -26,9 +26,6 @@ import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
 import { routesPath } from "@/routes/routesPath";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { SchoolMark } from "@/components/school-mark";
-import { useAppSelector } from "@/redux/store";
-import { selectSchool } from "@/redux/features/auth/auth-slice";
-
 
 /** Every branch this caller may see. The server scopes it by their grants. */
 export function useBranches(): HostQueryResult<HostBranch> {
@@ -124,30 +121,19 @@ export const createsWorkflowTemplates = false;
 /** When this school's fee bills fall due. */
 export { default as FeeDuePolicyPanel } from "@/pages/protected/school-finance/fee-due-policy";
 
-/** The school's own mark, not the platform's.
+/** The school's own crest at the top of the Finance sidebar, not the platform's.
  *
  *  The same component the school's own sidebar uses, deliberately: crossing
- *  into Finance should not change who the header says you are looking at. It
- *  also has the fallback this used not to have. A school whose crest is missing
- *  from storage - never uploaded, or the file gone - rendered an empty span
- *  here, so the top of the finance sidebar was simply blank, with nothing to
- *  say whether the logo was loading, missing or broken.
+ *  into Finance should not change who the header says you are looking at, and a
+ *  school whose crest is missing from storage - never uploaded, or the file gone
+ *  - falls back to the XVS shield rather than leaving the sidebar's top blank.
  */
 export const AppLogo: ComponentType<{ animate?: boolean; className?: string }> = ({
   animate = true,
   className,
 }) => {
   const logo = useSchoolLogo();
-  const school = useAppSelector(selectSchool);
-  return (
-    <SchoolMark
-      logo={logo}
-      name={school?.name}
-      slug={school?.slug}
-      animate={animate}
-      className={className}
-    />
-  );
+  return <SchoolMark logo={logo} animate={animate} className={className} />;
 };
 
 /** Scroll the sidebar so the active item is visible.

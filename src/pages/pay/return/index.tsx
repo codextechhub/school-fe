@@ -34,7 +34,7 @@ export default function PaymentReturn() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 px-4 py-10">
       <div className="w-full max-w-md rounded-xl border bg-background p-6 text-center shadow-sm sm:p-8">
-        <SignInMark className="mx-auto mb-4 h-9 w-auto" />
+        <SignInMark size={36} className="mb-4" />
         <CheckCircle2 className="mx-auto size-10 text-muted-foreground" />
         <h1 className="mt-4 text-lg font-semibold">Thank you</h1>
         <p className="mt-2 text-sm text-muted-foreground">

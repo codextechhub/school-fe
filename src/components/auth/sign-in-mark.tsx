@@ -1,17 +1,21 @@
 import { useState } from "react";
 
+import { SchoolMark } from "@/components/school-mark";
+import { cn } from "@/lib/utils";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { schoolLogoUrl } from "@/utils/school-brand";
 
 /**
- * The mark at the top of the sign-in page.
+ * The mark at the top of the sign-in page, which turns over on hover to write
+ * "XVS" the way the sidebar's does.
  *
- * Not components/school-mark, which is the sidebar's: that one is handed a logo
- * it has already fetched with a session, and flips to name the school. This one
- * runs before any session exists and has to resolve the crest for itself.
+ * The flip and the crest fallback are components/school-mark's; what this adds
+ * is where the crest comes from. The sidebar is handed a logo the session has
+ * already fetched, and this runs before any session exists, so it has to
+ * resolve the crest from the address alone.
  *
  * A school's own crest where the address names a school and that school has
- * uploaded one, and the XVS mark otherwise. Which matters because this is the
+ * uploaded one, and the XVS shield otherwise. Which matters because this is the
  * page where somebody decides whether they are in the right place: staff at
  * Holy Cross reaching holy-cross.xvs.codexng.com should see their own badge,
  * and the bare product address has no school to show.
@@ -22,21 +26,30 @@ import { schoolLogoUrl } from "@/utils/school-brand";
  * there is nothing to be gained by a probe request that a plain onError does
  * not already tell us - and this way the common case is one request, not two.
  */
-export default function SignInMark({ className }: { className?: string }) {
+export default function SignInMark({
+  /** Height of the crest, in px. */
+  size = 32,
+  className,
+}: {
+  size?: number;
+  className?: string;
+}) {
   // Read once per mount: the address cannot change without a page load.
   const [slug] = useState(() => currentSchoolSlug());
-  const [failed, setFailed] = useState(false);
+  const url = schoolLogoUrl(slug);
 
-  const url = failed ? "" : schoolLogoUrl(slug);
-  if (!url) {
-    return <img src="/image/logo.png" alt="XVS" className={className} />;
-  }
   return (
-    <img
-      src={url}
-      alt="School logo"
-      className={className}
-      onError={() => setFailed(true)}
-    />
+    // The flip box is inline-block, so centring is the row's job rather than
+    // the mark's own margins.
+    <div className={cn("flex justify-center", className)}>
+      <SchoolMark
+        logo={url || null}
+        // Named from the address rather than from which image won: on a school's
+        // own host the mark stands for that school whether its badge loaded or
+        // the shield stood in, and the bare product host has no school to name.
+        alt={url ? "School logo" : "XVS"}
+        size={size}
+      />
+    </div>
   );
 }

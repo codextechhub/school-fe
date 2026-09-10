@@ -4,9 +4,10 @@ import "./index.css";
 import App from "./App.tsx";
 import AppProvider from "./redux/provider.tsx";
 import { installStaleChunkReload } from "@/utils/stale-chunk";
-// The sidebar mark writes the school's name in this on hover; nothing else
-// uses it, and it is one weight of one face.
-import "@fontsource/great-vibes/400.css";
+// The sidebar mark writes the XVS wordmark in this on hover, the same face the
+// CodeX console draws its own wordmark from; nothing else uses it, and it is
+// one weight of one face.
+import "@fontsource/grand-hotel/400.css";
 // Geist is the app's typeface, the same one the CodeX console uses. Two
 // variable files rather than ten static weights across two families, so this
 // is fewer bytes as well as one voice across both products. Mono carries

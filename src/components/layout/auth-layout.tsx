@@ -41,12 +41,13 @@ export default function AuthLayout() {
       <div className="w-full flex-1 relative px-6 hide-scrollbar overflow-y-auto flex flex-col min-h-[100dvh]">
         <div className="w-full m-auto max-w-107.5 py-6 shrink-0">
           {/* The school's own crest when the address names one, the XVS mark
-              otherwise. See components/auth/school-mark. */}
+              otherwise, turning over on hover to write the wordmark. See
+              components/auth/sign-in-mark. */}
           {/* Mobile-only - part of the centered block below lg. The blue
               panel carries the mark on desktop, so this is hidden there. */}
-          <SignInMark className="lg:hidden h-8 w-auto mx-auto mb-6" />
+          <SignInMark size={32} className="lg:hidden mb-6" />
           {/* Desktop-only (blue panel is shown alongside). */}
-          <SignInMark className="hidden lg:block h-12 w-auto mx-auto mb-6" />
+          <SignInMark size={48} className="hidden lg:flex mb-6" />
           <Outlet />
         </div>
       </div>

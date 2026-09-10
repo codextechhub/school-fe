@@ -880,22 +880,17 @@ export function AppSidebar({
             <SidebarMenuItem>
               {/* The mark alone, the way the console shows its own. The name
                   and the role used to sit beside it in a block wide enough to
-                  need its own truncation; the name is now one hover away and
-                  the role is on the account menu, where a reader looks for it.
+                  need its own truncation; the name is on the link below and the
+                  role is on the account menu, where a reader looks for it.
 
-                  Collapsed to the icon rail there is no width for the name to
-                  turn into, so it stays a plain logo there. */}
+                  Collapsed to the icon rail there is no width for the wordmark
+                  to turn into, so it stays a plain logo there. */}
               <Link
                 to={routesPath.PROTECTED.OVERVIEW.INDEX}
                 aria-label={schoolName ? `${schoolName} - go to dashboard` : "Go to dashboard"}
                 className="mx-auto flex h-11 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               >
-                <SchoolMark
-                  logo={logoBlobUrl}
-                  name={schoolName}
-                  slug={school?.slug}
-                  animate={state !== "collapsed"}
-                />
+                <SchoolMark logo={logoBlobUrl} animate={state !== "collapsed"} />
               </Link>
             </SidebarMenuItem>
           </SidebarMenu>
