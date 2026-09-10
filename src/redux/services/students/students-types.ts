@@ -242,6 +242,19 @@ export interface StudentSearchHit {
   class_name: string;
 }
 
+/** One guardian hit in the command palette.
+ *
+ *  Three fields, and no phone, email or photograph: the directory row carries
+ *  those and this opens in a dropdown on the second keystroke, over whatever
+ *  page the reader is on. Who, and whose children - the rest is on the record.
+ */
+export interface GuardianSearchHit {
+  id: number;
+  full_name: string;
+  /** Narrowed to the branches the caller covers, so it can be empty. */
+  ward_names: string[];
+}
+
 /** The guardian directory row. */
 export interface GuardianRow {
   id: number;

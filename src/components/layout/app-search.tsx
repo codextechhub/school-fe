@@ -4,7 +4,11 @@ import { ChevronRight, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
 import { P, resolvePermissionKey } from "@/permissions";
-import { useSearchStudentsQuery } from "@/redux/services/students/students-api";
+import {
+  useSearchGuardiansQuery,
+  useSearchStudentsQuery,
+} from "@/redux/services/students/students-api";
+import { useSearchStaffQuery } from "@/redux/services/staff/staff-api";
 import { useAppSelector } from "@/redux/store";
 import {
   selectActorPermissions,
@@ -155,30 +159,93 @@ export function AppSearch({
   const canSeeStudents = permissions.includes(
     resolvePermissionKey(P.BROWSE_STUDENTS),
   );
+  const canSeeStaff = permissions.includes(resolvePermissionKey(P.BROWSE_TEACHERS));
+  const longEnough = trimmed.length >= 2;
+  const askable = resultsOpen && !tenantIsPending && longEnough;
+
   const { data: studentHits } = useSearchStudentsQuery(trimmed, {
-    skip:
-      !resultsOpen || tenantIsPending || !canSeeStudents || trimmed.length < 2,
+    skip: !askable || !canSeeStudents,
   });
-  const students = useMemo(
-    () => (trimmed.length >= 2 ? (studentHits?.data ?? []).slice(0, 5) : []),
-    [studentHits, trimmed],
+  const { data: staffHits } = useSearchStaffQuery(trimmed, {
+    skip: !askable || !canSeeStaff,
+  });
+  // Guardians hang off students: a school that may not open a child's record has
+  // no business finding the household behind it, and there is no guardian key of
+  // its own to ask for.
+  const { data: guardianHits } = useSearchGuardiansQuery(trimmed, {
+    skip: !askable || !canSeeStudents,
+  });
+
+  /**
+   * The people found, in the order their sections appear.
+   *
+   * One list rather than three counts. Every offset below - the arrow-key
+   * indices, the action rows' displacement, the "show all" position - is
+   * derived from it, so adding a fourth kind of record cannot leave one of them
+   * behind. It was a single `studentCount` threaded through five places, which
+   * is a shape that holds for exactly as long as there is one kind of record.
+   */
+  const recordGroups = useMemo(() => {
+    const cap = <T,>(rows: T[] | undefined) =>
+      longEnough ? (rows ?? []).slice(0, 5) : [];
+    return [
+      {
+        key: "students" as const,
+        heading: "Students",
+        rows: cap(studentHits?.data).map((row) => ({
+          id: row.id,
+          name: row.full_name,
+          detail: [row.student_number || "No admission number", row.class_name]
+            .filter(Boolean).join(" · "),
+          to: routesPath.PROTECTED.STUDENTS.PROFILE_ID(row.id),
+        })),
+      },
+      {
+        key: "staff" as const,
+        heading: "Staff",
+        rows: cap(staffHits?.data).map((row) => ({
+          id: row.id,
+          name: row.name,
+          detail: row.meta,
+          to: routesPath.PROTECTED.STAFF.PROFILE_ID(row.id),
+        })),
+      },
+      {
+        key: "guardians" as const,
+        heading: "Guardians",
+        rows: cap(guardianHits?.data).map((row) => ({
+          id: row.id,
+          name: row.full_name,
+          // Which children, because two guardians share a surname far more often
+          // than two children do. Empty when the caller covers none of them.
+          detail: row.ward_names.join(", ") || "No wards at your branches",
+          to: routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(row.id),
+        })),
+      },
+    ].filter((group) => group.rows.length > 0);
+  }, [studentHits, staffHits, guardianHits, longEnough]);
+
+  /** Flattened in render order, which is the order the arrow keys walk. */
+  const recordRows = useMemo(
+    () => recordGroups.flatMap((group) => group.rows),
+    [recordGroups],
   );
-  const studentCount = students.length;
-  /** Every navigable row: students first, then the actions. */
-  const totalRows = studentCount + view.rows.length;
+  const recordCount = recordRows.length;
+  /** Every navigable row: people first, then the actions. */
+  const totalRows = recordCount + view.rows.length;
 
   // Where each action sits in the flat row order, so a rendered row can label
   // itself with the index the arrow keys use.
   const rowIndexByActionId = useMemo(() => {
     const index = new Map<string, number>();
     view.rows.forEach((row, position) => {
-      // Offset by the student rows above, so a rendered action labels itself
+      // Offset by the people rows above, so a rendered action labels itself
       // with the index the arrow keys actually use.
-      if (row.kind === "action") index.set(row.result.action.id, position + studentCount);
+      if (row.kind === "action") index.set(row.result.action.id, position + recordCount);
     });
     return index;
-  }, [view.rows, studentCount]);
-  const showAllIndex = view.truncated ? studentCount + view.rows.length - 1 : -1;
+  }, [view.rows, recordCount]);
+  const showAllIndex = view.truncated ? recordCount + view.rows.length - 1 : -1;
 
   // Before a character is typed the list is this user's own most-reached
   // actions. With no history yet every score is zero and registry order stands
@@ -210,16 +277,16 @@ export function AppSearch({
   };
 
   /**
-   * Open a student's record.
+   * Open somebody's record - a child, a colleague, a guardian.
    *
    * Deliberately NOT recorded as a pick: the frecency store learns which
-   * ACTIONS this person reaches for, and feeding it one row per child would
+   * ACTIONS this person reaches for, and feeding it one row per person would
    * teach it nothing and grow without bound.
    */
-  const openStudent = (id: number) => {
+  const openRecord = (to: string) => {
     closeSearch();
     setMobileOpen(false);
-    navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(id));
+    navigate(to);
   };
 
   const run = (action: ActionDef) => {
@@ -268,11 +335,11 @@ export function AppSearch({
       // the confirmation opened and its Cancel button was pressed by the same
       // keypress, so it appeared to flash and vanish.
       event.preventDefault();
-      if (activeRow < studentCount) {
-        openStudent(students[activeRow].id);
+      if (activeRow < recordCount) {
+        openRecord(recordRows[activeRow].to);
         return;
       }
-      const target = view.rows[activeRow - studentCount] ?? view.rows[0];
+      const target = view.rows[activeRow - recordCount] ?? view.rows[0];
       if (!target) return;
       if (target.kind === "show-all") expandResults();
       else run(target.result.action);
@@ -364,41 +431,51 @@ export function AppSearch({
       )}
     >
       <div className="max-h-[min(60vh,26rem)] overflow-y-auto">
-        {studentCount > 0 && (
-          <section aria-labelledby={`app-search-${variant}-students`}>
-            {renderSectionHeader(`app-search-${variant}-students`, "Students")}
-            {students.map((student, index) => (
-              <button
-                key={student.id}
-                id={`app-search-option-${variant}-${index}`}
-                type="button"
-                role="option"
-                aria-selected={activeRow === index}
-                // Mouse-down would blur the input and close the list before the
-                // click landed, so the row could never be clicked at all.
-                onMouseDown={(event) => event.preventDefault()}
-                onMouseEnter={() => setActiveRow(index)}
-                onClick={() => openStudent(student.id)}
-                className={cn(
-                  "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left",
-                  activeRow === index && "bg-gray-50",
-                )}
-              >
-                <span className="min-w-0">
-                  <span className="block truncate text-sm text-black-01">
-                    {student.full_name}
+        {recordGroups.map((group) => (
+          <section
+            key={group.key}
+            aria-labelledby={`app-search-${variant}-${group.key}`}
+          >
+            {renderSectionHeader(
+              `app-search-${variant}-${group.key}`, group.heading,
+            )}
+            {group.rows.map((person) => {
+              // Its position in the FLAT list, which is what the arrow keys
+              // walk. Looked up rather than taken from the inner map's index,
+              // which restarts at zero for every section.
+              const index = recordRows.indexOf(person);
+              return (
+                <button
+                  key={`${group.key}-${person.id}`}
+                  id={`app-search-option-${variant}-${index}`}
+                  type="button"
+                  role="option"
+                  aria-selected={activeRow === index}
+                  // Mouse-down would blur the input and close the list before
+                  // the click landed, so the row could never be clicked at all.
+                  onMouseDown={(event) => event.preventDefault()}
+                  onMouseEnter={() => setActiveRow(index)}
+                  onClick={() => openRecord(person.to)}
+                  className={cn(
+                    "flex w-full items-center justify-between gap-2 rounded-lg px-3 py-2 text-left",
+                    activeRow === index && "bg-gray-50",
+                  )}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm text-black-01">
+                      {person.name}
+                    </span>
+                    <span className="block truncate text-xs text-gray-400">
+                      {person.detail}
+                    </span>
                   </span>
-                  <span className="block truncate text-xs text-gray-400">
-                    {student.student_number || "No admission number"}
-                    {student.class_name ? ` · ${student.class_name}` : ""}
-                  </span>
-                </span>
-              </button>
-            ))}
+                </button>
+              );
+            })}
           </section>
-        )}
+        ))}
 
-        {view.rows.length === 0 && studentCount === 0 ? (
+        {view.rows.length === 0 && recordCount === 0 ? (
           <p className="px-3 py-4 text-center text-xs text-gray-400">
             {canSeeStudents && trimmed.length === 1
               ? "Keep typing to search students."
@@ -420,7 +497,7 @@ export function AppSearch({
               // Offset past the student rows, or two rows would claim the
               // same index and the arrow keys would highlight both.
               row.kind === "action"
-                ? renderRow(row.result, index + studentCount, variant)
+                ? renderRow(row.result, index + recordCount, variant)
                 : null,
             )}
           </section>

@@ -21,6 +21,7 @@ import type {
   StudentGuardianLink,
   StudentListArgs,
   StudentRow,
+  GuardianSearchHit,
   StudentSearchHit,
   StudentSubject,
   StudentSummary,
@@ -366,6 +367,21 @@ export const studentsApi = baseApi.injectEndpoints({
       providesTags: ["Students"],
     }),
 
+    /**
+     * Guardian hits for the command palette. Backend: GuardianSearchView.
+     *
+     * Capped and never paginated, like the student search above it: a palette
+     * that paginates is a list, and this is not one.
+     */
+    searchGuardians: builder.query<Envelope<GuardianSearchHit[]>, string>({
+      query: (q) => ({
+        url: `/guardians/search/`,
+        method: "GET",
+        params: { q },
+      }),
+      providesTags: ["Guardians"],
+    }),
+
     linkGuardian: builder.mutation<
       Envelope<StudentGuardianLink[]>,
       {
@@ -609,6 +625,7 @@ export const {
   useDeleteStudentDocumentMutation,
   useGetStudentHistoryQuery,
   useGetGuardiansQuery,
+  useSearchGuardiansQuery,
   useSearchStudentsQuery,
   useGetGuardianQuery,
   useUpdateGuardianMutation,
