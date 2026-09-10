@@ -31,6 +31,7 @@ import {
 import type { CataloguePermission } from "@/redux/services/roles/roles-types";
 import { writeErrorMessage, fieldErrors } from "@/utils/api-error";
 import { MODULE_LABEL } from "../onboarding-labels";
+import { AssignRolePanel } from "@/pages/protected/roles/assign-role-panel";
 
 /**
  * One drawer for a role: what it is called, what it is for, and what it reaches.
@@ -340,8 +341,11 @@ export function RoleDrawer({
             operation: "ADD" as const,
           })),
         }).unwrap();
+        // Names where it went. The request now waits in the approvals inbox
+        // beside purchase orders and payment runs, and a reader told only that
+        // it was "sent" has nowhere to go and look for it.
         toast.success(
-          `Sent for approval. ${trimmed} changes once somebody approves it.`,
+          `Sent for approval. ${trimmed} changes once it is approved - find it under Approvals.`,
         );
       } else {
         await updateRole({
@@ -452,7 +456,11 @@ export function RoleDrawer({
 
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
           {!creating && tab === "people" && (
-            <RoleHolders roleKey={roleKey as string} />
+            <RoleHolders
+              roleKey={roleKey as string}
+              roleId={detail?.id}
+              roleName={detail?.name ?? roleKey ?? ""}
+            />
           )}
           {(creating || tab === "reach") && (<>
           {locked && (
@@ -723,44 +731,86 @@ The roles table promises a count and could not say who. A school deciding
 whether to change what a role reaches needs to know whose access it is about to
 change, and that question was answerable only from the console.
 */
-function RoleHolders({ roleKey }: { roleKey: string }) {
-  const { data, isLoading } = useGetRoleHoldersQuery({ role: roleKey });
+/**
+ * Who holds a role, and the way to add somebody.
+ *
+ * Read and write in one place: the question "who does this job" and the act
+ * "give it to Ada" are the same thought, and splitting them sent a head teacher
+ * out to the staff directory to finish what she started here.
+ *
+ * The Give control is gated on `school.roles.assign`, the key the assignment
+ * endpoint itself checks, so the button is offered only where it will work.
+ */
+function RoleHolders({
+  roleKey,
+  roleId,
+  roleName,
+}: {
+  roleKey: string;
+  roleId?: number;
+  roleName: string;
+}) {
+  const { hasPermission } = usePermissions();
+  const { data, isLoading, refetch } = useGetRoleHoldersQuery({ role: roleKey });
   const holders = data?.data ?? [];
+  // A role that has not loaded has no id to assign against, so the panel waits
+  // rather than offering a button that cannot say which role it means.
+  const mayAssign = hasPermission(P.ASSIGN_ROLE) && roleId !== undefined;
 
   if (isLoading) {
     return <p className="text-[13px] text-gray-06">Loading…</p>;
   }
   if (holders.length === 0) {
     return (
-      <p className="rounded-md border border-border px-3 py-2.5 text-[13px] text-gray-06">
-        Nobody holds this role yet. Until somebody does, it grants nothing and
-        anything routed to it waits.
-      </p>
+      <div className="space-y-3">
+        <p className="rounded-md border border-border px-3 py-2.5 text-[13px] text-gray-06">
+          Nobody holds this role yet. Until somebody does, it grants nothing and
+          anything routed to it waits.
+        </p>
+        {mayAssign && (
+          <AssignRolePanel
+            roleId={roleId}
+            roleName={roleName}
+            heldBy={[]}
+            onAssigned={refetch}
+          />
+        )}
+      </div>
     );
   }
   return (
-    <ul className="space-y-2">
-      {holders.map((holder) => (
-        <li
-          key={holder.id}
-          className="flex items-start justify-between gap-3 rounded-md border border-border px-3 py-2.5"
-        >
-          <div className="min-w-0">
-            <p className="text-[13px] font-medium text-black-01 truncate">
-              {holder.user_name}
-            </p>
-            <p className="text-xs text-gray-06 truncate">{holder.user_email}</p>
-          </div>
-          {/* Only where it changes the meaning: a role held school-wide says so
-              by saying nothing, and a branch name on every row of a one-branch
-              school is a column that repeats itself. */}
-          {holder.branch !== null && (
-            <Badge variant="inactive" className="text-[11px] shrink-0">
-              One branch
-            </Badge>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-3">
+      <ul className="space-y-2">
+        {holders.map((holder) => (
+          <li
+            key={holder.id}
+            className="flex items-start justify-between gap-3 rounded-md border border-border px-3 py-2.5"
+          >
+            <div className="min-w-0">
+              <p className="text-[13px] font-medium text-black-01 truncate">
+                {holder.user_name}
+              </p>
+              <p className="text-xs text-gray-06 truncate">{holder.user_email}</p>
+            </div>
+            {/* Only where it changes the meaning: a role held school-wide says
+                so by saying nothing, and a branch name on every row of a
+                one-branch school is a column that repeats itself. */}
+            {holder.branch !== null && (
+              <Badge variant="inactive" className="text-[11px] shrink-0">
+                One branch
+              </Badge>
+            )}
+          </li>
+        ))}
+      </ul>
+      {mayAssign && (
+        <AssignRolePanel
+          roleId={roleId}
+          roleName={roleName}
+          heldBy={holders.map((holder) => holder.user_id)}
+          onAssigned={refetch}
+        />
+      )}
+    </div>
   );
 }
