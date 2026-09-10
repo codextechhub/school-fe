@@ -461,7 +461,6 @@ export const baseApi = createApi({
     // Requests waiting on a decision, and the decisions already taken. Separate
     // from Roles because approving one rewrites a role: the inbox and the roles
     // table both have to move, and a single tag would refetch neither reliably.
-    "RoleChangeRequests",
     // The org chart the shared workflow screens read when a step is pointed at a
     // position rather than a person. Declared here because RTK refuses a tag the
     // base api has not seen, and the screens that use them come from the package.

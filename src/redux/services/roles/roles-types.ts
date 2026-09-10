@@ -104,12 +104,43 @@ export interface RoleChangeDeltaItem {
 }
 
 /**
+ * Where a request has got to in its approval ladder.
+ *
+ * `status` on the request says PENDING or APPROVED; this says who it is waiting
+ * on. A screen that can only show "waiting" cannot tell the reader whether they
+ * are the person being waited for, and at a school with two administrators that
+ * is the entire question.
+ *
+ * Null for a request raised before role changes were routed through the
+ * approval engine. Those have no ladder to act on and cannot be decided.
+ */
+export interface RoleChangeApproval {
+  instance_id: string;
+  /** The engine's own status: IN_PROGRESS, APPROVED, REJECTED, and so on. */
+  status: string;
+  /** The stage the ladder is waiting on, empty once it is finished. */
+  stage_label: string;
+  /**
+   * Whether the reader is on this stage's approver list.
+   *
+   * Read from the frozen snapshot the server will check when the button is
+   * pressed, so a button that shows is a button that works.
+   */
+  can_act: boolean;
+  /** Whether the reader is the person who raised it. */
+  self_raised: boolean;
+}
+
+/**
  * A request to change what a role reaches, waiting on a decision.
  *
  * Restricted permissions cannot be granted by editing a role directly: the
  * server refuses and asks for one of these instead. So this is not an optional
  * workflow a school can ignore - it is the only route to every permission that
  * actually spends or bills money.
+ *
+ * Each one runs an approval ladder from the moment it is raised. The statuses
+ * here summarise it and `approval` carries the detail.
  */
 export interface RoleChangeRequest {
   id: number;
@@ -122,13 +153,7 @@ export interface RoleChangeRequest {
   submitted_at: string;
   decided_at: string | null;
   delta_items: RoleChangeDeltaItem[];
-}
-
-/** A decision on one request. Denial requires a reason; approval does not. */
-export interface RoleChangeDecision {
-  id: number;
-  action: "APPROVE" | "DENY";
-  notes?: string;
+  approval: RoleChangeApproval | null;
 }
 
 /** What raising a request needs. */

@@ -6,7 +6,6 @@ import type {
   NewRole,
   NewRoleChangeRequest,
   RoleHolder,
-  RoleChangeDecision,
   RoleChangeRequest,
   RoleUpdate,
   SchoolRole,
@@ -183,28 +182,15 @@ export const rolesApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * Requests to change what a role reaches, newest first.
+     * Raise a request to change what a role reaches.
      *
      * Not an optional workflow. Every permission that bills a family or moves
      * money is marked restricted, and the server refuses to grant one by
-     * editing a role: it asks for a request instead. A school with no screen for
-     * these can create roles and can never give them the powers they exist for.
+     * editing a role: it asks for a request instead. Raising one starts an
+     * approval ladder, and the request is then read and decided in the workflow
+     * approvals inbox alongside every other document awaiting a decision -
+     * which is why this app raises them and never lists them.
      */
-    getRoleChangeRequests: builder.query<
-      PaginatedEnvelope<RoleChangeRequest>,
-      { status?: string } | void
-    >({
-      query: (params) => ({
-        url: `${scope()}/role-change-requests/`,
-        method: "GET",
-        params: params && "status" in params && params.status
-          ? { status: params.status }
-          : undefined,
-      }),
-      extraOptions: { silent: true },
-      providesTags: ["RoleChangeRequests"],
-    }),
-
     createRoleChangeRequest: builder.mutation<
       Envelope<RoleChangeRequest>,
       NewRoleChangeRequest
@@ -215,29 +201,8 @@ export const rolesApi = baseApi.injectEndpoints({
         body,
       }),
       extraOptions: { silent: true },
-      invalidatesTags: ["RoleChangeRequests"],
     }),
 
-    /**
-     * Approve or deny one request.
-     *
-     * Approving rewrites the target role in the same transaction, so Roles is
-     * invalidated too: the roles table's permission counts are wrong the moment
-     * this returns, and a stale count on a permissions screen is worse than a
-     * spinner.
-     */
-    decideRoleChangeRequest: builder.mutation<
-      Envelope<RoleChangeRequest>,
-      RoleChangeDecision
-    >({
-      query: ({ id, ...body }) => ({
-        url: `${scope()}/role-change-requests/${id}/decide/`,
-        method: "POST",
-        body,
-      }),
-      extraOptions: { silent: true },
-      invalidatesTags: ["RoleChangeRequests", "Roles"],
-    }),
   }),
 });
 
@@ -251,7 +216,5 @@ export const {
   useGetRoleHoldersQuery,
   useAssignRoleMutation,
   useRevokeRoleAssignmentMutation,
-  useGetRoleChangeRequestsQuery,
   useCreateRoleChangeRequestMutation,
-  useDecideRoleChangeRequestMutation,
 } = rolesApi;

@@ -218,10 +218,10 @@ export function AppSidebar({
    *   - without the second, a parent lights alongside its child and two rows
    *     look selected at once;
    *   - without a door to point at, the exclusion darkens the whole group. A
-   *     hand-written list of excluded paths named /students/enrol and
-   *     /roles/change-requests, neither of which has a door, so opening either
-   *     unlit the parent and lit nothing else - and somebody halfway through
-   *     enrolling a child had no answer to "where am I?".
+   *     hand-written list of excluded paths can name a path that has no door -
+   *     /students/enrol is one - so opening it unlights the parent and lights
+   *     nothing else, and somebody halfway through enrolling a child has no
+   *     answer to "where am I?".
    *
    * Passing the sibling DOORS rather than their paths is what keeps the two
    * halves in step: a group cannot exclude a path it does not offer, and a
@@ -686,10 +686,9 @@ export function AppSidebar({
         title: "Roles & Permissions",
         url: routesPath.PROTECTED.ROLES.INDEX,
         icon: ShieldCheck,
-        // No deeper door under /roles, so nothing is excluded. It used to
-        // exclude /roles/change-requests, which has no door - so that screen
-        // darkened the whole sidebar. Approvals is not a sibling either: it
-        // sits at /approvals and cannot match this path.
+        // No deeper door under /roles, so nothing is excluded. Approvals is not
+        // a sibling either: a role change waits in the workflow inbox at
+        // /workflow/approvals, which cannot match this path.
         isActive: owns(routesPath.PROTECTED.ROLES.INDEX),
         childActive: false,
         permission: P.VIEW_ROLES,

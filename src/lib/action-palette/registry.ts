@@ -599,9 +599,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
 
   // ── Administration ─────────────────────────────────────────────────────────
   // The permanent doors under Administration, matching app-sidebar.tsx. Roles
-  // is gated on the same key its sidebar item is; the change-requests queue has
-  // no door of its own and is reached from the roles screen, so it is gated on
-  // the key that lets a reader act on one.
+  // is gated on the same key its sidebar item is.
   {
     id: "view-school-roles",
     label: "View roles and access",
@@ -611,16 +609,6 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: { perm: P.VIEW_ROLES },
     run: { to: R.ROLES.INDEX },
-  },
-  {
-    id: "view-role-change-requests",
-    label: "View role change requests",
-    aliases: ["maker checker", "role approvals", "pending role changes"],
-    section: "Settings",
-    group: "Administration",
-    kind: "view",
-    gate: { perm: P.APPROVE_ROLE_CHANGE },
-    run: { to: R.ROLES.CHANGE_REQUESTS },
   },
 
   // ── Workflow ───────────────────────────────────────────────────────────────

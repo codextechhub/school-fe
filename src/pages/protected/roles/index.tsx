@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import { Info, Plus, Search, ShieldCheck } from "lucide-react";
+import { Info, Plus, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,12 +7,7 @@ import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { PageShell } from "@/components/layout/page-shell";
 import { P } from "@/permissions";
-import { routesPath } from "@/routes/routesPath";
-import {
-  useGetRoleChangeRequestsQuery,
-  useGetSchoolRolesQuery,
-} from "@/redux/services/roles/roles-api";
-import { usePermissions } from "@/hooks/use-permissions";
+import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
 import { RoleDrawer } from "../onboarding/components/role-drawer";
 
 /**
@@ -34,18 +28,7 @@ const SEEDED_COLUMNS = ["Role", "People", "Permissions", "Status"];
 const OWN_COLUMNS = ["Role", "People", "Permissions"];
 
 export default function Roles() {
-  const navigate = useNavigate();
-  const { hasPermission } = usePermissions();
   const roles = useGetSchoolRolesQuery();
-
-  // Only to put a number on the Approvals button. A reader without the approve
-  // key never sees the button, so the request is not worth making for them.
-  const canApprove = hasPermission(P.APPROVE_ROLE_CHANGE);
-  const pending = useGetRoleChangeRequestsQuery(
-    { status: "PENDING" },
-    { skip: !canApprove },
-  );
-  const waiting = pending.data?.data?.length ?? 0;
 
   const [search, setSearch] = useState("");
   const [explainerOpen, setExplainerOpen] = useState(false);
@@ -124,20 +107,6 @@ export default function Roles() {
           </p>
         </div>
         <div className="flex items-center gap-2.5 shrink-0">
-          {canApprove && (
-            <Button
-              variant="outline"
-              onClick={() => navigate(routesPath.PROTECTED.ROLES.CHANGE_REQUESTS)}
-            >
-              <ShieldCheck />
-              Approvals
-              {waiting > 0 && (
-                <Badge variant="amber" className="ml-1.5 text-xs">
-                  {waiting}
-                </Badge>
-              )}
-            </Button>
-          )}
           <PermissionGate permission={P.CREATE_ROLE}>
             <Button onClick={() => openRole(null)}>
               <Plus />
@@ -153,7 +122,8 @@ export default function Roles() {
           <p className="text-sm text-gray-01 text-pretty">
             Some permissions - raising bills, taking payment, changing what a
             role can spend - need a second look before they take effect. Ticking
-            one raises a request for approval instead of saving straight away.
+            one raises a request instead of saving straight away, and the request
+            waits under Approvals with everything else awaiting a decision.
           </p>
         </div>
       )}
@@ -170,13 +140,13 @@ export default function Roles() {
 
       <section className="space-y-2.5">
         <h3 className="text-sm font-semibold text-black-01">
-          Roles CodeX set up for you
+          Roles CodeX set up for this school
         </h3>
         <CustomTable
           tableHeaderList={SEEDED_COLUMNS}
           tableBodyList={seeded.map((role) => rowFor(role, true))}
           loading={roles.isLoading}
-          loadingText="Loading your roles…"
+          loadingText="Loading roles…"
           emptyText={
             search
               ? "No default role matches that."
@@ -189,13 +159,13 @@ export default function Roles() {
 
       <section className="space-y-2.5">
         <h3 className="text-sm font-semibold text-black-01">
-          Roles you added
+          Roles this school added
         </h3>
         <CustomTable
           tableHeaderList={OWN_COLUMNS}
           tableBodyList={own.map((role) => rowFor(role, false))}
           loading={roles.isLoading}
-          loadingText="Loading your roles…"
+          loadingText="Loading roles…"
           emptyText={
             search
               ? "No role of yours matches that."
