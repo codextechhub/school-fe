@@ -35,9 +35,16 @@ export function useBranches(): HostQueryResult<HostBranch> {
 
 /** Everyone this caller may name on an approval.
  *
- *  Three fields need translating rather than passing through. `id` is a number
- *  on a staff row and a string in the contract, and an id that is sometimes
- *  either is how a Map lookup starts silently missing. `role` is plural on the
+ *  Three fields need translating rather than passing through. `id` is the
+ *  ACCOUNT, `user_id` on the staff row - not the row's own `id`, which is the
+ *  employment record and a different number entirely. Everything the contract
+ *  hands this id to speaks accounts: the workflow API returns `requested_by`
+ *  and its approver lists as account ids, and the approver-group endpoint takes
+ *  one. Passing the staff id made every name in the workflow screens fall back
+ *  to "User 60", because no lookup ever matched, and would have added the wrong
+ *  person to an approver group had the two sequences ever overlapped. It is
+ *  also stringified, because an id that is sometimes a number and sometimes a
+ *  string is how a Map lookup starts silently missing. `role` is plural on the
  *  record, because one person may hold several, and the contract shows one
  *  beside a name to make an approver identifiable, so the first is what it
  *  gets. And `status` is the ACCOUNT's, not the employment record's: the
@@ -48,7 +55,7 @@ export function useBranches(): HostQueryResult<HostBranch> {
 export function useDirectory(): HostQueryResult<HostPerson> {
   const { data, isLoading, isError } = useGetStaffListQuery();
   const rows = data?.data.map((s) => ({
-    id: String(s.id), full_name: s.full_name, email: s.email,
+    id: String(s.user_id), full_name: s.full_name, email: s.email,
     role: s.roles[0] ?? "", status: s.account_status,
   }));
   return { data: rows, isLoading, isError };
