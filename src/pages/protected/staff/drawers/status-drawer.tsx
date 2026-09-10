@@ -147,9 +147,10 @@ export function StatusDrawer({
 
           {options.length === 0 ? (
             <p className="rounded-lg bg-white-03 px-3.5 py-3 text-[13px] text-gray-01">
-              There is no move to make from here. Somebody who has been invited
-              becomes Active by opening their own link and setting a password,
-              and a record that has been closed stays closed.
+              {/* The server's own sentence where it has one: an empty list has
+                  more than one reason, and only the server knows which. */}
+              {state.note ??
+                "There is no move to make from here. Somebody who has been invited becomes Active by opening their own link and setting a password, and a record that has been closed stays closed."}
             </p>
           ) : (
             <>

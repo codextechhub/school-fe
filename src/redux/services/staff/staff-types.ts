@@ -385,6 +385,14 @@ export interface StaffStatusOptions {
   employment_status: EmploymentStatus;
   account_status: AccountStatus;
   options: StaffStatusOption[];
+  /**
+   * Why there is nothing to choose from, where the reason is not the record.
+   *
+   * Null in the ordinary case. An empty list otherwise reads as a record that
+   * has been closed, which is the wrong thing to tell an administrator looking
+   * at her own.
+   */
+  note: string | null;
   /** Named, never counted. A count sends a head teacher hunting. */
   assignments_needing_cover: string[];
 }
