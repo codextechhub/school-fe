@@ -20,6 +20,10 @@ const packageRoot = (() => {
   }
 })()
 
+// Where the dev server forwards API calls. Override with DEV_API_TARGET when the
+// backend is not on its usual port.
+const devApiTarget = process.env.DEV_API_TARGET ?? "http://localhost:8000"
+
 // Specifiers the shared package writes as `@/…` and this app redirects into
 // @xvs/finance. Aliasing them is only half the job - see PACKAGE_SPECIFIERS
 // below for the half that bites.
@@ -124,7 +128,36 @@ export default defineConfig({
   // Without this both default to 5173 and whichever starts second silently
   // moves to the next free port, which breaks any link built against it.
   // strictPort makes that failure loud instead of silent.
-  server: { port: 5174, strictPort: true, fs: { allow: [__dirname, packageRoot] } },
+  server: {
+    port: 5174,
+    strictPort: true,
+    fs: { allow: [__dirname, packageRoot] },
+    // The API is served from this origin in development.
+    //
+    // Not a convenience. The app runs at <slug>.localhost:5174 and the API at
+    // localhost:8000, and those are different SITES to a browser, not merely
+    // different ports - ports do not enter into it. So every cookie the API set
+    // was a third-party cookie: the refresh credential and Django's CSRF token
+    // were both withheld from the very requests that need them, and the refresh
+    // call came back "CSRF cookie not set" on every page load. Safari enforces
+    // this strictly; Chrome's localhost allowances hid it.
+    //
+    // Proxying puts both on one origin, which is also the shape production has
+    // (app and API under one registrable domain). Cookies are first-party, and
+    // SameSite stops being a question anyone has to answer.
+    //
+    // `/media` as well as `/v1`: attachment and logo URLs are stored root-mounted
+    // and resolved against the API base, so they arrive here rather than at /v1.
+    // `changeOrigin` stays false on purpose. Forwarding the browser's Host
+    // untouched means Django sees a request whose Origin and Host agree, which
+    // it treats as same-origin and waves through without consulting
+    // CSRF_TRUSTED_ORIGINS - and that list cannot express a wildcard port, so
+    // rewriting the Host would pin development to one.
+    proxy: {
+      "/v1": { target: devApiTarget, changeOrigin: false },
+      "/media": { target: devApiTarget, changeOrigin: false },
+    },
+  },
   plugins: [
     authBoundaryPlugin(),
     react({
