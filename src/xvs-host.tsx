@@ -14,7 +14,7 @@ import { type ComponentType } from "react";
 // which meant this app satisfied a copy and the compile-time assertion
 // checked nothing here.
 import type {
-  HostAvatarProps, HostBranch, HostPerson, HostQueryResult, HostExportProps,
+  HostAvatarProps, HostBranch, HostPerson, HostPosition, HostQueryResult, HostExportProps,
   HostRole,
 } from "@xvs/finance/host";
 import { ExportButton } from "@/components/custom/export-button";
@@ -68,6 +68,20 @@ export function useRoles(): HostQueryResult<HostRole> {
     assigned_users_count: role.assigned_users_count,
   }));
   return { data: rows, isLoading, isError };
+}
+
+/** A school has no organogram, so there are no seats to approve through.
+ *
+ *  The organogram is CodeX's own reporting structure - platform-scoped, with no
+ *  tenant column and a platform key on its endpoint - so there is no version of
+ *  it a school could be shown. Answering with an empty list is the real answer
+ *  rather than a gap: the approver picker drops its Positions tab instead of
+ *  offering one that could never list anything, which is what it did while the
+ *  package queried the console's endpoint directly and answered every school
+ *  administrator 403.
+ */
+export function usePositions(): HostQueryResult<HostPosition> {
+  return { data: [], isLoading: false, isError: false };
 }
 
 /** This app keeps no recently-opened trail, so noting one is a no-op.
