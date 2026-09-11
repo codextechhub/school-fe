@@ -1,6 +1,8 @@
 import { routesPath } from "@/routes/routesPath";
 import type { AlertCode, CalendarAlert } from "@/redux/services/calendar/calendar-types";
 import type { OnboardingState } from "@/redux/services/onboarding/onboarding-types";
+import type { StudentSummary } from "@/redux/services/students/students-types";
+import type { StaffCounts } from "@/redux/services/staff/staff-types";
 
 const R = routesPath.PROTECTED;
 
@@ -11,8 +13,7 @@ const R = routesPath.PROTECTED;
  * this is the school's version of it. The difference is where the items come
  * from: the console has a task table and an approvals queue, and a school has
  * neither. What a school has is a set of conditions the server already
- * detects and already writes sentences about, scattered across three screens
- * nobody visits until something has gone wrong.
+ * detects and already writes sentences about across the operational screens.
  *
  * **Nothing here is computed from raw data.** Every sentence is the server's
  * own, rendered verbatim, for the reason the calendar module records: the
@@ -116,10 +117,16 @@ export function buildAttention({
   alerts,
   onboarding,
   branchesWithoutSession,
+  students,
+  staff,
+  pendingApprovals,
 }: {
   alerts?: CalendarAlert[];
   onboarding?: OnboardingState | null;
   branchesWithoutSession?: { id: number; name: string }[];
+  students?: StudentSummary;
+  staff?: StaffCounts;
+  pendingApprovals?: number;
 }): AttentionItem[] {
   const out: AttentionItem[] = [];
 
@@ -162,10 +169,11 @@ export function buildAttention({
   const sorted = [...(alerts ?? [])].sort(
     (a, b) => (ALERT_RANK[a.code] ?? 99) - (ALERT_RANK[b.code] ?? 99),
   );
+  const notices: AttentionItem[] = [];
   for (const alert of sorted) {
     const target = ALERT_TARGET[alert.code];
     const tone = ALERT_TONE[alert.code] ?? "info";
-    out.push({
+    const item: AttentionItem = {
       id: `${alert.code}-${alert.ids.join("-") || "all"}`,
       tone,
       // Everything a school is told about is a school's to fix, except the
@@ -179,8 +187,91 @@ export function buildAttention({
       detail: alert.detail,
       to: target?.to ?? R.ACADEMIC_CALENDAR.INDEX,
       action: target?.action ?? "Take a look",
+    };
+    if (tone === "info") notices.push(item);
+    else out.push(item);
+  }
+
+  // Personal workflow work belongs after structural blockers. It is urgent to
+  // the reader, but it does not stop the school from running while it waits.
+  const approvalCount = pendingApprovals ?? 0;
+  if (approvalCount > 0) {
+    const count = approvalCount;
+    out.push({
+      id: "pending-approvals",
+      tone: "warning",
+      mine: true,
+      title: "Approvals are waiting",
+      stat: count,
+      detail:
+        count === 1
+          ? "One document is waiting for your decision."
+          : `${count} documents are waiting for your decision.`,
+      to: R.WORKFLOW.APPROVALS,
+      action: "Review approvals",
     });
   }
+
+  // These figures are the server's summary of the same branch and year the
+  // student directory reads. The dashboard does not recalculate status from
+  // rows, so its queue cannot disagree with the directory beneath it.
+  const unassignedCount = students?.unassigned ?? 0;
+  if (unassignedCount > 0) {
+    const count = unassignedCount;
+    out.push({
+      id: "students-unassigned",
+      tone: "warning",
+      mine: true,
+      title: "Students need a class",
+      stat: count,
+      detail:
+        count === 1
+          ? "One student is on the roll without a class."
+          : `${count} students are on the roll without a class.`,
+      to: R.STUDENTS.ASSIGN,
+      action: "Place students",
+    });
+  }
+
+  const applicantCount = students?.applicants ?? 0;
+  if (applicantCount > 0) {
+    const count = applicantCount;
+    out.push({
+      id: "student-applicants",
+      tone: "info",
+      mine: true,
+      title: "Applications need review",
+      stat: count,
+      detail:
+        count === 1
+          ? "One application is waiting for a decision."
+          : `${count} applications are waiting for a decision.`,
+      to: R.STUDENTS.APPLICANTS,
+      action: "Review applicants",
+    });
+  }
+
+  // A locked account is an identity issue, not an employment status. The
+  // staff endpoint keeps those separate and this wording preserves that fact.
+  const lockedAccountCount = staff?.locked_accounts ?? 0;
+  if (lockedAccountCount > 0) {
+    const count = lockedAccountCount;
+    out.push({
+      id: "staff-locked-accounts",
+      tone: "warning",
+      mine: true,
+      title: "Staff accounts are locked",
+      stat: count,
+      detail:
+        count === 1
+          ? "One staff account is locked and cannot sign in."
+          : `${count} staff accounts are locked and cannot sign in.`,
+      to: R.STAFF.INDEX,
+      action: "Open staff",
+    });
+  }
+
+  out.push(...notices);
 
   return out;
 }

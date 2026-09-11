@@ -1,59 +1,58 @@
 import { Link } from "react-router";
+import type { LucideIcon } from "lucide-react";
 import {
+  AlertTriangle,
+  ArrowRight,
   ArrowUpRight,
   BookOpen,
+  BriefcaseBusiness,
+  Building2,
   CalendarDays,
   CalendarRange,
   CheckCircle2,
-  DoorOpen,
+  ClipboardCheck,
   GraduationCap,
   LayoutGrid,
-  Layers,
+  ShoppingCart,
   Users,
+  Wallet,
 } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
 import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useCapabilities } from "@/hooks/use-capabilities";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 import { useAppSelector } from "@/redux/store";
 import { selectUser } from "@/redux/features/auth/auth-slice";
 import { routesPath } from "@/routes/routesPath";
 import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academics-api";
 import { useGetCalendarOverviewQuery } from "@/redux/services/calendar/calendar-api";
 import { useGetOnboardingStateQuery } from "@/redux/services/onboarding/onboarding-api";
+import { useGetStudentSummaryQuery } from "@/redux/services/students/students-api";
+import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
+import { useGetPendingApprovalsQuery } from "@/redux/services/dashboard/workflow-api";
 import { buildAttention } from "./attention";
 import { HeroBuildings } from "./hero-buildings";
 import { FocusPanel } from "./focus-panel";
 
 const R = routesPath.PROTECTED;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// The first screen a school sees.
-//
-// Built on the console's overview and rearranged around what a school actually
-// runs. The console opens with a worklist and then counts the platform; this
-// opens with a worklist and then answers the question a school asks every
-// morning, which is **where are we in the year**. That question has no analogue
-// on the console side and it is the reason this is not a copy.
-//
-// **Three requests, revealed as one.** The console's own comment records why it
-// went from eight to one: they arrived in whatever order the network settled
-// and the page appeared in waves. There is no school-side aggregate endpoint to
-// call, and inventing one is a backend change this screen does not need - so
-// the three that exist are held until all three have landed, which fixes the
-// waves without the round trip. All three are already fetched by other screens,
-// so arriving here from anywhere in Academics or the Calendar costs nothing.
-//
-// **The counts are the lens's counts.** Every figure here is for the branch and
-// the year in the switcher, the same as the screen it links to. A dashboard
-// that answers about the whole school while the switcher says Ikeja is a
-// dashboard that has to be checked against the screen below it, which is the
-// same as not having it.
-// ─────────────────────────────────────────────────────────────────────────────
+/**
+ * The school dashboard combines live summaries from the operational modules.
+ *
+ * Every request uses the same branch or academic-year lens as the screen it
+ * links to. A count on this page therefore means the same thing after the
+ * reader opens its directory. Requests are skipped when the reader lacks the
+ * corresponding view permission, so the dashboard never probes a closed API.
+ *
+ * The page favours decisions over decoration. It opens with the state of the
+ * term and the work waiting today, then shows people and calendar summaries,
+ * and finally offers the modules this account can actually reach.
+ */
 
-/** Slow poll, and only while the tab is actually being looked at. */
 const REFRESH = {
   pollingInterval: 180_000,
   skipPollingIfUnfocused: true,
@@ -66,61 +65,141 @@ function greeting(hour: number) {
   return "Good evening";
 }
 
+function plural(count: number, singular: string, pluralWord = `${singular}s`) {
+  return count === 1 ? singular : pluralWord;
+}
+
 function Shimmer({ className }: { className?: string }) {
   return <span className={cn("block animate-pulse rounded bg-gray-04", className)} />;
 }
 
-function Metric({
+const PULSE_TONES = {
+  blue: "bg-[#EEF2FF] text-[#5369B1]",
+  green: "bg-[#EAF7F2] text-green-02",
+  amber: "bg-[#FFF4DF] text-amber-01",
+  violet: "bg-[#F3EEFF] text-[#7755B7]",
+} as const;
+
+function PulseMetric({
   icon: Icon,
   label,
   value,
   note,
   to,
+  tone,
   loading,
 }: {
-  icon: typeof Users;
+  icon: LucideIcon;
   label: string;
   value: number | string;
-  note?: string;
+  note: string;
   to: string;
+  tone: keyof typeof PULSE_TONES;
   loading?: boolean;
 }) {
   return (
     <Link
       to={to}
-      className="group min-w-0 rounded-xl border border-white-02 bg-white px-3 py-2.5 transition-colors hover:border-primary/30"
+      className="group min-w-0 rounded-2xl border border-white-02 bg-white p-4 shadow-[0_8px_22px_rgba(29,43,68,0.04)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md sm:p-4.5"
     >
-      <span className="flex min-w-0 items-center gap-2">
-        <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-pry-01 text-primary">
-          <Icon className="size-3.5" />
+      <span className="flex min-w-0 items-start justify-between gap-3">
+        <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", PULSE_TONES[tone])}>
+          <Icon className="size-4.5" />
         </span>
-        <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-gray-05">
-          {label}
+        <ArrowUpRight className="size-4 text-gray-02 transition-colors group-hover:text-primary" />
+      </span>
+      {loading ? (
+        <Shimmer className="mt-5 h-7 w-16" />
+      ) : (
+        <span className="mt-5 block font-mont text-2xl font-semibold leading-none tracking-tight text-black-01 tabular-nums sm:text-[28px]">
+          {value}
         </span>
-      </span>
-      <span className="mt-1.5 block truncate font-mont text-lg font-semibold leading-none text-black-01 tabular-nums">
-        {loading ? <Shimmer className="my-0.5 h-4 w-10" /> : value}
-      </span>
-      {note && !loading && (
-        <span className="mt-1 block truncate text-[11px] text-gray-05">{note}</span>
       )}
+      <span className="mt-2 block truncate text-[13px] font-semibold text-black-01">
+        {label}
+      </span>
+      <span className="mt-0.5 block truncate text-[11px] text-gray-05">
+        {note}
+      </span>
     </Link>
+  );
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  note,
+  action,
+}: {
+  eyebrow?: string;
+  title: string;
+  note?: string;
+  action?: { label: string; to: string };
+}) {
+  return (
+    <div className="flex min-w-0 items-start justify-between gap-3">
+      <div className="min-w-0">
+        {eyebrow && (
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-primary">
+            {eyebrow}
+          </p>
+        )}
+        <h2 className={cn("font-mont font-semibold tracking-tight text-black-01", eyebrow ? "mt-1 text-lg" : "text-base")}>
+          {title}
+        </h2>
+        {note && <p className="mt-0.5 text-xs text-gray-05">{note}</p>}
+      </div>
+      {action && (
+        <Link
+          to={action.to}
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-primary hover:text-primary/80"
+        >
+          {action.label}
+          <ArrowUpRight className="size-3.5" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+function ProgressRing({ percent }: { percent: number }) {
+  const safePercent = Math.min(100, Math.max(0, percent));
+
+  return (
+    <div
+      className="grid size-23 shrink-0 place-items-center rounded-full"
+      style={{
+        background: `conic-gradient(rgba(255,255,255,.96) ${safePercent}%, rgba(255,255,255,.16) ${safePercent}% 100%)`,
+      }}
+      role="img"
+      aria-label={`${safePercent}% of the term completed`}
+    >
+      <div className="grid size-17 place-items-center rounded-full bg-[#173D4A] text-center shadow-inner">
+        <span className="font-mont text-xl font-semibold leading-none tabular-nums">
+          {safePercent}%
+        </span>
+        <span className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-white/55">
+          taught
+        </span>
+      </div>
+    </div>
   );
 }
 
 export default function Dashboard() {
   const user = useAppSelector(selectUser);
-  const { hasPermission } = usePermissions();
+  const { hasPermission, hasModuleAccess } = usePermissions();
+  const { hasCapability } = useCapabilities();
   const { lens, sessionName } = useAcademicsLens();
+  const studentLens = useStudentsLens();
 
   const canSeeCalendar = hasPermission(P.BROWSE_CALENDAR);
   const canSeeStructure = hasPermission(P.BROWSE_STRUCTURE);
   const canSeeTimetables = hasPermission(P.BROWSE_TIMETABLES);
   const canSeeOnboarding = hasPermission(P.VIEW_ONBOARDING);
+  const canSeeStudents = hasPermission(P.BROWSE_STUDENTS) && hasCapability("students");
+  const canSeeStaff = hasPermission(P.BROWSE_TEACHERS) && hasCapability("teachers");
 
-  // `skip` rather than a permission check inside the component: a reader who
-  // may not see the academic structure should not be sending the request at
-  // all, and the server would refuse it anyway.
   const structure = useGetAcademicOverviewQuery(lens, {
     ...REFRESH,
     skip: !canSeeStructure,
@@ -133,21 +212,54 @@ export default function Dashboard() {
     ...REFRESH,
     skip: !canSeeOnboarding,
   });
+  const students = useGetStudentSummaryQuery(studentLens.lens, {
+    ...REFRESH,
+    skip: !canSeeStudents || studentLens.isLoading,
+  });
+  const staff = useGetStaffListQuery(
+    {
+      page: 1,
+      branch: typeof studentLens.branch === "number"
+        ? String(studentLens.branch)
+        : undefined,
+    },
+    {
+      ...REFRESH,
+      skip: !canSeeStaff || studentLens.isLoading,
+    },
+  );
+  const approvals = useGetPendingApprovalsQuery(undefined, REFRESH);
 
-  // Held until every part that was asked for has landed. Revealing each as it
-  // arrives is what made the console's version appear in waves.
-  const loading =
+  const academicLoading =
     (canSeeStructure && structure.isLoading) ||
     (canSeeCalendar && calendar.isLoading) ||
     (canSeeOnboarding && onboarding.isLoading);
+  const operationalLoading =
+    academicLoading ||
+    (canSeeStudents && (students.isLoading || studentLens.isLoading)) ||
+    (canSeeStaff && (staff.isLoading || studentLens.isLoading)) ||
+    approvals.isLoading;
+  const operationalError =
+    (canSeeStructure && structure.isError) ||
+    (canSeeCalendar && calendar.isError) ||
+    (canSeeOnboarding && onboarding.isError) ||
+    (canSeeStudents && students.isError) ||
+    (canSeeStaff && staff.isError) ||
+    approvals.isError;
 
   const cal = calendar.data?.data;
   const str = structure.data?.data;
+  const studentSummary = students.data?.data;
+  const staffCounts = staff.data?.counts;
+  const pendingApprovals = approvals.data?.count ?? approvals.data?.results?.length ?? 0;
 
   const attention = buildAttention({
     alerts: cal?.alerts,
     onboarding: onboarding.data?.data ?? null,
     branchesWithoutSession: str?.branches_without_a_session,
+    students: studentSummary,
+    staff: staffCounts,
+    pendingApprovals,
   });
 
   const term = cal?.term ?? null;
@@ -162,347 +274,474 @@ export default function Dashboard() {
     month: "long",
   }).format(new Date());
 
-  const metrics = [
-    canSeeStructure && (
-      <Metric
-        key="classes"
+  const heroActions = [
+    canSeeStudents && {
+      label: "Open students",
+      to: R.STUDENTS.INDEX,
+      primary: true,
+    },
+    canSeeCalendar && {
+      label: "View calendar",
+      to: R.ACADEMIC_CALENDAR.INDEX,
+      primary: !canSeeStudents,
+    },
+    !canSeeStudents && !canSeeCalendar && canSeeStaff && {
+      label: "Open staff",
+      to: R.STAFF.INDEX,
+      primary: true,
+    },
+  ].filter(Boolean) as { label: string; to: string; primary: boolean }[];
+
+  const pulse = [
+    canSeeStudents && (
+      <PulseMetric
+        key="students"
         icon={Users}
+        label="Students on roll"
+        value={students.isError ? "-" : studentSummary?.on_roll ?? 0}
+        note={students.isError
+          ? "Could not load this summary"
+          : studentSummary
+          ? `${studentSummary.applicants} ${plural(studentSummary.applicants, "applicant")}`
+          : "Current student roll"}
+        to={R.STUDENTS.INDEX}
+        tone="blue"
+        loading={students.isLoading || studentLens.isLoading}
+      />
+    ),
+    canSeeStaff && (
+      <PulseMetric
+        key="staff"
+        icon={BriefcaseBusiness}
+        label="Staff employed"
+        value={staff.isError ? "-" : staffCounts?.currently_employed ?? 0}
+        note={staff.isError
+          ? "Could not load this summary"
+          : staffCounts
+          ? `${staffCounts.with_teaching_duties} with teaching duties`
+          : "Current staff roll"}
+        to={R.STAFF.INDEX}
+        tone="green"
+        loading={staff.isLoading || studentLens.isLoading}
+      />
+    ),
+    canSeeStructure && (
+      <PulseMetric
+        key="classes"
+        icon={GraduationCap}
         label="Classes"
-        value={str?.counts.classes ?? 0}
-        note={`${str?.counts.levels ?? 0} levels`}
+        value={structure.isError ? "-" : str?.counts.classes ?? 0}
+        note={structure.isError
+          ? "Could not load this summary"
+          : str
+            ? `${str.counts.levels} ${plural(str.counts.levels, "level")}`
+            : "Academic structure"}
         to={R.ACADEMIC_STRUCTURE.CLASSES}
-        loading={loading}
+        tone="amber"
+        loading={structure.isLoading}
       />
     ),
-    canSeeStructure && (
-      <Metric
-        key="subjects"
-        icon={BookOpen}
-        label="Subjects"
-        value={str?.counts.subjects ?? 0}
-        note={`${str?.counts.programs ?? 0} programmes`}
-        to={R.ACADEMIC_STRUCTURE.SUBJECTS}
-        loading={loading}
-      />
-    ),
-    canSeeTimetables && (
-      <Metric
-        key="timetabled"
-        icon={LayoutGrid}
-        label="Timetabled"
-        value={cal?.counts?.classes_timetabled ?? 0}
-        note={
-          str?.counts.classes
-            ? `of ${str.counts.classes}`
-            : "at least one lesson each"
-        }
-        to={R.TIMETABLES.CLASSES}
-        loading={loading}
-      />
-    ),
-    canSeeTimetables && (
-      <Metric
-        key="rooms"
-        icon={DoorOpen}
-        label="Rooms"
-        value={cal?.counts?.rooms ?? 0}
-        to={R.TIMETABLES.ROOMS}
-        loading={loading}
-      />
-    ),
-    canSeeCalendar && (
-      <Metric
-        key="events"
-        icon={CalendarRange}
-        label="On the calendar"
-        value={cal?.counts?.events_in_term ?? 0}
-        note="this term"
-        to={R.ACADEMIC_CALENDAR.EVENTS}
-        loading={loading}
-      />
-    ),
-    canSeeStructure && (
-      <Metric
-        key="departments"
-        icon={Layers}
-        label="Departments"
-        value={str?.counts.departments ?? 0}
-        to={R.ACADEMIC_STRUCTURE.DEPARTMENTS}
-        loading={loading}
-      />
-    ),
+    <PulseMetric
+      key="approvals"
+      icon={ClipboardCheck}
+      label="Pending approvals"
+      value={approvals.isError ? "-" : pendingApprovals}
+      note={approvals.isError
+        ? "Could not load your queue"
+        : pendingApprovals > 0
+          ? "Waiting for your decision"
+          : "Your queue is clear"}
+      to={R.WORKFLOW.APPROVALS}
+      tone="violet"
+      loading={approvals.isLoading}
+    />,
   ].filter(Boolean);
 
   const modules = [
-    { label: "Academic Structure", to: R.ACADEMIC_STRUCTURE.INDEX, icon: GraduationCap, show: canSeeStructure },
-    { label: "Calendar", to: R.ACADEMIC_CALENDAR.INDEX, icon: CalendarDays, show: canSeeCalendar },
-    { label: "Timetables", to: R.TIMETABLES.CLASSES, icon: LayoutGrid, show: canSeeTimetables },
-    { label: "Branches", to: R.BRANCHES.INDEX, icon: DoorOpen, show: hasPermission(P.BROWSE_BRANCHES) },
-  ].filter((m) => m.show);
+    {
+      label: "Students",
+      description: "Roll, applicants and guardians",
+      to: R.STUDENTS.INDEX,
+      icon: Users,
+      tone: "bg-[#EEF2FF] text-[#5369B1]",
+      show: canSeeStudents,
+    },
+    {
+      label: "Staff",
+      description: "People, duties and leave",
+      to: R.STAFF.INDEX,
+      icon: BriefcaseBusiness,
+      tone: "bg-[#EAF7F2] text-green-02",
+      show: canSeeStaff,
+    },
+    {
+      label: "Academic Structure",
+      description: "Years, classes and subjects",
+      to: R.ACADEMIC_STRUCTURE.INDEX,
+      icon: BookOpen,
+      tone: "bg-[#FFF4DF] text-amber-01",
+      show: canSeeStructure,
+    },
+    {
+      label: "Calendar",
+      description: "Terms, events and key dates",
+      to: R.ACADEMIC_CALENDAR.INDEX,
+      icon: CalendarRange,
+      tone: "bg-[#F3EEFF] text-[#7755B7]",
+      show: canSeeCalendar && hasCapability("calendar"),
+    },
+    {
+      label: "Timetables",
+      description: "Rooms and class schedules",
+      to: R.TIMETABLES.CLASSES,
+      icon: LayoutGrid,
+      tone: "bg-[#E9F5F8] text-[#247287]",
+      show: canSeeTimetables && hasCapability("calendar_plus"),
+    },
+    {
+      label: "Branches",
+      description: "School operations by branch",
+      to: R.BRANCHES.INDEX,
+      icon: Building2,
+      tone: "bg-[#F9EFEA] text-[#9A5A3C]",
+      show: hasPermission(P.BROWSE_BRANCHES),
+    },
+    {
+      label: "Workflow",
+      description: "Approvals and submissions",
+      to: R.WORKFLOW.APPROVALS,
+      icon: ClipboardCheck,
+      tone: "bg-[#F3EEFF] text-[#7755B7]",
+      show: true,
+    },
+    {
+      label: "Finance",
+      description: "Fees, banking and reports",
+      to: R.FINANCE.INDEX,
+      icon: Wallet,
+      tone: "bg-[#EAF7F2] text-green-02",
+      show: hasModuleAccess("finance.") && hasCapability("finance"),
+    },
+    {
+      label: "Procurement",
+      description: "Purchases, stock and vendors",
+      to: R.PROCUREMENT.INDEX,
+      icon: ShoppingCart,
+      tone: "bg-[#FFF4DF] text-amber-01",
+      show: hasModuleAccess("procurement.") && hasCapability("procurement"),
+    },
+  ].filter((module) => module.show);
 
   return (
-    <PageShell className="space-y-6">
-      {/* ── who, when, and where in the year ─────────────────────────────── */}
-      {/* The panel the console's own hero is built the same way: a diagonal
-          gradient, a 28px grid of hairlines so it is not a flat rectangle, two
-          soft lights drifting behind it, and the school itself drawn at the
-          right. Everything is stacked in ONE background-image rather than in
-          layered elements, so the whole thing costs one paint and cannot fall
-          out of alignment. */}
+    <PageShell className="space-y-5 pb-10 sm:space-y-6">
       <section
-        className="relative isolate overflow-hidden rounded-2xl px-5 py-4.5 text-white"
+        className="relative isolate overflow-hidden rounded-3xl px-5 py-6 text-white shadow-[0_18px_45px_rgba(14,49,60,0.18)] sm:px-7 sm:py-7"
         style={{
           backgroundImage: [
             "linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px)",
             "linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px)",
-            // Teal-petrol rather than the app's navy: the hero is the one
-            // surface that is not a control, and painting it in the button
-            // colour made it read as a very large button. Cool light at the
-            // top, warm gold low down - gold because a school's own iconography
-            // is crests and certificates, and it is the note the copperplate on
-            // the sidebar mark is already playing.
-            "radial-gradient(circle at 8% -10%, rgba(120,214,220,.22), transparent 42%)",
-            "radial-gradient(circle at 99% 118%, rgba(214,168,90,.22), transparent 40%)",
-            "linear-gradient(118deg, #0E313C 0%, #14495A 54%, #0A2029 100%)",
+            "radial-gradient(circle at 8% -10%, rgba(120,214,220,.25), transparent 40%)",
+            "radial-gradient(circle at 92% 112%, rgba(214,168,90,.28), transparent 40%)",
+            "linear-gradient(118deg, #0E313C 0%, #14495A 55%, #0A2029 100%)",
           ].join(", "),
           backgroundSize: "28px 28px, 28px 28px, auto, auto, auto",
         }}
       >
         <div className="hero-ambient pointer-events-none absolute -right-20 -top-24 size-64 rounded-full bg-white/10 blur-3xl" />
         <div className="hero-ambient-delayed pointer-events-none absolute -bottom-24 left-[34%] size-56 rounded-full bg-white/[0.06] blur-3xl" />
+        <HeroBuildings className="pointer-events-none absolute bottom-0 right-3 hidden h-[78%] max-w-[46%] text-white/[0.12] md:block" />
+        <HeroBuildings crop="centre" className="pointer-events-none absolute bottom-0 right-1 h-[60%] text-white/[0.08] sm:hidden" />
 
-        {/* Behind the text and clipped by the panel. `max-w-[55%]` so the
-            greeting always wins the room it needs - on a phone the drawing is
-            gone entirely rather than squeezed behind three lines of type. */}
-        <HeroBuildings className="pointer-events-none absolute bottom-0 right-3 hidden h-[82%] max-w-[52%] text-white/[0.17] sm:block" />
-        {/* The main block alone below `sm`. Same drawing, narrower window on
-            it: all three buildings shrunk to a phone turn the columns and the
-            clock into grey mush. */}
-        <HeroBuildings
-          crop="centre"
-          className="pointer-events-none absolute bottom-0 right-2 h-[76%] text-white/[0.15] sm:hidden"
-        />
+        <div className="relative grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+          <div className="min-w-0 sm:max-w-xl">
+            <p className="flex items-center gap-1.5 text-[11px] font-medium text-white/65">
+              <CalendarDays className="size-3.5" />
+              {today}
+            </p>
+            <h1 className="mt-2 font-mont text-2xl font-semibold tracking-tight sm:text-[30px]">
+              {greeting(new Date().getHours())}
+              {user?.first_name ? `, ${user.first_name}` : ""}.
+            </h1>
+            <p className="mt-2 max-w-lg text-[13px] leading-5 text-white/70 text-pretty">
+              {calendar.isError
+                ? "Your calendar summary could not be loaded. The rest of your workspace is still available below."
+                : term
+                ? `${term.name} of ${sessionName ?? "this year"} is underway. You have taught ${taught} of ${teachable} teaching days.`
+                : sessionName
+                  ? `${sessionName} is selected. No term covers today, so nothing is being taught right now.`
+                  : "No academic year is set up yet, so there is nothing to teach into."}
+            </p>
+            {heroActions.length > 0 && (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {heroActions.slice(0, 2).map((action) => (
+                  <Link
+                    key={action.label}
+                    to={action.to}
+                    className={cn(
+                      "inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold transition-colors",
+                      action.primary
+                        ? "bg-white text-[#173D4A] hover:bg-white/90"
+                        : "border border-white/20 bg-white/10 text-white hover:bg-white/15",
+                    )}
+                  >
+                    {action.label}
+                    <ArrowRight className="size-3.5" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
 
-        {/* Padded clear of the drawing on a phone, where the panel is barely
-            wider than the sentence under the greeting. */}
-        <div className="relative min-w-0 max-w-xl pr-14 sm:pr-0">
-          <p className="flex items-center gap-1.5 text-[11px] font-medium text-white/60">
-            <CalendarDays className="size-3.5" />
-            {today}
-          </p>
-          <h1 className="mt-1.5 font-mont text-xl font-semibold tracking-tight">
-            {greeting(new Date().getHours())}
-            {user?.first_name ? `, ${user.first_name}` : ""}.
-          </h1>
-          <p className="mt-1 text-xs leading-5 text-white/70 text-pretty">
-            {term
-              ? `${term.name} of ${sessionName ?? "this year"}, day ${taught} of ${teachable} taught.`
-              : sessionName
-                ? `${sessionName}. No term covers today, so nothing is being taught right now.`
-                : "No academic year is set up yet, so there is nothing to teach into."}
-          </p>
+          {canSeeCalendar && (
+            <div className="flex min-w-0 items-center gap-4 rounded-2xl border border-white/12 bg-white/[0.08] p-3.5 backdrop-blur-sm lg:w-65">
+              {academicLoading ? (
+                <Shimmer className="size-23 shrink-0 rounded-full bg-white/15" />
+              ) : calendar.isError ? (
+                <span className="grid size-23 shrink-0 place-items-center rounded-full bg-white/10 text-white/75">
+                  <AlertTriangle className="size-6" />
+                </span>
+              ) : (
+                <ProgressRing percent={termPercent} />
+              )}
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">
+                  Term progress
+                </p>
+                <p className="mt-1.5 truncate text-sm font-semibold text-white">
+                  {calendar.isError ? "Unavailable" : term?.name ?? "Between terms"}
+                </p>
+                <p className="mt-1 text-[11px] leading-4 text-white/60">
+                  {calendar.isError
+                    ? "Refresh to try again"
+                    : term
+                      ? `${Math.max(0, teachable - taught)} teaching days remain`
+                      : "No teaching days are active"}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ── today's focus ───────────────────────────────────────────────── */}
-      {loading ? (
-        <Shimmer className="h-20 rounded-2xl" />
-      ) : attention.length === 0 ? (
-        // Said plainly rather than left blank. The console renders nothing at
-        // all on a clear day because its hero already says so; this hero
-        // reports the year rather than the workload, so the clear day has to be
-        // stated here or the screen simply loses a section.
-        <section className="flex items-center gap-2.5 rounded-2xl border border-white-02 bg-white px-4 py-3.5">
-          <CheckCircle2 className="size-4 shrink-0 text-success-text" />
-          <p className="text-[13px] text-gray-06 text-pretty">
-            Nothing is waiting on you. The year is set up, the terms line up and
-            every timetable that exists is free of clashes.
-          </p>
-        </section>
-      ) : (
-        <FocusPanel items={attention} />
-      )}
-
-      {/* ── the term, and what is coming ─────────────────────────────────── */}
-      {canSeeCalendar && (
-        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-          <div className="rounded-2xl border border-white-02 bg-white p-4.5">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-mont text-base font-semibold text-black-01">
-                {term ? term.name : "The year"}
-              </h2>
-              <Link
-                to={R.ACADEMIC_CALENDAR.TERM_VIEW}
-                className="text-xs font-medium text-primary"
-              >
-                Term view
-              </Link>
-            </div>
-            {loading ? (
-              <Shimmer className="mt-4 h-10" />
-            ) : term ? (
-              <>
-                {/* Teaching days, not calendar days. The difference is the
-                    whole point of the closed-school flag: a term that is 60
-                    days long and shut for eight of them has 52 to teach in,
-                    and a bar drawn on the calendar span would say a school is
-                    further ahead than it is. */}
-                <p className="mt-3 font-mont text-2xl font-semibold leading-none text-black-01 tabular-nums">
-                  {taught}
-                  <span className="text-base font-medium text-gray-05">
-                    {" "}/ {teachable}
-                  </span>
-                </p>
-                <p className="mt-1 text-xs text-gray-05">
-                  teaching days, {termPercent}% of the term
-                </p>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-gray-04">
-                  <div
-                    className="h-full rounded-full bg-primary transition-[width] duration-500"
-                    style={{ width: `${Math.min(100, termPercent)}%` }}
-                  />
-                </div>
-
-                {/* The rest of the year, so the card answers "where are we"
-                    rather than only "how far into this one". The state is the
-                    server's: a term is ongoing because today falls inside its
-                    dates, and that is a comparison the client must not make a
-                    second time and get differently. */}
-                {terms.length > 0 && (
-                  <ul className="mt-4 grid gap-1.5">
-                    {terms.map((row) => (
-                      <li
-                        key={row.id}
-                        className="flex items-center justify-between gap-3 text-[13px]"
-                      >
-                        <span
-                          className={cn(
-                            "min-w-0 truncate",
-                            row.state === "ongoing"
-                              ? "font-medium text-black-01"
-                              : "text-gray-05",
-                          )}
-                        >
-                          {row.name}
-                        </span>
-                        <span
-                          className={cn(
-                            "shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium",
-                            row.state === "ongoing" && "bg-pry-01 text-primary",
-                            row.state === "completed" && "bg-gray-04 text-gray-05",
-                            row.state === "pending" && "text-gray-05",
-                          )}
-                        >
-                          {row.state === "ongoing"
-                            ? "underway"
-                            : row.state === "completed"
-                              ? "done"
-                              : "ahead"}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </>
-            ) : (
-              <p className="mt-3 text-[13px] text-gray-05 text-pretty">
-                No term covers today. Between terms the school still has a
-                calendar, but nothing is being taught.
-              </p>
-            )}
-          </div>
-
-          <div className="rounded-2xl border border-white-02 bg-white p-4.5">
-            <div className="flex items-baseline justify-between gap-3">
-              <h2 className="font-mont text-base font-semibold text-black-01">
-                Coming up
-              </h2>
-              <Link
-                to={R.ACADEMIC_CALENDAR.EVENTS}
-                className="text-xs font-medium text-primary"
-              >
-                All events
-              </Link>
-            </div>
-            {loading ? (
-              <Shimmer className="mt-4 h-16" />
-            ) : (cal?.next_up?.length ?? 0) === 0 ? (
-              <p className="mt-3 text-[13px] text-gray-05 text-pretty">
-                Nothing is dated ahead of today. Holidays, breaks and exam
-                periods all show here once they are on the calendar.
-              </p>
-            ) : (
-              <ul className="mt-3 grid gap-2">
-                {cal!.next_up!.map((event) => (
-                  <li
-                    key={event.id}
-                    className="flex items-center gap-3 border-b border-white-02 pb-2 last:border-0 last:pb-0"
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-medium text-black-01">
-                        {event.name}
-                      </span>
-                      <span className="block truncate text-[11px] text-gray-05">
-                        {event.type_label}
-                      </span>
-                    </span>
-                    <span className="shrink-0 text-[11px] text-gray-05 tabular-nums">
-                      {event.days_away === 0
-                        ? "today"
-                        : event.days_away === 1
-                          ? "tomorrow"
-                          : `in ${event.days_away} days`}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* ── the numbers ──────────────────────────────────────────────────── */}
-      {metrics.length > 0 && (
+      {pulse.length > 0 && (
         <section>
-          <h2 className="font-mont text-base font-semibold text-black-01">
-            At a glance
-          </h2>
-          <p className="mt-0.5 text-xs text-gray-05">
-            For the branch and year in the switcher.
-          </p>
-          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
-            {metrics}
+          <SectionHeading
+            eyebrow="School pulse"
+            title="Everything important, in one glance"
+            note={`${studentLens.multiBranch ? studentLens.label : "This school"}${sessionName ? ` · ${sessionName}` : ""}`}
+          />
+          <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {pulse}
           </div>
         </section>
       )}
 
-      {/* ── where to go ──────────────────────────────────────────────────── */}
+      {operationalError && !operationalLoading && (
+        <section className="flex items-start gap-3 rounded-2xl border border-yellow-01/30 bg-yellow-01/5 px-4 py-3.5">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-yellow-01-text" />
+          <div className="min-w-0">
+            <p className="text-[13px] font-semibold text-black-01">Some dashboard updates could not be checked</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-gray-06">
+              The information that did load is shown below. Refresh the page to try the missing summaries again.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {operationalLoading ? (
+        <Shimmer className="h-40 rounded-3xl" />
+      ) : attention.length > 0 ? (
+        <FocusPanel items={attention} />
+      ) : !operationalError ? (
+        <section className="flex items-start gap-3 rounded-3xl border border-green-01/15 bg-[linear-gradient(112deg,rgba(22,163,74,.08),rgba(255,255,255,1)_52%)] p-4.5 shadow-[0_10px_30px_rgba(29,43,68,0.04)] sm:items-center sm:p-5">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-green-01/10 text-green-01-text">
+            <CheckCircle2 className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-green-01-text">
+              Today&apos;s focus
+            </p>
+            <h2 className="mt-1 font-mont text-base font-semibold text-black-01">
+              Everything is in good shape
+            </h2>
+            <p className="mt-0.5 text-xs leading-5 text-gray-06 text-pretty">
+              No approvals, student placements, account lockouts, or academic setup issues are waiting on you.
+            </p>
+          </div>
+        </section>
+      ) : null}
+
+      {(canSeeCalendar || canSeeStudents) && (
+        <section className="grid min-w-0 gap-4 lg:grid-cols-3">
+          {canSeeCalendar && (
+            <div className="min-w-0 rounded-3xl border border-white-02 bg-white p-4.5 shadow-[0_10px_30px_rgba(29,43,68,0.04)] sm:p-5">
+              <SectionHeading
+                eyebrow="Academic year"
+                title={term?.name ?? "Between terms"}
+                action={{ label: "Term view", to: R.ACADEMIC_CALENDAR.TERM_VIEW }}
+              />
+              {academicLoading ? (
+                <Shimmer className="mt-5 h-28" />
+              ) : calendar.isError ? (
+                <p className="mt-4 text-[13px] leading-5 text-gray-05 text-pretty">
+                  The term summary is unavailable right now. Refresh the page to try again.
+                </p>
+              ) : term ? (
+                <>
+                  <div className="mt-5 flex items-end justify-between gap-3">
+                    <div>
+                      <p className="font-mont text-3xl font-semibold leading-none text-black-01 tabular-nums">
+                        {taught}
+                        <span className="text-base font-medium text-gray-05"> / {teachable}</span>
+                      </p>
+                      <p className="mt-1.5 text-xs text-gray-05">teaching days completed</p>
+                    </div>
+                    <span className="rounded-full bg-pry-01 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                      {termPercent}%
+                    </span>
+                  </div>
+                  <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-04">
+                    <div
+                      className="h-full rounded-full bg-[linear-gradient(90deg,#4A659D,#6D86BC)] transition-[width] duration-500"
+                      style={{ width: `${Math.min(100, termPercent)}%` }}
+                    />
+                  </div>
+                  {terms.length > 0 && (
+                    <ul className="mt-5 grid gap-2">
+                      {terms.map((row) => (
+                        <li key={row.id} className="flex items-center justify-between gap-3 text-[12px]">
+                          <span className={cn("min-w-0 truncate", row.state === "ongoing" ? "font-semibold text-black-01" : "text-gray-05")}>
+                            {row.name}
+                          </span>
+                          <span className={cn(
+                            "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                            row.state === "ongoing" && "bg-pry-01 text-primary",
+                            row.state === "completed" && "bg-gray-04 text-gray-06",
+                            row.state === "pending" && "text-gray-05",
+                          )}>
+                            {row.state === "ongoing" ? "underway" : row.state === "completed" ? "done" : "ahead"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              ) : (
+                <p className="mt-4 text-[13px] leading-5 text-gray-05 text-pretty">
+                  No term covers today. The calendar is ready for the next dated period.
+                </p>
+              )}
+            </div>
+          )}
+
+          {canSeeStudents && (
+            <div className="min-w-0 rounded-3xl border border-white-02 bg-white p-4.5 shadow-[0_10px_30px_rgba(29,43,68,0.04)] sm:p-5">
+              <SectionHeading
+                eyebrow="People"
+                title="Student body"
+                action={{ label: "Directory", to: R.STUDENTS.INDEX }}
+              />
+              {students.isLoading || studentLens.isLoading ? (
+                <Shimmer className="mt-5 h-28" />
+              ) : students.isError ? (
+                <p className="mt-4 text-[13px] leading-5 text-gray-05 text-pretty">
+                  The student summary is unavailable right now. Refresh the page to try again.
+                </p>
+              ) : (
+                <>
+                  <div className="mt-5 flex items-end justify-between gap-3">
+                    <div>
+                      <p className="font-mont text-3xl font-semibold leading-none text-black-01 tabular-nums">
+                        {studentSummary?.on_roll ?? 0}
+                      </p>
+                      <p className="mt-1.5 text-xs text-gray-05">currently on the roll</p>
+                    </div>
+                    <Users className="size-9 text-primary/20" />
+                  </div>
+                  <div className="mt-5 grid grid-cols-3 gap-2">
+                    {[
+                      { label: "Active", value: studentSummary?.active ?? 0 },
+                      { label: "Applicants", value: studentSummary?.applicants ?? 0 },
+                      { label: "Need class", value: studentSummary?.unassigned ?? 0 },
+                    ].map((row) => (
+                      <div key={row.label} className="min-w-0 rounded-xl bg-white-05 px-2.5 py-3 text-center">
+                        <p className="font-mont text-lg font-semibold leading-none text-black-01 tabular-nums">{row.value}</p>
+                        <p className="mt-1.5 truncate text-[10px] text-gray-05">{row.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {canSeeCalendar && (
+            <div className="min-w-0 rounded-3xl border border-white-02 bg-white p-4.5 shadow-[0_10px_30px_rgba(29,43,68,0.04)] sm:p-5">
+              <SectionHeading
+                eyebrow="Schedule"
+                title="Coming up"
+                action={{ label: "All events", to: R.ACADEMIC_CALENDAR.EVENTS }}
+              />
+              {calendar.isLoading ? (
+                <Shimmer className="mt-5 h-28" />
+              ) : calendar.isError ? (
+                <p className="mt-4 text-[13px] leading-5 text-gray-05 text-pretty">
+                  Upcoming events are unavailable right now. Refresh the page to try again.
+                </p>
+              ) : (cal?.next_up?.length ?? 0) === 0 ? (
+                <div className="mt-5 rounded-2xl bg-white-05 px-4 py-5 text-center">
+                  <CalendarDays className="mx-auto size-6 text-gray-02" />
+                  <p className="mt-2 text-[12px] leading-5 text-gray-05">
+                    Nothing is dated ahead of today.
+                  </p>
+                </div>
+              ) : (
+                <ul className="mt-4 grid gap-2.5">
+                  {cal!.next_up!.slice(0, 4).map((event) => (
+                    <li key={event.id} className="flex min-w-0 items-center gap-3 rounded-2xl bg-white-05 p-3">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-center shadow-sm">
+                        <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-05">
+                          {event.days_away === 0 ? "Now" : "In"}
+                        </span>
+                        <span className="font-mont text-sm font-semibold leading-none text-black-01 tabular-nums">
+                          {event.days_away === 0 ? "Today" : `${event.days_away}d`}
+                        </span>
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[12px] font-semibold text-black-01">{event.name}</span>
+                        <span className="mt-0.5 block truncate text-[10px] text-gray-05">{event.type_label}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
       {modules.length > 0 && (
         <section>
-          <h2 className="font-mont text-base font-semibold text-black-01">
-            Your workspace
-          </h2>
-          <p className="mt-0.5 text-xs text-gray-05">
-            Modules matched to your access.
-          </p>
-          {/* One column on a phone, not two. At 390px, two columns with an icon
-              and an arrow leaves about eleven characters for the label, and
-              "Academic Structure" arrived as "Academi…" - a truncated module
-              name is a module a reader has to guess at. */}
-          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {modules.map(({ label, to, icon: Icon }) => (
+          <SectionHeading
+            eyebrow="Your workspace"
+            title="Go where the work is"
+            note="Only modules included in your access are shown."
+          />
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {modules.map(({ label, description, to, icon: Icon, tone }) => (
               <Link
                 key={label}
                 to={to}
-                className="group flex min-w-0 items-center gap-3 rounded-xl border border-white-02 bg-white p-3.5 transition-colors hover:border-primary/30"
+                className="group flex min-w-0 items-center gap-3 rounded-2xl border border-white-02 bg-white p-3.5 shadow-[0_6px_18px_rgba(29,43,68,0.035)] transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:border-primary/25 hover:shadow-md"
               >
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-gray-04 text-gray-06 transition-colors group-hover:bg-pry-01 group-hover:text-primary">
-                  <Icon className="size-4" />
+                <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl", tone)}>
+                  <Icon className="size-4.5" />
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[13px] font-medium text-black-01">
-                  {label}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-semibold text-black-01">{label}</span>
+                  <span className="mt-0.5 block truncate text-[10px] text-gray-05">{description}</span>
                 </span>
-                <ArrowUpRight className="size-4 shrink-0 text-gray-05 transition-colors group-hover:text-primary" />
+                <ArrowUpRight className="size-4 shrink-0 text-gray-02 transition-colors group-hover:text-primary" />
               </Link>
             ))}
           </div>

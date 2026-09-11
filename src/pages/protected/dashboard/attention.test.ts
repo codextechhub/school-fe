@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { buildAttention } from "./attention";
 import type { CalendarAlert } from "@/redux/services/calendar/calendar-types";
 import type { OnboardingState } from "@/redux/services/onboarding/onboarding-types";
+import type { StudentSummary } from "@/redux/services/students/students-types";
+import type { StaffCounts } from "@/redux/services/staff/staff-types";
 
 const alert = (
   code: CalendarAlert["code"],
@@ -130,5 +132,48 @@ describe("buildAttention", () => {
       ],
     });
     expect(new Set(items.map((i) => i.id)).size).toBe(2);
+  });
+
+  it("adds work from the modules that joined the school dashboard", () => {
+    const items = buildAttention({
+      pendingApprovals: 3,
+      students: { applicants: 4, unassigned: 2 } as StudentSummary,
+      staff: { locked_accounts: 1 } as StaffCounts,
+    });
+
+    expect(items.map((item) => item.id)).toEqual([
+      "pending-approvals",
+      "students-unassigned",
+      "student-applicants",
+      "staff-locked-accounts",
+    ]);
+    expect(items.every((item) => item.mine)).toBe(true);
+  });
+
+  it("keeps structural problems ahead of personal queues and notices last", () => {
+    const items = buildAttention({
+      alerts: [
+        alert("EVENT_OUTSIDE_ANY_TERM"),
+        alert("TIMETABLE_HAS_CLASHES"),
+      ],
+      pendingApprovals: 2,
+      students: { applicants: 1, unassigned: 1 } as StudentSummary,
+    });
+
+    expect(items.map((item) => item.id)).toEqual([
+      "TIMETABLE_HAS_CLASHES-all",
+      "pending-approvals",
+      "students-unassigned",
+      "student-applicants",
+      "EVENT_OUTSIDE_ANY_TERM-all",
+    ]);
+  });
+
+  it("does not invent work for zero-value module summaries", () => {
+    expect(buildAttention({
+      pendingApprovals: 0,
+      students: { applicants: 0, unassigned: 0 } as StudentSummary,
+      staff: { locked_accounts: 0 } as StaffCounts,
+    })).toEqual([]);
   });
 });
