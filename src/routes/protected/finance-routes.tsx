@@ -7,7 +7,7 @@ import {
   BUDGETS_SECTIONS, COLLECTIONS_SECTIONS, EXPENSES_SECTIONS,
   RECEIVABLES_SECTIONS, REPORTS_SECTIONS,
 } from "@/pages/protected/finance/console-sections";
-import { financeSettingsSections, setupSections } from "@/xvs-host";
+import { financeSettingsSections, setupSections } from "@/xvs-host-config";
 
 // The finance screens come from @xvs/finance and are shared with the CodeX
 // console. Route-level code splitting: each area loads on first visit.

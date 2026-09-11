@@ -1,12 +1,16 @@
+import { lazy } from "react";
 import { type RouteObject } from "react-router";
-// EAGER on purpose. The shell (sidebar, header, session hooks) is a LAYOUT
-// ROUTE above every protected page, so it ships in the entry bundle and paints
-// the moment the app boots. Previously each page imported it, which made it a
-// shared dependency of the lazy page chunks only - rollup hoisted it into its
-// own chunk that had to be fetched before the frame could be drawn at all.
-import DashboardLayout from "@/components/layout/dashboard-layout";
 import { onboardingWelcomeRoute } from "./onboarding-routes";
 import { protectedChildren } from "./route-tables";
+
+/**
+ * The protected shell is one route-level chunk shared by every signed-in page.
+ * Authentication and public payment routes do not need its sidebars, menus,
+ * notification tray, or session controls, so they do not load this module.
+ */
+const DashboardLayout = lazy(
+  () => import("@/components/layout/dashboard-layout"),
+);
 
 export const protectedRoutes = [
   // Authenticated, but deliberately outside the shell - see the route's own

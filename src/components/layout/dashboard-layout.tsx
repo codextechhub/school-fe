@@ -2,11 +2,11 @@ import { Separator } from "@/components/ui/separator";
 import { ApprovalConfirmDialog } from "@/components/approval-confirm-dialog";
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { WorkspaceToaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "../app-sidebar";
-import { ConsoleSidebar } from "@/components/finance-ui/console-sidebar";
 import { schoolFinanceNav, schoolProcurementNav } from "./console-nav-for-school";
-import { ChevronLeft, Headset, Loader2, LogOut, Undo2, UsersRound } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { ChevronLeft, Headset, Loader2, LogOut, Search, Undo2, UsersRound } from "lucide-react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
 import useToggleModal from "@/hooks/use-toggle";
 import PromptModal from "@/components/modal/prompt-modal";
@@ -38,16 +38,36 @@ import {
 } from "../ui/dropdown-menu";
 import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-notice";
 import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
-import { AppSearch } from "./app-search";
 import { ReadOnlyNotice, type LensChoice } from "./lens-pills";
-import { NotificationsBell } from "@/components/custom/notifications-bell";
-import { SupportSheet } from "@/components/layout/support-sheet";
 import { SUPPORT_OPEN_EVENT } from "@/components/layout/support-open";
 import type { EscalationPrefill } from "@/components/custom/support-ticket-form";
 import { ProxySessionBanner } from "@/components/proxy-session-banner";
-import { ProxyUserDialog } from "@/components/proxy-user-dialog";
 import { P, resolvePermissionKey } from "@/permissions";
 import { exitProxySession } from "@/utils/proxy-session";
+
+const AppSearch = lazy(() =>
+  import("./app-search").then((module) => ({ default: module.AppSearch })),
+);
+const ConsoleSidebar = lazy(() =>
+  import("@/components/finance-ui/console-sidebar").then((module) => ({
+    default: module.ConsoleSidebar,
+  })),
+);
+const NotificationsBell = lazy(() =>
+  import("@/components/custom/notifications-bell").then((module) => ({
+    default: module.NotificationsBell,
+  })),
+);
+const SupportSheet = lazy(() =>
+  import("@/components/layout/support-sheet").then((module) => ({
+    default: module.SupportSheet,
+  })),
+);
+const ProxyUserDialog = lazy(() =>
+  import("@/components/proxy-user-dialog").then((module) => ({
+    default: module.ProxyUserDialog,
+  })),
+);
 
 // Per-screen header config, declared on the route rather than passed as props.
 // The layout is now an eager LAYOUT ROUTE (see routes/protected/index.tsx), so
@@ -255,7 +275,8 @@ export default function DashboardLayout() {
   };
 
   return (
-    <DashboardHeaderContext.Provider value={headerApi}>
+    <TooltipProvider>
+      <DashboardHeaderContext.Provider value={headerApi}>
       <SessionTimeoutModal
         open={open}
         secondsLeft={secondsLeft}
@@ -266,11 +287,17 @@ export default function DashboardLayout() {
       />
       <SidebarProvider>
         <DashboardToaster />
-        {sidebar === "finance"
-          ? <ConsoleSidebar title="Finance" nav={schoolFinanceNav} />
-          : sidebar === "procurement"
-            ? <ConsoleSidebar title="Procurement" nav={schoolProcurementNav} />
-            : <AppSidebar onboarding={onboarding} />}
+        {sidebar === "finance" ? (
+          <Suspense fallback={<ConsoleSidebarFallback />}>
+            <ConsoleSidebar title="Finance" nav={schoolFinanceNav} />
+          </Suspense>
+        ) : sidebar === "procurement" ? (
+          <Suspense fallback={<ConsoleSidebarFallback />}>
+            <ConsoleSidebar title="Procurement" nav={schoolProcurementNav} />
+          </Suspense>
+        ) : (
+          <AppSidebar onboarding={onboarding} />
+        )}
         <SidebarInset className="bg-white-05 min-w-0 w-auto">
           {/* Banner + header pin together: two independently sticky bars at
               top-0 would overlap as soon as the page scrolls. */}
@@ -329,16 +356,20 @@ export default function DashboardLayout() {
                   (proxy, logout) belong to this header, so it is handed the
                   same openers the account menu uses rather than mounting a
                   second dialog of its own. See AppSearch. */}
-              <AppSearch
-                onProxy={() => setProxyDialogOpen(true)}
-                onLogout={toggleLogout}
-                onHelp={() => {
-                  setSupportPrefill({});
-                  setSupportOpen(true);
-                }}
-              />
+              <Suspense fallback={<AppSearchFallback />}>
+                <AppSearch
+                  onProxy={() => setProxyDialogOpen(true)}
+                  onLogout={toggleLogout}
+                  onHelp={() => {
+                    setSupportPrefill({});
+                    setSupportOpen(true);
+                  }}
+                />
+              </Suspense>
 
-              <NotificationsBell />
+              <Suspense fallback={<HeaderIconFallback label="Loading notifications" />}>
+                <NotificationsBell />
+              </Suspense>
 
               {/* Support sits beside the bell in the design. It opens the
                   ticket form IN PLACE rather than navigating, the way
@@ -435,18 +466,24 @@ export default function DashboardLayout() {
               about the PAGE rather than a control. */}
           {showLens && !pageIsClosed && <ReadOnlyNotice />}
 
-          {canProxy && (
-            <ProxyUserDialog
-              open={proxyDialogOpen}
-              onOpenChange={setProxyDialogOpen}
-            />
+          {canProxy && proxyDialogOpen && (
+            <Suspense fallback={null}>
+              <ProxyUserDialog
+                open
+                onOpenChange={setProxyDialogOpen}
+              />
+            </Suspense>
           )}
 
-          <SupportSheet
-            open={supportOpen}
-            onOpenChange={setSupportOpen}
-            prefill={supportPrefill}
-          />
+          {supportOpen && (
+            <Suspense fallback={null}>
+              <SupportSheet
+                open
+                onOpenChange={setSupportOpen}
+                prefill={supportPrefill}
+              />
+            </Suspense>
+          )}
 
           <PromptModal
             isOpen={openLogout}
@@ -473,7 +510,8 @@ export default function DashboardLayout() {
         </SidebarInset>
         <ApprovalConfirmDialog />
       </SidebarProvider>
-    </DashboardHeaderContext.Provider>
+      </DashboardHeaderContext.Provider>
+    </TooltipProvider>
   );
 }
 
@@ -484,6 +522,47 @@ function DashboardToaster() {
   const { state } = useSidebar();
 
   return <WorkspaceToaster sidebarState={state} />;
+}
+
+/** Reserves the action palette's header space while its code is loading. */
+function AppSearchFallback() {
+  return (
+    <>
+      <div
+        aria-hidden="true"
+        className="absolute left-1/2 top-1/2 hidden h-9 w-[min(38vw,430px)] -translate-x-1/2 -translate-y-1/2 items-center rounded-xl border border-gray-200 bg-gray-50/70 px-3 text-gray-400 lg:flex"
+      >
+        <Search className="mr-2 size-4" />
+        <span className="text-sm">Search your workspace</span>
+      </div>
+      <span
+        aria-hidden="true"
+        className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 lg:hidden"
+      >
+        <Search className="size-4.5 stroke-[2.15]" />
+      </span>
+    </>
+  );
+}
+
+function ConsoleSidebarFallback() {
+  return (
+    <aside
+      aria-label="Loading finance navigation"
+      className="hidden h-svh w-64 shrink-0 border-r border-white-02 bg-white md:block"
+    />
+  );
+}
+
+function HeaderIconFallback({ label }: { label: string }) {
+  return (
+    <span
+      aria-label={label}
+      className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-05"
+    >
+      <Loader2 className="size-4 animate-spin" />
+    </span>
+  );
 }
 
 // Turn a backend role token ("SCHOOL_ADMIN", "branch_admin") into a display

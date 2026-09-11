@@ -1,11 +1,13 @@
+import { lazy } from "react";
 import { Navigate, type RouteObject } from "react-router";
 import { routesPath } from "../routesPath";
-import AuthLayout from "@/components/layout/auth-layout";
 import Guest from "@/middleware/guest";
-import Login from "@/pages/auth/login";
-import ResetPassword from "@/pages/auth/reset-password";
-import ForgotPassword from "@/pages/auth/forgot-password";
-import ActivateAccount from "@/pages/auth/activate";
+
+const AuthLayout = lazy(() => import("@/components/layout/auth-layout"));
+const Login = lazy(() => import("@/pages/auth/login"));
+const ResetPassword = lazy(() => import("@/pages/auth/reset-password"));
+const ForgotPassword = lazy(() => import("@/pages/auth/forgot-password"));
+const ActivateAccount = lazy(() => import("@/pages/auth/activate"));
 
 export const authRoutes = [
   {

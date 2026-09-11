@@ -86,6 +86,71 @@ const PACKAGE_SPECIFIERS = packageAlias.map((entry) => entry.find)
 // this app's own node_modules, where they are installed, so both setups resolve.
 const PACKAGE_ONLY_DEPS = ["date-fns"]
 
+const inPackage = (id: string, names: readonly string[]) => {
+  const normalized = id.split(path.sep).join("/")
+  return names.some((name) => normalized.includes(`/node_modules/${name}/`))
+}
+
+/**
+ * Stable dependency chunks for code that is shared across route boundaries.
+ *
+ * Route components remain split by their dynamic imports. This function keeps
+ * framework and UI runtimes out of the entry so they can be cached separately
+ * and parsed in smaller units without coupling unrelated feature pages.
+ */
+const vendorChunk = (id: string): string | undefined => {
+  if (inPackage(id, [
+    "react",
+    "react-dom",
+    "react-router",
+    "react-redux",
+    "redux-persist",
+    "@reduxjs/toolkit",
+    "scheduler",
+    "use-sync-external-store",
+  ])) return "vendor-framework"
+
+  if (inPackage(id, [
+    "@base-ui/react",
+    "@floating-ui/core",
+    "@floating-ui/dom",
+    "@floating-ui/react-dom",
+    "@floating-ui/utils",
+    "@radix-ui/react-collection",
+    "@radix-ui/react-collapsible",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-dismissable-layer",
+    "@radix-ui/react-dropdown-menu",
+    "@radix-ui/react-focus-scope",
+    "@radix-ui/react-menu",
+    "@radix-ui/react-popover",
+    "@radix-ui/react-popper",
+    "@radix-ui/react-presence",
+    "@radix-ui/react-roving-focus",
+    "@radix-ui/react-slot",
+    "@radix-ui/react-tooltip",
+    "@radix-ui/react-use-controllable-state",
+    "aria-hidden",
+    "react-remove-scroll",
+    "react-remove-scroll-bar",
+  ])) return "vendor-ui"
+
+  if (inPackage(id, ["date-fns", "@date-fns/tz", "react-day-picker"])) {
+    return "vendor-dates"
+  }
+  if (inPackage(id, ["formik", "yup", "property-expr", "toposort" ])) {
+    return "vendor-forms"
+  }
+  if (inPackage(id, ["motion", "motion-dom", "motion-utils", "framer-motion"])) {
+    return "vendor-motion"
+  }
+  if (inPackage(id, ["sonner", "next-themes"])) return "vendor-notifications"
+  if (inPackage(id, ["tailwind-merge", "clsx", "class-variance-authority"])) {
+    return "vendor-styles"
+  }
+  return undefined
+}
+
 const authBoundaryPlugin = () => ({
   name: "xvs-auth-boundary",
   enforce: "pre" as const,
@@ -179,16 +244,7 @@ export default defineConfig({
       output: {
         // The framework stack changes only on dependency bumps - splitting it
         // out of the app entry lets browsers keep it cached across deploys.
-        manualChunks: {
-          "vendor-react": [
-            "react",
-            "react-dom",
-            "react-router",
-            "@reduxjs/toolkit",
-            "react-redux",
-            "redux-persist",
-          ],
-        },
+        manualChunks: vendorChunk,
       },
     },
   },

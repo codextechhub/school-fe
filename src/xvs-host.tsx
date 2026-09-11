@@ -97,27 +97,10 @@ export function usePositions(): HostQueryResult<HostPosition> {
  *  know which it is running inside. */
 export function useLogRecentOpen(_entry: unknown): void {}
 
-import type {
-  FinanceSettingsSection, SetupSection,
-} from "@/pages/protected/finance/console-sections";
-
-/** Which Finance Settings sections this app routes.
- *
- *  The router's own list, so the settings nav cannot offer a section this app
- *  does not serve. Entities is absent because a school keeps one set of books
- *  and never creates another; "fees" is present and is school-only. */
-export const financeSettingsSections: readonly FinanceSettingsSection[] = [
-  "overview", "fiscal-calendar", "accounting", "documents",
-  "banking-cash", "reference-data", "approvals", "fees",
-] as const;
-
-/** Which Setup pages this app routes; see SCHOOL_SETUP_SECTIONS in the route
- *  table, which is built from this. Dimensions and currencies are absent: a
- *  school reports on branches and terms rather than analytical axes, and bills
- *  in naira only. */
-export const setupSections: readonly SetupSection[] = [
-  "accounts", "periods", "tax-codes", "cost-centers",
-] as const;
+export {
+  financeSettingsSections,
+  setupSections,
+} from "@/xvs-host-config";
 
 /** A school adjusts the approval paths it was given; it does not author new ones.
  *
