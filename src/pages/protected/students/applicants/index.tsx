@@ -1,14 +1,27 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { UserPlus } from "lucide-react";
+import {
+  Archive,
+  ArrowRight,
+  BookOpenCheck,
+  Clock3,
+  type LucideIcon,
+  UserPlus,
+} from "lucide-react";
 
+import PermissionGate from "@/components/custom/permission-gate";
+import {
+  CardActions,
+  ClickableCard,
+  Panel,
+} from "@/components/custom/surface";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
 import { cn } from "@/lib/utils";
-import { EmptyRing } from "../empty-ring";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import { P } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { writeErrorMessage } from "@/utils/api-error";
@@ -22,8 +35,13 @@ import type { StudentRow } from "@/redux/services/students/students-types";
 
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { DrawerShell, Field, inputClass } from "../drawers/drawer-shell";
+import { StudentDrawers, type DrawerRequest } from "../drawers";
 import { formatDate } from "../format";
+import { Pager } from "../pager";
+import { PersonAvatar } from "../person-avatar";
 import { StudentStatusBadge } from "../status-badge";
+
+type StageKey = "waiting" | "placement" | "closed";
 
 /**
  * The front of the lifecycle: who has applied, and the two ends it can reach.
@@ -36,99 +54,176 @@ import { StudentStatusBadge } from "../status-badge";
  */
 export default function Applicants() {
   const navigate = useNavigate();
-  const { lens } = useStudentsLens();
+  const {
+    lens,
+    multiBranch,
+    label: branchLabel,
+    sessionName,
+  } = useStudentsLens();
 
   const [enrolling, setEnrolling] = useState<StudentRow | null>(null);
   const [rejecting, setRejecting] = useState<StudentRow | null>(null);
+  const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
+  const [stage, setStage] = useState<StageKey>("waiting");
+  const [pages, setPages] = useState<Record<StageKey, number>>({
+    waiting: 1,
+    placement: 1,
+    closed: 1,
+  });
 
-  const waiting = useGetStudentsQuery({ ...lens, status: "APPLICANT" });
-  // On the roll but not yet in a class - the design's "enrolled, not activated"
-  // group, read from the state the backend actually keeps.
-  const recent = useGetStudentsQuery({ ...lens, status: "ENROLLED" });
-  const closed = useGetStudentsQuery({ ...lens, status: "REJECTED" });
+  const waiting = useGetStudentsQuery({
+    ...lens,
+    status: "APPLICANT",
+    page: pages.waiting,
+  });
+  const placement = useGetStudentsQuery({
+    ...lens,
+    status: "ENROLLED",
+    class: "unassigned",
+    page: pages.placement,
+  });
+  const closed = useGetStudentsQuery({
+    ...lens,
+    status: "REJECTED",
+    page: pages.closed,
+  });
 
-  if (waiting.isError) {
-    return (
-      <PageShell>
-        <OutlinedNotice
-          icon={UserPlus}
-          title="We could not load your applicants"
-          body="Something went wrong on our side. Try again in a moment."
-          actionLabel="Try again"
-          onAction={() => waiting.refetch()}
-        />
-      </PageShell>
-    );
+  const waitingRows = useMemo(
+    () => sortLongestWaiting(waiting.data?.data ?? []),
+    [waiting.data],
+  );
+  const placementRows = placement.data?.data ?? [];
+  const closedRows = closed.data?.data ?? [];
+
+  const counts: Record<StageKey, number> = {
+    waiting: waiting.data?.pagination.totalItems ?? 0,
+    placement: placement.data?.pagination.totalItems ?? 0,
+    closed: closed.data?.pagination.totalItems ?? 0,
+  };
+
+  function setPage(key: StageKey, page: number) {
+    setPages((current) => ({ ...current, [key]: page }));
   }
 
-  const open = waiting.data?.pagination.totalItems ?? 0;
-
   return (
-    <PageShell className="content-start gap-6" grid>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-gray-05">
-          {waiting.isLoading
-            ? "Loading applications…"
-            : open === 0
-              ? "No applications are waiting."
-              : `${open} ${open === 1 ? "application is" : "applications are"} waiting on a decision.`}
-        </p>
-        <Button
-          onClick={() =>
-            navigate(`${routesPath.PROTECTED.STUDENTS.ENROL}?applicant=1`)
-          }
-        >
-          Add an applicant
-        </Button>
+    <PageShell className="content-start gap-5" grid>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
+            Applicants
+          </h1>
+          <p className="mt-1 text-sm text-gray-01">
+            Review admissions for {multiBranch ? branchLabel : "this school"}
+            {sessionName ? ` in ${sessionName}` : ""}.
+          </p>
+        </div>
+        <PermissionGate permission={P.ENROLL_STUDENT}>
+          <Button
+            onClick={() =>
+              navigate(`${routesPath.PROTECTED.STUDENTS.ENROL}?applicant=1`)
+            }
+          >
+            <UserPlus className="size-4" />
+            Add applicant
+          </Button>
+        </PermissionGate>
       </div>
 
-      <Group
-        title="Waiting on a decision"
-        edge="bg-amber-500"
-        loading={waiting.isLoading}
-        rows={waiting.data?.data ?? []}
-        empty="Nothing is waiting. New applications appear here."
-        render={(s) => (
-          <>
-            <Button size="sm" onClick={() => setEnrolling(s)}>
-              Put on the roll
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setRejecting(s)}>
-              Close application
-            </Button>
-          </>
-        )}
-        onOpen={(id) => navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(id))}
+      <PipelineNav
+        active={stage}
+        counts={counts}
+        loading={waiting.isLoading || placement.isLoading || closed.isLoading}
+        onChange={setStage}
       />
 
-      <Group
-        title="On the roll, no class yet"
-        edge="bg-lime-600"
-        subtitle="Enrolled, but nobody has placed them. They will not appear on a register until they have a class."
-        loading={recent.isLoading}
-        rows={(recent.data?.data ?? []).filter((s) => !s.class_name)}
-        empty="Everyone who has been enrolled has a class."
-        render={(s) => (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(s.id))}
-          >
-            Assign a class
-          </Button>
-        )}
-        onOpen={(id) => navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(id))}
-      />
+      {stage === "waiting" && (
+        <StagePanel
+          title="Waiting on a decision"
+          subtitle="Review each application, then enrol the student or close the application."
+          icon={Clock3}
+          tone="amber"
+          loading={waiting.isLoading || waiting.isFetching}
+          error={waiting.isError}
+          onRetry={() => waiting.refetch()}
+          rows={waitingRows}
+          emptyTitle="No applications are waiting"
+          emptyBody="New applications will appear here for review."
+          page={waiting.data?.pagination.currentPage ?? 1}
+          totalPages={waiting.data?.pagination.totalPages ?? 1}
+          onPageChange={(page) => setPage("waiting", page)}
+          actions={(student) => (
+            <PermissionGate permission={P.MANAGE_STUDENTS}>
+              <Button size="sm" onClick={() => setEnrolling(student)}>
+                Put on the roll
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setRejecting(student)}
+              >
+                Close application
+              </Button>
+            </PermissionGate>
+          )}
+          onOpen={(id) =>
+            navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(id))
+          }
+        />
+      )}
 
-      <Group
-        title="Closed applications"
-        edge="bg-gray-02"
-        subtitle="Kept on purpose: a family that did not join is something a school looks up later."
-        loading={closed.isLoading}
-        rows={closed.data?.data ?? []}
-        empty="No application has been closed."
-        onOpen={(id) => navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(id))}
-      />
+      {stage === "placement" && (
+        <StagePanel
+          title="On the roll, no class yet"
+          subtitle="These students are enrolled but cannot appear on a class register until they are placed."
+          icon={BookOpenCheck}
+          tone="green"
+          loading={placement.isLoading || placement.isFetching}
+          error={placement.isError}
+          onRetry={() => placement.refetch()}
+          rows={placementRows}
+          emptyTitle="Everyone enrolled has a class"
+          emptyBody="Students who still need placement will appear here."
+          page={placement.data?.pagination.currentPage ?? 1}
+          totalPages={placement.data?.pagination.totalPages ?? 1}
+          onPageChange={(page) => setPage("placement", page)}
+          actions={(student) => (
+            <PermissionGate permission={P.ASSIGN_CLASS}>
+              <Button
+                size="sm"
+                onClick={() =>
+                  setDrawer({ kind: "transfer", studentId: student.id })
+                }
+              >
+                Assign a class
+              </Button>
+            </PermissionGate>
+          )}
+          onOpen={(id) =>
+            navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(id))
+          }
+        />
+      )}
+
+      {stage === "closed" && (
+        <StagePanel
+          title="Closed applications"
+          subtitle="Kept for reference so the school can answer why a family did not join."
+          icon={Archive}
+          tone="gray"
+          loading={closed.isLoading || closed.isFetching}
+          error={closed.isError}
+          onRetry={() => closed.refetch()}
+          rows={closedRows}
+          emptyTitle="No applications have been closed"
+          emptyBody="Applications closed after review will remain available here."
+          page={closed.data?.pagination.currentPage ?? 1}
+          totalPages={closed.data?.pagination.totalPages ?? 1}
+          onPageChange={(page) => setPage("closed", page)}
+          onOpen={(id) =>
+            navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(id))
+          }
+        />
+      )}
 
       {enrolling && (
         <ConfirmEnrolment
@@ -142,101 +237,258 @@ export default function Applicants() {
           onClose={() => setRejecting(null)}
         />
       )}
+      <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />
     </PageShell>
   );
 }
 
-function Group({
+function PipelineNav({
+  active,
+  counts,
+  loading,
+  onChange,
+}: {
+  active: StageKey;
+  counts: Record<StageKey, number>;
+  loading: boolean;
+  onChange: (stage: StageKey) => void;
+}) {
+  const items: {
+    key: StageKey;
+    label: string;
+    note: string;
+    icon: LucideIcon;
+    tone: string;
+  }[] = [
+    {
+      key: "waiting",
+      label: "Awaiting decision",
+      note: "Needs review",
+      icon: Clock3,
+      tone: "bg-amber-100 text-amber-700",
+    },
+    {
+      key: "placement",
+      label: "Needs a class",
+      note: "Enrolled to place",
+      icon: BookOpenCheck,
+      tone: "bg-emerald-100 text-emerald-700",
+    },
+    {
+      key: "closed",
+      label: "Closed",
+      note: "Kept for reference",
+      icon: Archive,
+      tone: "bg-gray-04 text-gray-06",
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      {items.map((item) => {
+        const selected = active === item.key;
+        const Icon = item.icon;
+        return (
+          <button
+            key={item.key}
+            type="button"
+            aria-pressed={selected}
+            onClick={() => onChange(item.key)}
+            className={cn(
+              "flex min-w-0 items-center gap-3 rounded-xl border bg-white p-3.5 text-left transition-colors",
+              selected
+                ? "border-primary ring-1 ring-primary/15"
+                : "border-border hover:border-primary/40",
+            )}
+          >
+            <span
+              className={cn(
+                "grid size-9 shrink-0 place-content-center rounded-lg",
+                item.tone,
+              )}
+            >
+              <Icon className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-semibold text-black-01">
+                {item.label}
+              </span>
+              <span className="mt-0.5 block truncate text-xs text-gray-05">
+                {item.note}
+              </span>
+            </span>
+            {loading ? (
+              <Skeleton className="size-7 shrink-0 rounded-full" />
+            ) : (
+              <span className="grid size-7 shrink-0 place-content-center rounded-full bg-white-03 text-xs font-semibold text-primary">
+                {counts[item.key]}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function StagePanel({
   title,
   subtitle,
+  icon: Icon,
   rows,
   loading,
-  empty,
-  edge,
-  render,
+  error,
+  onRetry,
+  emptyTitle,
+  emptyBody,
+  tone,
+  actions,
   onOpen,
+  page,
+  totalPages,
+  onPageChange,
 }: {
   title: string;
-  subtitle?: string;
+  subtitle: string;
+  icon: LucideIcon;
   rows: StudentRow[];
   loading?: boolean;
-  empty: string;
-  /** The 3px edge colour, matching the status these cards are all in. */
-  edge: string;
-  render?: (s: StudentRow) => React.ReactNode;
+  error?: boolean;
+  onRetry: () => void;
+  emptyTitle: string;
+  emptyBody: string;
+  tone: "amber" | "green" | "gray";
+  actions?: (student: StudentRow) => React.ReactNode;
   onOpen: (id: number) => void;
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
 }) {
-  return (
-    <section className="min-w-0">
-      <h3 className="text-sm font-semibold text-black-01">{title}</h3>
-      {subtitle && <p className="mt-0.5 text-xs text-gray-05">{subtitle}</p>}
+  const edge = {
+    amber: "bg-amber-500",
+    green: "bg-emerald-600",
+    gray: "bg-gray-02",
+  }[tone];
 
-      {loading ? (
-        <div className="mt-3.5 grid grid-cols-[repeat(auto-fill,minmax(316px,1fr))] gap-3.5">
-          <Skeleton className="h-44 rounded-[10px]" />
-          <Skeleton className="h-44 rounded-[10px]" />
+  return (
+    <Panel as="section" className="rounded-xl p-4 sm:p-5">
+      <div className="flex min-w-0 items-start gap-3">
+        <span
+          className={cn(
+            "grid size-9 shrink-0 place-content-center rounded-lg",
+            tone === "amber"
+              ? "bg-amber-100 text-amber-700"
+              : tone === "green"
+                ? "bg-emerald-100 text-emerald-700"
+                : "bg-gray-04 text-gray-06",
+          )}
+        >
+          <Icon className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-black-01">{title}</h2>
+          <p className="mt-0.5 text-xs leading-5 text-gray-05">{subtitle}</p>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="mt-5">
+          <OutlinedNotice
+            icon={Icon}
+            title="We could not load this stage"
+            body="Something went wrong on our side. Try again in a moment."
+            actionLabel="Try again"
+            onAction={onRetry}
+          />
+        </div>
+      ) : loading ? (
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {Array.from({ length: 3 }).map((_, index) => (
+            <Skeleton key={index} className="h-52 rounded-xl" />
+          ))}
         </div>
       ) : rows.length === 0 ? (
-        <div className="mt-3.5">
-          <EmptyRing>{empty}</EmptyRing>
+        <div className="mt-5 grid min-h-52 place-content-center rounded-xl border border-dashed border-white-02 bg-white-05 px-4 py-10 text-center">
+          <span className="mx-auto grid size-11 place-content-center rounded-full bg-white-03 text-primary">
+            <Icon className="size-5" />
+          </span>
+          <p className="mt-3 text-sm font-semibold text-black-01">
+            {emptyTitle}
+          </p>
+          <p className="mt-1 text-xs text-gray-05">{emptyBody}</p>
         </div>
       ) : (
-        <ul className="mt-3.5 grid grid-cols-[repeat(auto-fill,minmax(316px,1fr))] gap-3.5">
+        <ul className="mt-5 grid gap-3 lg:grid-cols-2">
           {rows.map((s) => (
-            <li
-              key={s.id}
-              className="flex min-w-0 overflow-hidden rounded-[10px] bg-white"
-            >
-              {/* A 3px edge in the status's own colour. The board is read at a
-                  glance for what needs deciding, and the edge is what makes a
-                  card's state legible before any of its words are. */}
-              <span aria-hidden className={cn("w-[3px] shrink-0", edge)} />
+            <li key={s.id} className="min-w-0">
+              <ClickableCard
+                onOpen={() => onOpen(s.id)}
+                label={`Open ${s.full_name}'s applicant record`}
+                className="relative flex h-full flex-col overflow-hidden rounded-xl p-0 text-left"
+              >
+                <span
+                  aria-hidden
+                  className={cn("absolute inset-y-0 left-0 w-1", edge)}
+                />
+                <div className="flex h-full min-w-0 flex-col px-4 py-4 pl-5">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <PersonAvatar
+                      name={s.full_name}
+                      photoUrl={s.photo_url}
+                      className="size-10 shrink-0"
+                      textClassName="text-xs"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-black-01">
+                        {s.full_name}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-gray-05">
+                        {s.level_name || "No level recorded"}
+                      </p>
+                    </div>
+                    <StudentStatusBadge
+                      status={s.status}
+                      label={s.status_label}
+                    />
+                  </div>
 
-              <div className="min-w-0 flex-1 px-5 py-4.5">
-                <div className="flex items-start gap-3">
-                  <span
-                    aria-hidden
-                    className="grid size-9.5 shrink-0 place-content-center rounded-full bg-white-03 text-[13px] font-semibold text-primary"
-                  >
-                    {initials(s.full_name)}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => onOpen(s.id)}
-                    className="min-w-0 flex-1 text-left"
-                  >
-                    <p className="truncate text-[15px] font-semibold text-black-01 hover:text-primary">
-                      {s.full_name}
+                  <div className="mt-4 grid gap-2 border-t border-border pt-3">
+                    <CardRow label="Applied for">
+                      {s.level_name || "Not stated"}
+                    </CardRow>
+                    <CardRow label="Guardian">
+                      {s.primary_guardian || "Nobody linked"}
+                    </CardRow>
+                    <p className="mt-1 text-xs font-medium text-gray-01">
+                      {waitingLine(s)}
                     </p>
-                    <p className="truncate text-[12.5px] text-gray-05">
-                      {s.level_name || "No level recorded"}
-                    </p>
-                  </button>
-                  <StudentStatusBadge status={s.status} label={s.status_label} />
-                </div>
+                  </div>
 
-                <div className="mt-3.5 flex flex-col gap-[7px] border-t border-white-02 pt-3">
-                  <CardRow label="Applied for">
-                    {s.level_name || "Not stated"}
-                  </CardRow>
-                  <CardRow label="Guardian">
-                    {s.primary_guardian || "Nobody linked"}
-                  </CardRow>
-                  {/* How long they have waited, not the date they applied.
-                      "12 days" is the fact somebody acts on; "20 Aug" makes
-                      the reader do the subtraction. */}
-                  <p className="text-xs text-gray-05">{waitingLine(s)}</p>
-                </div>
+                  {actions && (
+                    <CardActions className="mt-auto flex flex-wrap gap-2 pt-4">
+                      {actions(s)}
+                    </CardActions>
+                  )}
 
-                {render && (
-                  <div className="mt-4 flex flex-wrap gap-2">{render(s)}</div>
-                )}
-              </div>
+                  {!actions && (
+                    <span className="mt-auto inline-flex items-center gap-1 pt-4 text-xs font-medium text-primary">
+                      Open record
+                      <ArrowRight className="size-3.5" />
+                    </span>
+                  )}
+                </div>
+              </ClickableCard>
             </li>
           ))}
         </ul>
       )}
-    </section>
+
+      {!error && !loading && rows.length > 0 && (
+        <div className="mt-5 border-t border-border pt-4">
+          <Pager page={page} totalPages={totalPages} onGo={onPageChange} />
+        </div>
+      )}
+    </Panel>
   );
 }
 
@@ -257,13 +509,12 @@ function CardRow({
   );
 }
 
-/** Two letters from the name, for the card avatar. */
-function initials(fullName: string) {
-  const parts = fullName.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  const first = parts[0][0] ?? "";
-  const last = parts.length > 1 ? (parts[parts.length - 1][0] ?? "") : "";
-  return (first + last).toUpperCase();
+function sortLongestWaiting(rows: StudentRow[]) {
+  return [...rows].sort((a, b) => {
+    const aTime = a.applied_on ? Date.parse(a.applied_on) : Number.MAX_VALUE;
+    const bTime = b.applied_on ? Date.parse(b.applied_on) : Number.MAX_VALUE;
+    return aTime - bTime;
+  });
 }
 
 /**

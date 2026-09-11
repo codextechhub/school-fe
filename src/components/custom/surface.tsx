@@ -107,7 +107,11 @@ export function CardActions({
   children: React.ReactNode;
 }) {
   return (
-    <div className={className} onClick={(event) => event.stopPropagation()}>
+    <div
+      className={className}
+      onClick={(event) => event.stopPropagation()}
+      onKeyDown={(event) => event.stopPropagation()}
+    >
       {children}
     </div>
   );
