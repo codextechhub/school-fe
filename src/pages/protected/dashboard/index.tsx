@@ -523,19 +523,6 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {pulse.length > 0 && (
-        <section>
-          <SectionHeading
-            eyebrow="School pulse"
-            title="Everything important, in one glance"
-            note={`${studentLens.multiBranch ? studentLens.label : "This school"}${sessionName ? ` · ${sessionName}` : ""}`}
-          />
-          <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {pulse}
-          </div>
-        </section>
-      )}
-
       {operationalError && !operationalLoading && (
         <section className="flex items-start gap-3 rounded-2xl border border-yellow-01/30 bg-yellow-01/5 px-4 py-3.5">
           <AlertTriangle className="mt-0.5 size-4 shrink-0 text-yellow-01-text" />
@@ -570,6 +557,19 @@ export default function Dashboard() {
           </div>
         </section>
       ) : null}
+
+      {pulse.length > 0 && (
+        <section>
+          <SectionHeading
+            eyebrow="School pulse"
+            title="Everything important, in one glance"
+            note={`${studentLens.multiBranch ? studentLens.label : "This school"}${sessionName ? ` · ${sessionName}` : ""}`}
+          />
+          <div className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            {pulse}
+          </div>
+        </section>
+      )}
 
       {(canSeeCalendar || canSeeStudents) && (
         <section className="grid min-w-0 gap-4 lg:grid-cols-3">
