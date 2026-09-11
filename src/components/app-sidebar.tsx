@@ -728,10 +728,10 @@ export function AppSidebar({
           // The three above are personal - your queue, your submissions, your
           // delegations - and everybody signed in has them. This one is the
           // school's own list of who approves what, and a teacher holds no key
-          // for it, so it was a door drawn on a wall.
+          // for it, so it is offered only to somebody who can read it.
           ...(hasPermission(P.VIEW_APPROVER_GROUPS)
             ? [{
-                title: "Approver Groups",
+                title: "Approvers",
                 url: routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
                 isActive: location.startsWith(
                   routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,

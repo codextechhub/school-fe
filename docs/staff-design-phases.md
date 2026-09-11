@@ -369,9 +369,9 @@ than a screen: **On Leave is derived, not set.** See 12.
 
     The decision half needs no new screen. `workflow-routes.tsx` already mounts
     the whole ladder from `@xvs/finance`: Approvals, Approval detail, My
-    Submissions, Delegations, Approver Groups and Templates. So a filed request
+    Submissions, Delegations, Approvers and Templates. So a filed request
     lands in a queue that exists, the person tracks it in My Submissions, and
-    the empty `leave-approvers` group is fixable on Approver Groups without
+    the empty `leave-approvers` group is fixable on Approvers without
     anybody writing a screen. **Two things to check while building rather than
     assume**: that the generic approval detail renders a `schools.leave_request`
     payload legibly - those screens were drawn for finance documents - and that

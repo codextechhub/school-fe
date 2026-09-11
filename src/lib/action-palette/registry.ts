@@ -652,8 +652,8 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   },
   {
     id: "view-approver-groups",
-    label: "View approver groups",
-    aliases: ["approver pools", "approval groups"],
+    label: "View approvers",
+    aliases: ["approver groups", "approver pools", "approval groups"],
     section: "Settings",
     group: "Workflow",
     kind: "view",

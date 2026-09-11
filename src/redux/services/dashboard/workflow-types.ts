@@ -409,7 +409,7 @@ export interface DelegationWritePayload {
   reason?: string;
 }
 
-// ── Approver groups (the Workflow Approver screen) ───────────────────────────
+// ── Approver groups (the Approvers screen) ───────────────────────────────────
 
 /** What one membership row points at. USER is static; ROLE/POSITION resolve live. */
 export type GroupMemberKind = "USER" | "ROLE" | "POSITION";

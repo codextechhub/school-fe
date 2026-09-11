@@ -23,7 +23,6 @@ import { returnInitial } from "@/utils/helpers";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
-import { routesPath } from "@/routes/routesPath";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { SchoolMark } from "@/components/school-mark";
 
@@ -98,20 +97,9 @@ export function usePositions(): HostQueryResult<HostPosition> {
  *  know which it is running inside. */
 export function useLogRecentOpen(_entry: unknown): void {}
 
-/** Where this app lists who holds which role: the drawer's People tab. */
-export const rolesHref = routesPath.PROTECTED.ROLES.INDEX;
-
-/** No platform-wide staffing view exists for one school, so the tab is empty.
- *
- *  Rendering nothing rather than omitting the tab: the shared screen decides
- *  its own layout, and an app that cannot fill a slot fills it with nothing. */
 import type {
   FinanceSettingsSection, SetupSection,
 } from "@/pages/protected/finance/console-sections";
-
-export function ApprovalRolesTab() {
-  return null;
-}
 
 /** Which Finance Settings sections this app routes.
  *

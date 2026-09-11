@@ -31,7 +31,7 @@ export const workflowRoutes = [
   { path: W.MY_SUBMISSIONS, Component: MySubmissions, handle: { title: "My Submissions" } satisfies DashboardHandle },
   { path: W.SUBMISSION_DETAIL, Component: SubmissionDetail, handle: { title: "Submission", hasBack: true } satisfies DashboardHandle },
   { path: W.DELEGATIONS, Component: Delegations, handle: { title: "Delegations" } satisfies DashboardHandle },
-  { path: W.APPROVER_GROUPS, Component: ApproverGroups, handle: { title: "Approver Groups" } satisfies DashboardHandle },
+  { path: W.APPROVER_GROUPS, Component: ApproverGroups, handle: { title: "Approvers" } satisfies DashboardHandle },
   // No TEMPLATE_NEW. A school adjusts the approval paths it was given rather
   // than authoring new ones, so the builder is reachable only through EDIT, on
   // a template that already exists. See createsWorkflowTemplates in xvs-host.
