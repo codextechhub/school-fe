@@ -1,16 +1,15 @@
 import { useGetStudentQuery } from "@/redux/services/students/students-api";
 
-import { EditDrawer } from "./edit-drawer";
+import { EditDrawer, type EditSectionKey } from "./edit-drawer";
 import { LinkGuardianDrawer } from "./link-guardian-drawer";
 import { StatusDrawer } from "./status-drawer";
 import { TransferDrawer } from "./transfer-drawer";
 
 export type DrawerKind = "edit" | "status" | "transfer" | "guardian";
 
-export interface DrawerRequest {
-  kind: DrawerKind;
-  studentId: number;
-}
+export type DrawerRequest =
+  | { kind: "edit"; studentId: number; section?: EditSectionKey }
+  | { kind: Exclude<DrawerKind, "edit">; studentId: number };
 
 /**
  * One host for every student drawer, mounted once per screen.
@@ -41,7 +40,14 @@ export function StudentDrawers({
   const open = true;
   switch (request.kind) {
     case "edit":
-      return <EditDrawer student={student} open={open} onClose={onClose} />;
+      return (
+        <EditDrawer
+          student={student}
+          open={open}
+          onClose={onClose}
+          initialSection={request.section}
+        />
+      );
     case "status":
       return <StatusDrawer student={student} open={open} onClose={onClose} />;
     case "transfer":

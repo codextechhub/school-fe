@@ -4,6 +4,8 @@ import { ClickableCard } from "@/components/custom/surface";
 import type { StudentRow } from "@/redux/services/students/students-types";
 
 import { StudentStatusBadge } from "./status-badge";
+import { PersonAvatar } from "./person-avatar";
+import { getDirectoryRecordHealth } from "./profile-completeness";
 
 /**
  * The directory as cards.
@@ -58,17 +60,23 @@ export function StudentCards({
             <ClickableCard
               onOpen={() => onOpen(s.id)}
               label={`Open ${s.full_name}'s record`}
-              className="flex w-full min-w-0 flex-col gap-2 p-4 text-left"
+              className="flex w-full min-w-0 flex-col gap-3 rounded-xl p-4 text-left"
             >
               <div className="flex min-w-0 items-start justify-between gap-2">
-                {/* min-w-0 on the growing side, or truncate silently stops. */}
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-black-01">
-                    {s.full_name}
-                  </p>
-                  <p className="truncate text-xs text-gray-05">
-                    {s.student_number || "Not issued"}
-                  </p>
+                <div className="flex min-w-0 items-center gap-3">
+                  <PersonAvatar
+                    name={s.full_name}
+                    photoUrl={s.photo_url}
+                    className="size-10 shrink-0"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-black-01">
+                      {s.full_name}
+                    </p>
+                    <p className="truncate text-xs text-gray-05">
+                      {s.student_number || "Not issued"}
+                    </p>
+                  </div>
                 </div>
                 <StudentStatusBadge status={s.status} label={s.status_label} />
               </div>
@@ -88,9 +96,12 @@ export function StudentCards({
                 )}
               </div>
 
-              <p className="truncate text-xs text-gray-05">
-                {s.primary_guardian || "No guardian linked"}
-              </p>
+              <div className="grid gap-2 border-t border-border pt-3">
+                <p className="truncate text-xs text-gray-05">
+                  {s.primary_guardian || "No guardian linked"}
+                </p>
+                <CardRecordHealth student={s} />
+              </div>
             </ClickableCard>
           </li>
         ))}
@@ -122,5 +133,25 @@ export function StudentCards({
         </div>
       )}
     </>
+  );
+}
+
+function CardRecordHealth({ student }: { student: StudentRow }) {
+  const health = getDirectoryRecordHealth(student);
+
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-04">
+        <span
+          className={`block h-full rounded-full ${
+            health.gaps === 0 ? "bg-emerald-600" : "bg-amber-500"
+          }`}
+          style={{ width: `${health.percentage}%` }}
+        />
+      </span>
+      <span className="shrink-0 text-[11px] text-gray-05">
+        {health.gaps === 0 ? "Ready" : `${health.gaps} gaps`}
+      </span>
+    </div>
   );
 }

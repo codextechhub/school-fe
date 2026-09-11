@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { LayoutGrid, List, Search, Upload, UserPlus, Users, X } from "lucide-react";
+import {
+  LayoutGrid,
+  List,
+  Search,
+  Upload,
+  UserPlus,
+  Users,
+  X,
+} from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
@@ -12,6 +20,7 @@ import { ExportButton } from "@/components/custom/export-button";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { useStudentsLens } from "@/hooks/use-students-lens";
+import { cn } from "@/lib/utils";
 import {
   useGetClassSeatsQuery,
   useGetStudentSummaryQuery,
@@ -31,20 +40,14 @@ import { buildWorkQueue, type QueueRow } from "./work-queue";
 import { StudentCards } from "./student-cards";
 import { PersonAvatar } from "./person-avatar";
 import { StudentStatusBadge } from "./status-badge";
+import { getDirectoryRecordHealth } from "./profile-completeness";
 
 /**
  * The student directory. The module's front door, and its biggest screen.
  *
- * Read-only in this phase, deliberately: the whole API contract, the envelope,
- * the pagination shape and the branch lens are proven here before a single
- * mutation is written. The row menu's Edit, Change status and Transfer arrive
- * with the drawer bundle.
- *
- * **The tiles and the table come from two different endpoints and must agree.**
- * Both are given the same branch. They did not use to be: `/students/summary/`
- * took no branch, so the tiles read 87 over a table showing 49, with nothing on
- * the page marking which number was which. If a figure here is ever fed from a
- * call that does not carry `branch`, that gap comes straight back.
+ * The summary, work queue, filters, list, card view, and record actions all use
+ * the same branch and session lens. The directory endpoint exposes only safe
+ * list fields, so its record-health indicator never reads private profile data.
  */
 export default function StudentDirectory() {
   const navigate = useNavigate();
@@ -198,9 +201,9 @@ export default function StudentDirectory() {
       {/* ── Who this page is about, and the two ways in ──────────────────── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-black-01">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
             Student Directory
-          </h2>
+          </h1>
           <p className="mt-1 text-sm text-gray-01">
             Every student at {multiBranch ? branchLabel : "this school"}
             {summary?.session ? ` for ${summary.session}` : ""}.
@@ -214,7 +217,7 @@ export default function StudentDirectory() {
               className="inline-flex h-10.5 items-center gap-2 rounded-lg border border-white-02 bg-white px-4 text-sm font-medium text-gray-01 hover:bg-gray-03 hover:text-primary"
             >
               <Upload className="size-4" />
-              Bulk import
+              Import
             </button>
           </PermissionGate>
           <PermissionGate permission={P.ENROLL_STUDENT}>
@@ -254,108 +257,95 @@ export default function StudentDirectory() {
         }
       />
 
-      {/* ── Search, filters, export, view ─────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-2.5">
-        <div className="relative min-w-55 max-w-85 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
-          <input
-            value={search}
-            onChange={(e) => resetTo(() => setSearch(e.target.value))}
-            placeholder="Search name or admission no."
-            aria-label="Search students"
-            className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+      <div className="rounded-xl border border-border bg-white p-3.5 sm:p-4">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="relative min-w-55 flex-[1_1_20rem] lg:max-w-md">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
+            <input
+              value={search}
+              onChange={(e) => resetTo(() => setSearch(e.target.value))}
+              placeholder="Search name or admission no."
+              aria-label="Search students"
+              className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+            />
+          </div>
+
+          <FiltersPopover
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            value={{ classId, level, status, unassignedOnly }}
+            onChange={(next) =>
+              resetTo(() => {
+                if (next.classId !== undefined) setClassId(next.classId);
+                if (next.level !== undefined) setLevel(next.level);
+                if (next.status !== undefined) setStatus(next.status);
+                if (next.unassignedOnly !== undefined) {
+                  setUnassignedOnly(next.unassignedOnly);
+                  if (next.unassignedOnly) setClassId("all");
+                }
+              })
+            }
+            onClear={clearAll}
+            classes={classes}
+            levels={levels}
+            statuses={summary?.by_status ?? []}
+          />
+
+          <ExportButton
+            screen="students.directory"
+            params={{
+              search: search.trim() || undefined,
+              status: status === "all" ? undefined : status,
+              class: classId === "all" ? undefined : classId,
+              level: level === "all" ? undefined : level,
+              branch_name: lens.branch !== undefined ? branchLabel : undefined,
+              session_name: sessionName ?? undefined,
+            }}
+          />
+
+          <SegmentedToggle
+            className="sm:ml-auto"
+            ariaLabel="Directory layout"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: "list", label: "List", icon: List },
+              { value: "cards", label: "Cards", icon: LayoutGrid },
+            ]}
           />
         </div>
 
-        <FiltersPopover
-          open={filtersOpen}
-          onOpenChange={setFiltersOpen}
-          value={{ classId, level, status, unassignedOnly }}
-          onChange={(next) =>
-            resetTo(() => {
-              if (next.classId !== undefined) setClassId(next.classId);
-              if (next.level !== undefined) setLevel(next.level);
-              if (next.status !== undefined) setStatus(next.status);
-              if (next.unassignedOnly !== undefined) {
-                setUnassignedOnly(next.unassignedOnly);
-                // The two ask different questions of the same column, so one
-                // has to give: a class filter and "no class at all" cannot
-                // both be true, and leaving the old class on returns nothing.
-                if (next.unassignedOnly) setClassId("all");
-              }
-            })
-          }
-          onClear={clearAll}
-          classes={classes}
-          levels={levels}
-          statuses={summary?.by_status ?? []}
-        />
-
-        {/* The branch goes by NAME, not id: the export filters on the branch's
-            name and a translator has no tenant to resolve one into the other.
-            Sending it means the file narrows exactly as the table does - which
-            a student export can do and a catalogue export cannot, because a
-            student belongs to one branch and is never school-wide. */}
-        <ExportButton
-          screen="students.directory"
-          params={{
-            search: search.trim() || undefined,
-            status: status === "all" ? undefined : status,
-            class: classId === "all" ? undefined : classId,
-            level: level === "all" ? undefined : level,
-            branch_name: lens.branch !== undefined ? branchLabel : undefined,
-            session_name: sessionName ?? undefined,
-          }}
-        />
-
-        {/* The app's toggle, not a ninth copy of it. Its own comment warned
-            that five hand-rolled ones existed and a sixth was coming; this
-            screen had written the seventh. The sliding marker is the part that
-            cannot be reproduced consistently by hand. */}
-        <SegmentedToggle
-          className="ml-auto"
-          ariaLabel="Directory layout"
-          value={view}
-          onChange={setView}
-          options={[
-            { value: "list", label: "List", icon: List },
-            { value: "cards", label: "Cards", icon: LayoutGrid },
-          ]}
-        />
-      </div>
-
-      {/* Two or more filters is where a reader loses track of what is applied,
-          so the chips appear then rather than for every single one. */}
-      {chips.length >= 2 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {chips.map((chip) => (
+        {chips.length > 0 && (
+          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+            {chips.map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={() => resetTo(chip.clear)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 text-xs text-primary hover:bg-primary/15"
+              >
+                {chip.label}
+                <X className="size-3" />
+              </button>
+            ))}
             <button
-              key={chip.label}
               type="button"
-              onClick={() => resetTo(chip.clear)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gray-04 px-2.5 py-1 text-xs text-black-01 hover:bg-white-02"
+              onClick={clearAll}
+              className="text-xs text-primary underline-offset-2 hover:underline"
             >
-              {chip.label}
-              <X className="size-3" />
+              Clear all
             </button>
-          ))}
-          <button
-            type="button"
-            onClick={clearAll}
-            className="text-xs text-primary underline-offset-2 hover:underline"
-          >
-            Clear all
-          </button>
-        </div>
-      )}
+          </div>
+        )}
 
-      {anyFilter && !listLoading && (
-        <p className="text-xs text-gray-05" aria-live="polite">
-          {pagination?.totalItems ?? 0}{" "}
-          {pagination?.totalItems === 1 ? "student" : "students"} match
-          {pagination?.totalItems === 1 ? "es" : ""} your filters
-        </p>
-      )}
+        {anyFilter && !listLoading && (
+          <p className="mt-2 text-xs text-gray-05" aria-live="polite">
+            {pagination?.totalItems ?? 0}{" "}
+            {pagination?.totalItems === 1 ? "student" : "students"} match
+            {pagination?.totalItems === 1 ? "es" : ""} your filters
+          </p>
+        )}
+      </div>
 
       {view === "list" ? (
         <CustomTable
@@ -363,15 +353,12 @@ export default function StudentDirectory() {
             "Student",
             "Admission no.",
             "Class",
-            "Status",
             "Primary guardian",
-            // The row-menu column. CustomTable renders a sixth cell when
-            // `dropDown` is set, and without this the header row is one short -
-            // so every heading after it sits over the wrong column at the
-            // widths where the table stops stretching.
+            "Record",
             "",
           ]}
           loading={listLoading || isFetching}
+          cardBreakpoint="lg"
           defaultBodyList={rows}
           dropDown
           dropDownList={[
@@ -423,8 +410,14 @@ export default function StudentDirectory() {
                   <span className="block truncate text-sm text-black-01">
                     {s.full_name}
                   </span>
-                  <span className="block truncate text-xs text-gray-05">
-                    {s.level_name || "No level"}
+                  <span className="mt-0.5 flex flex-wrap items-center gap-1.5">
+                    <span className="truncate text-xs text-gray-05">
+                      {s.level_name || "No level"}
+                    </span>
+                    <StudentStatusBadge
+                      status={s.status}
+                      label={s.status_label}
+                    />
                   </span>
                 </span>
               </span>
@@ -444,10 +437,8 @@ export default function StudentDirectory() {
                 Unassigned
               </span>
             ),
-            Status: (
-              <StudentStatusBadge status={s.status} label={s.status_label} />
-            ),
             "Primary guardian": s.primary_guardian || "None linked",
+            Record: <RecordHealth student={s} />,
           }))}
           onRowClick={(student: StudentRow) => {
             if (student?.id) {
@@ -498,4 +489,25 @@ export default function StudentDirectory() {
   );
 }
 
+function RecordHealth({ student }: { student: StudentRow }) {
+  const health = getDirectoryRecordHealth(student);
 
+  return (
+    <span className="block min-w-28">
+      <span className="block h-1.5 overflow-hidden rounded-full bg-gray-04">
+        <span
+          className={cn(
+            "block h-full rounded-full",
+            health.gaps === 0 ? "bg-emerald-600" : "bg-amber-500",
+          )}
+          style={{ width: `${health.percentage}%` }}
+        />
+      </span>
+      <span className="mt-1 block text-[11px] text-gray-05">
+        {health.gaps === 0
+          ? "Ready"
+          : `${health.gaps} ${health.gaps === 1 ? "gap" : "gaps"}`}
+      </span>
+    </span>
+  );
+}

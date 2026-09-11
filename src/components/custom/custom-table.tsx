@@ -58,6 +58,8 @@ interface myComponentProps {
    * stacking would destroy it.
    */
   mobile?: "cards" | "scroll";
+  /** Keep cards through tablet widths for tables with more than five columns. */
+  cardBreakpoint?: "md" | "lg";
 }
 
 const CustomTable = ({
@@ -79,6 +81,7 @@ const CustomTable = ({
   loadingText,
   emptyText,
   mobile = "cards",
+  cardBreakpoint = "md",
 }: myComponentProps) => {
   //   pagination here ------
   // Function to generate page numbers with ellipsis
@@ -213,6 +216,9 @@ const CustomTable = ({
   // width because it is one centred sentence rather than columns.
   const showCards =
     mobile === "cards" && (loading || tableBodyList?.length > 0);
+  const cardsVisibility = cardBreakpoint === "lg" ? "lg:hidden" : "md:hidden";
+  const tableVisibility =
+    cardBreakpoint === "lg" ? "max-lg:hidden" : "max-md:hidden";
 
   /** The header labels a card shows, minus the ones a card has no room for. */
   const cardLabels = tableHeaderList?.filter(
@@ -228,7 +234,13 @@ const CustomTable = ({
       {loading && <SkeletonLoadingLabel text={loadingText || "Loading…"} />}
 
       {showCards && loading && (
-        <div className={cn(INFORMATION_CARD_SURFACE, "overflow-hidden rounded-md md:hidden")}>
+        <div
+          className={cn(
+            INFORMATION_CARD_SURFACE,
+            "overflow-hidden rounded-md",
+            cardsVisibility,
+          )}
+        >
           {Array.from({ length: GHOST_ROWS }).map((_, rowIndex) => (
             <SkeletonCard
               key={rowIndex}
@@ -240,7 +252,13 @@ const CustomTable = ({
       )}
 
       {showCards && !loading && (
-        <div className={cn(INFORMATION_CARD_SURFACE, "overflow-hidden rounded-md md:hidden")}>
+        <div
+          className={cn(
+            INFORMATION_CARD_SURFACE,
+            "overflow-hidden rounded-md",
+            cardsVisibility,
+          )}
+        >
           {tableBodyList?.map((item: any, rowIndex: any) => {
             // Underscore keys are row metadata (_slug, _key) that the table
             // never renders, and a card must not either.
@@ -315,7 +333,7 @@ const CustomTable = ({
         containerClassName={cn(
           INFORMATION_CARD_SURFACE,
           "overflow-hidden rounded-md",
-          showCards && "max-md:hidden",
+          showCards && tableVisibility,
         )}
       >
         {tableHeaderList?.length > 0 && (

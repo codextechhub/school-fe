@@ -20,44 +20,21 @@ import type {
   StaffListRow,
 } from "@/redux/services/staff/staff-types";
 
-import { AccountFlagChip, EmploymentBadge } from "./badges";
+import { AccountBadge, EmploymentBadge } from "./badges";
 import { leaveNote } from "./leave-note";
 import { CountsHeader } from "./counts-header";
 import { RecentImports } from "./recent-imports";
 import { FiltersPopover } from "./filters-popover";
 import { StaffDrawers, type StaffDrawerRequest } from "./drawers";
-// Neither of these is student-specific, and a second copy is the thing to
-// avoid: six places once drew their own initials circle, and a date parsed two
-// ways reads a day early on one screen and not the other.
+import { getStaffDirectoryHealth } from "./profile-completeness";
 import { PersonAvatar } from "../students/person-avatar";
 
 /**
- * The staff directory. The module's front door, and its biggest screen.
+ * The staff directory for teaching and non-teaching employees.
  *
- * **Everybody who works here, not only the teachers.** The bursar, the
- * registrar and the procurement officer are on this list, which is why the
- * screen says Staff. The backend keys are still `school.teachers.*` because a
- * permission key is a primary key that four tables point at; the word changed
- * and the key did not.
- *
- * **Two statuses, two columns, never merged.** Employment says whether somebody
- * still works here; the account says whether their login works. Where they
- * agree the account is silent, and the chip beside a name appears only when
- * they disagree - which is the one row on a page of fifty that somebody has to
- * read. See `badges.tsx` for why that silence is the design rather than an
- * omission.
- *
- * **One call draws the whole screen.** The rows, the six header figures, the
- * roles this school may hand out and whether the branch dimension applies all
- * arrive together, because a directory that needs four calls to draw its header
- * draws it late - and because two calls that narrowed differently is how the
- * student directory once showed 87 over a table of 49.
- *
- * **Bulk import opens over this list rather than at an address of its own.** It
- * is a thing you do TO the directory, not a place you go, which is the same
- * ruling the student directory carries. What it leaves behind - which file,
- * how many rows, who was skipped and why - is a different question asked months
- * later, so that lives in the folded panel above.
+ * Employment and account state use separate columns because they answer
+ * different questions. Counts, role options, and branch applicability come
+ * from the list response so the summary and the rows share one filter scope.
  */
 export default function StaffDirectory() {
   const navigate = useNavigate();
@@ -170,9 +147,9 @@ export default function StaffDirectory() {
     <PageShell className="content-start gap-5" grid>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-black-01">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
             Staff Directory
-          </h2>
+          </h1>
           {/* Named only when a branch is actually being read. `branchLabel`
               says "All branches" when nothing is narrowed, and "employed at All
               branches" reads like a place rather than an absence of one. */}
@@ -189,7 +166,7 @@ export default function StaffDirectory() {
           <PermissionGate permission={P.UPLOAD_IMPORT_BATCH}>
             <Button variant="outline" onClick={() => setImporting(true)}>
               <Upload className="size-4" />
-              Bulk import
+              Import
             </Button>
           </PermissionGate>
           <PermissionGate permission={P.INVITE_TEACHER}>
@@ -209,78 +186,76 @@ export default function StaffDirectory() {
         onPickTeaching={() => resetTo(() => setTeachingOnly(true))}
       />
 
-      <div className="flex flex-wrap items-center gap-2.5">
-        <div className="relative min-w-55 max-w-85 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
-          <input
-            value={search}
-            onChange={(e) => resetTo(() => setSearch(e.target.value))}
-            placeholder="Search name, email or staff ID"
-            aria-label="Search staff"
-            className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+      <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-white p-3.5 sm:p-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+          <div className="relative min-w-55 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
+            <input
+              value={search}
+              onChange={(e) => resetTo(() => setSearch(e.target.value))}
+              placeholder="Search name, email or staff ID"
+              aria-label="Search staff"
+              className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+            />
+          </div>
+
+          <FiltersPopover
+            open={filtersOpen}
+            onOpenChange={setFiltersOpen}
+            value={{ role, employment, account, schoolWideOnly }}
+            onChange={(next) =>
+              resetTo(() => {
+                if (next.role !== undefined) setRole(next.role);
+                if (next.employment !== undefined) {
+                  setEmployment(next.employment);
+                }
+                if (next.account !== undefined) setAccount(next.account);
+                if (next.schoolWideOnly !== undefined) {
+                  setSchoolWideOnly(next.schoolWideOnly);
+                }
+              })
+            }
+            onClear={clearAll}
+            roles={roles}
+            employmentStatuses={counts?.by_employment_status ?? []}
           />
+
+          <div className="ml-auto">
+            <RecentImports />
+          </div>
         </div>
 
-        <FiltersPopover
-          open={filtersOpen}
-          onOpenChange={setFiltersOpen}
-          value={{ role, employment, account, schoolWideOnly }}
-          onChange={(next) =>
-            resetTo(() => {
-              if (next.role !== undefined) setRole(next.role);
-              if (next.employment !== undefined) setEmployment(next.employment);
-              if (next.account !== undefined) setAccount(next.account);
-              if (next.schoolWideOnly !== undefined) {
-                setSchoolWideOnly(next.schoolWideOnly);
-              }
-            })
-          }
-          onClear={clearAll}
-          roles={roles}
-          employmentStatuses={counts?.by_employment_status ?? []}
-        />
-
-        {/* Pushed to the right of the toolbar rather than sitting above the
-            header in a band of its own. It is a record somebody consults, not
-            a fact about the school, so it belongs beside the other controls
-            and out of the way of the figures. */}
-        <div className="ml-auto">
-          <RecentImports />
-        </div>
-      </div>
-
-      {/* Two or more filters is where a reader loses track of what is applied,
-          so the chips appear then rather than for every single one. */}
-      {chips.length >= 2 && (
-        <div className="flex flex-wrap items-center gap-2">
-          {chips.map((chip) => (
+        {chips.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
+            {chips.map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={() => resetTo(chip.clear)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-gray-04 px-2.5 py-1 text-xs text-black-01 hover:bg-white-02"
+              >
+                {chip.label}
+                <X className="size-3" />
+              </button>
+            ))}
             <button
-              key={chip.label}
               type="button"
-              onClick={() => resetTo(chip.clear)}
-              className="inline-flex items-center gap-1.5 rounded-full bg-gray-04 px-2.5 py-1 text-xs text-black-01 hover:bg-white-02"
+              onClick={clearAll}
+              className="text-xs text-primary underline-offset-2 hover:underline"
             >
-              {chip.label}
-              <X className="size-3" />
+              Clear all
             </button>
-          ))}
-          <button
-            type="button"
-            onClick={clearAll}
-            className="text-xs text-primary underline-offset-2 hover:underline"
-          >
-            Clear all
-          </button>
-        </div>
-      )}
+          </div>
+        )}
 
-      {anyFilter && !isLoading && (
-        <p className="text-xs text-gray-05" aria-live="polite">
-          {pagination?.totalItems ?? 0}{" "}
-          {pagination?.totalItems === 1 ? "person matches" : "people match"}{" "}
-          your filters
-        </p>
-      )}
+        {anyFilter && !isLoading && (
+          <p className="text-xs text-gray-05" aria-live="polite">
+            {pagination?.totalItems ?? 0}{" "}
+            {pagination?.totalItems === 1 ? "person matches" : "people match"}{" "}
+            your filters
+          </p>
+        )}
+      </div>
 
       {/* Only where something is selected. A bar that is always there is a bar
           that is usually empty, and its two buttons would be permanently
@@ -326,7 +301,9 @@ export default function StaffDirectory() {
           "Role",
           ...(showBranch ? ["Posted to"] : []),
           "Employment",
+          "Account",
           "Teaching load",
+          "Record",
           // The row-menu column. CustomTable renders an extra cell when
           // `dropDown` is set, and without this the header row is one short.
           "",
@@ -334,6 +311,7 @@ export default function StaffDirectory() {
         loading={isLoading || isFetching}
         defaultBodyList={rows}
         dropDown
+        cardBreakpoint="lg"
         // Gated on the key the SERVER checks, so a reader who cannot do the
         // thing is not offered it, fills in a drawer and is refused at Save.
         // Assign role and Manage assignments arrive with their own drawers.
@@ -446,17 +424,18 @@ export default function StaffDirectory() {
                 ),
               }
             : {}),
-          // Two chips side by side, and the second one silent unless the
-          // account disagrees with the record.
           Employment: (
-            <span className="flex flex-wrap items-center gap-1.5">
-              <EmploymentBadge
-                status={person.display_employment_status}
-                label={person.display_employment_status_label}
-                note={leaveNote(person)}
-              />
-              <AccountFlagChip flag={person.account_flag} />
-            </span>
+            <EmploymentBadge
+              status={person.display_employment_status}
+              label={person.display_employment_status_label}
+              note={leaveNote(person)}
+            />
+          ),
+          Account: (
+            <AccountBadge
+              status={person.account_status}
+              label={titleCase(person.account_status)}
+            />
           ),
           // A count, uncoloured, with nothing to compare it against. No
           // contract records a maximum load and no subject records a weekly
@@ -464,6 +443,7 @@ export default function StaffDirectory() {
           "Teaching load": person.teaching_load
             ? `${person.teaching_load} ${person.teaching_load === 1 ? "class" : "classes"}`
             : "None",
+          Record: <StaffRecordHealth person={person} />,
         }))}
         onRowClick={(person: StaffListRow) => {
           if (person?.id) {
@@ -504,4 +484,38 @@ export default function StaffDirectory() {
       />
     </PageShell>
   );
+}
+
+function StaffRecordHealth({ person }: { person: StaffListRow }) {
+  const health = getStaffDirectoryHealth(person);
+
+  return (
+    <span className="grid min-w-28 gap-1.5">
+      <span className="flex items-center justify-between gap-2 text-xs">
+        <span className={health.gaps ? "text-amber-700" : "text-emerald-700"}>
+          {health.gaps
+            ? `${health.gaps} ${health.gaps === 1 ? "gap" : "gaps"}`
+            : "Complete"}
+        </span>
+        <span className="text-gray-05">{health.percentage}%</span>
+      </span>
+      <span className="h-1.5 overflow-hidden rounded-full bg-gray-04">
+        <span
+          className={cn(
+            "block h-full rounded-full",
+            health.gaps ? "bg-amber-500" : "bg-emerald-500",
+          )}
+          style={{ width: `${health.percentage}%` }}
+        />
+      </span>
+    </span>
+  );
+}
+
+function titleCase(code: string): string {
+  return code
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }

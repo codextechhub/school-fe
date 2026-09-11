@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Search, Users } from "lucide-react";
+import { Link2, Search, Users, UsersRound } from "lucide-react";
 
 import { PageShell } from "@/components/layout/page-shell";
+import { Panel } from "@/components/custom/surface";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
@@ -14,22 +15,10 @@ import { Pager } from "../pager";
 import { FooterLead, PersonCard, SiblingsPill } from "./person-card";
 
 /**
- * The people the school calls.
+ * The people the school calls and the students linked under each one.
  *
- * **A household, not a contact list.** The card that matters is the one
- * standing for more than one child: those students are siblings as far as the
- * school is concerned, and that fact lives nowhere else in the product. So the
- * ward count and the children's names are on the card, not behind it - somebody
- * scanning for "who else does this reach" should not have to open anything.
- *
- * **Cards rather than a table**, which is the design's shape and the right one:
- * the useful part of a row is a sentence of names, and a table either gives
- * that column enough width to starve the rest or truncates it after the first
- * name, which removes the only thing the row was for.
- *
- * Search is the only filter, deliberately. A guardian has no status, no class
- * and no branch of their own; the one question asked of this screen is "is this
- * person already here", and that is a search box.
+ * Cards keep every linked student's name visible. Search is the only filter
+ * because guardians do not have their own status, class, or branch.
  */
 export default function Guardians() {
   const navigate = useNavigate();
@@ -65,10 +54,12 @@ export default function Guardians() {
   return (
     <PageShell className="content-start gap-5" grid>
       <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-black-01">Guardians</h2>
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
+          Guardians
+        </h1>
         <p className="mt-1 text-sm text-gray-01">
-          One guardian can stand for several students, which is how the school
-          knows they are siblings.
+          The people your school calls, with students grouped under each
+          guardian.
           {/* A guardian carries no branch of their own, so say what the
               narrowing actually means rather than letting a shorter list look
               like a smaller school. */}
@@ -76,13 +67,36 @@ export default function Guardians() {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2.5">
-        {/* Capped rather than left to fill the row. A search box the width of
-            the page reads as the page's main content, and this one narrows a
-            grid of cards below it; the count then sits beside the box it
-            belongs to instead of alone at the far edge. Full width on a phone,
-            where there is nothing to share the row with. */}
-        <div className="relative min-w-0 flex-1 basis-52 sm:max-w-sm">
+      <div className="grid gap-3 md:grid-cols-[minmax(13rem,0.75fr)_minmax(0,1.6fr)]">
+        <Panel as="section" className="flex items-center gap-3 rounded-xl p-4 sm:p-5">
+          <span className="grid size-10 shrink-0 place-content-center rounded-lg bg-primary/10 text-primary">
+            <UsersRound className="size-5" />
+          </span>
+          <div className="min-w-0">
+            {isLoading ? (
+              <Skeleton className="h-7 w-14" />
+            ) : (
+              <p className="text-2xl font-semibold text-black-01">
+                {pagination?.totalItems ?? 0}
+              </p>
+            )}
+            <p className="text-xs text-gray-05">Guardian records</p>
+          </div>
+        </Panel>
+
+        <Panel as="section" className="flex items-center gap-3 rounded-xl p-4 sm:p-5">
+          <span className="grid size-10 shrink-0 place-content-center rounded-lg bg-blue-50 text-primary">
+            <Link2 className="size-5" />
+          </span>
+          <p className="text-sm leading-5 text-gray-01">
+            One guardian record can connect several students without splitting
+            the relationship across duplicate contacts.
+          </p>
+        </Panel>
+      </div>
+
+      <Panel as="section" className="flex flex-wrap items-center gap-2.5 rounded-xl p-3.5 sm:p-4">
+        <div className="relative min-w-0 flex-1 basis-56">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
           <input
             value={search}
@@ -92,19 +106,19 @@ export default function Guardians() {
             }}
             placeholder="Search by name, phone or email"
             aria-label="Search guardians"
-            className="h-9 w-full rounded-full border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+            className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
         {pagination && !isLoading && (
-          <p className="text-xs text-gray-05" aria-live="polite">
+          <p className="shrink-0 text-xs text-gray-05" aria-live="polite">
             {pagination.totalItems}{" "}
             {pagination.totalItems === 1 ? "guardian" : "guardians"}
           </p>
         )}
-      </div>
+      </Panel>
 
       {busy ? (
-        <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-3.5 lg:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-[122px] rounded-[10px]" />
           ))}
@@ -115,13 +129,15 @@ export default function Guardians() {
         </EmptyRing>
       ) : (
         <>
-          <div className="grid gap-3.5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3.5 lg:grid-cols-2 xl:grid-cols-3">
             {rows.map((g) => (
               <PersonCard
                 key={g.id}
                 name={g.full_name}
                 photoUrl={g.photo_url}
-                sub={g.phone || g.email || "No contact recorded"}
+                sub={g.phone || g.email || "Contact missing"}
+                secondary={g.phone && g.email ? g.email : undefined}
+                subTone={!g.phone && !g.email ? "warn" : "default"}
                 chip={g.is_sibling_household ? <SiblingsPill /> : undefined}
                 footerLead={
                   <FooterLead>

@@ -30,6 +30,11 @@ const SECTIONS = {
     { key: "phone", label: "Student phone" },
     { key: "email", label: "Student email", type: "email" },
   ],
+  admission: [
+    { key: "student_number", label: "Admission number" },
+    { key: "enrolment_date", label: "Admission date", type: "date" },
+    { key: "previous_school", label: "Previous school" },
+  ],
   medical: [
     { key: "blood_group", label: "Blood group" },
     { key: "allergies", label: "Allergies" },
@@ -39,13 +44,14 @@ const SECTIONS = {
   ],
 } as const;
 
-type SectionKey = keyof typeof SECTIONS;
+export type EditSectionKey = keyof typeof SECTIONS;
 type FieldKey = keyof StudentWrite;
 
-const TABS: { value: SectionKey; label: string }[] = [
-  { value: "bio", label: "Biography" },
+const TABS: { value: EditSectionKey; label: string }[] = [
+  { value: "bio", label: "Personal" },
   { value: "contact", label: "Contact" },
-  { value: "medical", label: "Medical" },
+  { value: "admission", label: "School" },
+  { value: "medical", label: "Health" },
 ];
 
 /** Under 2 or over 25 is a typed year, not a pupil. Matches the backend's rule. */
@@ -77,16 +83,18 @@ export function EditDrawer({
   student,
   open,
   onClose,
+  initialSection = "bio",
 }: {
   student: StudentDetail;
   open: boolean;
   onClose: () => void;
+  initialSection?: EditSectionKey;
 }) {
-  const [section, setSection] = useState<SectionKey>("bio");
+  const [section, setSection] = useState<EditSectionKey>(initialSection);
   const [draft, setDraft] = useState<Partial<StudentWrite>>({});
   const [update, { isLoading }] = useUpdateStudentMutation();
 
-  // The server drops the medical fields entirely for a caller without the key.
+  // The server drops sensitive health fields for a caller without the key.
   const canSeeMedical = student.blood_group !== undefined;
 
   const value = (key: FieldKey): string => {
@@ -108,7 +116,12 @@ export function EditDrawer({
 
   // What actually changed, so the line names fields rather than saying "edited".
   const changed = useMemo(() => {
-    const all = [...SECTIONS.bio, ...SECTIONS.contact, ...SECTIONS.medical];
+    const all = [
+      ...SECTIONS.bio,
+      ...SECTIONS.contact,
+      ...SECTIONS.admission,
+      ...SECTIONS.medical,
+    ];
     return all.filter((f) => {
       if (!(f.key in draft)) return false;
       const before = (student as unknown as Record<string, unknown>)[f.key];

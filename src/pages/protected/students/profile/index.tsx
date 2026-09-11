@@ -1,7 +1,18 @@
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { UserRound } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpen,
+  Check,
+  Clock3,
+  FileText,
+  HeartPulse,
+  LockKeyhole,
+  School,
+  UserRound,
+  UsersRound,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
@@ -24,6 +35,7 @@ import {
 import type {
   StudentDetail,
   StudentDocumentRow,
+  StudentGuardianLink,
   StudentStatus,
 } from "@/redux/services/students/students-types";
 
@@ -42,6 +54,11 @@ import { Dot } from "../guardians/person-card";
 import { Lifecycle } from "./lifecycle";
 import { EmptyRing } from "../empty-ring";
 import { Rows, type Row } from "./rows";
+import {
+  getStudentProfileCompleteness,
+  type ProfileCompleteness,
+  type ProfileGap,
+} from "../profile-completeness";
 
 const TABS = [
   { key: "overview", label: "Overview" },
@@ -55,15 +72,12 @@ const TABS = [
 type TabKey = (typeof TABS)[number]["key"];
 
 /**
- * One student's record. Read-only in this phase.
+ * One student's operational record.
  *
- * **Each tab fetches only when it is opened.** Six endpoints behind six tabs,
- * and a registrar opening a profile to check a phone number should not pull an
- * audit trail, a document checklist and a subject list to do it.
- *
- * Actions - Edit, Change status, Transfer, Link guardian - arrive with the
- * drawer bundle in phase 2. The header deliberately shows none of them yet
- * rather than showing buttons that do nothing.
+ * Guardian and document summaries load with the record because they determine
+ * whether it is complete. Class history, subjects, and full history remain
+ * scoped to the views that display them. Sensitive health fields are rendered
+ * only when the detail endpoint exposes them to the current viewer.
  */
 export default function StudentProfile() {
   const { id } = useParams();
@@ -72,6 +86,7 @@ export default function StudentProfile() {
   // a child's Guardians tab rather than "open him and click the third one".
   // Tabs owns the writing; this only reads.
   const [params] = useSearchParams();
+  const navigate = useNavigate();
   const { pastYear } = useStudentsLens();
   const tab = (params.get("tab") as TabKey) ?? "overview";
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
@@ -80,6 +95,40 @@ export default function StudentProfile() {
     skip: !Number.isFinite(studentId),
   });
   const student = data?.data;
+  const { data: guardiansData, isLoading: guardiansLoading } =
+    useGetStudentGuardiansQuery(studentId, {
+      skip: !Number.isFinite(studentId),
+    });
+  const { data: documentsData, isLoading: documentsLoading } =
+    useGetStudentDocumentsQuery(studentId, {
+      skip: !Number.isFinite(studentId),
+    });
+  const guardians = guardiansData?.data;
+  const documents = documentsData?.data;
+  const completeness = useMemo(
+    () =>
+      student
+        ? getStudentProfileCompleteness({ student, guardians, documents })
+        : undefined,
+    [student, guardians, documents],
+  );
+
+  function openGap(gap: ProfileGap) {
+    if (!student) return;
+    if (gap.destination === "guardian") {
+      setDrawer({ kind: "guardian", studentId: student.id });
+      return;
+    }
+    if (gap.destination === "documents") {
+      navigate("?tab=documents");
+      return;
+    }
+    setDrawer({
+      kind: "edit",
+      studentId: student.id,
+      section: editSectionFor(gap.key),
+    });
+  }
 
   if (isError) {
     return (
@@ -97,125 +146,128 @@ export default function StudentProfile() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <Surface as="section" className="px-6 py-5.5">
+      <Surface as="section" className="overflow-hidden rounded-xl px-4 py-5 sm:px-6">
         {isLoading || !student ? (
-          <div className="grid gap-2">
-            <Skeleton className="h-6 w-56" />
-            <Skeleton className="h-4 w-72" />
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
+            <Skeleton className="h-32 w-full rounded-xl" />
+            <Skeleton className="h-24 w-full rounded-xl" />
           </div>
         ) : (
-          <>
-            <div className="flex flex-wrap items-start gap-4.5">
-              <StudentPhoto student={student} />
+          <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_15rem]">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-start gap-4.5">
+                <StudentPhoto student={student} />
 
-              <div className="min-w-55 flex-1">
-                <div className="flex flex-wrap items-center gap-2.5">
-                  <h2 className="text-[22px] font-semibold text-black-01">
-                    {student.full_name}
-                  </h2>
-                  <StudentStatusBadge status={student.status} label={student.status_label} />
-                </div>
-                {/* Dot-separated rather than comma'd: these are four unrelated
-                    facts, not a sentence, and the dots stop them reading as
-                    one run-on line. */}
-                <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px]">
-                  <span
-                    className={
-                      student.student_number ? "text-gray-01" : "text-gray-02"
-                    }
-                  >
-                    {student.student_number || "No admission number"}
-                  </span>
-                  <Dot />
-                  <span
-                    className={
-                      student.class_name ? "text-gray-01" : "text-amber-700"
-                    }
-                  >
-                    {student.class_name || "Unassigned"}
-                  </span>
-                  {student.level_name && (
-                    <>
-                      <Dot />
-                      <span className="text-gray-05">{student.level_name}</span>
-                    </>
-                  )}
-                  {student.session_name && (
-                    <>
-                      <Dot />
-                      <span className="text-gray-05">
-                        {student.session_name}
-                      </span>
-                    </>
-                  )}
-                  {/* Absent at a single-branch school, not null - so this
-                      renders nothing there rather than an empty slot. */}
-                  {student.branch_name && (
-                    <>
-                      <Dot />
-                      <span className="text-gray-05">
-                        {student.branch_name}
-                      </span>
-                    </>
-                  )}
+                <div className="min-w-55 flex-1">
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
+                      {student.full_name}
+                    </h1>
+                    <StudentStatusBadge
+                      status={student.status}
+                      label={student.status_label}
+                    />
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2.5 text-[13px]">
+                    <span
+                      className={
+                        student.student_number
+                          ? "text-gray-01"
+                          : "text-amber-700"
+                      }
+                    >
+                      {student.student_number || "No admission number"}
+                    </span>
+                    <Dot />
+                    <span
+                      className={
+                        student.class_name ? "text-gray-01" : "text-amber-700"
+                      }
+                    >
+                      {student.class_name || "Unassigned"}
+                    </span>
+                    {student.level_name && (
+                      <>
+                        <Dot />
+                        <span className="text-gray-05">
+                          {student.level_name}
+                        </span>
+                      </>
+                    )}
+                    {student.branch_name && (
+                      <>
+                        <Dot />
+                        <span className="text-gray-05">
+                          {student.branch_name}
+                        </span>
+                      </>
+                    )}
+                    {student.session_name && (
+                      <>
+                        <Dot />
+                        <span className="text-gray-05">
+                          {student.session_name}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 </div>
               </div>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <PermissionGate permission={P.MODIFY_STUDENT}>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      setDrawer({ kind: "edit", studentId: student.id })
+                    }
+                  >
+                    Edit student
+                  </Button>
+                </PermissionGate>
+                <PermissionGate permission={P.ASSIGN_CLASS} disabled={pastYear}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setDrawer({ kind: "transfer", studentId: student.id })
+                    }
+                  >
+                    {student.class_name ? "Change class" : "Assign a class"}
+                  </Button>
+                </PermissionGate>
+                <PermissionGate permission={P.MANAGE_STUDENTS}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setDrawer({ kind: "status", studentId: student.id })
+                    }
+                  >
+                    Change status
+                  </Button>
+                </PermissionGate>
+                <PermissionGate permission={P.MODIFY_STUDENT}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setDrawer({ kind: "guardian", studentId: student.id })
+                    }
+                  >
+                    Link guardian
+                  </Button>
+                </PermissionGate>
+              </div>
+
+              <Lifecycle status={student.status} />
             </div>
 
-            <Lifecycle status={student.status} />
-
-            {/* Wraps rather than scrolls: four actions on a phone belong on two
-                rows, not behind a sideways drag.
-                
-                Each is gated on the key the BACKEND checks for it, so a reader
-                who cannot do the thing is not shown the button. All four were
-                open: somebody holding only school.students.view saw every one,
-                pressed it, filled in a drawer and was refused at Save. The
-                app's own action-palette comment names that failure as the one
-                to avoid, and PermissionGate has sixteen users elsewhere. */}
-            <div className="mt-4 flex flex-wrap gap-2">
-              <PermissionGate permission={P.MODIFY_STUDENT}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDrawer({ kind: "edit", studentId: student.id })}
-                >
-                  Edit record
-                </Button>
-              </PermissionGate>
-              <PermissionGate permission={P.MANAGE_STUDENTS}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDrawer({ kind: "status", studentId: student.id })}
-                >
-                  Change status
-                </Button>
-              </PermissionGate>
-              {/* Placement is academics' power, not students': the same key the
-                  assign screen needs. And withheld under a past year whatever
-                  the caller holds - the server refuses a placement into a year
-                  that has closed, so the button could only ever fail. */}
-              <PermissionGate permission={P.ASSIGN_CLASS} disabled={pastYear}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDrawer({ kind: "transfer", studentId: student.id })}
-                >
-                  {student.class_name ? "Transfer class" : "Assign a class"}
-                </Button>
-              </PermissionGate>
-              <PermissionGate permission={P.MODIFY_STUDENT}>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDrawer({ kind: "guardian", studentId: student.id })}
-                >
-                  Link a guardian
-                </Button>
-              </PermissionGate>
-            </div>
-          </>
+            <CompletenessCard
+              completeness={completeness}
+              loading={guardiansLoading || documentsLoading}
+            />
+          </div>
         )}
       </Surface>
 
@@ -224,11 +276,32 @@ export default function StudentProfile() {
         tabs={TABS.map((t) => ({ value: t.key, label: t.label }))}
       />
 
-      {tab === "overview" && <Overview loading={isLoading} student={student} />}
-      {tab === "guardians" && <GuardiansTab studentId={studentId} />}
+      {tab === "overview" && (
+        <Overview
+          loading={isLoading}
+          student={student}
+          guardians={guardians}
+          documents={documents}
+          completeness={completeness}
+          onGap={openGap}
+          onOpenTab={(nextTab) => navigate(`?tab=${nextTab}`)}
+        />
+      )}
+      {tab === "guardians" && (
+        <GuardiansTab
+          links={guardians ?? []}
+          loading={guardiansLoading}
+        />
+      )}
       {tab === "academic" && <AcademicTab studentId={studentId} student={student} />}
       {tab === "medical" && <MedicalTab loading={isLoading} student={student} />}
-      {tab === "documents" && <DocumentsTab studentId={studentId} />}
+      {tab === "documents" && (
+        <DocumentsTab
+          studentId={studentId}
+          docs={documents ?? []}
+          loading={documentsLoading}
+        />
+      )}
       {tab === "history" && <HistoryTab studentId={studentId} />}
 
       <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />
@@ -241,13 +314,27 @@ export default function StudentProfile() {
 function Overview({
   student,
   loading,
+  guardians,
+  documents,
+  completeness,
+  onGap,
+  onOpenTab,
 }: {
   student?: StudentDetail;
   loading?: boolean;
+  guardians?: StudentGuardianLink[];
+  documents?: StudentDocumentRow[];
+  completeness?: ProfileCompleteness;
+  onGap: (gap: ProfileGap) => void;
+  onOpenTab: (tab: TabKey) => void;
 }) {
+  const navigate = useNavigate();
+  const { data: subjectsData, isLoading: subjectsLoading } =
+    useGetStudentSubjectsQuery(student?.id ?? 0, { skip: !student });
+
   if (loading || !student) return <PanelSkeleton />;
 
-  const bio: Row[] = [
+  const personal: Row[] = [
     { label: "Full name", value: student.full_name },
     {
       label: "Date of birth",
@@ -258,44 +345,453 @@ function Overview({
     { label: "Gender", value: titleCaseCode(student.gender) || "-" },
     { label: "Nationality", value: student.nationality || "-" },
     { label: "State of origin", value: student.state_of_origin || "-" },
-  ];
-  const contact: Row[] = [
-    { label: "Home address", value: student.address || "-" },
+    { label: "Home address", value: student.address || "Not recorded" },
     { label: "Student phone", value: student.phone || "Not recorded" },
     { label: "Student email", value: student.email || "Not recorded" },
   ];
-  const admission: Row[] = [
+  const school: Row[] = [
     { label: "Admission number", value: student.student_number || "Not issued" },
     { label: "Admission date", value: formatDate(student.enrolment_date) },
+    { label: "Class", value: student.class_name || "Unassigned" },
+    { label: "Level", value: student.level_name || "Not recorded" },
     { label: "Session", value: student.session_name || "-" },
     ...(student.branch_name
       ? [{ label: "Branch", value: student.branch_name }]
       : []),
+    {
+      label: "Previous school",
+      value: student.previous_school || "Not recorded",
+    },
   ];
+  const primaryGuardian =
+    guardians?.find((link) => link.is_primary) ?? guardians?.[0];
+  const requiredDocuments = documents?.filter((document) => document.required);
+  const attachedRequired = requiredDocuments?.filter(
+    (document) => document.attached,
+  ).length;
+  const subjects = subjectsData?.data ?? [];
 
   return (
-    <div className="grid gap-4 lg:grid-cols-2">
-      <Panel title="Biography">
-        <Rows rows={bio} />
-      </Panel>
-      <Panel title="Contact">
-        <Rows rows={contact} />
-      </Panel>
-      <Panel title="Admission">
-        <Rows rows={admission} />
-      </Panel>
+    <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,0.9fr)]">
+      <div className="grid min-w-0 content-start gap-4">
+        <Panel title="Personal details" icon={UserRound}>
+          <DetailGrid rows={personal} />
+        </Panel>
+
+        <Panel title="School details" icon={School}>
+          <DetailGrid rows={school} />
+        </Panel>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SnapshotCard
+            icon={BookOpen}
+            title="Academic snapshot"
+            value={subjectsLoading ? undefined : subjects.length}
+            label={subjects.length === 1 ? "subject" : "subjects"}
+            action="View academic"
+            onOpen={() => onOpenTab("academic")}
+            tone="bg-violet-50 text-violet-800"
+          />
+          <SnapshotCard
+            icon={FileText}
+            title="Document snapshot"
+            value={documents ? attachedRequired : undefined}
+            label={
+              requiredDocuments
+                ? `of ${requiredDocuments.length} required on file`
+                : "required documents"
+            }
+            action="View documents"
+            onOpen={() => onOpenTab("documents")}
+            tone="bg-emerald-50 text-emerald-800"
+          />
+        </div>
+      </div>
+
+      <aside className="grid min-w-0 content-start gap-4">
+        <MissingInformation
+          completeness={completeness}
+          onGap={onGap}
+        />
+
+        <Panel
+          title="Primary guardian"
+          icon={UsersRound}
+          action={
+            primaryGuardian ? (
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(
+                    routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(
+                      primaryGuardian.guardian.id,
+                    ),
+                  )
+                }
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                View guardian
+              </button>
+            ) : undefined
+          }
+        >
+          {primaryGuardian ? (
+            <div className="grid gap-1.5">
+              <p className="text-sm font-semibold text-black-01">
+                {primaryGuardian.guardian.full_name}
+              </p>
+              <p className="text-xs text-gray-05">
+                {primaryGuardian.relationship_label}
+                {primaryGuardian.is_primary ? " · Primary contact" : ""}
+              </p>
+              <p className="mt-1 text-sm text-black-01">
+                {primaryGuardian.guardian.phone || "No phone recorded"}
+              </p>
+              <p className="break-words text-xs text-gray-05">
+                {primaryGuardian.guardian.email || "No email recorded"}
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-amber-700">No guardian linked.</p>
+          )}
+        </Panel>
+
+        <HealthSnapshot student={student} />
+
+        <Panel title="Recent activity" icon={Clock3}>
+          <ol className="grid gap-3">
+            <ActivityRow
+              title="Profile updated"
+              detail={formatDateTime(student.updated_at)}
+              tone="bg-emerald-600"
+            />
+            <ActivityRow
+              title="Student record created"
+              detail={formatDateTime(student.created_at)}
+              tone="bg-violet-500"
+            />
+          </ol>
+        </Panel>
+      </aside>
     </div>
+  );
+}
+
+function editSectionFor(key: string) {
+  if (["address", "phone", "email"].includes(key)) return "contact" as const;
+  if (["student_number", "enrolment_date", "previous_school"].includes(key)) {
+    return "admission" as const;
+  }
+  if (
+    [
+      "blood_group",
+      "allergies",
+      "conditions",
+      "emergency_contact_name",
+      "emergency_contact_phone",
+    ].includes(key)
+  ) {
+    return "medical" as const;
+  }
+  return "bio" as const;
+}
+
+function CompletenessCard({
+  completeness,
+  loading,
+}: {
+  completeness?: ProfileCompleteness;
+  loading?: boolean;
+}) {
+  if (loading || !completeness) {
+    return <Skeleton className="h-24 w-full rounded-xl" />;
+  }
+
+  const gapCount = completeness.gaps.length;
+
+  return (
+    <div className="flex min-w-0 items-center gap-3 self-start rounded-xl border border-border bg-white-05 p-3">
+      <div className="relative grid size-14 shrink-0 place-content-center self-center text-primary">
+        <svg viewBox="0 0 44 44" className="absolute inset-0 size-full -rotate-90">
+          <circle
+            cx="22"
+            cy="22"
+            r="18"
+            fill="none"
+            stroke="currentColor"
+            strokeOpacity="0.12"
+            strokeWidth="4"
+          />
+          <circle
+            cx="22"
+            cy="22"
+            r="18"
+            fill="none"
+            stroke="currentColor"
+            strokeLinecap="round"
+            strokeWidth="4"
+            pathLength="100"
+            strokeDasharray={`${completeness.percentage} 100`}
+          />
+        </svg>
+        <span className="text-xs font-semibold text-black-01">
+          {completeness.percentage}%
+        </span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold text-black-01">
+          Profile completeness
+        </p>
+        <p
+          className={cn(
+            "mt-1 text-xs",
+            gapCount > 0 ? "text-amber-700" : "text-emerald-700",
+          )}
+        >
+          {gapCount > 0
+            ? `${gapCount} ${gapCount === 1 ? "detail" : "details"} still missing`
+            : "This record is complete"}
+        </p>
+        {gapCount > 0 && (
+          <PermissionGate permission={P.MODIFY_STUDENT}>
+            <Button
+              size="sm"
+              className="mt-2 h-8 w-full"
+              onClick={() =>
+                document
+                  .getElementById("missing-information")
+                  ?.scrollIntoView({ behavior: "smooth", block: "center" })
+              }
+            >
+              Complete profile
+            </Button>
+          </PermissionGate>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function DetailGrid({ rows }: { rows: Row[] }) {
+  return (
+    <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+      {rows.map((row) => (
+        <div key={row.label} className="min-w-0">
+          <dt className="text-xs text-gray-05">{row.label}</dt>
+          <dd
+            className={cn(
+              "mt-1 min-w-0 break-words text-sm text-black-01",
+              ["Not recorded", "Not issued", "Unassigned"].includes(row.value) &&
+                "text-amber-700",
+            )}
+          >
+            {row.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
+function SnapshotCard({
+  icon: Icon,
+  title,
+  value,
+  label,
+  action,
+  onOpen,
+  tone,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  value?: number;
+  label: string;
+  action: string;
+  onOpen: () => void;
+  tone: string;
+}) {
+  return (
+    <Surface as="section" className="rounded-xl p-4 sm:p-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Icon className="size-4.5 text-primary" />
+        <h3 className="text-sm font-semibold text-black-01">{title}</h3>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="ml-auto text-xs font-medium text-primary hover:underline"
+        >
+          {action}
+        </button>
+      </div>
+      <div className={cn("mt-4 rounded-lg px-4 py-5 text-center", tone)}>
+        {value === undefined ? (
+          <Skeleton className="mx-auto h-8 w-14" />
+        ) : (
+          <p className="text-3xl font-semibold leading-none">{value}</p>
+        )}
+        <p className="mt-2 text-xs opacity-75">{label}</p>
+      </div>
+    </Surface>
+  );
+}
+
+function MissingInformation({
+  completeness,
+  onGap,
+}: {
+  completeness?: ProfileCompleteness;
+  onGap: (gap: ProfileGap) => void;
+}) {
+  if (!completeness) return <Skeleton className="h-48 w-full rounded-xl" />;
+
+  const gaps = completeness.gaps.slice(0, 4);
+
+  return (
+    <section
+      id="missing-information"
+      className={cn(
+        "min-w-0 rounded-xl border p-4 sm:p-5",
+        gaps.length > 0
+          ? "border-amber-200 bg-amber-50/70"
+          : "border-emerald-200 bg-emerald-50/60",
+      )}
+    >
+      <div className="flex items-start gap-3">
+        <span
+          className={cn(
+            "grid size-8 shrink-0 place-content-center rounded-lg",
+            gaps.length > 0
+              ? "bg-amber-100 text-amber-700"
+              : "bg-emerald-100 text-emerald-700",
+          )}
+        >
+          {gaps.length > 0 ? (
+            <AlertTriangle className="size-4" />
+          ) : (
+            <Check className="size-4" />
+          )}
+        </span>
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-black-01">
+            {gaps.length > 0 ? "Missing information" : "Record complete"}
+          </h3>
+          <p className="mt-0.5 text-xs text-gray-01">
+            {gaps.length > 0
+              ? "Fill these details to keep this student's record useful."
+              : "The expected details and required files are on record."}
+          </p>
+        </div>
+      </div>
+
+      {gaps.length > 0 && (
+        <>
+          <ul className="mt-4 grid gap-2">
+            {gaps.map((gap) => (
+              <li key={gap.key}>
+                <PermissionGate
+                  permission={P.MODIFY_STUDENT}
+                  fallback={
+                    <span className="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs text-black-01">
+                      <span className="size-1.5 rounded-full bg-amber-500" />
+                      {gap.label}
+                    </span>
+                  }
+                >
+                  <button
+                    type="button"
+                    onClick={() => onGap(gap)}
+                    className="flex w-full items-center gap-2 rounded-lg bg-white/80 px-3 py-2 text-left text-xs text-black-01 hover:bg-white"
+                  >
+                    <span className="size-1.5 rounded-full bg-amber-500" />
+                    <span className="min-w-0 flex-1 truncate">{gap.label}</span>
+                    <span className="font-medium text-primary">Fill</span>
+                  </button>
+                </PermissionGate>
+              </li>
+            ))}
+          </ul>
+          {completeness.gaps.length > gaps.length && (
+            <p className="mt-2 text-xs text-amber-800">
+              {completeness.gaps.length - gaps.length} more details need attention.
+            </p>
+          )}
+        </>
+      )}
+    </section>
+  );
+}
+
+function HealthSnapshot({ student }: { student: StudentDetail }) {
+  const permitted = student.blood_group !== undefined;
+
+  return (
+    <Panel
+      title="Health and emergency"
+      icon={HeartPulse}
+      action={
+        <span className="inline-flex items-center gap-1 text-[11px] text-gray-05">
+          <LockKeyhole className="size-3" />
+          Sensitive
+        </span>
+      }
+    >
+      {permitted ? (
+        <Rows
+          rows={[
+            { label: "Blood group", value: student.blood_group || "Not recorded" },
+            { label: "Allergies", value: student.allergies || "Not recorded" },
+            { label: "Conditions", value: student.conditions || "Not recorded" },
+            {
+              label: "Emergency contact",
+              value: student.emergency_contact_name || "Not recorded",
+            },
+            {
+              label: "Emergency phone",
+              value: student.emergency_contact_phone || "Not recorded",
+            },
+          ]}
+        />
+      ) : (
+        <p className="text-sm text-gray-05">
+          You do not hold permission to view these details.
+        </p>
+      )}
+    </Panel>
+  );
+}
+
+function ActivityRow({
+  title,
+  detail,
+  tone,
+}: {
+  title: string;
+  detail: string;
+  tone: string;
+}) {
+  return (
+    <li className="flex min-w-0 gap-2.5">
+      <span className={cn("mt-1.5 size-2 shrink-0 rounded-full", tone)} />
+      <div className="min-w-0">
+        <p className="text-sm text-black-01">{title}</p>
+        <p className="text-xs text-gray-05">{detail}</p>
+      </div>
+    </li>
   );
 }
 
 // ── Guardians ───────────────────────────────────────────────────────────────
 
-function GuardiansTab({ studentId }: { studentId: number }) {
+function GuardiansTab({
+  links,
+  loading,
+}: {
+  links: StudentGuardianLink[];
+  loading?: boolean;
+}) {
   const navigate = useNavigate();
-  const { data, isLoading } = useGetStudentGuardiansQuery(studentId);
-  const links = data?.data ?? [];
 
-  if (isLoading) return <PanelSkeleton />;
+  if (loading) return <PanelSkeleton />;
   if (links.length === 0) {
     return (
       <EmptyRing>No guardian linked</EmptyRing>
@@ -538,11 +1034,16 @@ function StudentPhoto({ student }: { student: StudentDetail }) {
 
 // ── Documents ───────────────────────────────────────────────────────────────
 
-function DocumentsTab({ studentId }: { studentId: number }) {
-  const { data, isLoading } = useGetStudentDocumentsQuery(studentId);
-  const docs = data?.data ?? [];
-
-  if (isLoading) return <PanelSkeleton />;
+function DocumentsTab({
+  studentId,
+  docs,
+  loading,
+}: {
+  studentId: number;
+  docs: StudentDocumentRow[];
+  loading?: boolean;
+}) {
+  if (loading) return <PanelSkeleton />;
 
   return (
     <Panel
@@ -787,24 +1288,26 @@ function HistoryTab({ studentId }: { studentId: number }) {
 
 function Panel({
   title,
+  icon: Icon,
   badge,
   note,
+  action,
   className,
   children,
 }: {
   title: string;
+  icon?: React.ComponentType<{ className?: string }>;
   badge?: string;
   /** A line under the heading, for a panel whose subject needs explaining. */
   note?: string;
+  action?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }) {
   return (
-    // The app's surface, not a ninth hand-written one. This wrapper stays
-    // because it also owns the heading, the badge and the note - what it no
-    // longer owns is what a white box looks like.
-    <Surface as="section" className={cn("px-5.5 py-5", className)}>
-      <div className="mb-3.5 flex flex-wrap items-center gap-2">
+    <Surface as="section" className={cn("rounded-xl px-4 py-5 sm:px-5.5", className)}>
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        {Icon && <Icon className="size-4.5 text-primary" />}
         <h3 className="text-sm font-semibold text-black-01">{title}</h3>
         {badge && (
           <span className="rounded-full bg-white-03 px-2 py-0.5 text-xs text-primary">
@@ -814,6 +1317,7 @@ function Panel({
         {note && (
           <span className="w-full text-xs text-gray-05">{note}</span>
         )}
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       {children}
     </Surface>

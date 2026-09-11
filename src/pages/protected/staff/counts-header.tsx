@@ -1,4 +1,13 @@
-import { GraduationCap, Lock } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  CalendarClock,
+  GraduationCap,
+  LockKeyhole,
+  Mail,
+  UserCheck,
+  Users,
+} from "lucide-react";
 
 import { Panel } from "@/components/custom/surface";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,43 +17,32 @@ import type {
   StaffCounts,
 } from "@/redux/services/staff/staff-types";
 
-/**
- * The directory's header: who works here, and the two figures that are not
- * about that.
- *
- * **Six numbers, and they are not all the same kind of thing**, which is why
- * each is labelled rather than pooled into one strip of tiles. Total and
- * currently employed differ the moment somebody resigns. The employment
- * breakdown draws the bar. Teaching duties is a count of assignments, with
- * nothing to compare it against. And **locked accounts is an ACCOUNT count
- * sitting beside employment ones**, which is why it is separated by a rule and
- * says so in words: a school that reads a security lockout as a suspension
- * believes its teacher was disciplined for mistyping a password.
- *
- * **The side panel switches dimension rather than padding one.** At a school
- * with several branches it is the posting breakdown; at a school with one it
- * would repeat a single value on every row, so the dimension recedes and the
- * role distribution takes the space. The server decides which and says so in
- * `breakdown_by`; nothing here guesses from the branch list.
- */
-
-const SEGMENT: Record<EmploymentStatus, string> = {
-  ACTIVE: "bg-green-700",
-  INVITED: "bg-amber-500",
-  ON_LEAVE: "bg-amber-400",
-  SUSPENDED: "bg-red-500",
-  RESIGNED: "bg-gray-02",
-  TERMINATED: "bg-gray-03",
-};
-
-function ColumnLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-gray-05">
-      {children}
-    </p>
-  );
+interface Metric {
+  label: string;
+  value: number;
+  note: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: string;
+  onClick?: () => void;
 }
 
+interface AttentionItem {
+  key: string;
+  count: number;
+  label: string;
+  action: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: string;
+  onClick: () => void;
+}
+
+/**
+ * Summarises employment, teaching, and account issues for the staff directory.
+ *
+ * Employment and account facts stay separate. The attention row uses only
+ * counts the list response provides, so it never invents missing postings or
+ * required records that the API cannot identify.
+ */
 export function CountsHeader({
   counts,
   loading,
@@ -58,158 +56,208 @@ export function CountsHeader({
   onPickLocked: () => void;
   onPickTeaching: () => void;
 }) {
-  const present = (counts?.by_employment_status ?? []).filter((r) => r.count > 0);
-  // Never zero: a bar divided by nothing is a row of NaN-wide segments.
-  const total = Math.max(1, counts?.total ?? 0);
-  const sideTitle =
-    counts?.breakdown_by === "role" ? "By role" : "Posted to";
+  const statusCount = (status: EmploymentStatus) =>
+    counts?.by_employment_status.find((row) => row.value === status)?.count ?? 0;
+  const invited = statusCount("INVITED");
+  const onLeave = statusCount("ON_LEAVE");
+  const locked = counts?.locked_accounts ?? 0;
+  const needsAttention = invited + locked;
+
+  const metrics: Metric[] = [
+    {
+      label: "Total staff",
+      value: counts?.total ?? 0,
+      note: "Every staff record",
+      icon: Users,
+      tone: "bg-primary/10 text-primary",
+    },
+    {
+      label: "Currently employed",
+      value: counts?.currently_employed ?? 0,
+      note: "Still on the staff roll",
+      icon: UserCheck,
+      tone: "bg-emerald-50 text-emerald-700",
+    },
+    {
+      label: "Teaching staff",
+      value: counts?.with_teaching_duties ?? 0,
+      note: "With teaching assignments",
+      icon: GraduationCap,
+      tone: "bg-violet-50 text-violet-700",
+      onClick: onPickTeaching,
+    },
+    {
+      label: "Needs attention",
+      value: needsAttention,
+      note: "Invitations and account locks",
+      icon: AlertTriangle,
+      tone: "bg-amber-50 text-amber-700",
+    },
+  ];
+
+  const attention: AttentionItem[] = [
+    invited > 0 && {
+      key: "invited",
+      count: invited,
+      label: invited === 1 ? "invitation pending" : "invitations pending",
+      action: "Review invitations",
+      icon: Mail,
+      tone: "bg-amber-50 text-amber-700",
+      onClick: () => onPickStatus("INVITED"),
+    },
+    locked > 0 && {
+      key: "locked",
+      count: locked,
+      label: locked === 1 ? "account locked" : "accounts locked",
+      action: "Review accounts",
+      icon: LockKeyhole,
+      tone: "bg-red-50 text-red-700",
+      onClick: onPickLocked,
+    },
+    onLeave > 0 && {
+      key: "leave",
+      count: onLeave,
+      label: onLeave === 1 ? "person on leave" : "people on leave",
+      action: "View absences",
+      icon: CalendarClock,
+      tone: "bg-violet-50 text-violet-700",
+      onClick: () => onPickStatus("ON_LEAVE"),
+    },
+  ].filter(Boolean) as AttentionItem[];
 
   return (
-    <Panel as="section" className="min-w-0 px-6 py-5.5">
-      <div className="flex flex-wrap items-start gap-8">
-        {/* ── Who works here, and how it splits ───────────────────────────── */}
-        <div className="min-w-0 flex-[1_1_300px]">
-          <ColumnLabel>Staff records</ColumnLabel>
-          {loading ? (
-            <Skeleton className="mt-2 h-10 w-24" />
-          ) : (
-            <p className="mt-2 text-[40px] font-semibold leading-none text-black-01">
-              {counts?.total ?? 0}
-            </p>
-          )}
-          <p className="mt-1.5 text-[13px] text-gray-05">
-            {counts?.currently_employed ?? 0} currently employed
-          </p>
-
-          <div className="mt-5 flex flex-col gap-2.5">
-            <div className="flex h-2.5 overflow-hidden rounded-full bg-gray-04">
-              {present.map((row) => (
-                <button
-                  key={row.value}
-                  type="button"
-                  title={`${row.label}: ${row.count}`}
-                  aria-label={`Filter to ${row.label}`}
-                  onClick={() => onPickStatus(row.value)}
-                  className={cn("h-2.5", SEGMENT[row.value] ?? "bg-gray-02")}
-                  style={{ width: `${(row.count / total) * 100}%` }}
-                />
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-x-4 gap-y-1.5">
-              {present.map((row) => (
-                <button
-                  key={row.value}
-                  type="button"
-                  onClick={() => onPickStatus(row.value)}
-                  aria-label={`Filter to ${row.label}`}
-                  className="inline-flex items-center gap-[7px] hover:opacity-70"
-                >
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "size-2 shrink-0 rounded-full",
-                      SEGMENT[row.value] ?? "bg-gray-02",
-                    )}
-                  />
-                  <span className="text-[13px] text-gray-01">{row.label}</span>
-                  <span className="text-[13px] font-semibold text-black-01">
-                    {row.count}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* The two figures that are not an employment status. Separated by a
-              rule, because that is the whole point of them being here. */}
-          <div className="mt-5 flex flex-wrap gap-2.5 border-t border-white-02 pt-4">
-            <QuickFigure
-              icon={GraduationCap}
-              count={counts?.with_teaching_duties ?? 0}
-              label="with teaching duties"
-              onClick={onPickTeaching}
-            />
-            {(counts?.locked_accounts ?? 0) > 0 && (
-              <QuickFigure
-                icon={Lock}
-                count={counts?.locked_accounts ?? 0}
-                // Named as an account fact on the chip itself, not only in a
-                // tooltip. This is the figure most likely to be read as an
-                // employment state, and it is not one.
-                label="locked out of their account"
-                tone="alert"
-                onClick={onPickLocked}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* ── The side breakdown, whichever dimension applies ─────────────── */}
-        <div className="min-w-55 flex-[1_1_220px]">
-          <ColumnLabel>{sideTitle}</ColumnLabel>
-          {loading ? (
-            <div className="mt-3 grid gap-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-4/5" />
-            </div>
-          ) : (
-            <ul className="mt-3 flex flex-col gap-2">
-              {(counts?.breakdown ?? []).map((row) => (
-                <li
-                  key={`${row.value ?? "none"}-${row.label}`}
-                  className="flex items-baseline justify-between gap-3 text-[13px]"
-                >
-                  <span className="min-w-0 truncate text-gray-01">
-                    {row.label}
-                  </span>
-                  <span className="font-semibold text-black-01">
-                    {row.count}
-                  </span>
-                </li>
-              ))}
-              {!(counts?.breakdown ?? []).length && (
-                <li className="text-[13px] text-gray-05">Nothing to show yet.</li>
-              )}
-            </ul>
-          )}
-          <p className="mt-3 text-xs text-gray-05">
-            {counts?.breakdown_by === "role"
-              ? "Roles people hold. Somebody with none is counted under No role."
-              : "Where each person is based. Somebody with no single base is School-wide, and appears on every branch's roster."}
-          </p>
-        </div>
+    <div className="grid min-w-0 gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {metrics.map((metric) => (
+          <MetricCard key={metric.label} metric={metric} loading={loading} />
+        ))}
       </div>
-    </Panel>
+
+      <Panel as="section" className="overflow-hidden rounded-xl">
+        <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3.5 sm:px-5">
+          <span className="grid size-9 shrink-0 place-content-center rounded-lg bg-amber-50 text-amber-700">
+            <AlertTriangle className="size-4.5" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-semibold text-black-01">
+              Staff attention
+            </h3>
+            <p className="text-xs text-gray-05">
+              Employment and account items that may need an administrator.
+            </p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="grid gap-2.5 p-4 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-16 w-full rounded-lg" />
+            ))}
+          </div>
+        ) : attention.length === 0 ? (
+          <div className="px-4 py-5 sm:px-5">
+            <p className="text-sm font-medium text-black-01">
+              Nothing needs attention.
+            </p>
+            <p className="mt-1 text-xs text-gray-05">
+              No invitation is pending and no staff account is locked.
+            </p>
+          </div>
+        ) : (
+          <ul
+            className="grid gap-px bg-border"
+            style={{
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(min(100%, 16rem), 1fr))",
+            }}
+          >
+            {attention.map((item) => {
+              const Icon = item.icon;
+              return (
+                <li key={item.key} className="min-w-0 bg-white">
+                  <button
+                    type="button"
+                    onClick={item.onClick}
+                    className="group flex h-full w-full min-w-0 items-center gap-3 px-4 py-4 text-left hover:bg-white-05 sm:px-5"
+                  >
+                    <span
+                      className={cn(
+                        "grid size-9 shrink-0 place-content-center rounded-lg",
+                        item.tone,
+                      )}
+                    >
+                      <Icon className="size-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[13px] font-medium text-black-01">
+                        {item.count} {item.label}
+                      </span>
+                      <span className="block text-xs text-gray-05">
+                        {item.action}
+                      </span>
+                    </span>
+                    <ArrowRight className="size-4 shrink-0 text-gray-05 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Panel>
+    </div>
   );
 }
 
-function QuickFigure({
-  icon: Icon,
-  count,
-  label,
-  tone = "plain",
-  onClick,
-}: {
-  icon: typeof Lock;
-  count: number;
-  label: string;
-  tone?: "plain" | "alert";
-  onClick: () => void;
-}) {
+function MetricCard({ metric, loading }: { metric: Metric; loading?: boolean }) {
+  const Icon = metric.icon;
+  const content = (
+    <>
+      <span
+        className={cn(
+          "grid size-9 shrink-0 place-content-center rounded-lg",
+          metric.tone,
+        )}
+      >
+        <Icon className="size-4.5" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-xs font-medium text-gray-01">
+          {metric.label}
+        </span>
+        {loading ? (
+          <Skeleton className="mt-1.5 h-7 w-16" />
+        ) : (
+          <span className="mt-1 block text-2xl font-semibold leading-none text-black-01">
+            {metric.value.toLocaleString()}
+          </span>
+        )}
+        <span className="mt-2 block text-[11px] leading-4 text-gray-05">
+          {metric.note}
+        </span>
+      </span>
+    </>
+  );
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <Panel
+      as="section"
       className={cn(
-        "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px]",
-        tone === "alert"
-          ? "bg-destructive/10 text-error-text hover:bg-destructive/15"
-          : "bg-gray-04 text-gray-01 hover:bg-white-02",
+        "rounded-xl p-4 sm:p-5",
+        metric.onClick &&
+          "transition-colors hover:border-primary/30 hover:bg-white-05",
       )}
     >
-      <Icon className="size-3.5 shrink-0" aria-hidden />
-      <span className="font-semibold">{count}</span>
-      {label}
-    </button>
+      {metric.onClick ? (
+        <button
+          type="button"
+          onClick={metric.onClick}
+          className="flex w-full min-w-0 items-start gap-3 text-left"
+        >
+          {content}
+        </button>
+      ) : (
+        <div className="flex min-w-0 items-start gap-3">{content}</div>
+      )}
+    </Panel>
   );
 }
