@@ -416,6 +416,7 @@ export const baseApi = createApi({
     "QueueSummary",
     "ProcRequisitions",
     "WorkflowApproverGroups",
+    "WorkflowDynamicRoles",
     "WorkflowDelegations",
     "WorkflowInstances",
     "WorkflowPending",

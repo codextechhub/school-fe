@@ -202,6 +202,8 @@ const SCREENS_WITH_CREATE_LANDING = [
   routesPath.PROTECTED.ACADEMIC_CALENDAR.EVENTS,
   routesPath.PROTECTED.TIMETABLES.ROOMS,
   routesPath.PROTECTED.TIMETABLES.BELL_SCHEDULE,
+  // A package screen: its Dynamic Role tab answers `?tab=rules&action=new`.
+  routesPath.PROTECTED.WORKFLOW.APPROVER_GROUPS,
 ];
 
 describe("action registry shape", () => {
@@ -269,7 +271,7 @@ describe("action registry destinations", () => {
   it("asks for a landing the app knows how to answer", () => {
     // A query string on an action is an instruction to the screen it lands on,
     // and the only instructions any screen listens for are these two - `action`
-    // through useActionParam, `tab` on the roles screen. A row carrying
+    // through useActionParam, `tab` on the roles and approvers screens. A row carrying
     // anything else silently does nothing on arrival, which reads to the person
     // who picked it as the palette being broken.
     for (const action of navActions) {

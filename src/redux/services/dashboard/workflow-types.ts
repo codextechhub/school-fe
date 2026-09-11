@@ -113,6 +113,11 @@ export interface WorkflowStage {
   approver_group_name?: string | null;
   /** DYNAMIC_ROLE source: ordered rules, first match wins. Empty otherwise. */
   dynamic_role_rules?: WorkflowStageDynamicRule[];
+  /**
+   * DYNAMIC_ROLE source: the named Dynamic Role this stage resolves through.
+   * Null for a stage that carries rules of its own in `dynamic_role_rules`.
+   */
+  dynamic_role?: DynamicRoleSummary | null;
   organogram_target: OrganogramTarget | "";
   organogram_levels: number;
   organogram_position_code: string | null;
@@ -177,6 +182,8 @@ export interface WorkflowStagePayload {
   approver_role_key?: string;
   approver_group_code?: string;
   dynamic_role_rules?: DynamicRulePayload[];
+  /** DYNAMIC_ROLE: the named Dynamic Role, by code. Clears any rules of the stage's own. */
+  dynamic_role_code?: string;
   organogram_target?: OrganogramTarget | "";
   organogram_levels?: number;
   organogram_position_code?: string;
@@ -563,6 +570,9 @@ export interface ApproverPreviewPayload {
   /** DYNAMIC_ROLE: the unsaved rules, tried against `sample_document`. */
   dynamic_role_rules?: DynamicRulePayload[];
   sample_document?: Record<string, unknown>;
+  /** DYNAMIC_ROLE: a saved Dynamic Role, by code, tried against `sample`. */
+  dynamic_role_code?: string;
+  sample?: DynamicRoleSample;
   approver_scope?: ApproverScope;
   document_type?: string;
 }
@@ -570,8 +580,12 @@ export interface ApproverPreviewPayload {
 /** One rule's evaluation in a dynamic-role preview, in evaluation order. */
 export interface DynamicRuleEvaluation {
   order: number;
-  role_key: string;
-  role_name: string;
+  /** Stage-owned rules: the role this rule names. */
+  role_key?: string;
+  role_name?: string;
+  /** A named Dynamic Role's rule: its id, and who it sends to. */
+  rule_id?: string | null;
+  target?: DynamicRoleTarget | null;
   is_fallback: boolean;
   /** The evaluator's own trace tree; rendered as-is, never re-derived here. */
   trace: { kind: string; result: boolean; [k: string]: unknown };
@@ -579,8 +593,12 @@ export interface DynamicRuleEvaluation {
 }
 
 export interface DynamicRolePreview {
-  matched_role_key: string | null;
-  matched_role_name: string | null;
+  /** Stage-owned rules: the role the matching rule named. */
+  matched_role_key?: string | null;
+  matched_role_name?: string | null;
+  /** A named Dynamic Role: the matching rule's position, and who it sends to. */
+  matched_order?: number | null;
+  matched_target?: DynamicRoleTarget | null;
   evaluations: DynamicRuleEvaluation[];
   /** Present only when nothing matched and there is no fallback rule. */
   note?: string;
@@ -637,3 +655,140 @@ export interface ApprovalParkState {
   requirement?: string;
   document_type?: string;
 }
+
+// ── Dynamic Roles (named, reusable rules choosing who approves) ──────────────
+
+/** Who a Dynamic Role rule sends a document to when it matches. */
+export type DynamicRoleTargetKind = "ROLE" | "USER" | "GROUP";
+
+/**
+ * What kind of value a condition tests, which decides its operators and how its
+ * value is entered. MONEY is whole kobo on the wire and naira on screen. ROLE,
+ * BRANCH and PERSON compare keys and ids as strings.
+ */
+export type ConditionFieldType =
+  | "MONEY" | "NUMBER" | "TEXT" | "CHOICE" | "ROLE" | "BRANCH" | "PERSON";
+
+/** One thing a Dynamic Role condition may test, as the server declares it. */
+export interface ConditionFieldSpec {
+  /** Its path in the rule context, e.g. `amount` or `requester.branch`. */
+  key: string;
+  label: string;
+  /** Which question it answers: about the document, or about who raised it. */
+  subject: "document" | "requester";
+  type: ConditionFieldType;
+  operators: string[];
+  choices: { value: string; label: string }[];
+}
+
+/** GET /workflow/dynamic-roles/fields/ */
+export interface DynamicRoleFields {
+  fields: ConditionFieldSpec[];
+  /** Every document type a Dynamic Role can serve. */
+  document_types: { value: string; label: string }[];
+  /** The roles a rule may send to: approving roles only. */
+  approver_roles: { key: string; name: string }[];
+}
+
+/** Who a rule sends to, as the preview and the audit describe it. */
+export interface DynamicRoleTarget {
+  kind: DynamicRoleTargetKind;
+  key?: string;
+  id?: string;
+  code?: string;
+  name: string;
+}
+
+export interface DynamicRoleRule {
+  id: string;
+  order: number;
+  /** Null on the Otherwise row, which is always last. */
+  condition: WorkflowCondition;
+  target_kind: DynamicRoleTargetKind;
+  role_key: string;
+  role_name: string | null;
+  user: string | number | null;
+  user_name: string | null;
+  group: string | null;
+  group_code: string | null;
+  group_name: string | null;
+  label: string;
+  is_fallback: boolean;
+}
+
+/** A Dynamic Role as a stage carries it. */
+export interface DynamicRoleSummary {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+  /** The document types it serves; empty means any. */
+  document_types: string[];
+  rules: DynamicRoleRule[];
+}
+
+/** A live stage routing through a Dynamic Role, so an edit can say what it reaches. */
+export interface DynamicRoleUse {
+  template_id: string;
+  template_name: string;
+  document_type: string;
+  stage_code: string;
+  stage_label: string;
+}
+
+export interface DynamicRole extends DynamicRoleSummary {
+  description: string;
+  used_by: DynamicRoleUse[];
+  created_at: string;
+  updated_at: string;
+}
+
+/** One rule as the API accepts it. Only the target matching `target_kind` is read. */
+export interface DynamicRoleRulePayload {
+  condition: WorkflowCondition;
+  target_kind: DynamicRoleTargetKind;
+  role_key?: string;
+  user?: string;
+  group_code?: string;
+  label?: string;
+}
+
+/**
+ * Create or edit a Dynamic Role. `rules` is the whole ordered list, ending with
+ * the Otherwise row, and replaces what was there.
+ */
+export interface DynamicRoleWritePayload {
+  code?: string;
+  name?: string;
+  description?: string;
+  document_types?: string[];
+  is_active?: boolean;
+  rules?: DynamicRoleRulePayload[];
+}
+
+/** What a document would carry, for trying rules before one exists. */
+export interface DynamicRoleSample {
+  /** Whole kobo. */
+  amount?: number;
+  branch?: string;
+  document_type?: string;
+  /** The document type's own fields, by their name without `document.`. */
+  document?: Record<string, unknown>;
+}
+
+export interface DynamicRolePreviewPayload {
+  requester: string;
+  document_types: string[];
+  rules: DynamicRoleRulePayload[];
+  sample?: DynamicRoleSample;
+  /** Narrows role holders the way a BRANCH-scoped stage would. */
+  branch?: string;
+}
+
+export interface DynamicRolePreviewResult {
+  count: number;
+  approvers: { user: ApproverPreviewUser }[];
+  dynamic_role: DynamicRolePreview;
+}
+
+export type DynamicRolesResponse = PaginatedResponse<DynamicRole>;

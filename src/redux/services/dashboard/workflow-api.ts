@@ -14,6 +14,12 @@ import type {
   StageApproverOverridesResponse,
   ApproverPreviewResult,
   DelegationWritePayload,
+  DynamicRole,
+  DynamicRoleFields,
+  DynamicRolePreviewPayload,
+  DynamicRolePreviewResult,
+  DynamicRolesResponse,
+  DynamicRoleWritePayload,
   PendingApprovalsResponse,
   PublishTemplatePayload,
   TemplateAdoption,
@@ -164,6 +170,65 @@ export const workflowApi = baseApi.injectEndpoints({
         { type: "WorkflowApproverGroups", id: "LIST" },
         { type: "WorkflowApproverGroups", id: arg.id },
       ],
+    }),
+
+    // ── Dynamic Roles ───────────────────────────────────────────────────────
+    getDynamicRoles: builder.query<DynamicRolesResponse, QueryParams | void>({
+      query: (params) => ({
+        url: `/workflow/dynamic-roles/${params ? generateQueryString(params) : ""}`,
+        method: "GET",
+      }),
+      providesTags: [{ type: "WorkflowDynamicRoles", id: "LIST" }],
+    }),
+
+    /**
+     * What a Dynamic Role serving these document types may test, and the roles
+     * a rule may send to. The server owns both lists, so the screen cannot
+     * offer a field or a role that saving would refuse.
+     *
+     * Silent, because the template page also reads it to put a stage's rules
+     * in words, and somebody who may view a template but not approvers gets
+     * plainer words rather than an error.
+     */
+    getDynamicRoleFields: builder.query<DynamicRoleFields, string[]>({
+      query: (documentTypes) => ({
+        url: `/workflow/dynamic-roles/fields/${documentTypes.length
+          ? `?${documentTypes.map((t) => `document_type=${encodeURIComponent(t)}`).join("&")}`
+          : ""}`,
+        method: "GET",
+      }),
+      extraOptions: { silent: true },
+    }),
+
+    // Refusals name the rule and what is wrong with it, and the editor shows
+    // them beside the rules, so the global toast stays out of the way.
+    createDynamicRole: builder.mutation<DynamicRole, DynamicRoleWritePayload>({
+      query: (body) => ({ url: `/workflow/dynamic-roles/`, method: "POST", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: [{ type: "WorkflowDynamicRoles", id: "LIST" }],
+    }),
+
+    // A stage shows its Dynamic Role's rules, so the templates drop too.
+    updateDynamicRole: builder.mutation<
+      DynamicRole, { id: string; body: DynamicRoleWritePayload }
+    >({
+      query: ({ id, body }) => ({ url: `/workflow/dynamic-roles/${id}/`, method: "PATCH", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: [{ type: "WorkflowDynamicRoles", id: "LIST" }, "WorkflowTemplates"],
+    }),
+
+    // 409 DYNAMIC_ROLE_IN_USE while a stage still uses it; the screen owns that message.
+    deleteDynamicRole: builder.mutation<void, string>({
+      query: (id) => ({ url: `/workflow/dynamic-roles/${id}/`, method: "DELETE" }),
+      extraOptions: { silent: true },
+      invalidatesTags: [{ type: "WorkflowDynamicRoles", id: "LIST" }],
+    }),
+
+    // Unsaved rules tried for a requester and a sample. A 400 carries the reason
+    // saving would give, shown beside the tester rather than as a toast.
+    previewDynamicRole: builder.mutation<DynamicRolePreviewResult, DynamicRolePreviewPayload>({
+      query: (body) => ({ url: `/workflow/dynamic-roles/preview/`, method: "POST", body }),
+      extraOptions: { silent: true },
     }),
 
     // ── Stage approver overrides ────────────────────────────────────────────
@@ -372,6 +437,12 @@ export const {
   useDeleteApproverGroupMutation,
   useAddApproverGroupMemberMutation,
   useRemoveApproverGroupMemberMutation,
+  useGetDynamicRolesQuery,
+  useGetDynamicRoleFieldsQuery,
+  useCreateDynamicRoleMutation,
+  useUpdateDynamicRoleMutation,
+  useDeleteDynamicRoleMutation,
+  usePreviewDynamicRoleMutation,
   useGetStageApproverOverridesQuery,
   useCreateStageApproverOverrideMutation,
   useDeleteStageApproverOverrideMutation,

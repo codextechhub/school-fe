@@ -120,6 +120,16 @@ const PACKAGE_CREATE_NOT_MOUNTED: Record<string, string> = {
   "finance/setup/entities-tab.tsx": "a school keeps one set of books",
 };
 
+/**
+ * @xvs/finance screens outside Finance and Procurement that answer
+ * `?action=new`, and the address their palette job points at. No console
+ * sidebar derives their jobs, so the jobs are written in registry.ts beside
+ * this app's own, and each is checked below to exist there.
+ */
+const PACKAGE_CREATE_IN_REGISTRY: Record<string, string> = {
+  "workflow/approver-groups/dynamic-roles-tab.tsx": "/workflow/approver-groups",
+};
+
 // ── Scanning ─────────────────────────────────────────────────────────────────
 
 function sourceFilesUnder(dir: string, out: string[] = []): string[] {
@@ -237,15 +247,16 @@ describe("every job this app can start", () => {
     // pointing at a screen with no landing hook; this one stops a screen
     // growing a create drawer that the box never learns to open.
     const wired = screensWithCreateLanding(SCHOOL_PAGES);
-    // This app's own jobs only. The console jobs land on package screens and
-    // are audited separately, below.
+    // This app's own jobs only. Jobs that land on package screens are audited
+    // separately, below.
+    const packageJobs = new Set(Object.values(PACKAGE_CREATE_IN_REGISTRY));
     const offered = new Set(
       ACTIONS.flatMap((action) => {
         if (!("to" in action.run) || !action.run.to.includes("action=new")) return [];
         const path = action.run.to.split("?")[0];
         const isConsole =
           path.startsWith("/finance") || path.startsWith("/procurement");
-        return isConsole ? [] : [path];
+        return isConsole || packageJobs.has(path) ? [] : [path];
       }),
     );
 
@@ -265,6 +276,7 @@ describe("every job the finance package can start", () => {
   it("is either offered here or recorded as a screen this app does not mount", () => {
     const known = new Set([
       ...Object.keys(PACKAGE_CREATE_SCREENS),
+      ...Object.keys(PACKAGE_CREATE_IN_REGISTRY),
       ...Object.keys(PACKAGE_CREATE_NOT_MOUNTED),
     ]);
     const unaccounted = wired.filter((file) => !known.has(file));
@@ -275,8 +287,10 @@ describe("every job the finance package can start", () => {
         ? `\n\n@xvs/finance grew create flows nobody has decided about:\n` +
           unaccounted.map((f) => `  ${f}`).join("\n") +
           `\n\nEither add the job to CONSOLE_CREATE_ACTIONS in console-actions.ts\n` +
-          `(and map the file to its url in PACKAGE_CREATE_SCREENS here), or add\n` +
-          `it to PACKAGE_CREATE_NOT_MOUNTED with the reason.\n`
+          `(and map the file to its url in PACKAGE_CREATE_SCREENS here), add a\n` +
+          `do-action to registry.ts for a screen outside Finance and Procurement\n` +
+          `(and map it in PACKAGE_CREATE_IN_REGISTRY), or add it to\n` +
+          `PACKAGE_CREATE_NOT_MOUNTED with the reason.\n`
         : "",
     ).toEqual([]);
   });
@@ -285,6 +299,7 @@ describe("every job the finance package can start", () => {
     const stillWired = new Set(wired);
     for (const file of [
       ...Object.keys(PACKAGE_CREATE_SCREENS),
+      ...Object.keys(PACKAGE_CREATE_IN_REGISTRY),
       ...Object.keys(PACKAGE_CREATE_NOT_MOUNTED),
     ]) {
       expect(
@@ -300,6 +315,22 @@ describe("every job the finance package can start", () => {
       expect(
         offered.has(url),
         `${file} creates at ${url}, but CONSOLE_CREATE_ACTIONS offers no job there`,
+      ).toBe(true);
+    }
+  });
+
+  it("has a registry job for every package screen outside the consoles", () => {
+    const offered = new Set(
+      ACTIONS.flatMap((action) =>
+        "to" in action.run && action.run.to.includes("action=new")
+          ? [action.run.to.split("?")[0]]
+          : [],
+      ),
+    );
+    for (const [file, url] of Object.entries(PACKAGE_CREATE_IN_REGISTRY)) {
+      expect(
+        offered.has(url),
+        `${file} creates at ${url}, but registry.ts offers no job there`,
       ).toBe(true);
     }
   });

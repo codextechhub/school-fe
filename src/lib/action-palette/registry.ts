@@ -661,6 +661,26 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.WORKFLOW.APPROVER_GROUPS },
   },
   {
+    id: "view-dynamic-roles",
+    label: "View Dynamic Roles",
+    aliases: ["approval rules", "role chosen by document", "approval thresholds"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "view",
+    gate: { perm: P.VIEW_APPROVER_GROUPS },
+    run: { to: `${R.WORKFLOW.APPROVER_GROUPS}?tab=rules` },
+  },
+  {
+    id: "create-dynamic-role",
+    label: "Create a Dynamic Role",
+    aliases: ["new dynamic role", "add an approval rule"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "do",
+    gate: { perm: P.MANAGE_APPROVER_GROUPS },
+    run: { to: `${R.WORKFLOW.APPROVER_GROUPS}?tab=rules&action=new` },
+  },
+  {
     // No "create workflow template" beside this one. A school adjusts the
     // approval paths it was given rather than authoring new ones, so the
     // builder is mounted only on EDIT and there is no address to send anybody
