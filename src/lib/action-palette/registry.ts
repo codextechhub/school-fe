@@ -657,7 +657,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     section: "Settings",
     group: "Workflow",
     kind: "view",
-    gate: null,
+    gate: { perm: P.VIEW_APPROVER_GROUPS },
     run: { to: R.WORKFLOW.APPROVER_GROUPS },
   },
   {
