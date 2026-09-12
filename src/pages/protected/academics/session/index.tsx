@@ -2,8 +2,11 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
   Archive,
+  BookOpenCheck,
+  CalendarDays,
   CalendarRange,
   Check,
+  ChevronRight,
   CircleCheck,
   CopyPlus,
   LayoutGrid,
@@ -34,19 +37,26 @@ import { useBranchLens } from "@/hooks/use-branch-lens";
 import {
   useActivateSessionMutation,
   useArchiveSessionMutation,
+  useGetAcademicOverviewQuery,
   useGetSessionsQuery,
 } from "@/redux/services/academics/academics-api";
 import type {
   AcademicSession,
+  OverviewSession,
   SessionStatus,
 } from "@/redux/services/academics/academics-types";
 import { ExportButton } from "@/components/custom/export-button";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { SessionDrawer } from "./session-drawer";
 import { RollForwardDialog } from "./roll-forward-dialog";
-import { CardActions, ClickableCard } from "@/components/custom/surface";
+import { CardActions, ClickableCard, Panel } from "@/components/custom/surface";
 import { SessionStatusChip } from "./session-chips";
-import { scopeOf, statusOf, TERM_TONE, termState } from "./session-format";
+import {
+  scopeOf,
+  statusOf,
+  teachingWeeks,
+  termState,
+} from "./session-format";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
 
@@ -85,13 +95,16 @@ export default function AcademicSessions() {
     status,
     page,
   });
+  const { data: overviewData, isLoading: overviewLoading } =
+    useGetAcademicOverviewQuery({ branch });
 
   const [activate, { isLoading: activating }] = useActivateSessionMutation();
   const [archive, { isLoading: archiving }] = useArchiveSessionMutation();
 
   const sessions = useMemo(() => data?.data ?? [], [data]);
   const pagination = data?.pagination;
-  const activeName = sessions.find((s) => s.status === "ACTIVE")?.name;
+  const activeSession = overviewData?.data.active_session;
+  const activeName = activeSession?.name ?? sessions.find((s) => s.status === "ACTIVE")?.name;
 
   const canEdit = hasPermission(P.MODIFY_SESSION);
   // The copy WRITES structure, so it answers to the structure key the server
@@ -140,6 +153,11 @@ export default function AcademicSessions() {
 
   return (
     <PageShell className="content-start gap-5" grid>
+      <SessionSummary
+        session={activeSession}
+        loading={overviewLoading}
+      />
+
       {/* flex-wrap, so the toolbar stacks on a phone instead of squeezing the
           search box to nothing. */}
       <div className="flex flex-wrap items-center gap-2.5">
@@ -195,8 +213,8 @@ export default function AcademicSessions() {
       </div>
 
       {isLoading ? (
-        <div className="grid items-start gap-6 lg:grid-cols-2">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 3 }).map((_, i) => (
             <Skeleton key={i} className="h-44 w-full rounded-md" />
           ))}
         </div>
@@ -225,7 +243,7 @@ export default function AcademicSessions() {
           }
         />
       ) : view === "cards" ? (
-        <div className="grid items-start gap-6 lg:grid-cols-2">
+        <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
           {sessions.map((session) => (
             <SessionCard
               key={session.id}
@@ -333,6 +351,70 @@ export default function AcademicSessions() {
   );
 }
 
+function SessionSummary({
+  session,
+  loading,
+}: {
+  session?: OverviewSession | null;
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Skeleton key={index} className="h-[74px] rounded-md" />
+        ))}
+      </div>
+    );
+  }
+
+  const ongoing = session?.terms.filter((term) => term.state === "ongoing").length ?? 0;
+  const terms = session?.terms.length ?? 0;
+  const weeks = teachingWeeks(session?.terms ?? []);
+  const cards = [
+    {
+      label: "Active session",
+      value: session?.name ?? "Not set",
+      icon: CalendarRange,
+      tone: "bg-primary/10 text-primary",
+      marker: !!session,
+    },
+    {
+      label: "Terms running",
+      value: `${ongoing} of ${terms}`,
+      icon: BookOpenCheck,
+      tone: "bg-sky-100 text-sky-700",
+    },
+    {
+      label: "Teaching weeks",
+      value: `${weeks} ${weeks === 1 ? "week" : "weeks"}`,
+      icon: CalendarDays,
+      tone: "bg-violet-100 text-violet-700",
+    },
+  ];
+
+  return (
+    <section className="grid gap-3 sm:grid-cols-3" aria-label="Session summary">
+      {cards.map((card) => (
+        <Panel key={card.label} className="flex min-w-0 items-center gap-3 px-4 py-3">
+          <span className={cn("grid size-10 shrink-0 place-content-center rounded-md", card.tone)}>
+            <card.icon className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-05">{card.label}</p>
+            <div className="mt-0.5 flex min-w-0 items-center gap-2">
+              <p className="truncate text-lg font-semibold leading-tight text-black-01">
+                {card.value}
+              </p>
+              {card.marker && <span className="size-2 shrink-0 rounded-full bg-green-01" />}
+            </div>
+          </div>
+        </Panel>
+      ))}
+    </section>
+  );
+}
+
 // ── The confirmations ───────────────────────────────────────────────────────
 
 type Confirmation = { kind: "activate" | "archive"; session: AcademicSession };
@@ -366,12 +448,6 @@ function confirmBody(confirm: Confirmation | null, activeName?: string) {
 
 // ── The card ────────────────────────────────────────────────────────────────
 
-function weeksBetween(start: string, end: string) {
-  if (!start || !end) return 0;
-  const days = (new Date(end).getTime() - new Date(start).getTime()) / 86400000;
-  return Math.max(1, Math.round(days / 7));
-}
-
 function SessionCard({
   session,
   canEdit,
@@ -395,10 +471,7 @@ function SessionCard({
 }) {
   const isActive = session.status === "ACTIVE";
   const archived = session.status === "ARCHIVED";
-  const weeks = session.terms.reduce(
-    (total, t) => total + weeksBetween(t.start_date, t.end_date),
-    0,
-  );
+  const weeks = teachingWeeks(session.terms);
   // An archived year is read-only on the server, so its Edit is not offered
   // rather than offered and refused.
   const showMenu = ((canEdit || canSeed) && !archived) || canManage;
@@ -410,19 +483,22 @@ function SessionCard({
       // The live year keeps its green edge, which outranks the shared hairline.
       className={cn(isActive && "border-green-01 hover:border-green-01")}
     >
-      <div className="flex justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h5 className="truncate text-base font-medium text-black-01">
-            {session.name} Academic Session
-          </h5>
-          <p className="text-xs text-gray-01">
+          <div className="flex flex-wrap items-center gap-2">
+            <h5 className="truncate text-base font-semibold text-black-01">
+              {session.name}
+            </h5>
+            <SessionStatusChip status={session.status} />
+          </div>
+          <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-gray-05">
+            <CalendarRange className="size-3.5 shrink-0" />
             {formatMonthYearShort(session.start_date)} -{" "}
             {formatMonthYearShort(session.end_date)}
           </p>
         </div>
 
-        <CardActions className="inline-flex shrink-0 items-start gap-1.5">
-          <SessionStatusChip status={session.status} />
+        <CardActions className="inline-flex shrink-0 items-start">
           {showMenu && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -465,41 +541,59 @@ function SessionCard({
         </CardActions>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {session.terms.map((term) => {
-          const state = termState(term);
-          return (
-            <span
-              key={term.id}
-              className={cn(
-                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs",
-                TERM_TONE[state],
-              )}
-            >
-              {term.name.replace(" Term", "")}
-              {state === "completed" && <Check className="ml-1 size-3" />}
-              {state === "ongoing" && " · ongoing"}
-            </span>
-          );
-        })}
+      <div className="mt-4 grid gap-2" aria-label={`${session.name} terms`}>
+        <div className="flex items-center justify-between gap-2">
+          {session.terms.map((term, index) => {
+            const state = termState(term);
+            return (
+              <div key={term.id} className="flex min-w-0 flex-1 items-center gap-1.5">
+                <span
+                  className={cn(
+                    "grid size-5 shrink-0 place-content-center rounded-full border text-[9px] font-semibold",
+                    state === "completed" && "border-green-01 bg-green-01 text-white",
+                    state === "ongoing" && "border-yellow-01 bg-yellow-01/10 text-yellow-01-text",
+                    state === "pending" && "border-white-02 text-gray-05",
+                  )}
+                >
+                  {state === "completed" ? <Check className="size-3" /> : index + 1}
+                </span>
+                <span className="truncate text-[11px] font-medium text-gray-06">
+                  T{index + 1}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex gap-2">
+          {session.terms.map((term) => {
+            const state = termState(term);
+            return (
+              <span
+                key={term.id}
+                className={cn(
+                  "h-1 min-w-0 flex-1 rounded-full",
+                  state === "completed" && "bg-green-01",
+                  state === "ongoing" && "bg-yellow-01",
+                  state === "pending" && "bg-gray-02/60",
+                )}
+              />
+            );
+          })}
+        </div>
       </div>
 
-      {/* The session's own shape. See the note at the top of this file for why
-          it is not students and classes. */}
-      <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-01">
-        <p>
-          {session.term_count} {session.term_count === 1 ? "term" : "terms"}
-        </p>
-        <span className="block size-1 rounded-full bg-gray-01" />
-        <p>{weeks} teaching weeks</p>
-        {session.scope_label && (
-          <>
-            <span className="block size-1 rounded-full bg-gray-01" />
-            <p className="min-w-0 truncate">{scopeOf(session)}</p>
-          </>
-        )}
+      <div className="mt-4 flex min-w-0 items-center justify-between gap-3 border-t border-white-02 pt-3">
+        <div className="min-w-0 text-xs text-gray-05">
+          <p className="truncate">{scopeOf(session)}</p>
+          <p className="mt-0.5 font-medium text-gray-01">
+            {weeks} teaching {weeks === 1 ? "week" : "weeks"}
+          </p>
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-primary">
+          View details
+          <ChevronRight className="size-3.5" />
+        </span>
       </div>
     </ClickableCard>
   );
 }
-

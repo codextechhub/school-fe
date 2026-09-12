@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { scopeOf, statusOf, termState } from "./session-format";
+import {
+  scopeOf,
+  statusOf,
+  teachingWeeks,
+  termState,
+  weeksBetween,
+} from "./session-format";
 import type { AcademicSession } from "@/redux/services/academics/academics-types";
 
 const session = (over: Partial<AcademicSession> = {}): AcademicSession => ({
@@ -67,5 +73,21 @@ describe("statusOf", () => {
   it("prints an unknown status rather than nothing", () => {
     // A status this build has not heard of must not render as a blank chip.
     expect(statusOf("CLOSED").label).toBe("CLOSED");
+  });
+});
+
+describe("teaching weeks", () => {
+  it("rounds a dated term to whole weeks", () => {
+    expect(weeksBetween("2026-09-01", "2026-12-08")).toBe(14);
+  });
+
+  it("adds all terms and ignores undated terms", () => {
+    expect(
+      teachingWeeks([
+        { start_date: "2026-09-01", end_date: "2026-12-08" },
+        { start_date: "2027-01-04", end_date: "2027-03-29" },
+        { start_date: "", end_date: "" },
+      ]),
+    ).toBe(26);
   });
 });

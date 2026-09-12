@@ -54,6 +54,23 @@ export function termState(
   return "pending";
 }
 
+/** Whole teaching weeks represented by one date range. */
+export function weeksBetween(start: string, end: string) {
+  if (!start || !end) return 0;
+  const days = (new Date(end).getTime() - new Date(start).getTime()) / 86400000;
+  return Math.max(1, Math.round(days / 7));
+}
+
+/** Total teaching weeks across a session's terms. */
+export function teachingWeeks(
+  terms: { start_date: string; end_date: string }[],
+) {
+  return terms.reduce(
+    (total, term) => total + weeksBetween(term.start_date, term.end_date),
+    0,
+  );
+}
+
 export const TERM_TONE: Record<TermState, string> = {
   completed: "bg-green-01/10 text-green-01-text",
   ongoing: "bg-yellow-01/10 text-yellow-01-text",
