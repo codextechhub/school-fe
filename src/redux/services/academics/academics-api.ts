@@ -347,6 +347,14 @@ export const academicsApi = baseApi.injectEndpoints({
       providesTags: ["Classes"],
     }),
 
+    getClass: builder.query<Envelope<SchoolClass>, number>({
+      query: (id) => ({
+        url: `/academics/classes/${id}/`,
+        method: "GET",
+      }),
+      providesTags: ["Classes"],
+    }),
+
     createClass: builder.mutation<Envelope<SchoolClass>, ClassWrite>({
       query: (body) => ({ url: `/academics/classes/`, method: "POST", body }),
       // A class hangs off a level, so the accordion's per-level count moves too.
@@ -490,6 +498,7 @@ export const {
   useArchiveLevelMutation,
   useRestoreLevelMutation,
   useGetClassesQuery,
+  useGetClassQuery,
   useCreateClassMutation,
   useUpdateClassMutation,
   useGenerateArmsMutation,

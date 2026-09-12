@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import {
   Archive,
+  BookOpenText,
+  ChevronRight,
   Edit,
   GraduationCap,
   LayoutGrid,
@@ -9,6 +12,8 @@ import {
   RotateCcw,
   Rows3,
   Search,
+  UserRoundCheck,
+  Users,
   Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,7 +26,7 @@ import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { ScopeCell } from "@/pages/protected/academics/components/scope-cell";
 import { EmptyYear } from "@/pages/protected/academics/components/empty-year";
-import { CardActions, ClickableCard } from "@/components/custom/surface";
+import { CardActions, ClickableCard, Panel } from "@/components/custom/surface";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
@@ -30,6 +35,7 @@ import { parseApiError } from "@/utils/api-error";
 import {
   useArchiveClassMutation,
   useCreateClassMutation,
+  useGetAcademicOverviewQuery,
   useGetClassesQuery,
   useGetProgramsQuery,
   useRestoreClassMutation,
@@ -46,23 +52,17 @@ import { ClassDrawer } from "./class-drawer";
 import { GenerateArmsDrawer } from "./generate-arms-drawer";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
+import { routesPath } from "@/routes/routesPath";
 
 /**
- * The classes pupils sit in, with their arms.
+ * The classes pupils sit in, including their arms and assigned class teachers.
  *
- * The card is the one this screen already had - name, a coloured tile keyed off
- * the programme band, three stats, and the buttons - with the real API behind
- * it. The three stats changed, and only because two of them had nothing behind
- * them: they read Students / Subject / Avg Score, and there is no student model
- * in the product and no assessment module at all. Subjects is real (it is the
- * offerings at this class's level), so it stays, and Level and Arm take the
- * other two slots - the facts a class card is actually for.
- *
- * There is no Delete, and its absence is a promise rather than an omission:
- * student enrolment points at SchoolClass with on_delete=PROTECT, which is safe
- * precisely because no route can reach that refusal. Archive is the lifecycle.
+ * A card opens the class record for every reader. Edit and lifecycle controls
+ * remain permission-gated actions within that card, so view access never turns
+ * into write access and a read-only card never becomes a dead control.
  */
 export default function Classes() {
+  const navigate = useNavigate();
   const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
@@ -96,6 +96,7 @@ export default function Classes() {
   // Levels come from the programmes call, which already nests them - one
   // request rather than a second flat list of the same rows.
   const { data: programData } = useGetProgramsQuery(lens);
+  const { data: overviewData } = useGetAcademicOverviewQuery(lens);
 
   const [create, { isLoading: creating }] = useCreateClassMutation();
   const [update, { isLoading: updating }] = useUpdateClassMutation();
@@ -247,6 +248,29 @@ export default function Classes() {
         </PermissionGate>
       </div>
 
+      <Panel
+        as="section"
+        className="grid grid-cols-2 divide-x divide-y divide-border overflow-hidden sm:grid-cols-3 sm:divide-y-0"
+        aria-label="Class structure summary"
+      >
+        <DirectorySummary
+          icon={GraduationCap}
+          label="Classes"
+          value={overviewData?.data.counts.classes}
+        />
+        <DirectorySummary
+          icon={Users}
+          label="Levels"
+          value={overviewData?.data.counts.levels}
+        />
+        <DirectorySummary
+          icon={BookOpenText}
+          label="Subjects"
+          value={overviewData?.data.counts.subjects}
+          className="col-span-2 sm:col-span-1"
+        />
+      </Panel>
+
       {isLoading ? (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 3 }).map((_, i) => (
@@ -268,14 +292,21 @@ export default function Classes() {
           }}
         />
       ) : view === "cards" ? (
-        <div className="grid items-start gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
           {classes.map((klass) => (
             <ClassCard
               key={klass.id}
               klass={klass}
               multiBranch={multiBranch}
-              canEdit={canEdit}
+              canEdit={canEdit && klass.is_active}
               canManage={canManage}
+              onOpen={() =>
+                navigate(
+                  routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASS_DETAILS_ID(
+                    klass.id,
+                  ),
+                )
+              }
               onEdit={() => {
                 setEditing(klass);
                 setDrawerOpen(true);
@@ -293,6 +324,7 @@ export default function Classes() {
             "Level",
             "Arm",
             ...(multiBranch ? ["Scope"] : []),
+            "Class Teacher",
             "Capacity",
             "Subjects",
             "Status",
@@ -304,6 +336,7 @@ export default function Classes() {
             Level: c.level_name,
             Arm: c.arm || "-",
             ...(multiBranch ? { Scope: c.scope_label ?? "School-wide" } : {}),
+            "Class Teacher": c.class_teacher?.name ?? "Not assigned",
             // Spelled out rather than left blank: no limit is a state the
             // school chose, and an empty cell reads as missing data.
             Capacity: c.capacity != null ? String(c.capacity) : "No limit",
@@ -311,9 +344,12 @@ export default function Classes() {
             Status: c.is_active ? "Active" : "Archived",
           }))}
           onRowClick={(klass: SchoolClass) => {
-            if (klass && canEdit) {
-              setEditing(klass);
-              setDrawerOpen(true);
+            if (klass) {
+              navigate(
+                routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASS_DETAILS_ID(
+                  klass.id,
+                ),
+              );
             }
           }}
           currentPage={pagination?.currentPage ?? 1}
@@ -397,8 +433,6 @@ export default function Classes() {
 
 type Confirmation = { kind: "archive" | "restore"; klass: SchoolClass };
 
-// ── The card ────────────────────────────────────────────────────────────────
-
 /** The tile colour keys off the programme band, as this card always did. */
 function tileVariant(levelName: string) {
   if (/^JSS|^Junior/i.test(levelName)) return "green";
@@ -411,6 +445,7 @@ function ClassCard({
   multiBranch,
   canEdit,
   canManage,
+  onOpen,
   onEdit,
   onArchive,
   onRestore,
@@ -419,6 +454,7 @@ function ClassCard({
   multiBranch: boolean;
   canEdit: boolean;
   canManage: boolean;
+  onOpen: () => void;
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
@@ -426,11 +462,37 @@ function ClassCard({
   return (
     <ClickableCard
       label={`Open ${klass.name}`}
-      onOpen={canEdit ? onEdit : () => {}}
+      onOpen={onOpen}
+      className="group px-4 py-4"
     >
-      <div className="mt-3 flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h4 className="truncate font-medium">{klass.name}</h4>
+      <div className="flex items-start gap-3">
+        <figure
+          className={cn(
+            badgeVariants({ variant: tileVariant(klass.level_name) }),
+            "grid size-10 shrink-0 place-content-center rounded-lg",
+          )}
+        >
+          <GraduationCap className="size-5!" />
+        </figure>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2">
+            <h3 className="truncate font-semibold text-black-01">
+              {klass.name}
+            </h3>
+            {!klass.is_active && (
+              <Badge
+                variant="inactive"
+                className="h-fit shrink-0 rounded-full py-0 text-[11px]"
+              >
+                Archived
+              </Badge>
+            )}
+          </div>
+          <p className="mt-0.5 truncate text-xs text-gray-05">
+            {klass.level_name}
+            {klass.arm ? `, Arm ${klass.arm}` : ""}
+          </p>
           {multiBranch && (
             <div className="mt-1.5 flex items-center gap-1.5 text-gray-05">
               <MapPin className="size-3 shrink-0 text-amber-01" />
@@ -443,69 +505,105 @@ function ClassCard({
             </div>
           )}
         </div>
+      </div>
 
-        <div className="inline-flex shrink-0 items-center gap-2">
-          {!klass.is_active && (
-            <Badge variant="inactive" className="h-fit rounded-full py-0 text-[11px]">
-              Archived
-            </Badge>
-          )}
-          <figure
+      <div className="mt-4 flex min-w-0 items-center gap-2 rounded-lg bg-white-03 px-3 py-2.5">
+        <UserRoundCheck className="size-4 shrink-0 text-primary" />
+        <div className="min-w-0">
+          <p className="text-[11px] text-gray-05">Class teacher</p>
+          <p
             className={cn(
-              badgeVariants({ variant: tileVariant(klass.level_name) }),
-              "grid size-8 place-content-center rounded-md",
+              "truncate text-sm font-medium",
+              klass.class_teacher ? "text-black-01" : "text-amber-700",
             )}
           >
-            <GraduationCap className="size-5!" />
-          </figure>
+            {klass.class_teacher?.name ?? "No class teacher assigned"}
+          </p>
         </div>
       </div>
 
-      <hr className="my-3 border-gray-0 border-1.5" />
-
-      {/* Level / Arm / Subjects. See the note at the top of this file for why
-          this is not Students / Subject / Avg Score. */}
-      <div className="flex items-center justify-between gap-2 px-1 xl:px-3">
-        <Stat label="Level" value={klass.level_name} />
-        <Stat label="Arm" value={klass.arm || "-"} />
+      <div className="mt-3 grid grid-cols-2 divide-x divide-border rounded-lg border border-border">
         <Stat label="Subjects" value={String(klass.subject_count)} />
+        <Stat
+          label="Capacity"
+          value={klass.capacity == null ? "No limit" : String(klass.capacity)}
+        />
       </div>
 
-      <CardActions className="mt-4 inline-flex flex-wrap items-center gap-3">
-        {canEdit && (
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-primary text-primary"
-            onClick={onEdit}
-          >
-            <Edit />
-            Edit
-          </Button>
-        )}
-        {canManage &&
-          (klass.is_active ? (
-            <Button size="sm" variant="ghost" className="text-gray-06" onClick={onArchive}>
-              <Archive className="size-4" />
-              Archive
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+        <CardActions className="inline-flex flex-wrap items-center gap-1">
+          {canEdit && (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-primary"
+              onClick={onEdit}
+            >
+              <Edit className="size-4" />
+              Edit
             </Button>
-          ) : (
-            <Button size="sm" variant="ghost" className="text-primary" onClick={onRestore}>
-              <RotateCcw className="size-4" />
-              Restore
-            </Button>
-          ))}
-      </CardActions>
+          )}
+          {canManage &&
+            (klass.is_active ? (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-gray-06"
+                onClick={onArchive}
+              >
+                <Archive className="size-4" />
+                Archive
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-primary"
+                onClick={onRestore}
+              >
+                <RotateCcw className="size-4" />
+                Restore
+              </Button>
+            ))}
+        </CardActions>
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+          View details
+          <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+        </span>
+      </div>
     </ClickableCard>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="min-w-0">
-      <p className="text-xs text-gray-05">{label}</p>
-      <p className="truncate text-lg font-semibold text-black-01">{value}</p>
+    <div className="min-w-0 px-3 py-2.5">
+      <p className="text-[11px] text-gray-05">{label}</p>
+      <p className="truncate text-base font-semibold text-black-01">{value}</p>
     </div>
   );
 }
 
+function DirectorySummary({
+  icon: Icon,
+  label,
+  value,
+  className,
+}: {
+  icon: React.ElementType;
+  label: string;
+  value?: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex min-w-0 items-center gap-3 px-4 py-3", className)}>
+      <span className="grid size-9 shrink-0 place-content-center rounded-md bg-primary/10 text-primary">
+        <Icon className="size-4.5" />
+      </span>
+      <div className="min-w-0">
+        <p className="text-xs text-gray-05">{label}</p>
+        <p className="text-lg font-semibold text-black-01">{value ?? "-"}</p>
+      </div>
+    </div>
+  );
+}
