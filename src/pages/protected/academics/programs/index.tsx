@@ -1,16 +1,23 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
   Archive,
+  ArrowRight,
+  CheckCircle2,
   RotateCcw,
   ChevronDown,
   ChevronRight,
+  CircleAlert,
+  GraduationCap,
   ListTree,
   Pencil,
   Plus,
   Rows3,
   Search,
+  School,
+  Signpost,
 } from "lucide-react";
 import { toast } from "sonner";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -34,17 +41,23 @@ import {
   useRestoreLevelMutation,
   useArchiveProgramMutation,
   useRestoreProgramMutation,
+  useGetAcademicOverviewQuery,
   useGetDepartmentsQuery,
   useGetProgramsQuery,
   useUpdateLevelMutation,
   useUpdateProgramMutation,
 } from "@/redux/services/academics/academics-api";
 import type {
+  AcademicOverview,
   EntityWrite,
   Level,
   Program,
 } from "@/redux/services/academics/academics-types";
-import { Panel } from "@/components/custom/surface";
+import {
+  CardActions,
+  ClickableCard,
+  Panel,
+} from "@/components/custom/surface";
 import { BulkLevelsDrawer } from "./bulk-levels-drawer";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "@/components/custom/export-button";
@@ -106,6 +119,8 @@ export default function Programs() {
     page,
   });
   const { data: deptData } = useGetDepartmentsQuery({ branch });
+  const { data: overviewData, isLoading: overviewLoading } =
+    useGetAcademicOverviewQuery(lens);
 
   const [createProgram, { isLoading: cp }] = useCreateProgramMutation();
   const [updateProgram, { isLoading: up }] = useUpdateProgramMutation();
@@ -245,6 +260,11 @@ export default function Programs() {
         return null;
       })()}
 
+      <ProgrammeSummary
+        counts={overviewData?.data.counts}
+        loading={overviewLoading}
+      />
+
       <div className="flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-0 flex-1 basis-52">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
@@ -287,7 +307,12 @@ export default function Programs() {
 
         <ExportButton
           screen="academics.programs"
-          params={{ search, branch: branch === "all" ? undefined : branch }}
+          params={{
+            search,
+            is_active: showArchived,
+            session: lens.session,
+            branch: branch === "all" ? undefined : branch,
+          }}
         />
 
         <PermissionGate permission={P.CREATE_STRUCTURE} disabled={readOnlyYear}>
@@ -480,6 +505,68 @@ export default function Programs() {
   );
 }
 
+function ProgrammeSummary({
+  counts,
+  loading,
+}: {
+  counts?: AcademicOverview["counts"];
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Skeleton key={index} className="h-[74px] rounded-md" />
+        ))}
+      </div>
+    );
+  }
+
+  const cards = [
+    {
+      label: "Programmes",
+      value: counts?.programs ?? "-",
+      icon: GraduationCap,
+      tone: "bg-primary/10 text-primary",
+    },
+    {
+      label: "Levels",
+      value: counts?.levels ?? "-",
+      icon: Signpost,
+      tone: "bg-sky-100 text-sky-700",
+    },
+    {
+      label: "Classes",
+      value: counts?.classes ?? "-",
+      icon: School,
+      tone: "bg-violet-100 text-violet-700",
+    },
+  ];
+
+  return (
+    <section className="grid gap-3 sm:grid-cols-3" aria-label="Programme summary">
+      {cards.map((card) => (
+        <Panel key={card.label} className="flex min-w-0 items-center gap-3 px-4 py-3">
+          <span
+            className={cn(
+              "grid size-10 shrink-0 place-content-center rounded-md",
+              card.tone,
+            )}
+          >
+            <card.icon className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-05">{card.label}</p>
+            <p className="mt-0.5 text-lg font-semibold leading-tight text-black-01">
+              {card.value}
+            </p>
+          </div>
+        </Panel>
+      ))}
+    </section>
+  );
+}
+
 function levelInitial(
   d: { program: Program; level: Level | null } | null,
 ): EntityDraft {
@@ -611,186 +698,398 @@ function ProgramRow({
   onArchiveLevel: (level: Level) => void;
 }) {
   const levels = program.levels ?? [];
-  const unwired = levels.filter((l) => l.promotion === "unset").length;
-  return (
-    <Panel as="section" className="overflow-hidden">
-      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded={open}
-          aria-label={`${open ? "Collapse" : "Expand"} ${program.name}`}
-          className="grid size-6 shrink-0 place-content-center rounded text-gray-06 hover:bg-gray-04"
-        >
-          {open ? (
-            <ChevronDown className="size-4" />
-          ) : (
-            <ChevronRight className="size-4" />
-          )}
-        </button>
+  const activeLevels = levels.filter((level) => level.is_active);
+  const unwired = activeLevels.filter((level) => level.promotion === "unset").length;
+  const classCount = levels.reduce((total, level) => total + level.class_count, 0);
+  const subjectOfferings = levels.reduce(
+    (total, level) => total + level.subject_count,
+    0,
+  );
+  const ready = program.is_active && activeLevels.length > 0 && unwired === 0;
+  const canAddLevel = canCreate && program.is_active;
+  const canChangeLevels = program.is_active;
+  const rowRef = useRef<HTMLDivElement>(null);
 
-        <div className="min-w-0 flex-1 basis-40">
-          <p className="truncate font-medium text-black-01">{program.name}</p>
-          <p className="truncate text-xs text-gray-05">
-            {program.code} ·{" "}
-            {levels.length === 1 ? "1 level" : `${levels.length} levels`} ·{" "}
-            {program.department_name ?? "No department"}
-          </p>
-          {/* Said here because nowhere else would say it. An unwired level
-              looks exactly like a level that ends the school, so a promotion
-              run graduates it silently - and the only moment anybody would
-              notice is the moment it is too late. */}
-          {unwired > 0 && (
-            <p className="mt-1 truncate text-xs text-yellow-01-text">
-              {unwired === 1
-                ? "1 level has no promotion set"
-                : `${unwired} levels have no promotion set`}
-            </p>
+  const toggleProgram = () => {
+    const opening = !open;
+    onToggle();
+    if (!opening) return;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const reducedMotion = window.matchMedia(
+          "(prefers-reduced-motion: reduce)",
+        ).matches;
+        rowRef.current?.scrollIntoView({
+          behavior: reducedMotion ? "auto" : "smooth",
+          block: "start",
+        });
+      });
+    });
+  };
+
+  return (
+    <div ref={rowRef} className="scroll-mt-20">
+    <Panel
+      as="section"
+      className={cn(
+        "overflow-hidden transition-[border-color,box-shadow] duration-200",
+        open ? "border-primary/50 shadow-sm" : "hover:border-primary/30 hover:shadow-sm",
+      )}
+    >
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={open}
+        aria-label={`${open ? "Collapse" : "Expand"} ${program.name}`}
+        onClick={toggleProgram}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            toggleProgram();
+          }
+        }}
+        className="group/program cursor-pointer px-4 py-4 transition-colors duration-200 hover:bg-primary/[0.02] active:bg-primary/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
+      >
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex min-w-0 flex-1 items-start gap-3 text-left">
+            <span className="grid size-10 shrink-0 place-content-center rounded-md bg-primary/10 text-primary transition-[transform,background-color,color] duration-200 group-hover/program:scale-105 group-hover/program:bg-primary group-hover/program:text-white">
+              <GraduationCap className="size-5" />
+            </span>
+            <span className="min-w-0 pt-0.5">
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="text-pretty font-semibold leading-5 text-black-01 transition-colors duration-200 group-hover/program:text-primary">
+                  {program.name}
+                </span>
+                <Badge
+                  variant={program.is_active ? "active" : "inactive"}
+                  className="h-fit rounded-full py-0 text-[10px] uppercase"
+                >
+                  {program.is_active ? "Active" : "Archived"}
+                </Badge>
+              </span>
+              <span className="mt-1 block text-xs text-gray-05">
+                {program.code} · {program.department_name ?? "No department"}
+              </span>
+            </span>
+          </div>
+
+          {(canEdit || canManage || canAddLevel) && (
+            <CardActions className="shrink-0">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Actions for ${program.name}`}
+                    className="grid size-6 place-content-center rounded-full text-gray-06 hover:bg-gray-04"
+                  >
+                    <span className="text-lg leading-none">⋯</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  {canEdit && (
+                    <DropdownMenuItem onClick={onEdit}>
+                      <Pencil className="size-4" />
+                      Edit
+                    </DropdownMenuItem>
+                  )}
+                  {canAddLevel && (
+                    <DropdownMenuItem onClick={onBulkLevels}>
+                      <Rows3 className="size-4" />
+                      Add levels in bulk
+                    </DropdownMenuItem>
+                  )}
+                  {canManage && (
+                    <DropdownMenuItem onClick={onArchive}>
+                      {program.is_active ? (
+                        <>
+                          <Archive className="size-4" />
+                          Archive
+                        </>
+                      ) : (
+                        <>
+                          <RotateCcw className="size-4" />
+                          Restore
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardActions>
           )}
         </div>
 
-        {multiBranch && (
-          <div className="shrink-0 text-xs text-gray-05">
-            <ScopeCell label={program.scope_label} shared={program.branch == null} />
+        {(program.description?.trim() || multiBranch) && (
+          <div className="mt-3 grid gap-2">
+            {program.description?.trim() && (
+              <p className="line-clamp-2 text-sm leading-5 text-gray-05">
+                {program.description}
+              </p>
+            )}
+            {multiBranch && (
+              <div className="text-xs text-gray-05">
+                <ScopeCell
+                  label={program.scope_label}
+                  shared={program.branch == null}
+                />
+              </div>
+            )}
           </div>
         )}
 
-        <div className="inline-flex shrink-0 items-center gap-1.5">
-          {canCreate && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-primary text-primary"
-              onClick={onAddLevel}
+        <div className="mt-4 grid grid-cols-3 divide-x divide-border border-y border-white-02 py-3">
+          <ProgramMetric label="Levels" value={levels.length} />
+          <ProgramMetric label="Classes" value={classCount} className="pl-4" />
+          <ProgramMetric
+            label="Offerings"
+            value={subjectOfferings}
+            className="pl-4"
+          />
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+          <div
+            className={cn(
+              "inline-flex min-w-0 items-center gap-1.5 text-xs font-medium",
+              ready && "text-green-01-text",
+              !ready && program.is_active && activeLevels.length > 0 &&
+                "text-yellow-01-text",
+              (!program.is_active || activeLevels.length === 0) && "text-gray-05",
+            )}
+          >
+            {ready ? (
+              <CheckCircle2 className="size-3.5 shrink-0" />
+            ) : program.is_active && activeLevels.length > 0 ? (
+              <CircleAlert className="size-3.5 shrink-0" />
+            ) : (
+              <Signpost className="size-3.5 shrink-0" />
+            )}
+            <span>
+              {ready
+                ? "Promotion path ready"
+                : !program.is_active
+                  ? "Programme archived"
+                  : activeLevels.length === 0
+                    ? "No active levels"
+                  : unwired === 1
+                    ? "1 level needs a promotion rule"
+                    : `${unwired} levels need promotion rules`}
+            </span>
+          </div>
+
+          <CardActions className="inline-flex flex-wrap items-center justify-end gap-2">
+            {canAddLevel && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-primary text-primary"
+                onClick={onAddLevel}
+              >
+                <Plus className="size-3.5" />
+                Add level
+              </Button>
+            )}
+            <button
+              type="button"
+              onClick={toggleProgram}
+              className="group/toggle inline-flex cursor-pointer items-center gap-1 rounded px-1 py-0.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
             >
-              <Plus className="size-3.5" />
-              Add level
-            </Button>
-          )}
-          {(canEdit || canManage || canCreate) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={`Actions for ${program.name}`}
-                  className="grid size-6 place-content-center rounded-full text-gray-06 hover:bg-gray-04"
-                >
-                  <span className="text-lg leading-none">⋯</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
-                {canEdit && (
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {canCreate && (
-                  <DropdownMenuItem onClick={onBulkLevels}>
-                    <Rows3 className="size-4" />
-                    Add levels in bulk
-                  </DropdownMenuItem>
-                )}
-                {canManage && (
-                  <DropdownMenuItem onClick={onArchive}>
-                    {program.is_active ? (
-                      <>
-                        <Archive className="size-4" />
-                        Archive
-                      </>
-                    ) : (
-                      <>
-                        <RotateCcw className="size-4" />
-                        Restore
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+              {open ? "Hide levels" : "View levels"}
+              {open ? (
+                <ChevronDown className="size-3.5" />
+              ) : (
+                <ChevronRight className="size-3.5" />
+              )}
+            </button>
+          </CardActions>
         </div>
       </div>
 
       {open && (
-        <div className="border-t border-white-02 bg-white-05">
+        <div className="animate-in fade-in-0 slide-in-from-top-2 border-t border-white-02 bg-white-05 px-3 py-3 duration-200 sm:px-4">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-black-01">Levels in order</h3>
+              <p className="mt-0.5 text-xs text-gray-05">
+                Follow the path pupils take through this programme.
+              </p>
+            </div>
+            {canAddLevel && (
+              <Button size="sm" variant="ghost" onClick={onBulkLevels}>
+                <Rows3 className="size-3.5" />
+                Add several
+              </Button>
+            )}
+          </div>
+
           {levels.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-gray-05">
+            <Panel className="px-4 py-5 text-center text-sm text-gray-05">
               No levels in this programme yet.
-            </p>
+            </Panel>
           ) : (
-            levels.map((level, i) => (
-              <div
-                key={level.id}
-                className={cn(
-                  "flex flex-wrap items-center gap-3 px-4 py-2.5 pl-11",
-                  i > 0 && "border-t border-white-02",
-                )}
-              >
-                <div className="min-w-0 flex-1 basis-40">
-                  <p className="truncate text-sm text-black-01">{level.name}</p>
-                  <p className="truncate text-xs text-gray-05">
-                    {level.code} ·{" "}
-                    {level.class_count === 0
-                      ? "No classes"
-                      : level.class_count === 1
-                        ? "1 class"
-                        : `${level.class_count} classes`}
-                    {" · "}
-                    <span
-                      className={cn(
-                        level.promotion === "unset" && "text-yellow-01-text",
-                      )}
-                    >
-                      {level.promotion === "promotes"
-                        ? `Promotes to ${level.next_level_name}`
-                        : level.promotion === "terminal"
-                          ? "Pupils leave here"
-                          : "No promotion set"}
-                    </span>
-                  </p>
-                </div>
-
-                {multiBranch && (
-                  <div className="shrink-0 text-xs text-gray-05">
-                    <ScopeCell
-                      label={level.scope_label}
-                      shared={level.branch == null}
-                    />
-                  </div>
-                )}
-
-                <div className="inline-flex shrink-0 items-center gap-1">
-                  {canEdit && (
-                    <button
-                      type="button"
-                      aria-label={`Edit ${level.name}`}
-                      onClick={() => onEditLevel(level)}
-                      className="grid size-7 place-content-center rounded-md text-gray-06 hover:bg-gray-04"
-                    >
-                      <Pencil className="size-3.5" />
-                    </button>
-                  )}
-                  {canManage && (
-                    <button
-                      type="button"
-                      aria-label={`${level.is_active ? "Archive" : "Restore"} ${level.name}`}
-                      onClick={() => onArchiveLevel(level)}
-                      className="grid size-7 place-content-center rounded-md text-gray-06 hover:bg-gray-04 hover:text-black-01"
-                    >
-                      {level.is_active ? (
-                        <Archive className="size-3.5" />
-                      ) : (
-                        <RotateCcw className="size-3.5" />
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))
+            <div className="grid gap-2">
+              {levels.map((level, index) => (
+                <LevelRow
+                  key={level.id}
+                  level={level}
+                  index={index}
+                  multiBranch={multiBranch}
+                  canEdit={canEdit && canChangeLevels}
+                  canManage={canManage && canChangeLevels}
+                  onEdit={() => onEditLevel(level)}
+                  onArchive={() => onArchiveLevel(level)}
+                />
+              ))}
+            </div>
           )}
         </div>
       )}
+    </Panel>
+    </div>
+  );
+}
+
+function ProgramMetric({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0", className)}>
+      <p className="truncate text-xs text-gray-05">{label}</p>
+      <p className="mt-0.5 text-lg font-semibold text-black-01">{value}</p>
+    </div>
+  );
+}
+
+function LevelRow({
+  level,
+  index,
+  multiBranch,
+  canEdit,
+  canManage,
+  onEdit,
+  onArchive,
+}: {
+  level: Level;
+  index: number;
+  multiBranch: boolean;
+  canEdit: boolean;
+  canManage: boolean;
+  onEdit: () => void;
+  onArchive: () => void;
+}) {
+  const promotion =
+    level.promotion === "promotes"
+      ? {
+          label: `Promotes to ${level.next_level_name}`,
+          icon: ArrowRight,
+          tone: "bg-green-01/10 text-green-01-text",
+        }
+      : level.promotion === "terminal"
+        ? {
+            label: "Pupils finish here",
+            icon: CheckCircle2,
+            tone: "bg-primary/10 text-primary",
+          }
+        : {
+            label: "Promotion not set",
+            icon: CircleAlert,
+            tone: "bg-yellow-01/10 text-yellow-01-text",
+          };
+
+  const content = (
+    <>
+      <span className="grid size-9 shrink-0 place-content-center rounded-md bg-primary/10 text-sm font-semibold text-primary transition-[transform,background-color,color] duration-200 group-hover/level:scale-105 group-hover/level:bg-primary group-hover/level:text-white">
+        {index + 1}
+      </span>
+
+      <div className="min-w-0 flex-1 basis-36">
+        <div className="flex flex-wrap items-center gap-2">
+          <h4 className="text-sm font-semibold text-black-01 transition-colors duration-200 group-hover/level:text-primary">
+            {level.name}
+          </h4>
+          <Badge
+            variant={level.is_active ? "active" : "inactive"}
+            className="h-fit rounded-full py-0 text-[10px] uppercase"
+          >
+            {level.is_active ? "Active" : "Archived"}
+          </Badge>
+        </div>
+        <p className="mt-0.5 text-xs text-gray-05">{level.code}</p>
+      </div>
+
+      <div className="grid min-w-[9rem] grid-cols-2 gap-4 text-xs">
+        <span>
+          <span className="block text-gray-05">Classes</span>
+          <span className="mt-0.5 block font-semibold text-black-01">
+            {level.class_count}
+          </span>
+        </span>
+        <span>
+          <span className="block text-gray-05">Subjects</span>
+          <span className="mt-0.5 block font-semibold text-black-01">
+            {level.subject_count}
+          </span>
+        </span>
+      </div>
+
+      <div className="min-w-0 basis-full sm:basis-auto">
+        <span
+          className={cn(
+            "inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
+            promotion.tone,
+          )}
+        >
+          <promotion.icon className="size-3.5 shrink-0" />
+          <span className="truncate">{promotion.label}</span>
+        </span>
+        {multiBranch && (
+          <div className="mt-1.5 text-xs text-gray-05">
+            <ScopeCell label={level.scope_label} shared={level.branch == null} />
+          </div>
+        )}
+      </div>
+
+      {canManage && (
+        <CardActions className="ml-auto inline-flex shrink-0 items-center gap-1">
+          <button
+            type="button"
+            aria-label={`${level.is_active ? "Archive" : "Restore"} ${level.name}`}
+            onClick={onArchive}
+            className="grid size-8 place-content-center rounded-md text-gray-06 hover:bg-gray-04 hover:text-black-01"
+          >
+            {level.is_active ? (
+              <Archive className="size-3.5" />
+            ) : (
+              <RotateCcw className="size-3.5" />
+            )}
+          </button>
+        </CardActions>
+      )}
+    </>
+  );
+
+  if (canEdit) {
+    return (
+      <ClickableCard
+        label={`Edit ${level.name}`}
+        onOpen={onEdit}
+        className="group/level flex min-w-0 flex-wrap items-center gap-3 px-3 py-3 hover:scale-[0.995] hover:shadow-sm active:scale-[0.985]"
+      >
+        {content}
+      </ClickableCard>
+    );
+  }
+
+  return (
+    <Panel className="flex min-w-0 flex-wrap items-center gap-3 px-3 py-3">
+      {content}
     </Panel>
   );
 }
