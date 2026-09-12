@@ -102,7 +102,7 @@ export function BranchDrawer({
 
               <p className="mt-4 flex items-start gap-1.5 text-xs text-gray-05">
                 <Info className="size-3.5 shrink-0 mt-px" />
-                CodeX maintains your branches. Ask the team to open a new one or
+                XVS maintains your branches. Ask the team to open a new one or
                 change any of these details.
               </p>
             </>

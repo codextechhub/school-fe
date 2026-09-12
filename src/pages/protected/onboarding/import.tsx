@@ -541,12 +541,12 @@ export default function OnboardingImport() {
             Academic Structure first.
           </p>
           <p>
-            Branches are opened by CodeX rather than uploaded. Ask the team if
+            Branches are opened by XVS rather than uploaded. Ask the team if
             you need another branch.
           </p>
         </div>
         <p className="mt-3 text-[11px] text-gray-05">
-          Validation and import are handled by the CodeX Data Import Engine.
+          Validation and import are handled by the XVS Data Import Engine.
         </p>
       </section>
 

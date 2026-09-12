@@ -47,7 +47,7 @@ const STATUS_LABEL: Record<TicketStatus, string> = {
 
 /** Where a ticket sits, in one word, for somebody scanning a column of them. */
 function whereItSits(ticket: Ticket): string {
-  if (ticket.escalated_at) return "With CodeX";
+  if (ticket.escalated_at) return "With XVS";
   return STATUS_LABEL[ticket.status] ?? ticket.status;
 }
 
@@ -83,7 +83,7 @@ export default function SupportDesk() {
           <p className="font-semibold font-mont text-black-01">Support</p>
           <p className="mt-0.5 text-xs text-gray-01">
             Issues raised at your school. Anything you cannot solve here can be
-            sent to CodeX.
+            sent to XVS.
           </p>
         </div>
         {/* The same panel the headset opens, so there is one form and not two. */}

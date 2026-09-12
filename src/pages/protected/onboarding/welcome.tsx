@@ -61,7 +61,7 @@ export default function OnboardingWelcome() {
           </h1>
           <p className="mt-2.5 text-sm text-gray-01 text-pretty">
             Let's get {schoolName} ready to go live. Onboarding is a short
-            checklist: you confirm what CodeX has already set up, fill in what
+            checklist: you confirm what XVS has already set up, fill in what
             only you know, and pick up where you left off.
           </p>
 
@@ -114,7 +114,7 @@ export default function OnboardingWelcome() {
         </div>
 
         <p className="text-xs text-gray-05">
-          Stuck? Reach the CodeX team at{" "}
+          Stuck? Reach the XVS team at{" "}
           <a href={`mailto:${SUPPORT_MAIL}`}>{SUPPORT_MAIL}</a>
         </p>
       </div>

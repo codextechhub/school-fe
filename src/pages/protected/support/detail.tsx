@@ -164,9 +164,9 @@ export default function SupportTicketDetail() {
       await escalate({ id: ticket.id, note: escalateNote.trim() }).unwrap();
       setEscalateNote("");
       setEscalateOpen(false);
-      toast.success("Sent to CodeX support.");
+      toast.success("Sent to XVS support.");
     } catch (error) {
-      toast.error(apiErrorMessage(error, "We could not send this to CodeX."));
+      toast.error(apiErrorMessage(error, "We could not send this to XVS."));
     }
   };
 
@@ -315,7 +315,7 @@ export default function SupportTicketDetail() {
                           </span>
                           {fromCodex && (
                             <span className="rounded-full bg-pry-01 px-2 py-0.5 text-[10px] font-medium text-primary">
-                              CodeX
+                              XVS
                             </span>
                           )}
                           <span className="text-xs text-gray-05">
@@ -384,9 +384,9 @@ export default function SupportTicketDetail() {
             // The fact a teacher is missing when their own school goes quiet.
             // Named, dated, and explicit that the thread did not move.
             <div className={cn(CARD, "border-primary/20 bg-pry-01/30 p-4")}>
-              <p className="font-mont text-sm font-semibold text-primary">With CodeX</p>
+              <p className="font-mont text-sm font-semibold text-primary">With XVS</p>
               <p className="mt-1 text-[13px] leading-6 text-primary">
-                {ticket.escalated_by?.name ?? "Your school"} sent this to CodeX{" "}
+                {ticket.escalated_by?.name ?? "Your school"} sent this to XVS{" "}
                 {formatRelativeDate(ticket.escalated_at!)}. Replies here still
                 reach everybody on it.
               </p>
@@ -421,7 +421,7 @@ export default function SupportTicketDetail() {
                 <>
                   <p className="mt-1 text-xs leading-5 text-gray-01">
                     This one is your school's to solve. If it is beyond you, send
-                    it to CodeX and the whole thread goes with it.
+                    it to XVS and the whole thread goes with it.
                   </p>
                   {escalateOpen ? (
                     <div className="mt-3 grid gap-2">
@@ -429,7 +429,7 @@ export default function SupportTicketDetail() {
                         id="escalate-note"
                         label="What have you already tried?"
                         rows={3}
-                        placeholder="One line saves CodeX asking you the same question."
+                        placeholder="One line saves XVS asking you the same question."
                         value={escalateNote}
                         onChange={(event) => setEscalateNote(event.target.value)}
                       />
@@ -450,13 +450,13 @@ export default function SupportTicketDetail() {
                       onClick={() => setEscalateOpen(true)}
                     >
                       <ArrowUpRight className="size-4" />
-                      Send to CodeX
+                      Send to XVS
                     </Button>
                   )}
                 </>
               ) : (
                 <p className="mt-1 text-xs leading-5 text-gray-01">
-                  CodeX has this one. You can still reply, and close it once it
+                  XVS has this one. You can still reply, and close it once it
                   is sorted.
                 </p>
               )}

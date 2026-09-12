@@ -496,7 +496,7 @@ export function TicketFiledConfirmation({
         </code>
       </div>
       <p className="text-[13px] text-gray-06 max-w-[52ch] text-pretty">
-        Keep this reference. CodeX support will reply
+        Keep this reference. XVS support will reply
         {email ? ` to ${email}` : " by email"}, and you can answer them straight
         from that email.
       </p>

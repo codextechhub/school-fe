@@ -107,8 +107,8 @@ export default function GoLivePage() {
         <OutlinedNotice
           icon={SearchX}
           title="We could not find your onboarding checklist"
-          body="Your school exists, but its onboarding control room was never set up. CodeX needs to provision it before you can ask to go live."
-          actionLabel="Contact CodeX"
+          body="Your school exists, but its onboarding control room was never set up. XVS needs to provision it before you can ask to go live."
+          actionLabel="Contact XVS"
           onAction={() => requestSupportOpen()}
         />
       </PageShell>
@@ -121,7 +121,7 @@ export default function GoLivePage() {
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open the go-live request"
-          body={`Your account does not carry access to this school's go-live requests. Ask whoever set up your account, or reach CodeX at ${SUPPORT_MAIL}.`}
+          body={`Your account does not carry access to this school's go-live requests. Ask whoever set up your account, or reach XVS at ${SUPPORT_MAIL}.`}
         />
       </PageShell>
     );
@@ -178,8 +178,8 @@ function GoLive({ state }: { state: OnboardingState }) {
           Going live
         </h2>
         <p className="mt-1 text-sm text-gray-01 max-w-[70ch] text-pretty">
-          When your required steps are done you can ask CodeX to take your school
-          live. CodeX reviews every request by hand.
+          When your required steps are done you can ask XVS to take your school
+          live. XVS reviews every request by hand.
         </p>
       </div>
 
@@ -288,9 +288,9 @@ function GateCard({
             {readiness === "NOT_READY" &&
               "Your school is not ready yet. Finish the required steps and this form opens."}
             {readiness === "READY" &&
-              "Everything required is done. You can ask CodeX to take your school live."}
+              "Everything required is done. You can ask XVS to take your school live."}
             {readiness === "PENDING_APPROVAL" &&
-              "Your request is with CodeX. They review every one by hand."}
+              "Your request is with XVS. They review every one by hand."}
             {readiness === "LIVE" && "Your school is live."}
           </p>
         </div>
@@ -369,7 +369,7 @@ function RequestForm() {
         note: note.trim(),
         acknowledged,
       }).unwrap();
-      toast.success("Your go-live request is with CodeX.");
+      toast.success("Your go-live request is with XVS.");
       navigate(routesPath.PROTECTED.ONBOARDING.INDEX);
     } catch (rejection) {
       setError(
@@ -398,13 +398,13 @@ function RequestForm() {
             minDate={earliest}
           />
           <p className="mt-1.5 text-xs text-gray-05 text-pretty">
-            We will aim for this date. Your school goes live when CodeX approves
+            We will aim for this date. Your school goes live when XVS approves
             the request.
           </p>
         </div>
         <CustomTextArea
           id="go-live-note"
-          label="Anything CodeX should know (optional)"
+          label="Anything XVS should know (optional)"
           rows={3}
           value={note}
           onChange={(event) => setNote(event.target.value)}
@@ -454,7 +454,7 @@ function PendingBlock({ latest }: { latest: GoLiveRequest | null }) {
             {latest.requested_by_name ? ` by ${latest.requested_by_name}` : ""}.
           </p>
           <p className="mt-1 text-[13px] text-gray-06">
-            Preferred date {humanDate(latest.preferred_go_live_at)}. CodeX is
+            Preferred date {humanDate(latest.preferred_go_live_at)}. XVS is
             reviewing it.
           </p>
         </>
@@ -486,7 +486,7 @@ function ActivatedCard({ state }: { state: OnboardingState }) {
         Your school is now live
       </h3>
       <p className="text-sm text-gray-06 max-w-[52ch] text-pretty">
-        CodeX approved your request and switched your school on
+        XVS approved your request and switched your school on
         {state.go_live_at ? ` on ${humanDate(state.go_live_at)}` : ""}. Dashboard,
         People, Academics and Finance are all open, and your staff can sign in.
       </p>
@@ -515,13 +515,13 @@ function RejectedCard({ request }: { request: GoLiveRequest }) {
       <div className="flex flex-wrap items-center gap-2.5">
         <GoLiveStatusChip status="REJECTED" />
         <p className="text-sm font-semibold font-mont text-black-01">
-          CodeX did not approve this request.
+          XVS did not approve this request.
         </p>
       </div>
       <p className="mt-2 text-xs text-gray-05">
         {request.reviewed_by_name
           ? `Reviewed by ${request.reviewed_by_name}`
-          : "Reviewed by CodeX"}
+          : "Reviewed by XVS"}
         {request.reviewed_at ? ` · ${humanDate(request.reviewed_at)}` : ""} ·
         requested {humanDate(request.created_at)}
       </p>
@@ -601,7 +601,7 @@ function FailedCard({ request }: { request: GoLiveRequest }) {
       )}
 
       <p className="mt-3 text-[13px] text-gray-06 text-pretty">
-        Send this reference to CodeX and they will look into what broke. There is
+        Send this reference to XVS and they will look into what broke. There is
         nothing for you to fix on your side.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
@@ -618,11 +618,11 @@ function FailedCard({ request }: { request: GoLiveRequest }) {
           }
         >
           <Headset />
-          Report this to CodeX
+          Report this to XVS
         </Button>
         {/* Activation rolled everything back and put readiness at READY, so the
             form above is live and trying again is a real option - secondary to
-            telling CodeX, because the school did nothing wrong and a second
+            telling XVS, because the school did nothing wrong and a second
             attempt may hit whatever broke the first. */}
         <Button variant="outline" onClick={focusGoLiveForm}>
           Try again

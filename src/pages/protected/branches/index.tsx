@@ -64,7 +64,7 @@ export default function Branches() {
         <OutlinedNotice
           icon={GraduationCap}
           title="No branches yet"
-          body="CodeX sets up your branches. Ask the team if one is missing."
+          body="XVS sets up your branches. Ask the team if one is missing."
         />
       </PageShell>
     );

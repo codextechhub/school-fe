@@ -433,7 +433,7 @@ export function RoleDrawer({
           <SheetDescription className="text-[13px] text-gray-06 text-pretty">
             {readOnly
               ? locked
-                ? "CodeX maintains this role, so it cannot be changed here. This is what it can reach."
+                ? "XVS maintains this role, so it cannot be changed here. This is what it can reach."
                 : "What a person with this role can reach. Your account can read this but not change it."
               : "Name it, say what it is for, and tick what it should reach. It is all on this one screen."}
           </SheetDescription>
@@ -466,7 +466,7 @@ export function RoleDrawer({
           {locked && (
             <p className="flex items-start gap-2 rounded-md border border-border px-3 py-2.5 text-[13px] text-gray-06">
               <Lock className="size-3.5 shrink-0 mt-0.5 text-gray-05" />
-              This is one of the roles CodeX set up for your school. To work
+              This is one of the roles XVS set up for your school. To work
               differently, add a role of your own instead.
             </p>
           )}

@@ -64,8 +64,8 @@ export default function OnboardingControlRoom() {
         <OutlinedNotice
           icon={SearchX}
           title="We could not find your onboarding checklist"
-          body="Your school exists, but its onboarding control room was never set up. CodeX needs to provision it before you can start."
-          actionLabel="Contact CodeX"
+          body="Your school exists, but its onboarding control room was never set up. XVS needs to provision it before you can start."
+          actionLabel="Contact XVS"
           onAction={() => requestSupportOpen()}
         />
       </PageShell>
@@ -78,7 +78,7 @@ export default function OnboardingControlRoom() {
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open the onboarding checklist"
-          body={`Your account does not carry access to this school's onboarding. Ask whoever set up your account, or reach CodeX at ${SUPPORT_MAIL}.`}
+          body={`Your account does not carry access to this school's onboarding. Ask whoever set up your account, or reach XVS at ${SUPPORT_MAIL}.`}
         />
       </PageShell>
     );
@@ -382,7 +382,7 @@ function GoLivePanel({
       {readiness === "READY" && (
         <>
           <p className="mt-2 text-[13px] text-gray-06 text-pretty">
-            Everything required is done. You can ask CodeX to take your school
+            Everything required is done. You can ask XVS to take your school
             live.
           </p>
           {canRequest && (
@@ -396,7 +396,7 @@ function GoLivePanel({
       {readiness === "PENDING_APPROVAL" && (
         <>
           <p className="mt-2 text-[13px] text-gray-06 text-pretty">
-            Your request is with CodeX. They review every one by hand.
+            Your request is with XVS. They review every one by hand.
           </p>
           {canReadRequests && (
             <Button variant="outline" className="mt-3.5 w-full" onClick={goLive}>
@@ -456,7 +456,7 @@ const plural = (count: number, word: string) =>
 
 function readinessHeadline(state: ReadinessState, blockers: number): string {
   if (state === "READY") return "Ready to go live";
-  if (state === "PENDING_APPROVAL") return "Waiting on CodeX";
+  if (state === "PENDING_APPROVAL") return "Waiting on XVS";
   if (state === "LIVE") return "Live";
   // The count belongs in the headline, not only in a tile: "Not ready" alone
   // does not say how far off the school is.
@@ -474,7 +474,7 @@ function readinessDetail(
     return "Everything required is done. Send your request whenever you are ready.";
   }
   if (state.readiness_state === "PENDING_APPROVAL") {
-    return "Waiting on CodeX to review your request.";
+    return "Waiting on XVS to review your request.";
   }
   if (state.readiness_state === "LIVE") {
     return "Your school is live and onboarding is closed.";

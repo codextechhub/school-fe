@@ -168,7 +168,7 @@ export default function OnboardingRoles() {
           </h2>
           <p className="mt-1 text-sm text-gray-01 text-pretty">
             {canSeeRoles
-              ? `CodeX has set ${school?.name ?? "your school"} up with a baseline of roles. Look them over, add any of your own, and invite the people who will operate the system.`
+              ? `XVS has set ${school?.name ?? "your school"} up with a baseline of roles. Look them over, add any of your own, and invite the people who will operate the system.`
               : "The people who will operate the system, and whether their invitations have landed."}
           </p>
         </div>
@@ -246,7 +246,7 @@ export default function OnboardingRoles() {
             </div>
             <p className="mt-2.5 flex items-start gap-1.5 text-xs text-gray-05">
               <Info className="size-3.5 shrink-0 mt-px text-gray-05" />
-              Open a role to see what it can reach. CodeX maintains these, so their
+              Open a role to see what it can reach. XVS maintains these, so their
               permissions are read-only - to work differently, add a role of
               your own.
             </p>

@@ -140,7 +140,7 @@ export default function Roles() {
 
       <section className="space-y-2.5">
         <h3 className="text-sm font-semibold text-black-01">
-          Roles CodeX set up for this school
+          Roles XVS set up for this school
         </h3>
         <CustomTable
           tableHeaderList={SEEDED_COLUMNS}

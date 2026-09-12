@@ -126,7 +126,7 @@ export function taskMeta(key: TaskKey): TaskMeta {
   return (
     CATALOG[key] ?? {
       icon: School,
-      description: "One of the steps CodeX needs before your school can go live.",
+      description: "One of the steps XVS needs before your school can go live.",
     }
   );
 }

@@ -110,6 +110,13 @@ export {
  *  so the address is unreachable as well as unadvertised. */
 export const createsWorkflowTemplates = false;
 
+/** What a school calls the party that publishes its approval paths.
+ *
+ *  A school buys XVS and deals with XVS. The company behind it is not a name a
+ *  school administrator has any reason to learn, least of all from a sentence
+ *  explaining which version of an approval path they are running. */
+export const platformName = "XVS";
+
 /** When this school's fee bills fall due. */
 export { default as FeeDuePolicyPanel } from "@/pages/protected/school-finance/fee-due-policy";
 

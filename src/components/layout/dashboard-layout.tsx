@@ -381,7 +381,7 @@ export default function DashboardLayout() {
               <button
                 type="button"
                 aria-label="Get help"
-                title="Raise an issue with CodeX"
+                title="Raise an issue with XVS"
                 onClick={() => {
                   setSupportPrefill({});
                   setSupportOpen(true);

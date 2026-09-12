@@ -80,7 +80,7 @@ export function OnboardingStatusStrip() {
           </span>
           <p className="text-[13px] text-gray-01 text-pretty">
             {expiry.days_remaining} days left to complete onboarding. After that
-            your sign-in will be paused until CodeX restores it.
+            your sign-in will be paused until XVS restores it.
           </p>
         </div>
       )}

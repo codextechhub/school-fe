@@ -60,7 +60,7 @@ export default function SchoolProfilePage() {
         <OutlinedNotice
           icon={ShieldOff}
           title="You cannot open your school's profile"
-          body={`Your account does not carry access to this school's profile. Ask whoever set up your account, or reach CodeX at ${SUPPORT_MAIL}.`}
+          body={`Your account does not carry access to this school's profile. Ask whoever set up your account, or reach XVS at ${SUPPORT_MAIL}.`}
           actionLabel="Back to control room"
           onAction={() => navigate(routesPath.PROTECTED.ONBOARDING.INDEX)}
         />
@@ -148,8 +148,8 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
           Your school profile
         </h2>
         <p className="mt-1 text-sm text-gray-01 max-w-[70ch] text-pretty">
-          The details XVS uses across every module. CodeX filled in most of this
-          when it created your school; the rest is yours to confirm.
+          The details XVS uses across every module. Most of it was filled in
+          when your school was created; the rest is yours to confirm.
         </p>
       </div>
 
@@ -168,11 +168,11 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
       {notOursToFix.length > 0 && (
         <div className="rounded-md border border-destructive/30 bg-destructive/5 px-4 py-3 max-w-200">
           <p className="text-sm font-medium text-black-01">
-            Something is missing that only CodeX can set
+            Something is missing that only XVS can set
           </p>
           <p className="mt-1 text-[13px] text-gray-01 text-pretty">
             {notOursToFix.map((row) => row.label).join(", ")}. Raise this with
-            CodeX and they will put it right.
+            XVS and they will put it right.
           </p>
           <Button
             variant="outline"
@@ -180,15 +180,15 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
             className="mt-3"
             onClick={() => requestSupportOpen()}
           >
-            Tell CodeX
+            Tell XVS
           </Button>
         </div>
       )}
 
-      {/* ── What CodeX set ────────────────────────────────────────────────── */}
+      {/* ── What the platform set ─────────────────────────────────────────── */}
       <section className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 max-w-200">
         <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
-          Set by CodeX
+          Set by XVS
         </p>
         <div className="mt-3 grid gap-4 sm:grid-cols-3">
           <ReadOnlyField label="School name" value={profile.name} />
@@ -198,7 +198,7 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
         <p className="mt-3 flex items-start gap-1.5 text-xs text-gray-05 text-pretty">
           <Info className="size-3.5 shrink-0 mt-0.5" />
           Your sign-in address is the web address your staff use, so it is fixed
-          here. If any of these is wrong, tell CodeX before you go live.
+          here. If any of these is wrong, tell XVS before you go live.
         </p>
       </section>
 
