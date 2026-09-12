@@ -670,19 +670,41 @@ export type ConditionFieldType =
   | "MONEY" | "NUMBER" | "TEXT" | "CHOICE" | "ROLE" | "BRANCH" | "PERSON";
 
 /** One thing a Dynamic Role condition may test, as the server declares it. */
-export interface ConditionFieldSpec {
-  /** Its path in the rule context, e.g. `amount` or `requester.branch`. */
+/**
+ * A part of the school a condition can ask about: this document, the person who
+ * raised it, or one an app owns, such as the child a bill is for. A screen asks
+ * for the area first and then offers that area's fields.
+ */
+export interface ConditionArea {
   key: string;
   label: string;
-  /** Which question it answers: about the document, or about who raised it. */
-  subject: "document" | "requester";
+  /** The document types that reach it. Empty means every document does. */
+  document_types: string[];
+}
+
+export interface ConditionFieldSpec {
+  /** Its path in the rule context, e.g. `amount` or `student.class_name`. */
+  key: string;
+  label: string;
+  /** The area it belongs to, which is what the picker opens with. */
+  area: string;
+  /** What `area` was called when a condition had a subject. Same value. */
+  subject: string;
   type: ConditionFieldType;
   operators: string[];
   choices: { value: string; label: string }[];
+  /**
+   * The document types that can answer it. Empty means every document can. A
+   * Dynamic Role names no document type, so a rule may test anything here and
+   * publishing refuses a stage whose own document cannot answer it.
+   */
+  document_types: string[];
 }
 
 /** GET /workflow/dynamic-roles/fields/ */
 export interface DynamicRoleFields {
+  /** The areas to offer, in order: this document, who raised it, then the rest. */
+  areas: ConditionArea[];
   fields: ConditionFieldSpec[];
   /** Every document type a Dynamic Role can serve. */
   document_types: { value: string; label: string }[];
