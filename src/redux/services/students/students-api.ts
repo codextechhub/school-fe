@@ -423,13 +423,11 @@ export const studentsApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * One class's roster, for its seat count.
+     * One class's paginated roster with its capacity metadata.
      *
-     * The transfer drawer needs "29 of 30 seats used" for the class being moved
-     * INTO. There is no endpoint returning seats for every class at once (see
-     * the phase 2 backend ask), so this is fetched for the one class the user
-     * picked - which is also all the design shows, since its destination meta
-     * only appears after a selection.
+     * A number reads the first page for summary and transfer views. The object
+     * form lets a roster load later pages inside its own scroll area without
+     * expanding the page around it.
      */
     getClassRoster: builder.query<
       PaginatedEnvelope<StudentRow> & {
@@ -437,12 +435,17 @@ export const studentsApi = baseApi.injectEndpoints({
         capacity: number | null;
         class_name: string;
       },
-      number
+      number | { classId: number; page?: number }
     >({
-      query: (classId) => ({
-        url: `/students/classes/${classId}/roster/`,
-        method: "GET",
-      }),
+      query: (args) => {
+        const classId = typeof args === "number" ? args : args.classId;
+        const page = typeof args === "number" ? 1 : (args.page ?? 1);
+        return {
+          url: `/students/classes/${classId}/roster/`,
+          method: "GET",
+          params: page > 1 ? { page } : undefined,
+        };
+      },
       providesTags: ["Students"],
     }),
 
@@ -636,6 +639,7 @@ export const {
   usePreviewPromotionMutation,
   useRunPromotionMutation,
   useGetClassRosterQuery,
+  useLazyGetClassRosterQuery,
   useBulkAssignClassMutation,
   useUpdateStudentMutation,
   useChangeStudentStatusMutation,

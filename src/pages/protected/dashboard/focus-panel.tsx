@@ -1,16 +1,25 @@
+import { useEffect, useReducer, useState } from "react";
 import { Link } from "react-router";
-import { AlertTriangle, ArrowUpRight, Info } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowUpRight,
+  Info,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { AttentionItem, AttentionTone } from "./attention";
+import { initialPanelState, panelOpenReducer } from "./panel-open-state";
 
 /**
  * The dashboard's live worklist.
  *
- * Important rows stay visible. Hiding them behind a collapsed panel made the
- * dashboard look calm while approvals, unplaced students, or timetable
- * clashes were waiting underneath it. The two groups distinguish work from
- * information, but neither needs a hover or a second click to be read.
+ * The panel can be pinned open or minimized. A minimized panel opens while it
+ * is hovered so desktop readers can scan it without changing their saved view;
+ * the explicit control provides the same access on touch and keyboard devices.
+ * Blocking work opens on arrival, while repeated refreshes respect a reader's
+ * decision to minimize it.
  *
  * Nothing is dismissible. Each row is recomputed from live server state and
  * disappears only when the underlying condition is resolved.
@@ -73,7 +82,7 @@ function FocusCard({ item }: { item: AttentionItem }) {
     <Link
       to={item.to}
       className={cn(
-        "group flex min-w-0 items-center gap-3 rounded-2xl border p-3.5 transition-[border-color,box-shadow,transform] hover:-translate-y-0.5 hover:shadow-sm",
+        "group flex min-w-0 items-center gap-3 rounded-2xl border p-3.5 transition-[border-color,box-shadow,transform] duration-200 hover:-translate-y-1 hover:scale-[1.015] hover:shadow-md focus-visible:-translate-y-1 focus-visible:scale-[1.015] focus-visible:shadow-md",
         tone.card,
       )}
     >
@@ -86,12 +95,12 @@ function FocusCard({ item }: { item: AttentionItem }) {
         <Icon className="size-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13px] font-semibold text-black-01">
+        <span className="block break-words text-[13px] font-semibold text-black-01">
           {item.title}
         </span>
         <span
           title={item.detail}
-          className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-gray-05 text-pretty"
+          className="mt-0.5 text-[11px] leading-4 text-gray-05 text-pretty"
         >
           {item.detail}
         </span>
@@ -115,6 +124,18 @@ function FocusCard({ item }: { item: AttentionItem }) {
 }
 
 export function FocusPanel({ items }: { items: AttentionItem[] }) {
+  const [panel, dispatchPanel] = useReducer(
+    panelOpenReducer,
+    undefined,
+    initialPanelState,
+  );
+  const [hoveredOpen, setHoveredOpen] = useState(false);
+  const hasBlocking = items.some((item) => item.tone === "blocking");
+
+  useEffect(() => {
+    dispatchPanel({ type: "data", hasBlocking });
+  }, [hasBlocking]);
+
   if (items.length === 0) return null;
 
   const mine = items.filter((item) => item.mine);
@@ -125,13 +146,21 @@ export function FocusPanel({ items }: { items: AttentionItem[] }) {
   ]
     .filter(Boolean)
     .join(" · ");
+  const expanded = panel.expanded || hoveredOpen;
 
   return (
     <section
       aria-label="Action needed"
-      className="min-w-0 rounded-3xl border border-white-02 bg-white p-4 shadow-[0_10px_30px_rgba(29,43,68,0.05)] sm:p-5"
+      onMouseEnter={() => setHoveredOpen(true)}
+      onMouseLeave={() => setHoveredOpen(false)}
+      className={cn(
+        "min-w-0 rounded-3xl border p-4 transition-[background-color,border-color,box-shadow] duration-300 sm:p-5",
+        expanded
+          ? "border-white-02 bg-white shadow-[0_10px_30px_rgba(29,43,68,0.05)]"
+          : "border-yellow-01/50 bg-[linear-gradient(112deg,rgba(214,168,90,.20),rgba(214,168,90,.08)_62%,rgba(255,255,255,.9))] shadow-[0_8px_24px_rgba(149,108,37,0.08)]",
+      )}
     >
-      <div className="flex min-w-0 items-start justify-between gap-3">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-yellow-02">
             Today&apos;s focus
@@ -143,43 +172,83 @@ export function FocusPanel({ items }: { items: AttentionItem[] }) {
             The live worklist for this school.
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-yellow-01/10 px-2.5 py-1 text-[11px] font-semibold text-yellow-01-text">
-          {summary}
-        </span>
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          <span className="rounded-full bg-yellow-01/10 px-2.5 py-1 text-[11px] font-semibold text-yellow-01-text">
+            {summary}
+          </span>
+          <button
+            type="button"
+            aria-expanded={expanded}
+            aria-controls="dashboard-focus-details"
+            aria-label={
+              panel.expanded
+                ? "Minimize Today's focus"
+                : "Maximize Today's focus"
+            }
+            onClick={() => {
+              if (panel.expanded) {
+                dispatchPanel({ type: "close" });
+                setHoveredOpen(false);
+                return;
+              }
+              dispatchPanel({ type: "open" });
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white-02 bg-white/85 px-2.5 py-1.5 text-[11px] font-semibold text-gray-06 shadow-sm transition-[border-color,color,transform] hover:-translate-y-0.5 hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25"
+          >
+            {panel.expanded ? (
+              <Minimize2 className="size-3.5" />
+            ) : (
+              <Maximize2 className="size-3.5" />
+            )}
+            {panel.expanded ? "Minimize" : "Maximize"}
+          </button>
+        </div>
       </div>
 
-      {mine.length > 0 && (
-        <section aria-label="Yours to fix" className="mt-5">
-          <GroupHeading
-            title="Yours to fix"
-            note="Work that is waiting on the school"
-            tone="mine"
-          />
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 2xl:grid-cols-3">
-            {mine.map((item) => (
-              <FocusCard key={item.id} item={item} />
-            ))}
-          </div>
-        </section>
-      )}
+      <div
+        id="dashboard-focus-details"
+        aria-hidden={!expanded}
+        inert={!expanded}
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
+          expanded ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          {mine.length > 0 && (
+            <section aria-label="Yours to fix" className="mt-5">
+              <GroupHeading
+                title="Yours to fix"
+                note="Work that is waiting on the school"
+                tone="mine"
+              />
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 2xl:grid-cols-3">
+                {mine.map((item) => (
+                  <FocusCard key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          )}
 
-      {watch.length > 0 && (
-        <section
-          aria-label="Watch"
-          className={mine.length > 0 ? "mt-5" : "mt-4"}
-        >
-          <GroupHeading
-            title="Good to know"
-            note="Worth checking, and possibly deliberate"
-            tone="watch"
-          />
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 2xl:grid-cols-3">
-            {watch.map((item) => (
-              <FocusCard key={item.id} item={item} />
-            ))}
-          </div>
-        </section>
-      )}
+          {watch.length > 0 && (
+            <section
+              aria-label="Watch"
+              className={mine.length > 0 ? "mt-5" : "mt-4"}
+            >
+              <GroupHeading
+                title="Good to know"
+                note="Worth checking, and possibly deliberate"
+                tone="watch"
+              />
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 2xl:grid-cols-3">
+                {watch.map((item) => (
+                  <FocusCard key={item.id} item={item} />
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      </div>
     </section>
   );
 }

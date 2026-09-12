@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
   ArrowLeft,
@@ -6,6 +6,7 @@ import {
   Building2,
   Gauge,
   GraduationCap,
+  LoaderCircle,
   Lock,
   Pencil,
   UserRoundCheck,
@@ -34,8 +35,12 @@ import type {
   ClassWrite,
   Level,
 } from "@/redux/services/academics/academics-types";
-import { useGetClassRosterQuery } from "@/redux/services/students/students-api";
+import {
+  useGetClassRosterQuery,
+  useLazyGetClassRosterQuery,
+} from "@/redux/services/students/students-api";
 import type { StudentRow } from "@/redux/services/students/students-types";
+import type { Pagination } from "@/redux/services/onboarding/onboarding-types";
 import { routesPath } from "@/routes/routesPath";
 import { parseApiError } from "@/utils/api-error";
 import { ClassDrawer } from "../class-drawer";
@@ -237,7 +242,7 @@ export default function ClassDetails() {
                 Students in this class
               </h2>
               <p className="mt-0.5 text-xs text-gray-05">
-                A preview of the current class register.
+                Scroll inside this panel to load the full class register.
               </p>
             </div>
             {canBrowseStudents && (
@@ -252,7 +257,9 @@ export default function ClassDetails() {
           </div>
 
           <RosterPreview
+            classId={klass.id}
             students={students}
+            pagination={rosterData?.pagination}
             loading={rosterLoading}
             canBrowse={canBrowseStudents}
             error={rosterError}
@@ -335,12 +342,6 @@ export default function ClassDetails() {
               />
               <InformationRow label="Code" value={klass.code || "Not set"} />
               <InformationRow
-                label="Scope"
-                value={
-                  klass.scope_label ?? klass.branch_name ?? "School-wide"
-                }
-              />
-              <InformationRow
                 label="Description"
                 value={klass.description || "No description"}
               />
@@ -410,7 +411,7 @@ function SummaryCard({
         <p className="text-[11px] text-gray-05 sm:text-xs">{label}</p>
         <p
           className={cn(
-            "truncate text-sm font-semibold sm:text-base",
+            "break-words text-[13px] font-semibold leading-tight sm:text-base",
             subdued ? "text-amber-700" : "text-black-01",
           )}
         >
@@ -439,18 +440,70 @@ function studentCountLabel({
 }
 
 function RosterPreview({
+  classId,
   students,
+  pagination,
   loading,
   canBrowse,
   error,
   onRetry,
 }: {
+  classId: number;
   students: StudentRow[];
+  pagination?: Pagination;
   loading: boolean;
   canBrowse: boolean;
   error: boolean;
   onRetry: () => void;
 }) {
+  const [loadedStudents, setLoadedStudents] = useState<StudentRow[]>([]);
+  const [visibleCount, setVisibleCount] = useState(7);
+  const [nextPage, setNextPage] = useState<number | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const loadLock = useRef(false);
+  const [loadPage, { isFetching: loadingMore }] =
+    useLazyGetClassRosterQuery();
+
+  useEffect(() => {
+    setLoadedStudents(students);
+    setVisibleCount(7);
+    setNextPage(
+      pagination?.next ? (pagination.currentPage ?? 1) + 1 : null,
+    );
+    setLoadMoreError(false);
+    loadLock.current = false;
+  }, [classId, pagination?.currentPage, pagination?.next, students]);
+
+  async function revealMore() {
+    if (loadLock.current) return;
+
+    const nextVisible = Math.min(visibleCount + 7, loadedStudents.length);
+    if (nextVisible > visibleCount) setVisibleCount(nextVisible);
+    if (nextVisible < loadedStudents.length || nextPage == null) return;
+
+    loadLock.current = true;
+    setLoadMoreError(false);
+    try {
+      const response = await loadPage({ classId, page: nextPage }).unwrap();
+      setLoadedStudents((current) => {
+        const knownIds = new Set(current.map((student) => student.id));
+        return [
+          ...current,
+          ...response.data.filter((student) => !knownIds.has(student.id)),
+        ];
+      });
+      setNextPage(
+        response.pagination.next
+          ? response.pagination.currentPage + 1
+          : null,
+      );
+    } catch {
+      setLoadMoreError(true);
+    } finally {
+      loadLock.current = false;
+    }
+  }
+
   if (!canBrowse) {
     return (
       <p className="px-5 py-10 text-center text-sm text-gray-05">
@@ -499,37 +552,73 @@ function RosterPreview({
     );
   }
 
+  const displayedStudents = loadedStudents.slice(0, visibleCount);
+  const hasMore =
+    visibleCount < loadedStudents.length || nextPage != null;
+
   return (
-    <ul className="px-4 sm:px-5">
-      {students.slice(0, 6).map((student) => (
-        <li key={student.id} className="border-b border-border last:border-0">
-          <Link
-            to={routesPath.PROTECTED.STUDENTS.PROFILE_ID(student.id)}
-            className="group flex min-w-0 items-center gap-3 rounded-md py-3 outline-none transition-colors hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            <PersonAvatar
-              name={student.full_name}
-              photoUrl={student.photo_url}
-              className="size-9 shrink-0"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-black-01 group-hover:text-primary">
-                {student.full_name}
-              </p>
-              <p className="mt-0.5 truncate text-xs text-gray-05">
-                {student.student_number || "Admission number not issued"}
-              </p>
-            </div>
-            <Badge
-              variant={student.status === "ACTIVE" ? "active" : "inactive"}
-              className="max-w-28 truncate rounded-full text-[10px]"
+    <div
+      className="max-h-96 overflow-y-auto overscroll-contain px-4 sm:px-5"
+      aria-label="Class student list"
+      tabIndex={0}
+      onScroll={(event) => {
+        const panel = event.currentTarget;
+        const nearBottom =
+          panel.scrollHeight - panel.scrollTop - panel.clientHeight < 72;
+        if (nearBottom) void revealMore();
+      }}
+    >
+      <ul>
+        {displayedStudents.map((student) => (
+          <li key={student.id} className="border-b border-border last:border-0">
+            <Link
+              to={routesPath.PROTECTED.STUDENTS.PROFILE_ID(student.id)}
+              className="group flex min-w-0 items-center gap-3 rounded-md py-3 outline-none transition-colors hover:bg-primary/5 focus-visible:ring-2 focus-visible:ring-primary"
             >
-              {student.status_label}
-            </Badge>
-          </Link>
-        </li>
-      ))}
-    </ul>
+              <PersonAvatar
+                name={student.full_name}
+                photoUrl={student.photo_url}
+                className="size-9 shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <p className="break-words text-sm font-medium text-black-01 group-hover:text-primary">
+                  {student.full_name}
+                </p>
+                <p className="mt-0.5 break-words text-xs text-gray-05">
+                  {student.student_number || "Admission number not issued"}
+                </p>
+              </div>
+              <Badge
+                variant={student.status === "ACTIVE" ? "active" : "inactive"}
+                className="shrink-0 rounded-full text-[10px]"
+              >
+                {student.status_label}
+              </Badge>
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <div
+        className="flex min-h-10 items-center justify-center border-t border-border py-2 text-xs text-gray-05"
+        aria-live="polite"
+      >
+        {loadingMore ? (
+          <span className="inline-flex items-center gap-2">
+            <LoaderCircle className="size-3.5 animate-spin" />
+            Loading more students
+          </span>
+        ) : loadMoreError ? (
+          <Button size="sm" variant="ghost" onClick={() => void revealMore()}>
+            Try loading more
+          </Button>
+        ) : hasMore ? (
+          "Scroll for more students"
+        ) : (
+          `All ${loadedStudents.length} students loaded`
+        )}
+      </div>
+    </div>
   );
 }
 
