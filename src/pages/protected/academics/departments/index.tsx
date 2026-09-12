@@ -1,6 +1,9 @@
 import { useMemo, useState } from "react";
 import {
   Archive,
+  BookOpenText,
+  ChevronRight,
+  GraduationCap,
   Layers,
   LayoutGrid,
   Pencil,
@@ -20,11 +23,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import PromptModal from "@/components/modal/prompt-modal";
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
-import { CardActions, ClickableCard } from "@/components/custom/surface";
+import { CardActions, ClickableCard, Panel } from "@/components/custom/surface";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
@@ -32,11 +43,15 @@ import { parseApiError } from "@/utils/api-error";
 import {
   useCreateDepartmentMutation,
   useArchiveDepartmentMutation,
+  useGetAcademicOverviewQuery,
   useRestoreDepartmentMutation,
   useGetDepartmentsQuery,
   useUpdateDepartmentMutation,
 } from "@/redux/services/academics/academics-api";
-import type { Department } from "@/redux/services/academics/academics-types";
+import type {
+  AcademicOverview,
+  Department,
+} from "@/redux/services/academics/academics-types";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "@/components/custom/export-button";
@@ -44,6 +59,7 @@ import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
+import { cn } from "@/lib/utils";
 
 /**
  * Faculty groupings that programmes and subjects hang off.
@@ -67,6 +83,7 @@ export default function Departments() {
   const [page, setPage] = useState(1);
 
   const [editing, setEditing] = useState<Department | null>(null);
+  const [viewing, setViewing] = useState<Department | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirm, setConfirm] = useState<Confirmation | null>(null);
 
@@ -78,6 +95,8 @@ export default function Departments() {
     is_active: showArchived,
     page,
   });
+  const { data: overviewData, isLoading: overviewLoading } =
+    useGetAcademicOverviewQuery(lens);
 
   const [create, { isLoading: creating }] = useCreateDepartmentMutation();
   const [update, { isLoading: updating }] = useUpdateDepartmentMutation();
@@ -110,6 +129,7 @@ export default function Departments() {
             multiBranch={multiBranch}
             canEdit={canEdit}
             canManage={canManage}
+            onOpen={() => setViewing(dept)}
             onEdit={() => openEdit(dept)}
             onArchive={() => setConfirm({ kind: "archive", department: dept })}
             onRestore={() => setConfirm({ kind: "restore", department: dept })}
@@ -135,9 +155,7 @@ export default function Departments() {
           Subjects: String(d.subject_count),
           Status: d.is_active ? "Active" : "Archived",
         }))}
-        onRowClick={(dept: Department) => {
-          if (dept && canEdit) openEdit(dept);
-        }}
+        onRowClick={(dept: Department) => dept && setViewing(dept)}
         currentPage={pagination?.currentPage ?? 1}
         totalPage={pagination?.totalPages ?? 1}
         onPageChange={(next) => setPage(Number(next) || 1)}
@@ -146,6 +164,7 @@ export default function Departments() {
     );
 
   const openEdit = (dept: Department) => {
+    setViewing(null);
     setEditing(dept);
     setDrawerOpen(true);
   };
@@ -226,6 +245,11 @@ export default function Departments() {
 
   return (
     <PageShell className="content-start gap-5" grid>
+      <DepartmentSummary
+        counts={overviewData?.data.counts}
+        loading={overviewLoading}
+      />
+
       <div className="flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-0 flex-1 basis-52">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
@@ -354,6 +378,24 @@ export default function Departments() {
         onSave={saveDraft}
       />
 
+      <DepartmentDetails
+        department={viewing}
+        open={!!viewing}
+        multiBranch={multiBranch}
+        canEdit={canEdit}
+        canManage={canManage}
+        onClose={() => setViewing(null)}
+        onEdit={() => viewing && openEdit(viewing)}
+        onArchive={() => {
+          if (!viewing) return;
+          setViewing(null);
+          setConfirm({
+            kind: viewing.is_active ? "archive" : "restore",
+            department: viewing,
+          });
+        }}
+      />
+
       <PromptModal
         isOpen={!!confirm}
         onClose={() => {
@@ -376,6 +418,212 @@ export default function Departments() {
         }
       />
     </PageShell>
+  );
+}
+
+function DepartmentSummary({
+  counts,
+  loading,
+}: {
+  counts?: AcademicOverview["counts"];
+  loading: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="grid gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Skeleton key={index} className="h-[74px] rounded-md" />
+        ))}
+      </div>
+    );
+  }
+
+  const cards = [
+    {
+      label: "Departments",
+      value: counts?.departments ?? "-",
+      icon: Layers,
+      tone: "bg-primary/10 text-primary",
+    },
+    {
+      label: "Programmes",
+      value: counts?.programs ?? "-",
+      icon: GraduationCap,
+      tone: "bg-sky-100 text-sky-700",
+    },
+    {
+      label: "Subjects",
+      value: counts?.subjects ?? "-",
+      icon: BookOpenText,
+      tone: "bg-violet-100 text-violet-700",
+    },
+  ];
+
+  return (
+    <section className="grid gap-3 sm:grid-cols-3" aria-label="Department summary">
+      {cards.map((card) => (
+        <Panel key={card.label} className="flex min-w-0 items-center gap-3 px-4 py-3">
+          <span
+            className={cn(
+              "grid size-10 shrink-0 place-content-center rounded-md",
+              card.tone,
+            )}
+          >
+            <card.icon className="size-5" />
+          </span>
+          <div className="min-w-0">
+            <p className="text-xs text-gray-05">{card.label}</p>
+            <p className="mt-0.5 text-lg font-semibold leading-tight text-black-01">
+              {card.value}
+            </p>
+          </div>
+        </Panel>
+      ))}
+    </section>
+  );
+}
+
+/**
+ * Read-only department detail shown before any edit action.
+ *
+ * All values come from the directory response, so opening the drawer does not
+ * add a request per card. Editing remains permission-gated and opens the shared
+ * entity form only when the reader asks to change the record.
+ */
+function DepartmentDetails({
+  department,
+  open,
+  multiBranch,
+  canEdit,
+  canManage,
+  onClose,
+  onEdit,
+  onArchive,
+}: {
+  department: Department | null;
+  open: boolean;
+  multiBranch: boolean;
+  canEdit: boolean;
+  canManage: boolean;
+  onClose: () => void;
+  onEdit: () => void;
+  onArchive: () => void;
+}) {
+  if (!department) return null;
+
+  return (
+    <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-md"
+      >
+        <SheetHeader className="border-b border-border px-5 pb-4 pt-5 pr-12 text-left">
+          <div className="flex items-start gap-3">
+            <span className="grid size-10 shrink-0 place-content-center rounded-md bg-primary/10 text-primary">
+              <Layers className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <SheetTitle className="truncate font-mont text-base">
+                  {department.name}
+                </SheetTitle>
+                <Badge
+                  variant={department.is_active ? "active" : "inactive"}
+                  className="h-fit rounded-full py-0 text-[10px] uppercase"
+                >
+                  {department.is_active ? "Active" : "Archived"}
+                </Badge>
+              </div>
+              <SheetDescription className="mt-0.5 text-xs text-gray-05">
+                Department code: {department.code}
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
+
+        <ScrollArea className="min-w-0 flex-1" viewportClassName="px-5 py-5">
+          <section aria-labelledby="department-overview-heading">
+            <h3
+              id="department-overview-heading"
+              className="text-xs font-medium uppercase tracking-wide text-gray-05"
+            >
+              Overview
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-gray-01">
+              {department.description?.trim() ||
+                "No description has been added for this department."}
+            </p>
+          </section>
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Panel className="px-4 py-3">
+              <span className="grid size-8 place-content-center rounded-md bg-sky-100 text-sky-700">
+                <GraduationCap className="size-4" />
+              </span>
+              <p className="mt-3 text-2xl font-semibold text-black-01">
+                {department.program_count}
+              </p>
+              <p className="text-xs text-gray-05">Programmes</p>
+            </Panel>
+            <Panel className="px-4 py-3">
+              <span className="grid size-8 place-content-center rounded-md bg-violet-100 text-violet-700">
+                <BookOpenText className="size-4" />
+              </span>
+              <p className="mt-3 text-2xl font-semibold text-black-01">
+                {department.subject_count}
+              </p>
+              <p className="text-xs text-gray-05">Subjects</p>
+            </Panel>
+          </div>
+
+          <div className="mt-5 grid gap-3">
+            <Panel className="px-4 py-3">
+              <p className="text-xs text-gray-05">Scope</p>
+              <div className="mt-1.5 flex items-center gap-2 text-sm font-medium text-black-01">
+                <Pin className="size-4 shrink-0 text-primary" />
+                {multiBranch ? (
+                  <ScopeCell
+                    label={department.scope_label}
+                    shared={department.branch == null}
+                  />
+                ) : (
+                  <span>The whole school</span>
+                )}
+              </div>
+            </Panel>
+            <Panel className="px-4 py-3">
+              <p className="text-xs text-gray-05">Availability</p>
+              <p className="mt-1.5 text-sm leading-5 text-gray-01">
+                {department.is_active
+                  ? "Available when assigning programmes and subjects."
+                  : "Hidden from new assignments until it is restored."}
+              </p>
+            </Panel>
+          </div>
+        </ScrollArea>
+
+        {(canEdit || canManage) && (
+          <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-4">
+            {canManage && (
+              <Button variant="outline" onClick={onArchive}>
+                {department.is_active ? (
+                  <Archive className="size-4" />
+                ) : (
+                  <RotateCcw className="size-4" />
+                )}
+                {department.is_active ? "Archive" : "Restore"}
+              </Button>
+            )}
+            {canEdit && (
+              <Button onClick={onEdit}>
+                <Pencil className="size-4" />
+                Edit department
+              </Button>
+            )}
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -434,6 +682,7 @@ function DepartmentCard({
   multiBranch,
   canEdit,
   canManage,
+  onOpen,
   onEdit,
   onArchive,
   onRestore,
@@ -442,6 +691,7 @@ function DepartmentCard({
   multiBranch: boolean;
   canEdit: boolean;
   canManage: boolean;
+  onOpen: () => void;
   onEdit: () => void;
   onArchive: () => void;
   onRestore: () => void;
@@ -449,13 +699,21 @@ function DepartmentCard({
   return (
     <ClickableCard
       label={`Open ${dept.name}`}
-      // Edit is what a card press means here: the drawer IS the detail view.
-      onOpen={canEdit ? onEdit : () => {}}
+      onOpen={onOpen}
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h5 className="truncate text-base font-medium text-black-01">{dept.name}</h5>
-          <p className="text-xs text-gray-05">{dept.code}</p>
+        <div className="flex min-w-0 items-start gap-3">
+          <span className="grid size-9 shrink-0 place-content-center rounded-md bg-primary/10 text-primary">
+            <Layers className="size-4.5" />
+          </span>
+          <div className="min-w-0 pt-0.5">
+            <h5 className="text-pretty text-base font-semibold leading-5 text-black-01">
+              {dept.name}
+            </h5>
+            <p className="mt-0.5 text-xs font-medium uppercase tracking-wide text-gray-05">
+              {dept.code}
+            </p>
+          </div>
         </div>
         <div className="inline-flex shrink-0 items-center gap-1.5">
           <Badge
@@ -466,44 +724,48 @@ function DepartmentCard({
           </Badge>
           {(canEdit || canManage) && (
             <CardActions>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  aria-label={`Actions for ${dept.name}`}
-                  className="grid size-6 place-content-center rounded-full text-gray-06 hover:bg-gray-04"
-                >
-                  <span className="text-lg leading-none">⋯</span>
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                {canEdit && (
-                  <DropdownMenuItem onClick={onEdit}>
-                    <Pencil className="size-4" />
-                    Edit
-                  </DropdownMenuItem>
-                )}
-                {canEdit && dept.is_active && (
-                  <DropdownMenuItem onClick={onArchive}>
-                    <Archive className="size-4" />
-                    Archive
-                  </DropdownMenuItem>
-                )}
-                {canEdit && !dept.is_active && (
-                  <DropdownMenuItem onClick={onRestore}>
-                    <RotateCcw className="size-4" />
-                    Restore
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label={`Actions for ${dept.name}`}
+                    className="grid size-6 place-content-center rounded-full text-gray-06 hover:bg-gray-04"
+                  >
+                    <span className="text-lg leading-none">⋯</span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  {canEdit && (
+                    <DropdownMenuItem onClick={onEdit}>
+                      <Pencil className="size-4" />
+                      Edit
+                    </DropdownMenuItem>
+                  )}
+                  {canManage && dept.is_active && (
+                    <DropdownMenuItem onClick={onArchive}>
+                      <Archive className="size-4" />
+                      Archive
+                    </DropdownMenuItem>
+                  )}
+                  {canManage && !dept.is_active && (
+                    <DropdownMenuItem onClick={onRestore}>
+                      <RotateCcw className="size-4" />
+                      Restore
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </CardActions>
           )}
         </div>
       </div>
 
+      <p className="mt-3 line-clamp-2 min-h-10 text-sm leading-5 text-gray-05">
+        {dept.description?.trim() || "No description has been added yet."}
+      </p>
+
       {multiBranch && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-gray-05">
+        <div className="mt-3 flex items-center gap-1.5 text-xs text-gray-05">
           <Pin className="size-3 shrink-0" />
           <ScopeCell label={dept.scope_label} shared={dept.branch == null} />
         </div>
@@ -511,20 +773,34 @@ function DepartmentCard({
 
       <hr className="my-3 border-white-02" />
 
-      <div className="flex items-center justify-between px-1">
+      <div className="grid grid-cols-2 divide-x divide-border">
         <Stat label="Programmes" value={dept.program_count} />
-        <Stat label="Subjects" value={dept.subject_count} />
+        <Stat label="Subjects" value={dept.subject_count} className="pl-4" />
+      </div>
+
+      <div className="mt-3 flex items-center justify-end border-t border-white-02 pt-3">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+          View details
+          <ChevronRight className="size-3.5" />
+        </span>
       </div>
     </ClickableCard>
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: number;
+  className?: string;
+}) {
   return (
-    <div>
+    <div className={className}>
       <p className="text-xs text-gray-05">{label}</p>
       <p className="text-lg font-semibold text-black-01">{value}</p>
     </div>
   );
 }
-
