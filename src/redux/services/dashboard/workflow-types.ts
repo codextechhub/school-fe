@@ -814,3 +814,8 @@ export interface DynamicRolePreviewResult {
 }
 
 export type DynamicRolesResponse = PaginatedResponse<DynamicRole>;
+
+/** Whether a school's approvals notify anybody at all. One answer per school. */
+export interface WorkflowNotificationSetting {
+  enabled: boolean;
+}

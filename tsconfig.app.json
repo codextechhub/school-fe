@@ -73,6 +73,12 @@
       "@/pages/protected/workflow/approver-groups/*": [
             "./node_modules/@xvs/finance/src/pages/workflow/approver-groups/*"
       ],
+      "@/pages/protected/workflow/notifications": [
+            "./node_modules/@xvs/finance/src/pages/workflow/notifications"
+      ],
+      "@/pages/protected/workflow/notifications/*": [
+            "./node_modules/@xvs/finance/src/pages/workflow/notifications/*"
+      ],
       "@/pages/protected/workflow/templates": [
             "./node_modules/@xvs/finance/src/pages/workflow/templates"
       ],

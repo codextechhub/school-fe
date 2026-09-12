@@ -164,6 +164,8 @@ export const routesPath = {
       MY_SUBMISSIONS: "/workflow/my-submissions",
       DELEGATIONS: "/workflow/delegations",
       APPROVER_GROUPS: "/workflow/approver-groups",
+      // One switch for the school: whether approvals write to anybody.
+      NOTIFICATIONS: "/workflow/notifications",
       TEMPLATES: "/workflow/templates",
       TEMPLATE_NEW: "/workflow/templates/new",
       TEMPLATE_DETAIL: "/workflow/templates/:id",

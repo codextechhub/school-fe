@@ -18,6 +18,7 @@ import type {
   DynamicRoleFields,
   DynamicRolePreviewPayload,
   DynamicRolePreviewResult,
+  WorkflowNotificationSetting,
   DynamicRolesResponse,
   DynamicRoleWritePayload,
   PendingApprovalsResponse,
@@ -229,6 +230,21 @@ export const workflowApi = baseApi.injectEndpoints({
     previewDynamicRole: builder.mutation<DynamicRolePreviewResult, DynamicRolePreviewPayload>({
       query: (body) => ({ url: `/workflow/dynamic-roles/preview/`, method: "POST", body }),
       extraOptions: { silent: true },
+    }),
+
+    // The school's own switch: whether its approvals tell anybody anything.
+    // Read on template view, set on template manage - the workflow keys a
+    // school already holds, since config.value.* belongs to Codex alone.
+    getWorkflowNotificationSetting: builder.query<WorkflowNotificationSetting, void>({
+      query: () => ({ url: `/workflow/notification-settings/`, method: "GET" }),
+      providesTags: ["WorkflowNotificationSetting"],
+    }),
+
+    setWorkflowNotificationSetting: builder.mutation<WorkflowNotificationSetting, boolean>({
+      query: (enabled) => ({
+        url: `/workflow/notification-settings/`, method: "PATCH", body: { enabled },
+      }),
+      invalidatesTags: ["WorkflowNotificationSetting"],
     }),
 
     // ── Stage approver overrides ────────────────────────────────────────────
@@ -443,6 +459,8 @@ export const {
   useUpdateDynamicRoleMutation,
   useDeleteDynamicRoleMutation,
   usePreviewDynamicRoleMutation,
+  useGetWorkflowNotificationSettingQuery,
+  useSetWorkflowNotificationSettingMutation,
   useGetStageApproverOverridesQuery,
   useCreateStageApproverOverrideMutation,
   useDeleteStageApproverOverrideMutation,

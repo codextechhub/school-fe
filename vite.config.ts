@@ -43,6 +43,7 @@ const packageAlias: { find: string; replacement: string }[] = [
   { find: "@/pages/protected/workflow/my-submissions", replacement: pkg("src/pages/workflow/my-submissions") },
   { find: "@/pages/protected/workflow/instances", replacement: pkg("src/pages/workflow/instances") },
   { find: "@/pages/protected/workflow/approver-groups", replacement: pkg("src/pages/workflow/approver-groups") },
+  { find: "@/pages/protected/workflow/notifications", replacement: pkg("src/pages/workflow/notifications") },
   { find: "@/pages/protected/workflow/templates", replacement: pkg("src/pages/workflow/templates") },
   { find: "@/redux/services/workflow", replacement: pkg("src/redux/services/workflow") },
   { find: "@/pages/protected/workflow/delegations", replacement: pkg("src/pages/workflow/delegations") },

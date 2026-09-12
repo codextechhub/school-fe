@@ -11,6 +11,9 @@ const MySubmissions = lazy(() => import("@/pages/protected/workflow/my-submissio
 const SubmissionDetail = lazy(() => import("@/pages/protected/workflow/my-submissions/submission-detail"));
 const Delegations = lazy(() => import("@/pages/protected/workflow/delegations"));
 const ApproverGroups = lazy(() => import("@/pages/protected/workflow/approver-groups"));
+const WorkflowNotifications = lazy(
+  () => import("@/pages/protected/workflow/notifications"),
+);
 const Templates = lazy(() => import("@/pages/protected/workflow/templates"));
 const TemplateDetail = lazy(() => import("@/pages/protected/workflow/templates/template-detail"));
 const TemplateBuilder = lazy(() => import("@/pages/protected/workflow/templates/template-builder"));
@@ -32,6 +35,7 @@ export const workflowRoutes = [
   { path: W.SUBMISSION_DETAIL, Component: SubmissionDetail, handle: { title: "Submission", hasBack: true } satisfies DashboardHandle },
   { path: W.DELEGATIONS, Component: Delegations, handle: { title: "Delegations" } satisfies DashboardHandle },
   { path: W.APPROVER_GROUPS, Component: ApproverGroups, handle: { title: "Approvers" } satisfies DashboardHandle },
+  { path: W.NOTIFICATIONS, Component: WorkflowNotifications, handle: { title: "Notifications" } satisfies DashboardHandle },
   // No TEMPLATE_NEW. A school adjusts the approval paths it was given rather
   // than authoring new ones, so the builder is reachable only through EDIT, on
   // a template that already exists. See createsWorkflowTemplates in xvs-host.

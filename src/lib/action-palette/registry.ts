@@ -661,6 +661,16 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.WORKFLOW.APPROVER_GROUPS },
   },
   {
+    id: "view-workflow-notifications",
+    label: "View workflow notifications",
+    aliases: ["approval emails", "notify approvers", "stop notifications"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "view",
+    gate: { perm: P.MANAGE_WORKFLOW_TEMPLATES },
+    run: { to: R.WORKFLOW.NOTIFICATIONS },
+  },
+  {
     id: "view-dynamic-roles",
     label: "View Dynamic Roles",
     aliases: ["approval rules", "role chosen by document", "approval thresholds"],
