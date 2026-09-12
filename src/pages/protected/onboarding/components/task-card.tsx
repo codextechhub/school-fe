@@ -103,7 +103,7 @@ export function TaskCard({
             isDone
               ? "bg-green-01/10 text-green-01"
               : isSkipped
-                ? "bg-gray-05/10 text-gray-05"
+                ? "bg-gray-05/10 text-gray-06-text"
                 : "bg-pry-01 text-primary",
           )}
         >

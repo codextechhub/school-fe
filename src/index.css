@@ -126,7 +126,15 @@
   --color-gray-02: #B8BAB7;
   --color-gray-03: #F7F7F7;
   --color-gray-04: #F9F9F8;
-  --color-gray-05: #8F918F;
+  /* The grey almost all small text is written in, at 1,600-odd uses across the
+     app and @xvs/finance. WCAG AA asks 4.5:1 at this size; this measures 4.97:1
+     on white and 4.64:1 on gray-03, the lightest surface a card is drawn on, so
+     it holds wherever the text lands rather than only on the pure-white parts.
+     It shares a value with gray-06 because both are the lightest neutral that
+     still passes, not by accident.
+     Text on this colour's own 10% tint is the exception and wants
+     gray-06-text: the tint lifts the background to within 4.4:1 of this. */
+  --color-gray-05: #6F706F;
   --color-gray-06: #6F706F;
   --color-yellow-01: #F59E0B;
   --color-green-01: #16A34A;
