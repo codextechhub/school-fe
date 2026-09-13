@@ -18,6 +18,7 @@ import {
   type BackSpec,
   type HeaderOverride,
 } from "./dashboard-header";
+import { useRouteAcknowledgement } from "@/hooks/use-route-acknowledgement";
 import { useSessionTimeout } from "@/hooks/use-session-timeout";
 import { useTokenRefresh } from "@/hooks/use-token-refresh";
 import { SessionTimeoutModal } from "@/components/session-timeout-modal";
@@ -225,6 +226,7 @@ export default function DashboardLayout() {
   const pageIsClosed = tenantIsPending && !onboardingRoute && !pendingSurface;
 
   useTokenRefresh();
+  useRouteAcknowledgement();
   const { handleLogout, isLoggingOut } = useLogout();
   const { isOpen: openLogout, toggleClick: toggleLogout } = useToggleModal(false);
 

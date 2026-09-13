@@ -15,6 +15,14 @@ export interface NotificationItem {
   created_at: string;
 }
 
+/** What `/v1/notify/acknowledge-route/` reports about one navigation. */
+export interface RouteAcknowledgement {
+  /** Rows this call cleared. Zero on most navigations, and on a double read. */
+  updated_count: number;
+  /** The reader's unread in-app total once the clearing is done. */
+  unread_count: number;
+}
+
 /**
  * The notification bell and its tray.
  *
@@ -79,6 +87,56 @@ export const notificationsApi = baseApi.injectEndpoints({
       extraOptions: { silent: true },
       invalidatesTags: ["Notifications"],
     }),
+
+    /**
+     * Name the route the reader just opened, so the post about that record
+     * stops sitting in the bell.
+     *
+     * Fired on every pathname change, and most of them clear nothing: the
+     * backend matches only a path that names one record (an export run, a
+     * ticket, an approval, an import batch), so the tray is refetched only when
+     * `updated_count` says a row actually moved.
+     *
+     * `unread_count` is the authority on the badge, and `updated_count` is not.
+     * Reading a record through its own endpoint clears the rows pointing at it
+     * server-side, and that GET usually lands microseconds before this call, so
+     * this one updates nothing while the badge still shows the pre-read number.
+     * The count travels back with the response precisely so the bell can be
+     * corrected straight away rather than at the next sixty second poll.
+     */
+    acknowledgeNotificationRoute: builder.mutation<
+      Envelope<RouteAcknowledgement>,
+      { path: string }
+    >({
+      query: (body) => ({
+        url: `/notify/acknowledge-route/`,
+        method: "POST",
+        body,
+      }),
+      // Background work on behalf of a reader who asked for a screen, not for
+      // this: a failure belongs in the console, never in a toast.
+      extraOptions: { silent: true },
+      invalidatesTags: (result, error) =>
+        !error && result?.data?.updated_count ? ["Notifications"] : [],
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          const unread = data?.data?.unread_count;
+          if (typeof unread !== "number") return;
+          dispatch(
+            notificationsApi.util.updateQueryData(
+              "getUnreadNotificationCount",
+              undefined,
+              (draft) => {
+                draft.data.unread_count = unread;
+              },
+            ),
+          );
+        } catch {
+          // A count that never arrived leaves the badge to the next poll.
+        }
+      },
+    }),
   }),
 });
 
@@ -87,4 +145,5 @@ export const {
   useGetNotificationsQuery,
   useMarkNotificationsReadMutation,
   useMarkAllNotificationsReadMutation,
+  useAcknowledgeNotificationRouteMutation,
 } = notificationsApi;

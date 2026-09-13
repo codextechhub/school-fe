@@ -30,6 +30,20 @@ import { baseApi } from "@/redux/services/base-api";
 // requests in flight and only completes once that reaches zero and stays there.
 // ─────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Requests the bar must not wait on.
+ *
+ * The route acknowledgement fires on the same pathname change that raises the
+ * bar, and it is nobody's screen: it clears the notification about the record
+ * being opened. Counted, it would hold the bar up after the page had finished
+ * arriving, reporting a wait the reader is not having.
+ *
+ * The bell's own polls are deliberately absent. `getNotifications` serves the
+ * tray AND the notifications page, so excluding it would put the bar away while
+ * that page was still empty.
+ */
+const BACKGROUND_ENDPOINTS = new Set(["acknowledgeNotificationRoute"]);
+
 /** Below this, a screen already felt instant and a bar is just a flicker. */
 const MIN_VISIBLE_MS = 220;
 /** How long the request count must stay at zero before the screen counts as settled. */
@@ -46,19 +60,22 @@ export function RouteProgress() {
   // How many requests are in flight. A plain number, so this re-renders when
   // the count changes and not on every unrelated store write.
   const inFlight = useAppSelector((state) => {
+    type Entry = { status?: string; endpointName?: string } | undefined;
     const slice = state[baseApi.reducerPath] as
-      | { queries?: Record<string, { status?: string } | undefined>;
-          mutations?: Record<string, { status?: string } | undefined> }
+      | { queries?: Record<string, Entry>; mutations?: Record<string, Entry> }
       | undefined;
     if (!slice) return 0;
-    let n = 0;
-    for (const key in slice.queries) {
-      if (slice.queries[key]?.status === "pending") n += 1;
-    }
-    for (const key in slice.mutations) {
-      if (slice.mutations[key]?.status === "pending") n += 1;
-    }
-    return n;
+    const counts = (entries: Record<string, Entry> | undefined) => {
+      let n = 0;
+      for (const key in entries) {
+        const entry = entries[key];
+        if (entry?.status !== "pending") continue;
+        if (BACKGROUND_ENDPOINTS.has(entry.endpointName ?? "")) continue;
+        n += 1;
+      }
+      return n;
+    };
+    return counts(slice.queries) + counts(slice.mutations);
   });
 
   // ── start on a route change ───────────────────────────────────────────────
