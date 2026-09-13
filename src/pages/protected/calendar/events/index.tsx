@@ -1,12 +1,12 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, Pencil, Plus, Search, Trash2, Eye } from "lucide-react";
+import { CalendarDays, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
+import { Panel } from "@/components/custom/surface";
+import { PageShell } from "@/components/layout/page-shell";
 import PromptModal from "@/components/modal/prompt-modal";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { P } from "@/permissions";
@@ -28,17 +28,13 @@ import type {
   CalendarEvent,
   CalendarEventWrite,
 } from "@/redux/services/calendar/calendar-types";
-import { eventVariant } from "../components/event-kind";
-import { formatRange } from "../components/dates";
-import { RowActions } from "../components/row-actions";
-import { audienceLine } from "../components/audience";
 import { warnAboutClashes } from "../components/clash-toast";
 import { eventDeleteBody } from "../components/event-delete";
 import { blankEvent, draftFrom } from "../components/event-draft";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { EventFilters } from "./event-filters";
 import { BLANK_FACETS, type EventFacets } from "./event-facets";
-import { PageShell } from "@/components/layout/page-shell";
+import { EventList } from "./event-list";
 import { useActionParam } from "@/hooks/use-action-param";
 
 /**
@@ -173,31 +169,16 @@ export default function CalendarEvents() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-center gap-2.5">
-        <div className="relative min-w-0 flex-1 basis-52">
-          <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
-          <input
-            value={facets.search}
-            onChange={(e) => {
-              setFacets((f) => ({ ...f, search: e.target.value }));
-              setPage(1);
-            }}
-            placeholder="Search events"
-            aria-label="Search events"
-            className="h-9 w-full rounded-full border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
-          />
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
+            Events
+          </h1>
+          <p className="mt-1 text-sm text-gray-01">
+            Plan holidays, breaks, exam periods and school events
+            {sessionName ? ` for ${sessionName}` : ""}.
+          </p>
         </div>
-
-        <EventFilters
-          facets={facets}
-          terms={terms}
-          showScope={multiBranch}
-          onChange={(next) => {
-            setFacets(next);
-            setPage(1);
-          }}
-        />
-
         <PermissionGate
           permission={P.CREATE_CALENDAR_EVENT}
           disabled={readOnlyYear}
@@ -212,8 +193,43 @@ export default function CalendarEvents() {
         </PermissionGate>
       </div>
 
+      <Panel as="section" className="p-4 sm:p-5">
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+          <div className="relative min-w-0 flex-1 basis-60">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
+            <input
+              value={facets.search}
+              onChange={(e) => {
+                setFacets((current) => ({
+                  ...current,
+                  search: e.target.value,
+                }));
+                setPage(1);
+              }}
+              placeholder="Search events"
+              aria-label="Search events"
+              className="h-10 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
+            />
+          </div>
+
+          <EventFilters
+            facets={facets}
+            terms={terms}
+            showScope={multiBranch}
+            onChange={(next) => {
+              setFacets(next);
+              setPage(1);
+            }}
+          />
+        </div>
+      </Panel>
+
       {isLoading ? (
-        <Skeleton className="h-80 w-full rounded-md" />
+        <div className="grid gap-2.5">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-32 w-full rounded-md" />
+          ))}
+        </div>
       ) : !events.length ? (
         <OutlinedNotice
           icon={CalendarDays}
@@ -231,82 +247,42 @@ export default function CalendarEvents() {
           onAction={filtered ? clearFilters : () => openForm(null)}
         />
       ) : (
-        <CustomTable
-          tableHeaderList={[
-            "Event",
-            "Type",
-            "Dates",
-            "Term",
-            ...(multiBranch ? ["Scope"] : []),
-            "Action",
-          ]}
-          defaultBodyList={events}
-          tableBodyList={events.map((event) => ({
-            Event: (
-              <span className="flex min-w-0 flex-col gap-0.5">
-                <span className="truncate font-medium text-black-01">
-                  {event.name}
-                </span>
-                {event.closes_school && (
-                  <span className="text-[11px] text-gray-05">School closed</span>
-                )}
-              </span>
-            ),
-            Type: (
-              <Badge
-                variant={eventVariant(event.event_type)}
-                className="rounded-full py-0 text-[11px]"
+        <section className="min-w-0" aria-labelledby="event-list-heading">
+          <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2
+                id="event-list-heading"
+                className="text-[15px] font-semibold text-black-01"
               >
-                {event.type_label}
-              </Badge>
-            ),
-            Dates: formatRange(event.start_date, event.end_date),
-            Term: event.term ? (
-              event.term.name
-            ) : (
-              // Not an error, and not hidden. The event is still on the
-              // calendar; the hub raises an alert about it.
-              <span className="text-gray-05">Outside every term</span>
-            ),
-            ...(multiBranch
-              ? {
-                  Scope: <ScopeWithAudience event={event} />,
-                }
-              : {}),
-            Action: (
-              <RowActions
-                label={`Actions for ${event.name}`}
-                actions={[
-                  { label: "View details", icon: Eye, onSelect: () => setViewing(event) },
-                  canEdit && {
-                    label: "Edit",
-                    icon: Pencil,
-                    onSelect: () => openForm(event),
-                  },
-                  canDelete && {
-                    label: "Delete",
-                    icon: Trash2,
-                    destructive: true,
-                    onSelect: () => setConfirm(event),
-                  },
-                ]}
-              />
-            ),
-          }))}
-          onRowClick={(event: CalendarEvent) => event && setViewing(event)}
-          currentPage={pagination?.currentPage ?? 1}
-          totalPage={pagination?.totalPages ?? 1}
-          onPageChange={(next) => setPage(Number(next) || 1)}
-          emptyText="No events"
-        />
-      )}
+                School year events
+              </h2>
+              <p className="mt-0.5 text-xs text-gray-05">
+                {pagination?.totalItems ?? events.length}{" "}
+                {(pagination?.totalItems ?? events.length) === 1
+                  ? "event"
+                  : "events"}
+                {filtered
+                  ? " match these filters"
+                  : sessionName
+                    ? ` in ${sessionName}`
+                    : ""}
+              </p>
+            </div>
+          </div>
 
-      {events.length > 0 && (
-        <p className="text-xs text-gray-05">
-          {pagination?.totalItems ?? events.length}{" "}
-          {(pagination?.totalItems ?? events.length) === 1 ? "event" : "events"}
-          {filtered ? " match these filters" : ""}
-        </p>
+          <EventList
+            events={events}
+            multiBranch={multiBranch}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            page={pagination?.currentPage ?? 1}
+            totalPages={pagination?.totalPages ?? 1}
+            onOpen={setViewing}
+            onEdit={openForm}
+            onDelete={setConfirm}
+            onPageChange={setPage}
+          />
+        </section>
       )}
 
       <EventDrawer
@@ -348,29 +324,4 @@ export default function CalendarEvents() {
     </PageShell>
   );
 }
-
-/**
- * Where an event applies, and to whom.
- *
- * The audience line is the half the prototype had no room for, and leaving it
- * out is what made a narrowed closure read as a whole-branch one. It renders
- * only when the event IS narrowed - a Scope column where most rows say nothing
- * extra is a column where the narrowed ones stand out.
- */
-function ScopeWithAudience({ event }: { event: CalendarEvent }) {
-  const who = audienceLine(event.audience);
-  return (
-    <span className="flex min-w-0 flex-col gap-0.5">
-      {event.branch ? (
-        <span className="min-w-0 truncate">{event.scope_label}</span>
-      ) : (
-        <Badge variant="blue" className="h-fit w-fit rounded-full py-0 text-[11px]">
-          School-wide
-        </Badge>
-      )}
-      {who && <span className="truncate text-[11px] text-gray-05">{who}</span>}
-    </span>
-  );
-}
-
 

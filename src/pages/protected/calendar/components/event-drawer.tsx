@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Loader2 } from "lucide-react";
+import {
+  BookOpen,
+  CalendarDays,
+  CalendarOff,
+  Loader2,
+  MapPin,
+  UsersRound,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -462,96 +469,134 @@ export function EventDetail({
     <Sheet open={open && !!event} onOpenChange={(next) => !next && onClose()}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-md"
+        className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-lg"
       >
         <SheetHeader className="border-b border-border px-5 pb-4 pt-5 pr-12 text-left">
-          <SheetTitle className="font-mont text-base text-pretty">
+          <SheetTitle className="font-mont text-lg text-pretty">
             {event?.name}
           </SheetTitle>
           <SheetDescription className="text-[13px] text-gray-01">
-            {event && formatRange(event.start_date, event.end_date)}
+            Event details
           </SheetDescription>
         </SheetHeader>
 
         {event && (
           <ScrollArea className="flex-1" viewportClassName="px-5 py-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant={eventVariant(event.event_type)}
-                className="rounded-full py-0 text-[11px]"
-              >
-                {event.type_label}
-              </Badge>
-              {multiBranch && event.scope_label && (
-                <Badge
-                  variant={event.branch ? "inactive" : "blue"}
-                  className="rounded-full py-0 text-[11px]"
-                >
-                  {event.scope_label}
-                </Badge>
-              )}
+            <div className="rounded-lg border border-border bg-pry-01/40 p-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="grid size-10 shrink-0 place-content-center rounded-full bg-white text-primary">
+                  <CalendarDays className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-gray-06">
+                    Event dates
+                  </p>
+                  <p className="text-sm font-semibold text-black-01">
+                    {formatRange(event.start_date, event.end_date)}
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <Badge
+                      variant={eventVariant(event.event_type)}
+                      className="rounded-full py-0 text-[11px]"
+                    >
+                      {event.type_label}
+                    </Badge>
+                    {event.closes_school && (
+                      <Badge variant="red" className="rounded-full py-0 text-[11px]">
+                        <CalendarOff className="size-3" /> School closed
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <dl className="mt-4 grid gap-3">
-              <Row
-                label="Term"
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <DetailFact
+                icon={BookOpen}
+                label="School term"
                 value={event.term?.name ?? "Outside every term"}
                 muted={!event.term}
               />
-              <Row
-                label="School closed"
-                value={event.closes_school ? "Yes" : "No"}
-              />
-              <Row
+              {multiBranch && (
+                <DetailFact
+                  icon={MapPin}
+                  label="Applies to"
+                  value={event.scope_label ?? (event.branch_name || "School-wide")}
+                />
+              )}
+              <DetailFact
+                icon={UsersRound}
                 label="Who it covers"
                 value={
                   event.audience?.length
-                    ? event.audience.map((a) => a.name).join(", ")
+                    ? event.audience.map((audience) => audience.name).join(", ")
                     : "Everybody"
                 }
               />
-              {event.description && (
-                <Row label="Description" value={event.description} />
-              )}
-            </dl>
+              <DetailFact
+                icon={CalendarOff}
+                label="Teaching day"
+                value={event.closes_school ? "No, the school is closed" : "Yes"}
+              />
+            </div>
+
+            {event.description && (
+              <div className="mt-4 rounded-lg border border-border bg-white-05 p-4">
+                <p className="text-sm font-semibold text-black-01">
+                  Event description
+                </p>
+                <p className="mt-2 text-sm leading-6 text-gray-06 text-pretty">
+                  {event.description}
+                </p>
+              </div>
+            )}
           </ScrollArea>
         )}
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
           <Button variant="ghost" onClick={onClose}>
             Close
           </Button>
-          {onEdit && <Button onClick={onEdit}>Edit</Button>}
+          {onEdit && <Button onClick={onEdit}>Edit event</Button>}
         </div>
       </SheetContent>
     </Sheet>
   );
 }
 
-function Row({
+function DetailFact({
+  icon: Icon,
   label,
   value,
   muted,
 }: {
+  icon: typeof CalendarDays;
   label: string;
   value: string;
   muted?: boolean;
 }) {
   return (
-    <div className="grid grid-cols-[7.5rem_1fr] gap-3 border-b border-white-02 pb-3 last:border-0">
-      <dt className="text-[13px] text-gray-05">{label}</dt>
-      <dd
+    <div className="min-w-0 rounded-lg border border-border p-3">
+      <span className="flex items-center gap-2 text-xs font-semibold text-gray-06">
+        <Icon className="size-3.5 text-primary" /> {label}
+      </span>
+      <p
         className={cn(
-          "min-w-0 text-sm text-pretty",
+          "mt-2 text-sm text-pretty",
           muted ? "text-gray-05" : "text-black-01",
         )}
       >
         {value}
-      </dd>
+      </p>
     </div>
   );
 }
 
+/**
+ * Scope choices stay as real buttons because they change the write target,
+ * while the branch picker below selects the exact branch.
+ */
 function ScopeOption({
   on,
   label,

@@ -76,7 +76,7 @@ export function EventFilters({
     <>
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
-          <Button variant="outline" className="shrink-0 text-sm">
+          <Button variant="outline" className="h-10 shrink-0 rounded-lg text-sm">
             <SlidersHorizontal /> Filters
             {active > 0 && (
               <span className="ml-1 grid size-4.5 place-content-center rounded-full bg-primary text-[10px] font-medium text-white">
