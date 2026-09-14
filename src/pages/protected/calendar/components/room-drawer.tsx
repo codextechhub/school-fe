@@ -13,7 +13,6 @@ import {
 import { SearchSelect } from "@/components/custom/search-select";
 import { Field } from "@/pages/protected/academics/components/entity-drawer";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import type { RoomWrite } from "@/redux/services/calendar/calendar-types";
@@ -27,7 +26,7 @@ import { ProblemSummary } from "./problem-summary";
  *
  * **The branch is required and can never be "the whole school".** It is the one
  * non-null branch column in the schools product, and the reason is physical: a
- * room is a place, and a place is at one site. So this drawer has a branch
+ * room is a place, and a place belongs to one branch. So this drawer has a branch
  * PICKER where the event drawer has a whole-school / one-branch choice, and no
  * third option to leave out.
  *
@@ -152,82 +151,88 @@ export function RoomDrawer({
             {editing ? `Edit ${initial.name}` : "Add room"}
           </SheetTitle>
           <SheetDescription className="text-[13px] text-gray-01 text-pretty">
-            A place a lesson or an examination happens in. Rooms are what make a
-            double-booking detectable.
+            Enter the room details used for lessons and examinations.
           </SheetDescription>
         </SheetHeader>
 
         <ScrollArea className="flex-1" viewportClassName="px-5 py-5">
-          <Field
-            label="Room name *"
-            error={errorFor("name") || (refusal?.field === "name" ? refusal.message : "")}
-          >
-            <Input
-              ref={register("name")}
-              value={draft.name}
-              onChange={(e) => patch({ name: e.target.value })}
-              onBlur={leave("name")}
-              placeholder="e.g. Block A Room 1"
-              aria-invalid={invalid("name") || (refusal?.field === "name" || undefined)}
-            />
-          </Field>
-
-          <div className="mt-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field
+              label="Name *"
+              error={
+                errorFor("name") ||
+                (refusal?.field === "name" ? refusal.message : "")
+              }
+            >
+              <Input
+                ref={register("name")}
+                value={draft.name}
+                onChange={(event) => patch({ name: event.target.value })}
+                onBlur={leave("name")}
+                placeholder="e.g. Science Laboratory"
+                aria-invalid={
+                  invalid("name") ||
+                  (refusal?.field === "name" || undefined)
+                }
+              />
+            </Field>
             <Field
               label="Code"
               error={refusal?.field === "code" ? refusal.message : ""}
             >
               <Input
                 value={draft.code}
-                onChange={(e) => patch({ code: e.target.value.toUpperCase() })}
-                placeholder="e.g. A-1"
+                onChange={(event) =>
+                  patch({ code: event.target.value.toUpperCase() })
+                }
+                placeholder="e.g. LAB-01"
                 aria-invalid={refusal?.field === "code" || undefined}
               />
             </Field>
-            <p className="mt-1 text-xs text-gray-05 text-pretty">
-              Optional, and unique across the whole school - unlike the name,
-              which only has to be unique within its branch.
-            </p>
           </div>
 
-          <div className="mt-4">
-            <Field label="Type *">
-              <div className="flex flex-wrap gap-1.5">
-                {ROOM_KINDS.map((kind) => {
-                  const on = draft.room_type === kind.value;
-                  // Icon AND label here, deliberately. This is where somebody
-                  // learns which mark means what; the card can be terse
-                  // afterwards because this was not.
-                  return (
-                    <button
-                      key={kind.value}
-                      type="button"
-                      onClick={() => patch({ room_type: kind.value })}
-                      aria-pressed={on}
-                      className={cn(
-                        "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs",
-                        on
-                          ? "border-primary bg-pry-01 font-medium text-primary"
-                          : "border-white-02 bg-white text-gray-06 hover:bg-gray-04",
-                      )}
-                    >
-                      <kind.icon className="size-3.5" />
-                      {kind.label}
-                    </button>
-                  );
-                })}
-              </div>
+          <p className="mt-1.5 text-xs text-gray-05 text-pretty">
+            The code is optional and must be unique across the school.
+          </p>
+
+          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Room type *">
+              <SearchSelect
+                aria-label="Room type"
+                value={draft.room_type}
+                clearable={false}
+                placeholder="Select room type"
+                onChange={(event) =>
+                  patch({
+                    room_type: event.target.value as RoomDraft["room_type"],
+                  })
+                }
+                options={ROOM_KINDS.map((kind) => ({
+                  value: kind.value,
+                  label: kind.label,
+                }))}
+              />
             </Field>
-            <p className="mt-1.5 text-xs text-gray-05 text-pretty">
-              A label, not a rule. Nothing refuses a Physics lesson in a
-              classroom, because nothing records which subject needs which kind
-              of room.
-            </p>
+            <Field label="Capacity">
+              <Input
+                type="number"
+                min={1}
+                value={draft.capacity}
+                onChange={(event) => patch({ capacity: event.target.value })}
+                placeholder="e.g. 36"
+              />
+            </Field>
           </div>
+
+          <p className="mt-1.5 text-xs text-gray-05 text-pretty">
+            Capacity is guidance for scheduling and is not enforced automatically.
+          </p>
 
           {multiBranch && (
             <div className="mt-5 border-t border-white-02 pt-4">
-              <p className="mb-2 text-[13px] font-medium text-gray-06">Branch *</p>
+              <p className="mb-2 text-[13px] font-medium text-gray-06">
+                Applies to *
+              </p>
               {tiedLock ? (
                 <div className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5">
                   <p className="text-sm text-black-01">{tiedLock.name}</p>
@@ -266,22 +271,7 @@ export function RoomDrawer({
             </div>
           )}
 
-          <div className="mt-5 border-t border-white-02 pt-4">
-            <Field label="Capacity">
-              <Input
-                type="number"
-                min={1}
-                value={draft.capacity}
-                onChange={(e) => patch({ capacity: e.target.value })}
-                placeholder="Optional"
-              />
-            </Field>
-            <p className="mt-1 text-xs text-gray-05 text-pretty">
-              A note for whoever is scheduling. Nothing checks it.
-            </p>
-          </div>
-
-          <label className="mt-4 flex cursor-pointer items-start gap-2.5">
+          <label className="mt-5 flex cursor-pointer items-start gap-2.5 rounded-lg border border-border p-3.5">
             <input
               type="checkbox"
               checked={draft.is_active}
@@ -290,7 +280,7 @@ export function RoomDrawer({
             />
             <span className="min-w-0">
               <span className="block text-[13px] font-medium text-gray-06">
-                Active
+                Active room
               </span>
               <span className="block text-xs text-gray-05 text-pretty">
                 An inactive room stops appearing when anyone picks a room.
@@ -319,7 +309,7 @@ export function RoomDrawer({
                 dead control with the reason removed. */}
             <Button onClick={save} disabled={(editing && !dirty) || saving}>
               {saving && <Loader2 className="size-4 animate-spin" />}
-              {editing ? "Save changes" : "Add room"}
+              {editing ? "Save changes" : "Save room"}
             </Button>
           </div>
         </div>
