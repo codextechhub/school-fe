@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import {
   AlertTriangle,
   Bell,
@@ -70,8 +70,8 @@ import { PageShell } from "@/components/layout/page-shell";
 export default function ClassTimetables() {
   const { lens, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
+  const [params, setParams] = useSearchParams();
 
-  const [classId, setClassId] = useState<number | null>(null);
   const [lesson, setLesson] = useState<LessonTarget | null>(null);
   const [dupOpen, setDupOpen] = useState(false);
   const [confirm, setConfirm] = useState<"clear" | null>(null);
@@ -82,8 +82,18 @@ export default function ClassTimetables() {
 
   // The first class the caller can see, until one is picked. A screen that
   // opens on "choose a class" makes a reader do a step the server can do.
-  const current = classId ?? classes[0]?.id ?? null;
+  const requestedClass = Number(params.get("class"));
+  const current =
+    classes.find((schoolClass) => schoolClass.id === requestedClass)?.id ??
+    classes[0]?.id ??
+    null;
   const currentRow = classes.find((c) => c.id === current) ?? null;
+
+  const setClassId = (id: number) => {
+    const next = new URLSearchParams(params);
+    next.set("class", String(id));
+    setParams(next, { replace: true });
+  };
 
   const { data: gridData, isLoading: gridLoading } = useGetClassTimetableQuery(
     current ? { id: current, session: lens.session } : { id: 0 },

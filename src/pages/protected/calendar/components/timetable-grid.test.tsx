@@ -134,4 +134,29 @@ describe("timetable grid", () => {
     expect(container.querySelector('[aria-label="Fill Period 1"]')).toBeNull();
     expect(container.querySelector('button[aria-label="Mathematics, Period 2"]')).toBeNull();
   });
+
+  it("opens a teacher's filled class without making free periods clickable", () => {
+    const onCellClick = vi.fn();
+    act(() => {
+      root.render(
+        <TimetableGrid
+          days={days}
+          warnings={[]}
+          variant="teacher"
+          emptyLabel="Free"
+          onCellClick={onCellClick}
+        />,
+      );
+    });
+
+    expect(container.querySelector('[aria-label="Fill Period 1"]')).toBeNull();
+    act(() =>
+      container
+        .querySelector<HTMLButtonElement>(
+          '[aria-label^="Open JSS1 A timetable"]',
+        )
+        ?.click(),
+    );
+    expect(onCellClick).toHaveBeenCalledTimes(1);
+  });
 });

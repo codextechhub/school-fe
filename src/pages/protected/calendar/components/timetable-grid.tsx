@@ -104,7 +104,9 @@ export function TimetableGrid({
                     clashed={clashed}
                     emptyLabel={emptyLabel}
                     onClick={
-                      onCellClick && cell
+                      onCellClick &&
+                      cell &&
+                      (variant === "class" || cell.slot)
                         ? () => onCellClick(cell, dayIndex)
                         : undefined
                     }
@@ -158,7 +160,7 @@ function Cell({
       // "Add" is an instruction, not content: on paper there is nothing to
       // press, and a grid of the word repeated forty times reads as data.
       <span className="print-blank inline-flex items-center gap-1 text-[11px] font-medium text-gray-05/70">
-        <Plus className="print-hide size-3.5" />
+        {onClick && <Plus className="print-hide size-3.5" />}
         {emptyLabel}
       </span>
     );
@@ -216,7 +218,11 @@ function Cell({
     <button
       type="button"
       onClick={onClick}
-      aria-label={`${slot.subject_name}, ${cell.period_label}`}
+      aria-label={
+        variant === "teacher"
+          ? `Open ${slot.class_name} timetable for ${slot.subject_name}, ${cell.period_label}`
+          : `${slot.subject_name}, ${cell.period_label}`
+      }
       className={cn(
         shell,
         "transition-colors hover:bg-pry-01/40 active:bg-pry-01/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",

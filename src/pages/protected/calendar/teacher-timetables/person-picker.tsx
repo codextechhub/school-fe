@@ -1,3 +1,5 @@
+import { Users } from "lucide-react";
+
 import type { TeacherRow } from "@/redux/services/calendar/calendar-types";
 import { RowPicker } from "../components/row-picker";
 
@@ -26,6 +28,8 @@ export function PersonPicker({
       current={current}
       searchPlaceholder="Search teachers"
       emptyText="No teacher matches that."
+      presentation="card"
+      icon={Users}
       subtitle={(t) =>
         `${t.lesson_count} lesson${t.lesson_count === 1 ? "" : "s"}${
           t.has_clash ? " · has a clash" : ""
