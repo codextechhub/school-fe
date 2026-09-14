@@ -1,22 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Check, GraduationCap } from "lucide-react";
+import { ArrowRight, Check, GraduationCap } from "lucide-react";
 
 import KpiCard from "@/components/custom/kpi-card";
 import PermissionGate from "@/components/custom/permission-gate";
-import { P } from "@/permissions";
-import { useStudentsLens } from "@/hooks/use-students-lens";
 import { Panel } from "@/components/custom/surface";
-
+import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
-import { PageShell } from "@/components/layout/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useStudentsLens } from "@/hooks/use-students-lens";
+import { P } from "@/permissions";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
-import { routesPath } from "@/routes/routesPath";
-import { cn } from "@/lib/utils";
-import { writeErrorMessage } from "@/utils/api-error";
 import { useGetSessionsQuery } from "@/redux/services/academics/academics-api";
 import {
   usePreviewPromotionMutation,
@@ -27,97 +23,125 @@ import type {
   PromotionOutcome,
   PromotionPlan,
 } from "@/redux/services/students/students-types";
+import { routesPath } from "@/routes/routesPath";
+import { writeErrorMessage } from "@/utils/api-error";
 
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { ClassGroups } from "./class-groups";
+import { reviewCounts } from "./promotion-model";
 import { OUTCOME, destinationOf } from "./outcome";
 
 const STEPS = ["Target year", "Review students", "Confirm", "Done"];
 
 /**
- * The end-of-session move.
+ * The end-of-session move from one school year into the next.
  *
- * **The preview is the server's, not ours.** It runs the same classification
- * the run does, so the overrides go to BOTH: counts computed here from the
- * override map would be a second opinion, and the number on the confirm step
- * has to be the number the run acts on. Every step that changes an override
- * re-previews rather than doing the arithmetic itself.
- *
- * **Nothing is silently skipped.** A student the run will not touch appears on
- * the exception list with the reason, and the reasons are the server's own
- * sentences - printed verbatim, because they say whose problem each one is.
- * Class-wide causes collapse to one row however many students they cover;
- * per-student causes get one each.
- *
- * **The target year is usually empty, and that is the normal case.** A school
- * copies its structure forward before promoting into it, so "there is no class
- * at the next level" is what this screen says most of the first time it is
- * opened - and it says where to go and fix it rather than showing a wall of
- * held students with no explanation.
+ * The server classifies the same student set during preview and execution.
+ * Overrides are sent to both calls so the confirm counts always describe the
+ * write that follows. A branch is the only optional scope accepted here; the
+ * selected directory year is not sent because promotion always starts from the
+ * active school year returned by the server.
  */
 export default function Promotion() {
-  const { lens, narrowed, label } = useStudentsLens();
+  const { branch, narrowed, label } = useStudentsLens();
+  return (
+    <PromotionWorkflow
+      key={branch ?? "all-branches"}
+      branch={branch}
+      narrowed={narrowed}
+      branchLabel={label}
+    />
+  );
+}
+
+function PromotionWorkflow({
+  branch,
+  narrowed,
+  branchLabel,
+}: {
+  branch?: number;
+  narrowed: boolean;
+  branchLabel: string;
+}) {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [target, setTarget] = useState("");
-  const [overrides, setOverrides] = useState<Record<string, PromotionOutcome>>(
-    {},
-  );
+  const [classFilter, setClassFilter] = useState("all");
+  const [overrides, setOverrides] = useState<Record<string, PromotionOutcome>>({});
   const [plan, setPlan] = useState<PromotionPlan | null>(null);
   const [done, setDone] = useState<PromotionBatch | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const previewSequence = useRef(0);
+  const pageTop = useRef<HTMLElement>(null);
 
-  const { data: sessionsData, isLoading: sessionsLoading } =
-    useGetSessionsQuery();
+  const { data: sessionsData, isLoading: sessionsLoading } = useGetSessionsQuery();
   const [preview, { isLoading: previewing }] = usePreviewPromotionMutation();
   const [run, { isLoading: running }] = useRunPromotionMutation();
 
   const sessions = useMemo(() => sessionsData?.data ?? [], [sessionsData]);
-  // A promotion moves INTO a year that has not started. The active year is
-  // where everyone already is, and an archived one refuses writes outright -
-  // offering either would be offering a refusal.
-  const targets = sessions.filter((s) => s.status === "DRAFT");
-  const active = sessions.find((s) => s.status === "ACTIVE");
+  const targets = sessions.filter((session) => session.status === "DRAFT");
+  const active = sessions.find((session) => session.status === "ACTIVE");
 
-  async function refreshPlan(next = overrides) {
-    if (!target) return null;
+  async function refreshPlan(nextOverrides = overrides, targetId = target) {
+    if (!targetId) return null;
+    const sequence = ++previewSequence.current;
     try {
       const result = await preview({
-        ...lens,
-        to_session: Number(target),
-        overrides: next,
+        branch,
+        to_session: Number(targetId),
+        overrides: nextOverrides,
       }).unwrap();
+      if (previewSequence.current !== sequence) return null;
       setPlan(result.data);
       return result.data;
     } catch (error) {
-      toast.error(
-        writeErrorMessage(error, "We could not preview that promotion."),
-      );
+      if (previewSequence.current === sequence) {
+        toast.error(writeErrorMessage(error, "We could not preview that promotion."));
+      }
       return null;
     }
   }
 
+  function chooseTarget(value: string) {
+    previewSequence.current += 1;
+    setTarget(value);
+    setPlan(null);
+    setOverrides({});
+    setClassFilter("all");
+    if (value) void refreshPlan({}, value);
+  }
+
+  function goToStep(nextStep: number) {
+    setStep(nextStep);
+    requestAnimationFrame(() => {
+      pageTop.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+        block: "start",
+      });
+    });
+  }
+
   async function toReview() {
-    const fresh = await refreshPlan();
-    if (fresh) setStep(1);
+    const currentPlan = plan ?? (await refreshPlan());
+    if (currentPlan) goToStep(1);
   }
 
   async function toConfirm() {
-    // Re-previewed with the overrides in hand, so the confirm step's counts
-    // are the ones the run will produce and not our own arithmetic.
-    const fresh = await refreshPlan();
-    if (fresh) setStep(2);
+    const currentPlan = await refreshPlan();
+    if (currentPlan) goToStep(2);
   }
 
   function setOutcome(studentId: number, outcome: PromotionOutcome) {
-    setOverrides((o) => ({ ...o, [String(studentId)]: outcome }));
+    setOverrides((current) => ({ ...current, [String(studentId)]: outcome }));
   }
 
   function setClassOutcome(classId: number, outcome: PromotionOutcome) {
     if (!plan) return;
     const next = { ...overrides };
-    for (const s of plan.students) {
-      if (s.from_class_id === classId) next[String(s.id)] = outcome;
+    for (const student of plan.students) {
+      if (student.from_class_id === classId) next[String(student.id)] = outcome;
     }
     setOverrides(next);
   }
@@ -125,16 +149,13 @@ export default function Promotion() {
   async function execute() {
     setConfirming(false);
     try {
-      // The SAME lens the preview used. A run scoped differently from the
-      // preview it was confirmed against would move a set of children nobody
-      // reviewed.
       const result = await run({
-        ...lens,
+        branch,
         to_session: Number(target),
         overrides,
       }).unwrap();
       setDone(result.data);
-      setStep(3);
+      goToStep(3);
       toast.success(result.message);
     } catch (error) {
       toast.error(writeErrorMessage(error, "We could not run that promotion."));
@@ -142,9 +163,8 @@ export default function Promotion() {
   }
 
   const counts = plan?.counts;
+  const liveCounts = plan ? reviewCounts(plan, overrides) : null;
   const nothingToMove = plan != null && plan.counts.candidates === 0;
-  // Every candidate held means the target year has no structure to land in.
-  // Naming that beats a list of held students nobody can act on.
   const allHeld =
     plan != null &&
     plan.counts.candidates > 0 &&
@@ -158,9 +178,7 @@ export default function Promotion() {
           title="There is no year to promote into"
           body="A promotion moves students into a year that has not started yet. Create next year in Academic Structure, copy this year's classes into it, and come back."
           actionLabel="Go to Sessions"
-          onAction={() =>
-            navigate(routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS)
-          }
+          onAction={() => navigate(routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS)}
         />
       </PageShell>
     );
@@ -168,208 +186,197 @@ export default function Promotion() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-black-01">Promotion</h2>
-        <p className="mt-1 text-sm text-gray-01">
-          The end-of-session move. Every student on the roll goes up, repeats,
-          graduates or is held, and you decide which before anything is written.
-        </p>
-        {/* Said out loud, and on this screen more than any other: a promotion
-            cannot be undone from here, so "every student on the roll" has to
-            name WHICH roll. The preview and the run carry the same lens, so
-            what this line describes is exactly what will move. */}
-        {narrowed && (
-          <p className="mt-2 inline-flex rounded-md bg-white-03 px-2.5 py-1 text-xs font-medium text-primary">
-            {label} only
+      <header
+        ref={pageTop}
+        className="flex min-w-0 scroll-mt-20 flex-wrap items-start justify-between gap-3"
+      >
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
+            Promotion
+          </h1>
+          <p className="mt-1 max-w-3xl text-sm text-gray-01">
+            The end-of-session move. Every student on the roll goes up, repeats,
+            graduates or is held before anything is written.
           </p>
-        )}
-      </div>
-
-      {/* In a tray, like the profile's tabs and the classes screen: four steps
-          loose on the page background read as four labels rather than one
-          progress indicator with a position in it.
-
-          Sized to the four steps rather than to the page. Stretched, the tray
-          was a white band across the whole width with its content in the first
-          third and nothing in the rest, which reads as a panel whose contents
-          failed to load. Bordered for the same reason the cards are: the page
-          is white too, so an unbordered white tray has no edge at all and the
-          steps float on the background the tray exists to lift them off.
-
-          Hidden on phones, where the labels do not fit - the strip scrolls and
-          a reader sees "Target yea / Review studer / Dor", clipped words that
-          read as broken. Nothing is lost: the footer says "Step 2 of 4 · Review
-          students" on every width. */}
-      <ol className="hidden w-fit max-w-full gap-1 overflow-x-auto rounded-lg border border-border bg-white p-1.5 sm:flex">
-        {STEPS.map((label, i) => (
-          <li key={label} className="min-w-0">
-            <span
-              aria-current={i === step ? "step" : undefined}
-              className={cn(
-                "flex h-9 items-center gap-2 whitespace-nowrap rounded-md px-3.5 text-[13.5px]",
-                i === step && "bg-white-03 font-semibold text-primary",
-                i !== step && "text-gray-06",
-              )}
-            >
-              <span
-                className={cn(
-                  "grid size-5 shrink-0 place-items-center rounded-full text-[10px] font-semibold",
-                  i < step && "bg-green-700 text-white",
-                  i === step && "bg-primary text-white",
-                  i > step && "bg-gray-04 text-gray-05",
-                )}
-              >
-                {i + 1}
-              </span>
-              {label}
-            </span>
-          </li>
-        ))}
-      </ol>
-
-      {/* ── 1. the target year, and what each class maps to ─────────────── */}
-      {step === 0 && (
-        <section className="grid gap-4">
-          <div className="max-w-sm">
-            <label
-              htmlFor="target-year"
-              className="text-xs font-medium text-gray-05"
-            >
-              Promote into
-            </label>
-            <NativeSelect
-              id="target-year"
-              value={target}
-              onChange={(e) => {
-                setTarget(e.target.value);
-                setPlan(null);
-                setOverrides({});
-              }}
-              className="mt-1 h-9"
-            >
-              <option value="">Select a year</option>
-              {targets.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </NativeSelect>
-            <p className="mt-1.5 text-xs text-gray-05">
-              {active
-                ? `Students move out of ${active.name} into the year you pick.`
-                : "Students move out of the current year into the year you pick."}
+          {narrowed && (
+            <p className="mt-2 inline-flex rounded-md bg-white-03 px-2.5 py-1 text-xs font-medium text-primary">
+              {branchLabel} only
             </p>
+          )}
+        </div>
+        <p className="shrink-0 rounded-full bg-white-03 px-3 py-1.5 text-xs font-medium text-gray-05">
+          Step {step + 1} of {STEPS.length} · {STEPS[step]}
+        </p>
+      </header>
+
+      {step === 0 && (
+        <section className="grid gap-4" aria-labelledby="sessions-heading">
+          <Panel className="p-4 sm:p-6">
+            <h2 id="sessions-heading" className="text-base font-semibold text-black-01">
+              Sessions
+            </h2>
+            <div className="mt-4 grid min-w-0 grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+              <SessionField label="From" value={active?.name ?? "Current school year"} />
+              <ArrowRight className="mx-auto mb-3 size-4 rotate-90 text-gray-05 sm:rotate-0" />
+              <div className="min-w-0">
+                <label htmlFor="target-year" className="text-xs font-medium text-gray-05">
+                  Into
+                </label>
+                <NativeSelect
+                  id="target-year"
+                  value={target}
+                  loading={previewing}
+                  onChange={(event) => chooseTarget(event.target.value)}
+                  className="mt-1 h-12 bg-white-03 font-semibold text-primary"
+                >
+                  <option value="">Select a year</option>
+                  {targets.map((session) => (
+                    <option key={session.id} value={session.id}>
+                      {session.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </div>
+            </div>
+
+            {previewing && !plan && (
+              <div className="mt-6 border-t border-white-02 pt-5">
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="mt-2 h-4 w-full max-w-xl" />
+                <div className="mt-4 grid gap-2">
+                  {[0, 1, 2].map((item) => (
+                    <Skeleton key={item} className="h-12 w-full rounded-md" />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {plan && <LevelMapping plan={plan} />}
+
+            {target && !plan && !previewing && (
+              <div className="mt-6 border-t border-white-02 pt-5">
+                <p className="text-sm text-gray-05">
+                  The class map could not be loaded. Try the preview again before
+                  reviewing students.
+                </p>
+                <Button className="mt-3" variant="outline" onClick={() => void refreshPlan()}>
+                  Try again
+                </Button>
+              </div>
+            )}
+          </Panel>
+
+          <div>
+            <Button
+              onClick={() => void toReview()}
+              disabled={!plan || previewing || nothingToMove}
+            >
+              Review students
+              <ArrowRight className="size-4" />
+            </Button>
           </div>
 
-          {plan && (
-            <>
-              <Panel className="px-5.5 py-5">
-                <h3 className="text-sm font-semibold text-black-01">
-                  Where each class goes
-                </h3>
-                <p className="mt-0.5 text-xs text-gray-05">
-                  Resolved against the real class list, so a class can never be
-                  promoted into one the school does not run.
-                </p>
-                <ul className="mt-3 grid gap-2">
-                  {plan.level_map.map((row) => (
-                    <li
-                      key={row.from_id}
-                      className="flex flex-wrap items-baseline justify-between gap-2 text-sm"
-                    >
-                      <span className="min-w-0 text-black-01">{row.from}</span>
-                      <span className="flex flex-wrap items-baseline gap-2">
-                        <span className={destinationOf(plan, row).tone}>
-                          {destinationOf(plan, row).label}
-                        </span>
-                        <span className="text-xs text-gray-05">
-                          {row.students}{" "}
-                          {row.students === 1 ? "student" : "students"}
-                        </span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </Panel>
-              <Exceptions plan={plan} />
-            </>
+          {nothingToMove && (
+            <p className="text-sm text-gray-05">
+              Nobody in {plan?.from_session} is a candidate for promotion.
+            </p>
           )}
         </section>
       )}
 
-      {/* ── 2. per-class review ─────────────────────────────────────────── */}
-      {step === 1 && plan && (
-        <>
+      {step === 1 && plan && liveCounts && (
+        <section className="grid gap-4" aria-labelledby="review-heading">
           {allHeld && (
             <p className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
-              Every student would be held, because {plan.to_session} has no
-              classes to move them into yet. Copy this year's classes forward in
-              Academic Structure first - the promotion has nowhere to land until
-              you do.
+              Every student would be held because {plan.to_session} has no classes
+              to move them into yet. Copy this year's classes forward in Academic
+              Structure first.
             </p>
           )}
+
+          <div className="flex min-w-0 flex-wrap items-end gap-3">
+            <div className="w-full sm:w-52">
+              <label htmlFor="class-filter" className="sr-only">
+                Filter review by class
+              </label>
+              <NativeSelect
+                id="class-filter"
+                value={classFilter}
+                onChange={(event) => setClassFilter(event.target.value)}
+              >
+                <option value="all">All classes</option>
+                {plan.level_map
+                  .filter((row) => row.students > 0)
+                  .map((row) => (
+                    <option key={row.from_id} value={row.from_id}>
+                      {row.from}
+                    </option>
+                  ))}
+              </NativeSelect>
+            </div>
+            <p id="review-heading" className="pb-2 text-sm text-gray-05">
+              {liveCounts.promote} promoted, {liveCounts.repeat} repeating,{" "}
+              {liveCounts.graduate} graduating, {liveCounts.hold} held.
+            </p>
+          </div>
+
           <ClassGroups
             plan={plan}
             overrides={overrides}
+            classFilter={classFilter}
             onSetStudent={setOutcome}
             onSetClass={setClassOutcome}
           />
           <Exceptions plan={plan} />
-        </>
-      )}
-
-      {/* ── 3. confirm ──────────────────────────────────────────────────── */}
-      {step === 2 && counts && (
-        <section className="grid gap-4">
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            {/* The app's KPI card. Four label-and-number tiles is exactly
-                what it is for, and a hand-written pair drifts in type scale
-                the moment somebody edits one of the two screens. */}
-            {(["promote", "repeat", "graduate", "hold"] as const).map((k) => (
-              <KpiCard
-                key={k}
-                label={OUTCOME[k.toUpperCase() as PromotionOutcome].label}
-                value={counts[k]}
-              />
-            ))}
-          </div>
-          <p className="text-sm text-gray-05">
-            {counts.candidates === 1
-              ? `1 student moves into ${plan?.to_session}. `
-              : `${counts.candidates} students move into ${plan?.to_session}. `}
-            {counts.graduate > 0 &&
-              (counts.graduate === 1
-                ? "1 leaves the roll as a graduate. "
-                : `${counts.graduate} leave the roll as graduates. `)}
-            {counts.excluded > 0 &&
-              (counts.excluded === 1
-                ? `1 student on the roll is not a candidate and stays in ${plan?.from_session}. `
-                : `${counts.excluded} students on the roll are not candidates and stay in ${plan?.from_session}. `)}
-            This cannot be undone from here.
-          </p>
-          <Exceptions plan={plan!} />
         </section>
       )}
 
-      {/* ── 4. done ─────────────────────────────────────────────────────── */}
+      {step === 2 && counts && plan && (
+        <section className="grid gap-4" aria-labelledby="confirm-heading">
+          <Panel className="p-4 sm:p-5">
+            <h2 id="confirm-heading" className="text-base font-semibold text-black-01">
+              Confirm this promotion
+            </h2>
+            <p className="mt-1 text-sm text-gray-05">
+              Review the final result before moving the students into {plan.to_session}.
+            </p>
+            <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {(["promote", "repeat", "graduate", "hold"] as const).map((key) => (
+                <KpiCard
+                  key={key}
+                  label={OUTCOME[key.toUpperCase() as PromotionOutcome].label}
+                  value={counts[key]}
+                />
+              ))}
+            </div>
+            <p className="mt-4 text-sm text-gray-05">
+              {counts.candidates === 1
+                ? `1 student moves into ${plan.to_session}. `
+                : `${counts.candidates} students move into ${plan.to_session}. `}
+              {counts.excluded > 0 &&
+                `${counts.excluded} ${counts.excluded === 1 ? "student stays" : "students stay"} in ${plan.from_session}. `}
+              This cannot be undone from here.
+            </p>
+          </Panel>
+          <Exceptions plan={plan} />
+        </section>
+      )}
+
       {step === 3 && done && (
-        <section className="grid gap-4">
-          {/* An irreversible thing finished. The design marks it rather than
-              dropping the reader back onto four numbers - a run that ends the
-              same way it was previewed gives no sign it actually happened. */}
-          <Panel className="flex items-center gap-3.5 px-5.5 py-5">
+        <section className="grid gap-4" aria-labelledby="complete-heading">
+          <Panel className="flex flex-wrap items-center gap-3.5 p-5">
             <span
-              aria-hidden
+              aria-hidden="true"
               className="grid size-13 shrink-0 place-content-center rounded-full bg-green-700/10 text-green-800"
             >
               <Check className="size-6" />
             </span>
             <div className="min-w-0">
-              <h3 className="text-[15px] font-semibold text-black-01">
+              <h2 id="complete-heading" className="text-base font-semibold text-black-01">
                 Promotion complete
-              </h3>
+              </h2>
               <p className="mt-0.5 text-sm text-gray-05">
-                Every move is on the students&apos; own history.
+                Every move is recorded in each student's history.
               </p>
             </div>
           </Panel>
@@ -381,11 +388,7 @@ export default function Promotion() {
               ["Graduated", done.graduated],
               ["Held", done.held],
             ].map(([label, value]) => (
-              <KpiCard
-                key={String(label)}
-                label={String(label)}
-                value={value}
-              />
+              <KpiCard key={String(label)} label={String(label)} value={value} />
             ))}
           </div>
           <p className="text-sm text-gray-05">
@@ -394,65 +397,30 @@ export default function Promotion() {
               ` ${done.failed} could not be written and were left where they are.`}
           </p>
           <div>
-            <Button
-              onClick={() => navigate(routesPath.PROTECTED.STUDENTS.INDEX)}
-            >
+            <Button onClick={() => navigate(routesPath.PROTECTED.STUDENTS.INDEX)}>
               Back to the directory
             </Button>
           </div>
         </section>
       )}
 
-      {previewing && !plan && <Skeleton className="h-40 w-full rounded-xl" />}
-
-      {/* ── the footer ──────────────────────────────────────────────────── */}
-      {step < 3 && (
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-white-02 pt-4">
-          <span className="mr-auto text-xs text-gray-05">
-            Step {step + 1} of {STEPS.length} · {STEPS[step]}
-          </span>
-          {/* Step 2 keeps its way back: the per-student overrides are the whole
-              point of it, and this is the last moment before a run that cannot
-              be undone from here. */}
-          {step > 0 && (
-            <Button variant="outline" onClick={() => setStep(step - 1)}>
-              Back
-            </Button>
-          )}
-          {step === 0 && (
-            <>
-              {target && !plan && (
-                <Button onClick={() => refreshPlan()} disabled={previewing}>
-                  {previewing ? "Checking…" : "Check this year"}
-                </Button>
-              )}
-              {plan && (
-                <Button
-                  onClick={toReview}
-                  disabled={previewing || nothingToMove}
-                >
-                  Review students
-                </Button>
-              )}
-            </>
-          )}
+      {step > 0 && step < 3 && (
+        <footer className="flex flex-wrap items-center justify-end gap-2 border-t border-white-02 pt-4">
+          <Button variant="outline" onClick={() => goToStep(step - 1)}>
+            Back
+          </Button>
           {step === 1 && (
-            <Button onClick={toConfirm} disabled={previewing}>
-              {previewing ? "Recalculating…" : "Preview and confirm"}
+            <Button onClick={() => void toConfirm()} disabled={previewing}>
+              {previewing ? "Recalculating..." : "Preview and confirm"}
             </Button>
           )}
-          {/* The run needs BOTH keys, because it writes placements and placing
-              is academics' power - the same pair the backend asserts. mode
-              "all" rather than the default any: either key alone must not
-              open it. */}
           {step === 2 && (
             <PermissionGate
               permission={[P.MANAGE_STUDENTS, P.ASSIGN_CLASS]}
               mode="all"
               fallback={
                 <p className="text-xs text-gray-05">
-                  You can preview a promotion but not run one. That needs the
-                  student-lifecycle and class-assignment permissions.
+                  Running a promotion needs student-lifecycle and class-assignment permissions.
                 </p>
               }
             >
@@ -464,13 +432,7 @@ export default function Promotion() {
               </Button>
             </PermissionGate>
           )}
-        </div>
-      )}
-
-      {nothingToMove && step === 0 && (
-        <p className="text-sm text-gray-05">
-          Nobody in {plan?.from_session} is a candidate for promotion.
-        </p>
+        </footer>
       )}
 
       <ConfirmDialog
@@ -490,23 +452,54 @@ export default function Promotion() {
   );
 }
 
-/**
- * Why students are not simply moving up.
- *
- * Class-wide causes collapse to one row however many students they cover, and
- * per-student causes get one each - the split the server already makes, kept
- * because repeating "this class has no target" under 25 names buries the two
- * rows that actually need a decision.
- */
-/**
- * Where to go and fix a class-wide cause.
- *
- * Every one of these sentences ends by telling a registrar to change something
- * in Academic Structure, and each names a DIFFERENT screen: an unwired level is
- * fixed on Programmes & Levels, a missing class on Classes & Arms. Printing the
- * instruction without the door means reading it, leaving, and hunting for the
- * screen it meant.
- */
+function SessionField({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <p className="text-xs font-medium text-gray-05">{label}</p>
+      <div className="mt-1 flex h-12 min-w-0 items-center rounded-md border border-border bg-white px-3">
+        <p className="truncate text-sm font-semibold text-black-01">{value}</p>
+      </div>
+    </div>
+  );
+}
+
+function LevelMapping({ plan }: { plan: PromotionPlan }) {
+  return (
+    <div className="mt-6 border-t border-white-02 pt-5">
+      <h2 className="text-base font-semibold text-black-01">Level mapping</h2>
+      <p className="mt-1 text-sm text-gray-05">
+        Targets come from the class structure in Academic Structure. Terminal
+        levels leave the roll as graduates.
+      </p>
+      <ul className="mt-4 grid gap-2">
+        {plan.level_map.map((row) => {
+          const destination = destinationOf(plan, row);
+          return (
+            <li
+              key={row.from_id}
+              className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-3 rounded-md border border-border px-3.5 py-3 text-sm sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)_auto]"
+            >
+              <span className="truncate font-medium text-black-01">{row.from}</span>
+              <ArrowRight className="size-4 shrink-0 text-gray-05" />
+              <span className={`min-w-0 truncate ${destination.tone}`}>
+                {destination.label}
+              </span>
+              {row.terminal && (
+                <span className="col-span-3 w-fit rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary sm:col-span-1">
+                  Terminal
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-4 text-sm text-gray-05">
+        {plan.counts.candidates} {plan.counts.candidates === 1 ? "student is" : "students are"} candidates
+      </p>
+    </div>
+  );
+}
+
 const FIX: Record<string, { label: string; to: string }> = {
   LEVEL_NOT_WIRED: {
     label: "Set its promotion target",
@@ -522,63 +515,65 @@ const FIX: Record<string, { label: string; to: string }> = {
   },
 };
 
+/** Lists the class-wide and individual decisions that block a normal move. */
 function Exceptions({ plan }: { plan: PromotionPlan }) {
   const navigate = useNavigate();
   const { by_class: byClass, by_student: byStudent } = plan.exceptions;
-  if (byClass.length === 0 && byStudent.length === 0) return null;
+  const total = byClass.length + byStudent.length;
+  if (total === 0) return null;
 
   return (
-    <Panel as="section" className="px-5.5 py-5">
-      <p className="text-xs font-medium text-gray-05">
-        {byClass.length + byStudent.length}{" "}
-        {byClass.length + byStudent.length === 1 ? "exception" : "exceptions"}
+    <Panel as="section" className="p-4 sm:p-5">
+      <h2 className="text-base font-semibold text-black-01">
+        {total} {total === 1 ? "exception" : "exceptions"}
+      </h2>
+      <p className="mt-1 text-sm text-gray-05">
+        Anything that cannot simply move up. Class-wide causes appear once;
+        students needing an individual decision have their own row.
       </p>
-      <ul className="mt-3 grid gap-2.5">
-        {byClass.map((e) => (
+      <ul className="mt-4 grid gap-2">
+        {byClass.map((exception) => {
+          const terminal = exception.cause === "TERMINAL_LEVEL";
+          return (
+            <li
+              key={`c-${exception.class}-${exception.cause}`}
+              className={`rounded-md border border-border border-l-2 p-3 ${terminal ? "border-l-primary" : "border-l-amber-400"}`}
+            >
+              <div className="flex flex-wrap items-baseline gap-2">
+                <p className="text-sm font-semibold text-black-01">{exception.class_name}</p>
+                <span className="text-xs text-gray-05">
+                  {exception.students} {exception.students === 1 ? "student" : "students"}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-gray-05">{exception.reason}</p>
+              {FIX[exception.cause] && (
+                <button
+                  type="button"
+                  onClick={() => navigate(FIX[exception.cause].to)}
+                  className="mt-1.5 text-xs font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  {FIX[exception.cause].label}
+                </button>
+              )}
+            </li>
+          );
+        })}
+        {byStudent.map((exception) => (
           <li
-            key={`c-${e.class}-${e.cause}`}
-            className="border-l-2 border-amber-400 pl-3"
+            key={`s-${exception.student}`}
+            className="rounded-md border border-border border-l-2 border-l-amber-400 p-3"
           >
-            <p className="text-sm font-medium text-black-01">
-              {e.class_name}
-              <span className="ml-2 text-xs font-normal text-gray-05">
-                {e.students} {e.students === 1 ? "student" : "students"}
-              </span>
-            </p>
-            <p className="text-xs text-gray-05">{e.reason}</p>
-            {FIX[e.cause] && (
-              <button
-                type="button"
-                onClick={() => navigate(FIX[e.cause].to)}
-                className="mt-1 text-xs text-primary underline-offset-2 hover:underline"
-              >
-                {FIX[e.cause].label}
-              </button>
-            )}
-          </li>
-        ))}
-        {byStudent.map((e) => (
-          <li
-            key={`s-${e.student}`}
-            className="border-l-2 border-amber-400 pl-3"
-          >
-            <p className="text-sm font-medium text-black-01">
-              {e.name}
-              <span className="ml-2 text-xs font-normal text-gray-05">
-                {e.class}
-              </span>
-            </p>
-            <p className="text-xs text-gray-05">{e.reason}</p>
-            {/* A per-student cause is fixed on that student, so the door is
-                their record rather than a settings screen. */}
+            <div className="flex flex-wrap items-baseline gap-2">
+              <p className="text-sm font-semibold text-black-01">{exception.name}</p>
+              <span className="text-xs text-gray-05">{exception.class}</span>
+            </div>
+            <p className="mt-0.5 text-xs text-gray-05">{exception.reason}</p>
             <button
               type="button"
-              onClick={() =>
-                navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(e.student))
-              }
-              className="mt-1 text-xs text-primary underline-offset-2 hover:underline"
+              onClick={() => navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(exception.student))}
+              className="mt-1.5 text-xs font-medium text-primary underline-offset-2 hover:underline"
             >
-              Open {e.name}
+              Open {exception.name}
             </button>
           </li>
         ))}
