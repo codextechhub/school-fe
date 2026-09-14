@@ -1,192 +1,149 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { Users } from "lucide-react";
+import { ArrowLeftRight, BookOpenCheck, LoaderCircle, Users } from "lucide-react";
 
-import { SearchSelect } from "@/components/custom/search-select";
 import CustomTable from "@/components/custom/custom-table";
-import { Button } from "@/components/ui/button";
-import { NativeSelect } from "@/components/ui/native-select";
 import PermissionGate from "@/components/custom/permission-gate";
-import Tabs from "@/components/custom/tab";
-import { useStudentsLens } from "@/hooks/use-students-lens";
-import { P } from "@/permissions";
+import { SearchSelect } from "@/components/custom/search-select";
+import { Panel as Surface } from "@/components/custom/surface";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { NativeSelect } from "@/components/ui/native-select";
 import { PageShell } from "@/components/layout/page-shell";
-import { EmptyRing } from "../empty-ring";
-import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
-import { routesPath } from "@/routes/routesPath";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 import { cn } from "@/lib/utils";
-import { writeErrorMessage } from "@/utils/api-error";
+import { P } from "@/permissions";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import {
   useBulkAssignClassMutation,
-  useGetClassSeatsQuery,
   useGetClassRosterQuery,
+  useGetClassSeatsQuery,
   useGetUnplacedStudentsQuery,
+  useLazyGetClassRosterQuery,
 } from "@/redux/services/students/students-api";
-import type {
-  BulkResultRow,
-  ClassSeats,
-  StudentRow,
-} from "@/redux/services/students/students-types";
+import type { BulkResultRow, ClassSeats, StudentRow } from "@/redux/services/students/students-types";
+import { routesPath } from "@/routes/routesPath";
+import { writeErrorMessage } from "@/utils/api-error";
 
+import { EmptyRing } from "../empty-ring";
+import { formatDate } from "../format";
+import { PersonAvatar } from "../person-avatar";
 import { StudentStatusBadge } from "../status-badge";
 import { TransferDrawer } from "../drawers/transfer-drawer";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  assignmentImpact,
+  loadNote,
+  mergeRosterRows,
+} from "./class-roster-model";
 
-type Tab = "unplaced" | "roster";
+type View = "unplaced" | "roster";
+const ROSTER_BATCH = 7;
 
 /**
  * Placing children, and reading a class register.
  *
- * Two tabs because they are two jobs: "who has nowhere to sit" is a worklist
- * that should empty, and "who is in JSS1 A" is a reference you come back to.
+ * The unassigned list is a work queue that should empty. The register is a
+ * reference list that stays useful afterwards. Both live in the URL so another
+ * screen can link directly to the relevant register.
  *
- * **Partial success is reported as partial.** The bulk route answers per
- * student - each is its own transaction - so twenty picked can come back as
- * eighteen placed and two refused, with a reason on each. Collapsing that into
- * one "Done" would hide the two, and the unplaced children are the entire point
- * of the screen.
+ * A register reveals seven students at a time inside a bounded scroll area.
+ * Later API pages load only when the reader reaches the bottom, so a large
+ * class does not turn the page into an unbounded list or fetch unseen records.
  */
-
-/**
- * How full a class is, in the school's words rather than a percentage.
- *
- * Over capacity is a real state and not an error: a school takes a
- * thirty-first child into a class of thirty when the alternative is turning
- * them away, and the register has to say so plainly rather than clamp to full.
- * A class with no capacity recorded is not full, which is why it says neither.
- */
-function loadNote(c: ClassSeats): string {
-  if (c.capacity == null) return "No limit set";
-  if (c.used > c.capacity) return `Over by ${c.used - c.capacity}`;
-  if (c.remaining === 0) return "Full";
-  return `${c.remaining} free`;
-}
-
-/** The bar and the note for the one class the register is open on. */
-function ClassLoad({ c }: { c: ClassSeats }) {
-  const isOver = c.capacity != null && c.used > c.capacity;
-  const isFull = c.remaining === 0;
-  const pct = c.capacity
-    ? Math.min(100, Math.round((c.used / c.capacity) * 100))
-    : 0;
-
-  return (
-    <div className="min-w-0 flex-1 basis-48 pb-1.5 sm:max-w-64">
-      <div className="flex items-baseline justify-between gap-2">
-        <span
-          className={cn(
-            "text-xs",
-            isOver
-              ? "text-red-600"
-              : isFull
-                ? "text-amber-700"
-                : "text-gray-05",
-          )}
-        >
-          {loadNote(c)}
-        </span>
-        <span className="shrink-0 text-xs text-gray-06">
-          {c.capacity == null ? c.used : `${c.used}/${c.capacity}`}
-        </span>
-      </div>
-      {/* Outlined, because the track is what says how much room the class has.
-          A pale fill on a white page shows only the part that is FULL, so a
-          class with two students in thirty reads as a short blue stub floating
-          in nothing, and there is no way to see it is two out of thirty. */}
-      <span className="mt-1.5 block h-[9px] overflow-hidden rounded-full border border-border bg-gray-04">
-        <span
-          className={cn(
-            "block h-full rounded-full",
-            isOver ? "bg-red-500" : isFull ? "bg-amber-500" : "bg-primary",
-          )}
-          style={{ width: `${isOver ? 100 : pct}%` }}
-        />
-      </span>
-    </div>
-  );
-}
-
 export default function ClassesAndTransfers() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-
-  // The tab and the class live in the URL: the directory's capacity panel deep
-  // links straight to one class's register, and a registrar sends a colleague
-  // the link to the list they are looking at.
-  const tab = (params.get("tab") as Tab) || "unplaced";
+  const { lens, multiBranch, label: branchLabel, sessionName } = useStudentsLens();
+  const view = params.get("tab") === "roster" ? "roster" : "unplaced";
   const classParam = params.get("class") ?? "";
 
+  const [unplacedPage, setUnplacedPage] = useState(1);
   const [picked, setPicked] = useState<number[]>([]);
   const [target, setTarget] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
   const [refusals, setRefusals] = useState<BulkResultRow[]>([]);
   const [moving, setMoving] = useState<StudentRow | null>(null);
 
-  const { lens } = useStudentsLens();
   const { data: classesData } = useGetClassSeatsQuery(lens);
   const classes = useMemo(() => classesData?.data ?? [], [classesData]);
+  const unplacedQuery = useGetUnplacedStudentsQuery({ ...lens, page: unplacedPage });
+  const unplaced = useMemo(() => unplacedQuery.data?.data ?? [], [unplacedQuery.data]);
+  const unplacedPagination = unplacedQuery.data?.pagination;
+  const unplacedTotal = unplacedPagination?.totalItems ?? unplaced.length;
 
-  const {
-    data: unplacedData,
-    isLoading: unplacedLoading,
-    isError: unplacedError,
-    refetch: refetchUnplaced,
-  } = useGetUnplacedStudentsQuery(lens);
-  const unplaced = useMemo(() => unplacedData?.data ?? [], [unplacedData]);
-
-  // Default to the first class only once the list has arrived, so the roster
-  // does not fetch against an empty id on the first render.
   const rosterClassId = Number(classParam) || classes[0]?.id;
-  const { data: rosterData, isFetching: rosterLoading } =
-    useGetClassRosterQuery(rosterClassId as number, {
-      skip: tab !== "roster" || !rosterClassId,
-    });
-  const roster = useMemo(() => rosterData?.data ?? [], [rosterData]);
+  const {
+    currentData: rosterData,
+    isLoading: rosterInitialLoading,
+    isFetching: rosterFetching,
+    isError: rosterError,
+    refetch: refetchRoster,
+  } = useGetClassRosterQuery(
+    { classId: rosterClassId as number, page: 1 },
+    { skip: view !== "roster" || !rosterClassId },
+  );
+  const [loadRosterPage, { isFetching: loadingMore }] = useLazyGetClassRosterQuery();
+  const [loadedRoster, setLoadedRoster] = useState<StudentRow[]>([]);
+  const [visibleRosterCount, setVisibleRosterCount] = useState(ROSTER_BATCH);
+  const [nextRosterPage, setNextRosterPage] = useState<number | null>(null);
+  const [loadMoreError, setLoadMoreError] = useState(false);
+  const rosterLoadLock = useRef(false);
+  const activeRosterClass = useRef<number | undefined>(rosterClassId);
+
+  useEffect(() => {
+    activeRosterClass.current = rosterClassId;
+    setLoadedRoster([]);
+    setVisibleRosterCount(ROSTER_BATCH);
+    setNextRosterPage(null);
+    setLoadMoreError(false);
+    rosterLoadLock.current = false;
+  }, [rosterClassId]);
+
+  useEffect(() => {
+    if (!rosterData || !rosterClassId) return;
+    setLoadedRoster(rosterData.data);
+    setVisibleRosterCount(ROSTER_BATCH);
+    setNextRosterPage(
+      rosterData.pagination.next ? rosterData.pagination.currentPage + 1 : null,
+    );
+    setLoadMoreError(false);
+    rosterLoadLock.current = false;
+  }, [rosterClassId, rosterData]);
 
   const [bulkAssign, { isLoading: assigning }] = useBulkAssignClassMutation();
 
-  function setRosterClass(id: string) {
-    const p = new URLSearchParams(params);
-    p.set("tab", "roster");
-    p.set("class", id);
-    setParams(p, { replace: true });
+  function selectView(next: View) {
+    const nextParams = new URLSearchParams(params);
+    nextParams.set("tab", next);
+    if (next === "unplaced") nextParams.delete("class");
+    setParams(nextParams, { replace: true });
   }
 
-  // Which classes the picked students could actually join.
-  //
-  // A class carries a branch; a student carries a branch; the server refuses a
-  // placement that crosses them. Offering the refusal and then explaining it is
-  // worse than not offering it: the registrar picks a class, waits, and is told
-  // no. A class with no branch is school-wide and takes anyone, and at a
-  // single-branch school the field is absent entirely so nothing is excluded.
-  const pickedBranches = new Set(
-    unplaced.filter((s) => picked.includes(s.id)).map((s) => s.branch),
-  );
-  const classFits = (c: (typeof classes)[number]) => {
-    if (c.branch == null) return true;
-    if (pickedBranches.size === 0) return true;
-    return pickedBranches.size === 1 && pickedBranches.has(c.branch);
-  };
+  function setRosterClass(id: string) {
+    const nextParams = new URLSearchParams(params);
+    nextParams.set("tab", "roster");
+    nextParams.set("class", id);
+    setParams(nextParams, { replace: true });
+  }
 
-  // The roster's own seats_used is not read here: the class rail above the
-  // register already carries every class's load, from the aggregate the backend
-  // pins to this endpoint (test_it_agrees_with_the_roster_it_is_meant_to
-  // _replace). Reading both would be two sources for one number.
-  const targetClass = classes.find((c) => String(c.id) === target);
-  const rosterClass = classes.find((c) => c.id === rosterClassId);
-  // The load rides on the label because it is what decides the choice, and a
-  // picker that named classes alone would send a reader back out to find which
-  // of them has room. It is searchable text too, so "free" reaches the ones
-  // with space.
+  const pickedBranches = new Set(
+    unplaced.filter((student) => picked.includes(student.id)).map((student) => student.branch),
+  );
+  const classFits = (schoolClass: ClassSeats) =>
+    schoolClass.branch == null ||
+    pickedBranches.size === 0 ||
+    (pickedBranches.size === 1 && pickedBranches.has(schoolClass.branch));
+  const targetClass = classes.find((schoolClass) => String(schoolClass.id) === target);
+  const rosterClass = classes.find((schoolClass) => schoolClass.id === rosterClassId);
   const classOptions = useMemo(
     () =>
-      classes.map((c) => ({
-        value: String(c.id),
+      classes.map((schoolClass) => ({
+        value: String(schoolClass.id),
         label:
-          c.capacity == null
-            ? `${c.name} · ${c.used} enrolled`
-            : `${c.name} · ${c.used}/${c.capacity} · ${loadNote(c)}`,
+          schoolClass.capacity == null
+            ? `${schoolClass.name} · ${schoolClass.used} enrolled`
+            : `${schoolClass.name} · ${schoolClass.used}/${schoolClass.capacity} · ${loadNote(schoolClass)}`,
       })),
     [classes],
   );
@@ -200,27 +157,17 @@ export default function ClassesAndTransfers() {
         school_class: Number(target),
         allow_over_capacity: allowOver,
       }).unwrap();
-
-      const rows = result.data.results ?? [];
-      const failed = rows.filter((r) => !r.ok);
+      const failed = (result.data.results ?? []).filter((row) => !row.ok);
       setPicked([]);
       setAcknowledged(false);
-
-      if (failed.length === 0) {
-        toast.success(result.message);
-      } else {
-        // Named, not counted. "2 could not be placed" tells a registrar
-        // nothing about which two or what to do next.
+      setUnplacedPage(1);
+      if (failed.length === 0) toast.success(result.message);
+      else {
         setRefusals(failed);
         toast.warning(result.message);
       }
     } catch (error) {
-      const message = writeErrorMessage(
-        error,
-        "We could not assign those students.",
-      );
-      // Capacity is a question, not a fault: the server refuses once for the
-      // whole selection, and the registrar decides whether to overfill.
+      const message = writeErrorMessage(error, "We could not assign those students.");
       if (/capacit/i.test(message) && !allowOver) {
         setAcknowledged(true);
         toast.warning(`${message} Press Assign again to go ahead anyway.`);
@@ -230,7 +177,43 @@ export default function ClassesAndTransfers() {
     }
   }
 
-  if (unplacedError && tab === "unplaced") {
+  async function revealMoreRoster() {
+    if (rosterLoadLock.current) return;
+    if (visibleRosterCount < loadedRoster.length) {
+      setVisibleRosterCount((current) =>
+        Math.min(current + ROSTER_BATCH, loadedRoster.length),
+      );
+      return;
+    }
+    if (!rosterClassId || nextRosterPage == null) return;
+
+    const requestedClass = rosterClassId;
+    rosterLoadLock.current = true;
+    setLoadMoreError(false);
+    try {
+      const response = await loadRosterPage({
+        classId: requestedClass,
+        page: nextRosterPage,
+      }).unwrap();
+      if (activeRosterClass.current !== requestedClass) return;
+      setLoadedRoster((current) => {
+        const merged = mergeRosterRows(current, response.data);
+        setVisibleRosterCount((visible) =>
+          Math.min(visible + ROSTER_BATCH, merged.length),
+        );
+        return merged;
+      });
+      setNextRosterPage(
+        response.pagination.next ? response.pagination.currentPage + 1 : null,
+      );
+    } catch {
+      if (activeRosterClass.current === requestedClass) setLoadMoreError(true);
+    } finally {
+      rosterLoadLock.current = false;
+    }
+  }
+
+  if (unplacedQuery.isError && view === "unplaced") {
     return (
       <PageShell>
         <OutlinedNotice
@@ -238,280 +221,419 @@ export default function ClassesAndTransfers() {
           title="We could not load the students waiting for a class"
           body="Something went wrong on our side. Try again in a moment."
           actionLabel="Try again"
-          onAction={() => refetchUnplaced()}
+          onAction={() => unplacedQuery.refetch()}
         />
       </PageShell>
     );
   }
 
+  const visibleRoster = loadedRoster.slice(0, visibleRosterCount);
+  const rosterHasMore = visibleRosterCount < loadedRoster.length || nextRosterPage != null;
+
   return (
     <PageShell className="content-start gap-5" grid>
       <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-black-01">
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
           Classes &amp; transfers
-        </h2>
-        <p className="mt-1 text-sm text-gray-01">
-          Place students who have no class, and read any class register.
+        </h1>
+        <p className="mt-1 max-w-3xl text-sm text-gray-01">
+          Place students who have no class, and move students between classes
+          {multiBranch
+            ? branchLabel === "All branches"
+              ? " across all branches"
+              : ` at ${branchLabel}`
+            : " in this school"}
+          {sessionName ? ` during ${sessionName}` : ""}.
         </p>
       </div>
 
-      {/* The app's tab strip. It reads and writes `?tab=` itself, which is
-          the same URL this screen already used - so the capacity panel's deep
-          link into a register keeps working, and the sliding marker now
-          matches every other tabbed screen. */}
-      <Tabs
-        tabKey="tab"
-        tabs={[
-          {
-            value: "unplaced",
-            label: `Waiting for a class${unplaced.length ? ` (${unplaced.length})` : ""}`,
-          },
-          { value: "roster", label: "Class register" },
-        ]}
-      />
+      <ViewSwitch value={view} unplacedCount={unplacedTotal} onChange={selectView} />
 
-      {/* ── Refusals from the last run ──────────────────────────────────── */}
       {refusals.length > 0 && (
-        <section className="rounded-xl border border-amber-300 bg-amber-50 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-amber-900">
-              {refusals.length}{" "}
-              {refusals.length === 1 ? "student was" : "students were"} not
-              placed
-            </h3>
-            <button
-              type="button"
-              onClick={() => setRefusals([])}
-              className="text-xs text-amber-900 underline-offset-2 hover:underline"
-            >
-              Dismiss
-            </button>
+        <RefusalNotice rows={refusals} onDismiss={() => setRefusals([])} />
+      )}
+
+      {view === "unplaced" ? (
+        <section className="grid min-w-0 gap-3" aria-labelledby="unplaced-heading">
+          <div className="min-w-0">
+            <h2 id="unplaced-heading" className="font-semibold text-black-01">
+              {unplacedTotal === 1
+                ? "1 student has no class"
+                : `${unplacedTotal} students have no class`}
+            </h2>
+            <p className="mt-0.5 text-xs text-gray-05">
+              Select one or more students, then choose the class they are joining.
+            </p>
           </div>
-          <ul className="mt-2 grid gap-1.5">
-            {refusals.map((r) => (
-              <li key={r.student} className="text-sm text-amber-900">
-                <span className="font-medium">
-                  {r.name || `Student ${r.student}`}
-                </span>
-                {r.message ? ` - ${r.message}` : ""}
-              </li>
-            ))}
-          </ul>
+
+          {picked.length > 0 && (
+            <AssignmentBar
+              count={picked.length}
+              classes={classes}
+              target={target}
+              targetClass={targetClass}
+              assigning={assigning}
+              acknowledged={acknowledged}
+              classFits={classFits}
+              onTargetChange={(value) => {
+                setTarget(value);
+                setAcknowledged(false);
+              }}
+              onAssign={() => void assign(acknowledged)}
+              onClear={() => {
+                setPicked([]);
+                setAcknowledged(false);
+              }}
+            />
+          )}
+
+          {unplacedTotal === 0 && !unplacedQuery.isLoading ? (
+            <EmptyRing>Every student has a class</EmptyRing>
+          ) : (
+            <CustomTable
+              tableHeaderList={[
+                "",
+                "Student",
+                "Admission no.",
+                "Status",
+                "Level applied for",
+                "Primary guardian",
+                "Admitted",
+              ]}
+              loading={unplacedQuery.isLoading || unplacedQuery.isFetching}
+              defaultBodyList={unplaced}
+              tableBodyList={unplaced.map((student) => ({
+                "": (
+                  <Checkbox
+                    aria-label={`Select ${student.full_name}`}
+                    checked={picked.includes(student.id)}
+                    onCheckedChange={() =>
+                      setPicked((current) =>
+                        current.includes(student.id)
+                          ? current.filter((id) => id !== student.id)
+                          : [...current, student.id],
+                      )
+                    }
+                    onClick={(event) => event.stopPropagation()}
+                  />
+                ),
+                Student: <StudentName student={student} />,
+                "Admission no.": student.student_number || "Not issued",
+                Status: (
+                  <StudentStatusBadge status={student.status} label={student.status_label} />
+                ),
+                "Level applied for": student.level_name || "Not set",
+                "Primary guardian": student.primary_guardian || "None linked",
+                Admitted: student.enrolment_date
+                  ? formatDate(student.enrolment_date)
+                  : "Not recorded",
+              }))}
+              onRowClick={(student: StudentRow) =>
+                navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(student.id))
+              }
+              currentPage={unplacedPagination?.currentPage ?? 1}
+              totalPage={unplacedPagination?.totalPages ?? 1}
+              onPageChange={(page) => {
+                setPicked([]);
+                setUnplacedPage(Number(page) || 1);
+              }}
+              hidePagination={(unplacedPagination?.totalPages ?? 1) < 2}
+              cardBreakpoint="lg"
+              emptyText="Nobody is waiting for a class"
+            />
+          )}
+        </section>
+      ) : (
+        <section className="grid min-w-0 gap-3" aria-labelledby="roster-heading">
+          <Surface className="px-4 py-4 sm:px-5">
+            <div className="flex flex-wrap items-end gap-x-5 gap-y-4">
+              <div className="min-w-0 flex-1 basis-64 sm:max-w-sm">
+                <SearchSelect
+                  label="Class"
+                  options={classOptions}
+                  value={rosterClassId ? String(rosterClassId) : ""}
+                  onChange={(event) => setRosterClass(event.target.value)}
+                  placeholder="Search for a class"
+                />
+              </div>
+              {rosterClass && <ClassLoad schoolClass={rosterClass} />}
+            </div>
+          </Surface>
+
+          <Surface as="section" className="overflow-hidden" aria-labelledby="roster-heading">
+            <div className="border-b border-border px-4 py-3 sm:px-5">
+              <h2 id="roster-heading" className="font-semibold text-black-01">
+                {rosterClass?.name ?? "Class register"}
+              </h2>
+              <p className="mt-0.5 text-xs text-gray-05">
+                {rosterData?.pagination.totalItems ?? rosterClass?.used ?? 0}{" "}
+                {(rosterData?.pagination.totalItems ?? rosterClass?.used ?? 0) === 1
+                  ? "student"
+                  : "students"}
+                {rosterClass?.level_name ? ` · ${rosterClass.level_name}` : ""}
+              </p>
+            </div>
+
+            <div
+              className="max-h-[28rem] min-w-0 overflow-y-auto overscroll-contain"
+              aria-label="Class student list"
+              tabIndex={0}
+              onScroll={(event) => {
+                const panel = event.currentTarget;
+                const nearBottom =
+                  panel.scrollHeight - panel.scrollTop - panel.clientHeight < 80;
+                if (nearBottom) void revealMoreRoster();
+              }}
+            >
+              {rosterError ? (
+                <div className="grid place-items-center gap-2 px-5 py-12 text-center">
+                  <p className="text-sm text-gray-05">We could not load this class register.</p>
+                  <Button size="sm" variant="outline" onClick={() => refetchRoster()}>
+                    Try again
+                  </Button>
+                </div>
+              ) : (
+                <CustomTable
+                  tableHeaderList={["Student", "Admission no.", "Status", "Primary guardian", ""]}
+                  loading={rosterInitialLoading || (rosterFetching && !rosterData)}
+                  defaultBodyList={visibleRoster}
+                  tableBodyList={visibleRoster.map((student) => ({
+                    Student: <StudentName student={student} />,
+                    "Admission no.": student.student_number || "Not issued",
+                    Status: (
+                      <StudentStatusBadge status={student.status} label={student.status_label} />
+                    ),
+                    "Primary guardian": student.primary_guardian || "None linked",
+                    "": (
+                      <PermissionGate permission={P.ASSIGN_CLASS}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setMoving(student);
+                          }}
+                        >
+                          <ArrowLeftRight className="size-3.5" />
+                          Move out
+                        </Button>
+                      </PermissionGate>
+                    ),
+                  }))}
+                  onRowClick={(student: StudentRow) =>
+                    navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(student.id))
+                  }
+                  hidePagination
+                  cardBreakpoint="lg"
+                  emptyText="Nobody is in this class yet"
+                />
+              )}
+            </div>
+
+            {!rosterError && loadedRoster.length > 0 && (
+              <div
+                className="flex min-h-11 items-center justify-center border-t border-border px-4 py-2 text-xs text-gray-05"
+                aria-live="polite"
+              >
+                {loadingMore ? (
+                  <span className="inline-flex items-center gap-2">
+                    <LoaderCircle className="size-3.5 animate-spin" />
+                    Loading more students
+                  </span>
+                ) : loadMoreError ? (
+                  <Button size="sm" variant="ghost" onClick={() => void revealMoreRoster()}>
+                    Try loading more
+                  </Button>
+                ) : rosterHasMore ? (
+                  <Button size="sm" variant="ghost" onClick={() => void revealMoreRoster()}>
+                    Load 7 more students
+                  </Button>
+                ) : (
+                  `All ${loadedRoster.length} students loaded`
+                )}
+              </div>
+            )}
+          </Surface>
         </section>
       )}
 
-      {tab === "unplaced" ? (
-        <>
-          {unplaced.length === 0 && !unplacedLoading ? (
-            <EmptyRing>Every student has a class</EmptyRing>
-          ) : (
-            <>
-              <CustomTable
-                tableHeaderList={[
-                  "",
-                  "Student",
-                  "Admission no.",
-                  "Status",
-                  "Level applied for",
-                  "Primary guardian",
-                ]}
-                loading={unplacedLoading}
-                defaultBodyList={unplaced}
-                tableBodyList={unplaced.map((s) => ({
-                  "": (
-                    // The shared Checkbox, not a bare input: an unstyled native
-                    // box is drawn by the operating system, so the selection
-                    // column looked like black squares on one machine and
-                    // grey ticks on another, matching nothing else on screen.
-                    <Checkbox
-                      aria-label={`Select ${s.full_name}`}
-                      checked={picked.includes(s.id)}
-                      onCheckedChange={() =>
-                        setPicked((p) =>
-                          p.includes(s.id)
-                            ? p.filter((x) => x !== s.id)
-                            : [...p, s.id],
-                        )
-                      }
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ),
-                  Student: s.full_name,
-                  "Admission no.": s.student_number || "Not issued",
-                  Status: (
-                    <StudentStatusBadge
-                      status={s.status}
-                      label={s.status_label}
-                    />
-                  ),
-                  "Level applied for": s.level_name || "-",
-                  "Primary guardian": s.primary_guardian || "None linked",
-                }))}
-                onRowClick={(student: StudentRow) => {
-                  if (student?.id) {
-                    navigate(
-                      routesPath.PROTECTED.STUDENTS.PROFILE_ID(student.id),
-                    );
-                  }
-                }}
-                hidePagination
-                emptyText="Nobody is waiting for a class"
-              />
-
-              {/* The action bar appears only once something is picked, so the
-                  screen is a list until it is a worklist. */}
-              {picked.length > 0 && (
-                <div className="sticky bottom-4 z-10 flex flex-wrap items-center gap-2.5 rounded-xl border border-white-02 bg-white p-3 shadow-lg">
-                  <span className="text-sm text-black-01">
-                    {picked.length} picked
-                  </span>
-                  <NativeSelect
-                    aria-label="Assign into"
-                    value={target}
-                    onChange={(e) => {
-                      setTarget(e.target.value);
-                      setAcknowledged(false);
-                    }}
-                    className="h-9 w-auto min-w-44"
-                  >
-                    <option value="">Assign into…</option>
-                    {classes.map((c) => {
-                      const fits = classFits(c);
-                      return (
-                        <option key={c.id} value={c.id} disabled={!fits}>
-                          {c.name}
-                          {c.capacity == null
-                            ? ` · ${c.used} enrolled`
-                            : ` · ${c.used}/${c.capacity}`}
-                          {!fits && c.branch_name
-                            ? ` · ${c.branch_name} only`
-                            : ""}
-                        </option>
-                      );
-                    })}
-                  </NativeSelect>
-                  {/* The screen reads a register as well as filling one, so
-                      the SCREEN stays open on `view` and only the write is
-                      gated. The nav item already hides it from somebody
-                      without the key, but a URL still reaches it. */}
-                  <PermissionGate permission={P.ASSIGN_CLASS}>
-                    <Button
-                      size="sm"
-                      disabled={!target || assigning}
-                      onClick={() => assign(acknowledged)}
-                    >
-                      {assigning
-                        ? "Assigning…"
-                        : acknowledged
-                          ? "Assign anyway"
-                          : "Assign"}
-                    </Button>
-                  </PermissionGate>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setPicked([]);
-                      setAcknowledged(false);
-                    }}
-                  >
-                    Clear
-                  </Button>
-                  {/* What this selection does to the class, before it runs.
-                      The server checks capacity once for the whole selection,
-                      so the arithmetic that matters is used + picked - not
-                      used + 1, and getting it wrong here means the warning
-                      fires on the wrong side of the limit. */}
-                  {targetClass && (
-                    <span
-                      className={
-                        targetClass.capacity != null &&
-                        targetClass.used + picked.length > targetClass.capacity
-                          ? "text-xs text-amber-700"
-                          : "text-xs text-gray-05"
-                      }
-                    >
-                      {targetClass.capacity == null
-                        ? `Into ${targetClass.name} · no capacity set`
-                        : targetClass.used + picked.length >
-                            targetClass.capacity
-                          ? `${targetClass.name} holds ${targetClass.used} of ${targetClass.capacity}. These ${picked.length} would put it ${targetClass.used + picked.length - targetClass.capacity} over.`
-                          : `Into ${targetClass.name} · ${targetClass.used} of ${targetClass.capacity} used, ${targetClass.capacity - targetClass.used} free`}
-                    </span>
-                  )}
-                </div>
-              )}
-            </>
-          )}
-        </>
-      ) : (
-        <>
-          {/* A picker, and the load of the one it is on.
-              The load still leads the choice, which is why every option names
-              it: a bare class list makes you pick one to find out how full it
-              is, which is backwards. But a box per class does not survive a
-              real school - a secondary with six arms at each of six levels is
-              thirty-six boxes, eleven rows of them, and the register they
-              exist to open is pushed off the bottom of the screen before a
-              single name is read. Searchable, so the answer to "where is SSS2
-              C" is three keystrokes rather than a scan. */}
-          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-            <div className="min-w-0 flex-1 basis-64 sm:max-w-sm">
-              <SearchSelect
-                label="Showing"
-                options={classOptions}
-                value={rosterClassId ? String(rosterClassId) : ""}
-                onChange={(e) => setRosterClass(e.target.value)}
-                placeholder="Search for a class"
-              />
-            </div>
-            {rosterClass && <ClassLoad c={rosterClass} />}
-          </div>
-
-          <CustomTable
-            tableHeaderList={[
-              "Student",
-              "Admission no.",
-              "Status",
-              "Primary guardian",
-              "",
-            ]}
-            loading={rosterLoading}
-            defaultBodyList={roster}
-            tableBodyList={roster.map((s) => ({
-              Student: s.full_name,
-              "Admission no.": s.student_number || "Not issued",
-              Status: (
-                <StudentStatusBadge status={s.status} label={s.status_label} />
-              ),
-              "Primary guardian": s.primary_guardian || "None linked",
-              "": (
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setMoving(s);
-                  }}
-                  className="text-xs text-primary underline-offset-2 hover:underline"
-                >
-                  Move
-                </button>
-              ),
-            }))}
-            onRowClick={(student: StudentRow) => {
-              if (student?.id) {
-                navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(student.id));
-              }
-            }}
-            hidePagination
-            emptyText="Nobody is in this class yet"
-          />
-        </>
-      )}
-
-      {moving && (
-        <TransferDrawer student={moving} open onClose={() => setMoving(null)} />
-      )}
+      {moving && <TransferDrawer student={moving} open onClose={() => setMoving(null)} />}
     </PageShell>
+  );
+}
+
+function ViewSwitch({ value, unplacedCount, onChange }: {
+  value: View;
+  unplacedCount: number;
+  onChange: (next: View) => void;
+}) {
+  const options = [
+    { value: "unplaced" as const, label: "Unassigned students", icon: BookOpenCheck, count: unplacedCount },
+    { value: "roster" as const, label: "Class roster", icon: Users },
+  ];
+  return (
+    <div role="tablist" aria-label="Classes and transfers views" className="max-w-full overflow-x-auto">
+      <div className="relative inline-grid min-w-max grid-cols-2 rounded-lg border border-border bg-white p-1">
+        <span
+          aria-hidden="true"
+          className={cn(
+            "pointer-events-none absolute inset-y-1 left-1 w-[calc((100%-0.5rem)/2)] rounded-md bg-pry-01 shadow-sm",
+            "transition-transform duration-300 ease-out motion-reduce:transition-none",
+            value === "roster" && "translate-x-full",
+          )}
+        />
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => onChange(option.value)}
+              className={cn(
+                "relative z-10 inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                active
+                  ? "font-medium text-primary"
+                  : "text-gray-06 hover:bg-gray-04 hover:text-black-01 active:scale-[0.98]",
+              )}
+            >
+              <option.icon className="size-4" />
+              {option.label}
+              {option.count != null && option.count > 0 && (
+                <span className="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                  {option.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function AssignmentBar({ count, classes, target, targetClass, assigning, acknowledged, classFits, onTargetChange, onAssign, onClear }: {
+  count: number;
+  classes: ClassSeats[];
+  target: string;
+  targetClass?: ClassSeats;
+  assigning: boolean;
+  acknowledged: boolean;
+  classFits: (schoolClass: ClassSeats) => boolean;
+  onTargetChange: (value: string) => void;
+  onAssign: () => void;
+  onClear: () => void;
+}) {
+  const wouldOverfill = Boolean(
+    targetClass?.capacity != null && targetClass.used + count > targetClass.capacity,
+  );
+  return (
+    <Surface className="flex flex-wrap items-center gap-3 px-4 py-3 shadow-sm">
+      <span className="shrink-0 text-sm font-medium text-black-01">
+        {count} {count === 1 ? "student" : "students"} picked
+      </span>
+      <div className="min-w-0 flex-1 basis-52 sm:max-w-xs">
+        <NativeSelect
+          aria-label="Target class"
+          value={target}
+          onChange={(event) => onTargetChange(event.target.value)}
+          className="h-9"
+        >
+          <option value="">Assign into...</option>
+          {classes.map((schoolClass) => {
+            const fits = classFits(schoolClass);
+            return (
+              <option key={schoolClass.id} value={schoolClass.id} disabled={!fits}>
+                {schoolClass.name}
+                {schoolClass.capacity == null
+                  ? ` · ${schoolClass.used} enrolled`
+                  : ` · ${schoolClass.used}/${schoolClass.capacity}`}
+                {!fits && schoolClass.branch_name
+                  ? ` · ${schoolClass.branch_name} only`
+                  : ""}
+              </option>
+            );
+          })}
+        </NativeSelect>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button size="sm" variant="ghost" onClick={onClear}>Clear</Button>
+        <PermissionGate permission={P.ASSIGN_CLASS}>
+          <Button size="sm" disabled={!target || assigning} onClick={onAssign}>
+            {assigning ? "Assigning..." : acknowledged ? "Assign anyway" : "Assign"}
+          </Button>
+        </PermissionGate>
+      </div>
+      {targetClass && (
+        <p className={cn("w-full text-xs", wouldOverfill ? "text-amber-700" : "text-gray-05")}>
+          {assignmentImpact(targetClass, count)}
+        </p>
+      )}
+    </Surface>
+  );
+}
+
+function RefusalNotice({ rows, onDismiss }: { rows: BulkResultRow[]; onDismiss: () => void }) {
+  return (
+    <section className="rounded-xl border border-amber-300 bg-amber-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-amber-900">
+          {rows.length} {rows.length === 1 ? "student was" : "students were"} not placed
+        </h2>
+        <button type="button" onClick={onDismiss} className="text-xs text-amber-900 underline-offset-2 hover:underline">
+          Dismiss
+        </button>
+      </div>
+      <ul className="mt-2 grid gap-1.5">
+        {rows.map((row) => (
+          <li key={row.student} className="text-sm text-amber-900">
+            <span className="font-medium">{row.name || `Student ${row.student}`}</span>
+            {row.message ? ` - ${row.message}` : ""}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function StudentName({ student }: { student: StudentRow }) {
+  return (
+    <span className="flex min-w-0 items-center gap-2.5">
+      <PersonAvatar name={student.full_name} photoUrl={student.photo_url} className="size-8.5 shrink-0" textClassName="text-xs" />
+      <span className="min-w-0">
+        <span className="block break-words text-sm font-medium text-black-01">{student.full_name}</span>
+        <span className="mt-0.5 block text-xs text-gray-05">{student.level_name || "No level set"}</span>
+      </span>
+    </span>
+  );
+}
+
+function ClassLoad({ schoolClass }: { schoolClass: ClassSeats }) {
+  const isOver = schoolClass.capacity != null && schoolClass.used > schoolClass.capacity;
+  const isFull = schoolClass.remaining === 0;
+  const percent = schoolClass.capacity
+    ? Math.min(100, Math.round((schoolClass.used / schoolClass.capacity) * 100))
+    : 0;
+  return (
+    <div className="min-w-0 flex-1 basis-52 pb-1 sm:max-w-xs">
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-xs font-medium text-black-01">{schoolClass.level_name || "Level not set"}</span>
+        <span className={cn("shrink-0 text-xs", isOver ? "text-red-600" : isFull ? "text-amber-700" : "text-gray-05")}>
+          {schoolClass.capacity == null
+            ? `${schoolClass.used} enrolled`
+            : `${schoolClass.used} of ${schoolClass.capacity} · ${loadNote(schoolClass)}`}
+        </span>
+      </div>
+      {schoolClass.capacity != null && (
+        <span className="mt-2 block h-2 overflow-hidden rounded-full bg-white-02">
+          <span
+            className={cn("block h-full rounded-full", isOver ? "bg-red-500" : isFull ? "bg-amber-500" : "bg-primary")}
+            style={{ width: `${isOver ? 100 : percent}%` }}
+          />
+        </span>
+      )}
+    </div>
   );
 }

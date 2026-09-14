@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 /**
  * The frame all five student drawers sit in.
@@ -44,6 +45,7 @@ export function DrawerShell({
   canSave,
   saving,
   destructive,
+  wide,
 }: {
   open: boolean;
   onClose: () => void;
@@ -56,12 +58,17 @@ export function DrawerShell({
   saving?: boolean;
   /** Colours the primary button for a move that takes a child off the roll. */
   destructive?: boolean;
+  /** Gives comparison-heavy forms enough room for two readable columns. */
+  wide?: boolean;
 }) {
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
       <SheetContent
         side="right"
-        className="flex w-full flex-col gap-0 bg-white p-0 sm:max-w-md"
+        className={cn(
+          "flex w-full flex-col gap-0 bg-white p-0",
+          wide ? "sm:max-w-2xl" : "sm:max-w-md",
+        )}
       >
         <SheetHeader className="border-b border-border px-5 pb-4 pt-5 pr-12 text-left">
           <SheetTitle className="font-mont text-base">{title}</SheetTitle>

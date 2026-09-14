@@ -101,7 +101,7 @@ export const studentsApi = baseApi.injectEndpoints({
      */
     getUnplacedStudents: builder.query<
       PaginatedEnvelope<StudentRow>,
-      { branch?: number; session?: number } | void
+      StudentListArgs | void
     >({
       query: (args) => ({
         url: `/students/unplaced/`,

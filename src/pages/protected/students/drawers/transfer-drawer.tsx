@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { ArrowRight } from "lucide-react";
 
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -86,7 +87,7 @@ export function TransferDrawer({
     used != null && capacity != null && used + 1 > capacity;
 
   const [assign, { isLoading }] = useAssignClassMutation();
-  const valid = destinationId > 0 && Boolean(effective);
+  const valid = destinationId > 0 && Boolean(reason) && Boolean(effective);
 
   function reset() {
     setDestination("");
@@ -133,14 +134,37 @@ export function TransferDrawer({
       }}
       title={student.class_name ? "Transfer class" : "Assign a class"}
       subtitle={`${student.full_name} · ${student.class_name || "no class yet"}`}
-      saveLabel={override ? "Move anyway" : "Move student"}
+      saveLabel={
+        override
+          ? "Move anyway"
+          : student.class_name
+            ? "Move student"
+            : "Assign student"
+      }
       onSave={save}
       canSave={valid}
       saving={isLoading}
       destructive={override}
+      wide
     >
       <div className="grid gap-4">
-        <Field label="Destination class">
+        <div className="grid items-stretch gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-center">
+          <div className="rounded-lg border border-border bg-white px-4 py-3">
+            <p className="text-xs text-gray-05">From</p>
+            <p className="mt-1 text-sm font-semibold text-black-01">
+              {student.class_name || "No class yet"}
+            </p>
+          </div>
+          <ArrowRight className="mx-auto size-4 rotate-90 text-gray-05 sm:rotate-0" />
+          <div className="rounded-lg border border-border bg-pry-01 px-4 py-3">
+            <p className="text-xs text-gray-05">To</p>
+            <p className="mt-1 text-sm font-semibold text-primary">
+              {chosen?.name || "Not picked yet"}
+            </p>
+          </div>
+        </div>
+
+        <Field label="Destination class" required>
           <NativeSelect
             value={destination}
             onChange={(e) => {
@@ -148,6 +172,7 @@ export function TransferDrawer({
               setOverride(false);
             }}
             className="h-9"
+            required
           >
             <option value="">Select a class</option>
             {classes.map((c) => (
@@ -176,31 +201,37 @@ export function TransferDrawer({
           </p>
         )}
 
-        <Field
-          label="Reason"
-          hint="Optional, and kept on the student's history with your name."
-        >
-          <NativeSelect
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            className="h-9"
-          >
-            <option value="">Not given</option>
-            {TRANSFER_REASONS.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <Field label="Reason" required>
+            <NativeSelect
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              className="h-9"
+              required
+            >
+              <option value="">Select a reason</option>
+              {TRANSFER_REASONS.map((r) => (
+                <option key={r.value} value={r.value}>
+                  {r.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
 
-        <Field label="Effective from">
-          <DatePickerInput
-            value={effective}
-            onChange={(e) => setEffective(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
+          <Field label="Effective date" required>
+            <DatePickerInput
+              value={effective}
+              onChange={(e) => setEffective(e.target.value)}
+              className={inputClass}
+              required
+            />
+          </Field>
+        </div>
+
+        <p className="text-xs text-gray-05">
+          This move is written to {student.first_name}&apos;s history with your
+          name against it.
+        </p>
       </div>
     </DrawerShell>
   );
