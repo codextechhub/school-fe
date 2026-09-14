@@ -1,19 +1,15 @@
 import { useMemo, useState } from "react";
-import { Bell, Pencil, Plus, Trash2 } from "lucide-react";
+import { Bell, Plus } from "lucide-react";
 import { toast } from "sonner";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import PromptModal from "@/components/modal/prompt-modal";
-import { Panel } from "@/components/custom/surface";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
-import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import {
   useCreatePeriodMutation,
@@ -26,20 +22,15 @@ import type {
   Period,
   PeriodWrite,
 } from "@/redux/services/calendar/calendar-types";
-import { RowActions } from "../components/row-actions";
 import { PeriodDrawer } from "../components/period-drawer";
 import { blankPeriod, periodDraftFrom } from "../components/period-draft";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
-
-const DAY_TABS: { value: DayOfWeek | "all"; label: string; short: string }[] = [
-  { value: "all", label: "The whole schedule", short: "All" },
-  { value: 1, label: "Monday", short: "Mon" },
-  { value: 2, label: "Tuesday", short: "Tue" },
-  { value: 3, label: "Wednesday", short: "Wed" },
-  { value: 4, label: "Thursday", short: "Thu" },
-  { value: 5, label: "Friday", short: "Fri" },
-];
+import {
+  PeriodDirectory,
+  SchoolDayPanel,
+  type BellDay,
+} from "./bell-schedule-view";
 
 /**
  * The daily period structure every timetable grid is built on.
@@ -60,7 +51,7 @@ export default function BellSchedule() {
     useAcademicsLens();
   const { hasPermission } = usePermissions();
 
-  const [day, setDay] = useState<DayOfWeek | "all">("all");
+  const [day, setDay] = useState<BellDay>("all");
   const [editing, setEditing] = useState<Period | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirm, setConfirm] = useState<Period | null>(null);
@@ -83,14 +74,12 @@ export default function BellSchedule() {
   const everyPeriod = useMemo(() => allData?.data?.periods ?? [], [allData]);
 
   /**
-   * What the strip draws, which is never the same as what the table lists.
+   * The periods that form the visual school day.
    *
-   * The table answers "what rows exist"; the strip answers "what does a day
-   * look like", and those differ the moment one day owns its own periods. On
-   * the All tab it drew every row end to end - the everyday schedule followed
-   * by Friday's - and reported a school day running 08:00 to 10:00, which is
-   * not a day this school or any other has. On All it now shows the everyday
-   * schedule, which is what runs on the days nobody has overridden.
+   * The directory answers "what rows exist" while this preview answers "what
+   * does a day look like". The All view therefore previews only the everyday
+   * schedule, because joining it to Friday's override would create a school day
+   * that never runs.
    */
   const stripPeriods = useMemo(
     () => (day === "all" ? periods.filter((p) => !p.day_of_week) : periods),
@@ -98,12 +87,17 @@ export default function BellSchedule() {
   );
   const stripLabel =
     day === "all"
-      ? "Every day, on the days that do not run their own schedule"
-      : DAY_TABS.find((t) => t.value === day)?.label ?? "";
+      ? "The everyday schedule used unless a weekday has its own periods."
+      : `${schedule?.day_label ?? "This day"}'s schedule as it actually runs.`;
 
   /** Which weekdays carry rows of their own, so run their own schedule. */
   const ownDays = useMemo(
-    () => new Set(everyPeriod.map((p) => p.day_of_week).filter(Boolean)),
+    () =>
+      new Set(
+        everyPeriod
+          .map((period) => period.day_of_week)
+          .filter((value): value is DayOfWeek => value !== null),
+      ),
     [everyPeriod],
   );
 
@@ -116,7 +110,7 @@ export default function BellSchedule() {
     setDrawerOpen(true);
   };
 
-  // "Add a period" from the search box, on the Add button's own gate.
+  // The command-palette action follows the Add button's permission gate.
   useActionParam("new", canCreate, () => open(null));
 
   const save = async (body: PeriodWrite) => {
@@ -157,10 +151,15 @@ export default function BellSchedule() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-center justify-between gap-2.5">
-        <p className="min-w-0 text-sm text-gray-06 text-pretty">
-          The daily period structure every timetable grid is built on.
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="font-mont text-lg font-semibold text-black-01">
+            Bell Schedule
+          </h1>
+          <p className="mt-1 min-w-0 text-sm text-gray-06 text-pretty">
+            Set the daily periods every class and teacher timetable uses.
+          </p>
+        </div>
         <PermissionGate
           permission={P.CREATE_TIMETABLE_ENTRY}
           disabled={readOnlyYear}
@@ -177,8 +176,8 @@ export default function BellSchedule() {
 
       {isLoading ? (
         <>
-          <Skeleton className="h-32 w-full rounded-md" />
-          <Skeleton className="h-64 w-full rounded-md" />
+          <Skeleton className="h-52 w-full rounded-md" />
+          <Skeleton className="h-72 w-full rounded-md" />
         </>
       ) : empty ? (
         <OutlinedNotice
@@ -194,139 +193,25 @@ export default function BellSchedule() {
         />
       ) : (
         <>
-          {/* ── The school day, as it actually runs ─────────────────────── */}
-          <Panel className="p-5">
-            <h2 className="font-mont text-[15px] font-semibold text-black-01">
-              The school day
-            </h2>
-            <p className="mt-0.5 text-[13px] text-gray-05 text-pretty">
-              {stripLabel}
-            </p>
+          <SchoolDayPanel
+            day={day}
+            periods={stripPeriods}
+            ownDays={ownDays}
+            label={stripLabel}
+            note={schedule?.note}
+            canEdit={canEdit}
+            onDayChange={setDay}
+            onEdit={open}
+          />
 
-            <div className="mt-3 max-w-full overflow-x-auto">
-              <div className="inline-flex gap-1.5 pb-1">
-                {DAY_TABS.map((tab) => (
-                  <button
-                    key={String(tab.value)}
-                    type="button"
-                    onClick={() => setDay(tab.value)}
-                    aria-pressed={day === tab.value}
-                    className={cn(
-                      "whitespace-nowrap rounded-full border px-3 py-1.5 text-xs",
-                      day === tab.value
-                        ? "border-primary bg-pry-01 font-medium text-primary"
-                        : "border-white-02 bg-white text-gray-06 hover:bg-gray-04",
-                    )}
-                  >
-                    {tab.short}
-                    {/* A dot on the days that override the everyday schedule,
-                        so the one short Friday is findable without opening
-                        every tab. */}
-                    {tab.value !== "all" && ownDays.has(tab.value) && (
-                      <span className="ml-1.5 inline-block size-1.5 rounded-full bg-primary align-middle" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* The server's own sentence for a day that replaces the everyday
-                schedule. Rendered verbatim: it counts the periods in force. */}
-            {schedule?.note && (
-              <p className="mt-3 rounded-lg border border-primary/30 bg-pry-01/40 px-3 py-2 text-[13px] text-gray-06 text-pretty">
-                {schedule.note}
-              </p>
-            )}
-
-            <div className="mt-4 max-w-full overflow-x-auto">
-              <div className="flex min-w-max items-stretch gap-1.5 pb-1">
-                {stripPeriods.map((period) => (
-                  <div
-                    key={period.id}
-                    className={cn(
-                      "min-w-24 rounded-lg border px-2.5 py-2",
-                      period.period_type === "LESSON"
-                        ? "border-white-02 bg-white"
-                        : "border-transparent bg-white-05",
-                    )}
-                  >
-                    <p
-                      className={cn(
-                        "truncate text-xs font-medium",
-                        period.period_type === "LESSON"
-                          ? "text-black-01"
-                          : "text-gray-05",
-                      )}
-                    >
-                      {period.label}
-                    </p>
-                    <p className="mt-0.5 whitespace-nowrap text-[11px] text-gray-05">
-                      {clock(period.start_time)} - {clock(period.end_time)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <p className="mt-3 text-xs text-gray-05">{summary(stripPeriods)}</p>
-          </Panel>
-
-          {/* ── Every row on file ───────────────────────────────────────── */}
-          <CustomTable
-            tableHeaderList={[
-              "Order",
-              "Label",
-              "Time",
-              "Type",
-              "Applies on",
-              ...(multiBranch ? ["Scope"] : []),
-              "Action",
-            ]}
-            defaultBodyList={periods}
-            tableBodyList={periods.map((period) => ({
-              Order: String(period.order_index),
-              Label: period.label,
-              Time: `${clock(period.start_time)} - ${clock(period.end_time)}`,
-              Type: period.type_label,
-              "Applies on": period.day_label,
-              ...(multiBranch
-                ? {
-                    Scope: period.branch ? (
-                      period.scope_label
-                    ) : (
-                      <Badge
-                        variant="blue"
-                        className="rounded-full py-0 text-[11px]"
-                      >
-                        School-wide
-                      </Badge>
-                    ),
-                  }
-                : {}),
-              Action: (
-                <RowActions
-                  label={`Actions for ${period.label}`}
-                  actions={[
-                    canEdit && {
-                      label: "Edit",
-                      icon: Pencil,
-                      onSelect: () => open(period),
-                    },
-                    canDelete && {
-                      label: "Delete",
-                      icon: Trash2,
-                      destructive: true,
-                      onSelect: () => setConfirm(period),
-                    },
-                  ]}
-                />
-              ),
-            }))}
-            onRowClick={(period: Period) => {
-              if (period && canEdit) open(period);
-            }}
-            emptyText="No periods run on this day"
-            mobile="scroll"
+          <PeriodDirectory
+            periods={periods}
+            note={directoryNote(day, schedule?.day_label, schedule?.note)}
+            multiBranch={multiBranch}
+            canEdit={canEdit}
+            canDelete={canDelete}
+            onEdit={open}
+            onDelete={setConfirm}
           />
         </>
       )}
@@ -363,15 +248,12 @@ function clock(value: string): string {
   return (value ?? "").slice(0, 5);
 }
 
-/** How long the day is, and how much of it is teaching. */
-function summary(periods: Period[]): string {
-  if (!periods.length) return "";
-  const lessons = periods.filter((p) => p.period_type === "LESSON").length;
-  const first = clock(periods[0].start_time);
-  const last = clock(periods[periods.length - 1].end_time);
-  return `${periods.length} period${periods.length === 1 ? "" : "s"}, ${lessons} of them teaching · ${first} to ${last}`;
+function directoryNote(day: BellDay, dayLabel?: string, serverNote?: string) {
+  if (day === "all") {
+    return "Every period defined, including weekdays that run their own schedule.";
+  }
+  return serverNote ?? `${dayLabel ?? "This day"} follows the everyday schedule.`;
 }
-
 
 /**
  * What removing a period does.
