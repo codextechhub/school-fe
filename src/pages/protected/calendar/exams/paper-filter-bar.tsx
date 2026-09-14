@@ -73,7 +73,7 @@ function Group({
 export function PaperFilterBar({
   filters,
   options,
-  clashCount,
+  clashingPaperCount,
   showing,
   total,
   onChange,
@@ -86,7 +86,7 @@ export function PaperFilterBar({
     invigilators: FilterOption[];
     sittings: FilterOption[];
   };
-  clashCount: number;
+  clashingPaperCount: number;
   showing: number;
   total: number;
   onChange: (next: PaperFilters) => void;
@@ -206,7 +206,7 @@ export function PaperFilterBar({
         {/* Its own control, not a checkbox buried in the popover. Chasing the
             clashes before publishing is the single most common reason to
             narrow this screen at all. */}
-        {clashCount > 0 && (
+        {clashingPaperCount > 0 && (
           <Button
             variant={filters.clashesOnly ? "default" : "outline"}
             size="sm"
@@ -215,12 +215,12 @@ export function PaperFilterBar({
               onChange({ ...filters, clashesOnly: !filters.clashesOnly })
             }
           >
-            Clashes only
+            Clashing papers
             <Badge
               variant={filters.clashesOnly ? "active" : "rejected"}
               className="ml-1 rounded-full px-1.5 py-0 text-[10px]"
             >
-              {clashCount}
+              {clashingPaperCount}
             </Badge>
           </Button>
         )}

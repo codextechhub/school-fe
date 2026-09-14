@@ -79,7 +79,7 @@ export function PaperBoard({
                       <button
                         type="button"
                         onClick={() => onAdd(day.date, cell.sitting)}
-                        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white-02 px-3 py-3 text-[11px] text-gray-05 transition-colors hover:border-primary/40 hover:text-primary"
+                        className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-white-02 px-3 py-3 text-[11px] text-gray-05 transition-all hover:border-primary/40 hover:bg-pry-01/30 hover:text-primary active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <Plus className="size-3.5" />
                         Add a paper
@@ -101,7 +101,7 @@ export function PaperBoard({
                             type="button"
                             onClick={() => onOpen(slot)}
                             className={cn(
-                              "w-full rounded-lg border px-2.5 py-2 text-left transition-colors",
+                              "w-full rounded-lg border px-2.5 py-2 text-left transition-all hover:-translate-y-px hover:shadow-sm active:translate-y-0 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                               clashing.has(slot.id)
                                 ? "border-error-text/35 bg-error-text/5 hover:border-error-text/60"
                                 : "border-white-02 bg-white-05 hover:border-primary/40",

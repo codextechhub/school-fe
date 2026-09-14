@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   AlertTriangle,
+  CalendarDays,
   CalendarPlus,
   ClipboardList,
   LayoutGrid,
@@ -119,7 +120,7 @@ export default function ExamScheduling() {
   // The board answers "when is what"; the list answers "show me every field of
   // every row", which is what somebody checking an invigilator column against
   // a staff rota wants. The list is also what prints.
-  const [view, setView] = useState<"board" | "list">("board");
+  const [view, setView] = useState<"board" | "list">("list");
 
   // Plain calls, not `useMemo`. All three are pure passes over one exam's
   // papers - a hundred rows at the outside - and the React Compiler memoises
@@ -199,7 +200,8 @@ export default function ExamScheduling() {
 
   if (isError) {
     return (
-      <PageShell>
+      <PageShell className="content-start gap-5" grid>
+        <PageHeading />
         <OutlinedNotice
           icon={ClipboardList}
           title="We could not load your exam schedule"
@@ -214,7 +216,8 @@ export default function ExamScheduling() {
   if (isLoading) {
     return (
       <PageShell className="content-start gap-5" grid>
-        <Skeleton className="h-24 w-full rounded-md" />
+        <PageHeading />
+        <Skeleton className="h-20 w-full rounded-md" />
         <Skeleton className="h-80 w-full rounded-md" />
       </PageShell>
     );
@@ -224,7 +227,8 @@ export default function ExamScheduling() {
   // a schedule hangs off a dated exam period and the calendar holds none.
   if (!exams.length || !exam) {
     return (
-      <PageShell>
+      <PageShell className="content-start gap-5" grid>
+        <PageHeading />
         <OutlinedNotice
           icon={CalendarPlus}
           title="No exam period yet"
@@ -242,38 +246,8 @@ export default function ExamScheduling() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="print-hide flex flex-wrap items-center justify-between gap-2.5">
-        {/* Only where there is a choice to make. A school running mocks in
-            November and end-of-term exams in December has two, and the design
-            offered no way to reach the second - see ruling C. */}
-        {exams.length > 1 ? (
-          <RowPicker
-            label="Exam period"
-            rows={exams.map((e) => ({
-              id: e.id,
-              name: e.name,
-              has_clash: e.warnings.length > 0,
-            }))}
-            current={current}
-            searchPlaceholder="Search exam periods"
-            emptyText="No exam period matches that."
-            subtitle={(row) => {
-              const found = exams.find((e) => e.id === row.id)!;
-              return `${formatRange(found.start_date, found.end_date)} · ${found.paper_count} paper${found.paper_count === 1 ? "" : "s"} · ${found.status_label}`;
-            }}
-            onPick={setExamId}
-          />
-        ) : (
-          <div className="min-w-0">
-            <h2 className="truncate font-mont text-[15px] font-semibold text-black-01">
-              {exam.name}
-            </h2>
-            <p className="mt-0.5 text-[13px] text-gray-05">
-              {range} · from the calendar
-            </p>
-          </div>
-        )}
-
+      <div className="print-hide flex flex-wrap items-start justify-between gap-3">
+        <PageHeading periodName={exam.name} />
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
@@ -317,6 +291,55 @@ export default function ExamScheduling() {
         </div>
       </div>
 
+      {exams.length > 1 ? (
+        <div className="print-hide flex flex-wrap items-center justify-between gap-3">
+          <RowPicker
+            label="Exam period"
+            rows={exams.map((e) => ({
+              id: e.id,
+              name: e.name,
+              has_clash: e.warnings.length > 0,
+            }))}
+            current={current}
+            searchPlaceholder="Search exam periods"
+            emptyText="No exam period matches that."
+            presentation="card"
+            icon={CalendarDays}
+            subtitle={(row) => {
+              const found = exams.find((e) => e.id === row.id)!;
+              return `${formatRange(found.start_date, found.end_date)} · ${found.paper_count} paper${found.paper_count === 1 ? "" : "s"} · ${found.status_label}`;
+            }}
+            onPick={setExamId}
+          />
+          <PeriodStatus
+            published={published}
+            status={exam.status_label}
+            papers={exam.paper_count}
+          />
+        </div>
+      ) : (
+        <Panel className="print-hide flex flex-wrap items-center gap-4 px-4 py-4 sm:px-5">
+          <div className="min-w-0">
+            <p className="font-mont text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-05">
+              Exam period
+            </p>
+            <h2 className="mt-1 truncate font-mont text-base font-semibold text-black-01">
+              {exam.name}
+            </h2>
+            <p className="mt-1 text-[13px] text-gray-06">
+              {range} · from the calendar
+            </p>
+          </div>
+          <div className="ml-auto">
+            <PeriodStatus
+              published={published}
+              status={exam.status_label}
+              papers={exam.paper_count}
+            />
+          </div>
+        </Panel>
+      )}
+
       <Panel className="print-area p-5">
         {/* On paper there is no header and no picker to say which exam period
             these papers belong to. */}
@@ -331,25 +354,6 @@ export default function ExamScheduling() {
           </p>
         </div>
 
-        <div className="print-hide flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0">
-            {exams.length > 1 && (
-              <p className="text-[13px] text-gray-05">
-                {range} · from the calendar
-              </p>
-            )}
-            <p className="text-[13px] text-gray-06">
-              {exam.paper_count} paper{exam.paper_count === 1 ? "" : "s"}
-            </p>
-          </div>
-          <Badge
-            variant={published ? "active" : "pending"}
-            className="rounded-full py-0.5 text-[11px]"
-          >
-            {exam.status_label}
-          </Badge>
-        </div>
-
         {exam.warnings.length > 0 && (
           <p className="print-only mb-3 text-sm text-error-text">
             {exam.warnings.length} unresolved clash
@@ -358,7 +362,7 @@ export default function ExamScheduling() {
         )}
 
         {exam.warnings.length > 0 && (
-          <div className="print-hide mt-4 rounded-lg border border-error-text/30 bg-error-text/5 px-3 py-2.5">
+          <div className="print-hide rounded-lg border border-error-text/30 bg-error-text/5 px-4 py-3.5">
             <p className="flex items-center gap-1.5 text-[13px] font-medium text-error-text">
               <AlertTriangle className="size-3.5 shrink-0" />
               {exam.warnings.length} clash
@@ -404,7 +408,7 @@ export default function ExamScheduling() {
               <PaperFilterBar
                 filters={filters}
                 options={options}
-                clashCount={clashing.size}
+                clashingPaperCount={clashing.size}
                 showing={shown.length}
                 total={exam.slots.length}
                 onChange={setFilters}
@@ -510,6 +514,7 @@ export default function ExamScheduling() {
                   setPaper({ values: paperValuesFrom(slot), slot });
                 }
               }}
+              cardBreakpoint="lg"
               emptyText="No papers"
             />
             </div>
@@ -541,3 +546,41 @@ export default function ExamScheduling() {
   );
 }
 
+function PageHeading({ periodName }: { periodName?: string }) {
+  return (
+    <div className="min-w-0">
+      <h1 className="font-mont text-lg font-semibold text-black-01">
+        Exam Scheduling
+      </h1>
+      <p className="mt-1 text-sm text-gray-06 text-pretty">
+        {periodName
+          ? `Papers placed inside ${periodName}.`
+          : "Build and publish the papers inside each dated exam period."}
+      </p>
+    </div>
+  );
+}
+
+function PeriodStatus({
+  published,
+  status,
+  papers,
+}: {
+  published: boolean;
+  status: string;
+  papers: number;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2.5">
+      <Badge
+        variant={published ? "active" : "pending"}
+        className="rounded-full py-0.5 text-[11px]"
+      >
+        {status}
+      </Badge>
+      <p className="text-xs text-gray-05">
+        {papers} paper{papers === 1 ? "" : "s"}
+      </p>
+    </div>
+  );
+}
