@@ -366,6 +366,8 @@ export interface NextStagePreview {
 export interface WorkflowInstanceDetail extends WorkflowInstance {
   /** Empty object when the document's handler provides no summary. */
   document_summary: DocumentSummary;
+  document_details: unknown;
+  source_document_link: string | null;
   /** Null when the instance isn't awaiting a decision. */
   next_stage: NextStagePreview | null;
   stage_instances: WorkflowStageInstance[];
