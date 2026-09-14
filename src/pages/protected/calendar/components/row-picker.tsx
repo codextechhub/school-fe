@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { AlertTriangle, Check, ChevronDown, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  Search,
+  type LucideIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,6 +42,8 @@ export function RowPicker<T extends PickerRow>({
   subtitle,
   searchPlaceholder,
   emptyText,
+  presentation = "compact",
+  icon: Icon,
   onPick,
 }: {
   /** "Timetable for", and what the search box is searching. */
@@ -45,6 +53,8 @@ export function RowPicker<T extends PickerRow>({
   subtitle: (row: T) => string;
   searchPlaceholder: string;
   emptyText: string;
+  presentation?: "compact" | "card";
+  icon?: LucideIcon;
   onPick: (id: number) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -57,8 +67,15 @@ export function RowPicker<T extends PickerRow>({
     : rows;
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-2">
-      <span className="text-[13px] text-gray-05">{label}</span>
+    <div
+      className={cn(
+        "flex min-w-0 flex-wrap items-center gap-2",
+        presentation === "card" && "w-full sm:w-auto",
+      )}
+    >
+      {presentation === "compact" && (
+        <span className="text-[13px] text-gray-05">{label}</span>
+      )}
       <Popover
         open={open}
         onOpenChange={(next) => {
@@ -67,15 +84,40 @@ export function RowPicker<T extends PickerRow>({
         }}
       >
         <PopoverTrigger asChild>
-          <Button variant="outline" className="min-w-0 text-sm">
-            <span className="min-w-0 truncate font-medium">
-              {row?.name ?? "Pick one"}
-            </span>
-            {row?.has_clash && (
-              <AlertTriangle className="size-3.5 shrink-0 text-error-text" />
-            )}
-            <ChevronDown className="size-4 shrink-0 text-gray-05" />
-          </Button>
+          {presentation === "card" ? (
+            <button
+              type="button"
+              className="flex h-14 w-full min-w-0 items-center gap-3 rounded-lg border border-border bg-white px-3.5 text-left transition-colors hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:min-w-72 sm:w-auto"
+            >
+              {Icon && (
+                <span className="grid size-9 shrink-0 place-content-center rounded-lg bg-pry-01 text-primary">
+                  <Icon className="size-4" />
+                </span>
+              )}
+              <span className="min-w-0 flex-1">
+                <span className="block font-mont text-[10px] font-semibold uppercase tracking-[0.07em] text-gray-05">
+                  {label}
+                </span>
+                <span className="mt-0.5 block truncate font-mont text-sm font-semibold text-black-01">
+                  {row?.name ?? "Pick one"}
+                </span>
+              </span>
+              {row?.has_clash && (
+                <AlertTriangle className="size-3.5 shrink-0 text-error-text" />
+              )}
+              <ChevronDown className="size-4 shrink-0 text-gray-05" />
+            </button>
+          ) : (
+            <Button variant="outline" className="min-w-0 text-sm">
+              <span className="min-w-0 truncate font-medium">
+                {row?.name ?? "Pick one"}
+              </span>
+              {row?.has_clash && (
+                <AlertTriangle className="size-3.5 shrink-0 text-error-text" />
+              )}
+              <ChevronDown className="size-4 shrink-0 text-gray-05" />
+            </Button>
+          )}
         </PopoverTrigger>
         <PopoverContent align="start" className="w-80 p-0">
           <div className="relative border-b border-white-02">

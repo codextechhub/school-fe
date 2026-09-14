@@ -210,7 +210,8 @@ export default function ClassTimetables() {
   if (listLoading) {
     return (
       <PageShell className="content-start gap-5" grid>
-        <Skeleton className="h-16 w-full rounded-md" />
+        <PageHeading />
+        <Skeleton className="h-14 w-72 max-w-full rounded-md" />
         <Skeleton className="h-[28rem] w-full rounded-md" />
       </PageShell>
     );
@@ -218,7 +219,8 @@ export default function ClassTimetables() {
 
   if (!classes.length) {
     return (
-      <PageShell>
+      <PageShell className="content-start gap-5" grid>
+        <PageHeading />
         <OutlinedNotice
           icon={GraduationCap}
           title="No classes yet"
@@ -239,6 +241,7 @@ export default function ClassTimetables() {
   if (grid && !grid.has_bell_schedule) {
     return (
       <PageShell className="content-start gap-5" grid>
+        <PageHeading />
         <ClassPicker
           classes={classes}
           current={current}
@@ -259,9 +262,8 @@ export default function ClassTimetables() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="print-hide flex flex-wrap items-center justify-between gap-2.5">
-        <ClassPicker classes={classes} current={current} onPick={setClassId} />
-
+      <div className="print-hide flex flex-wrap items-start justify-between gap-3">
+        <PageHeading />
         <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
@@ -270,11 +272,8 @@ export default function ClassTimetables() {
           >
             <Printer className="size-4" /> Print
           </Button>
-          {/* Beside Print rather than instead of it, and absent until a school
-              is granted the export keys - which no school role holds today. A
-              CSV of forty rows is not what goes on a noticeboard, but it is
-              what somebody wants when they are moving the week into a
-              spreadsheet, so both are offered where both are possible. */}
+          {/* Print serves the noticeboard workflow while export serves the
+              spreadsheet workflow and keeps its independent permission. */}
           <ExportButton
             screen="calendar.timetable"
             params={{
@@ -316,10 +315,27 @@ export default function ClassTimetables() {
         </div>
       </div>
 
+      <div className="print-hide flex flex-wrap items-center justify-between gap-3">
+        <ClassPicker classes={classes} current={current} onPick={setClassId} />
+
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5 sm:justify-end">
+          <Badge
+            variant={published ? "active" : currentRow?.status ? "pending" : "inactive"}
+            className="rounded-full py-0.5 text-[11px]"
+          >
+            {grid?.status_label ?? currentRow?.status_label ?? "Not started"}
+          </Badge>
+          <p className="text-xs text-gray-05">
+            {grid?.filled ?? currentRow?.lesson_count ?? 0} of{" "}
+            {grid?.lesson_periods ?? 0} teaching periods filled
+          </p>
+        </div>
+      </div>
+
       {gridLoading || !grid ? (
         <Skeleton className="h-[28rem] w-full rounded-md" />
       ) : (
-        <Panel className="print-area p-5">
+        <Panel className="print-area overflow-hidden">
           {/* The document's own heading: on paper there is no session pill and
               no page title to say which class or which year this is. */}
           <div className="print-only mb-4">
@@ -330,26 +346,6 @@ export default function ClassTimetables() {
               {grid.session.name} · {grid.status_label} ·{" "}
               {grid.filled} of {grid.lesson_periods} teaching periods filled
             </p>
-          </div>
-
-          <div className="print-hide flex flex-wrap items-center justify-between gap-3">
-            <div className="min-w-0">
-              <h2 className="font-mont text-[15px] font-semibold text-black-01">
-                {grid.school_class.name}
-              </h2>
-              <p className="mt-0.5 text-[13px] text-gray-05">
-                {/* A count of what exists, carrying no expectation. Nothing
-                    knows how many periods a subject should get, so there is no
-                    percentage here and no "complete". */}
-                {grid.filled} of {grid.lesson_periods} teaching periods filled
-              </p>
-            </div>
-            <Badge
-              variant={published ? "active" : grid.status ? "pending" : "inactive"}
-              className="rounded-full py-0.5 text-[11px]"
-            >
-              {grid.status_label}
-            </Badge>
           </div>
 
           {/* A printed copy carries the fact that the week is unresolved, but
@@ -367,7 +363,7 @@ export default function ClassTimetables() {
           )}
 
           {warnings.length > 0 && (
-            <div className="print-hide mt-4 rounded-lg border border-error-text/30 bg-error-text/5 px-3 py-2.5">
+            <div className="print-hide border-b border-error-text/20 bg-error-text/5 px-4 py-3.5 sm:px-5">
               <p className="flex items-center gap-1.5 text-[13px] font-medium text-error-text">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 {warnings.length} clash
@@ -390,13 +386,13 @@ export default function ClassTimetables() {
           )}
 
           {grid.filled === 0 && (
-            <p className="print-hide mt-4 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-[13px] text-gray-06 text-pretty">
-              Nothing scheduled yet. Click any empty cell to add a lesson, or
-              copy another class's week across with Duplicate from.
+            <p className="print-hide border-b border-primary/10 bg-pry-01/25 px-4 py-3 text-[13px] text-gray-06 text-pretty sm:px-5">
+              {grid.lesson_periods} teaching slots this week. Click any empty
+              slot to add the first lesson, or duplicate another class's week.
             </p>
           )}
 
-          <div className="mt-4">
+          <div>
             <TimetableGrid
               days={grid.days}
               warnings={warnings}
@@ -407,7 +403,7 @@ export default function ClassTimetables() {
           </div>
 
           {published && (
-            <p className="print-hide mt-3 text-xs text-gray-05 text-pretty">
+            <p className="print-hide border-t border-border px-4 py-3 text-xs text-gray-05 text-pretty sm:px-5">
               Published{" "}
               {grid.published_at
                 ? new Date(grid.published_at).toLocaleDateString()
@@ -493,5 +489,18 @@ export default function ClassTimetables() {
         src="/image/caution.png"
       />
     </PageShell>
+  );
+}
+
+function PageHeading() {
+  return (
+    <div className="min-w-0">
+      <h1 className="font-mont text-lg font-semibold text-black-01">
+        Class Timetables
+      </h1>
+      <p className="mt-1 text-sm text-gray-06 text-pretty">
+        Build each class's week, resolve clashes, then publish it.
+      </p>
+    </div>
   );
 }

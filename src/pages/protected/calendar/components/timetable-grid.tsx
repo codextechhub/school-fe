@@ -1,3 +1,5 @@
+import { Plus } from "lucide-react";
+
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type {
@@ -53,17 +55,17 @@ export function TimetableGrid({
   return (
     // Scrolls inside its own box. Six columns of readable width do not fit a
     // phone, and a page that scrolls sideways is a bug.
-    <ScrollArea orientation="horizontal" className="-mx-1" viewportClassName="px-1">
-      <table className="w-full min-w-[52rem] border-collapse text-left">
+    <ScrollArea orientation="horizontal">
+      <table className="w-full min-w-[56rem] border-collapse text-left">
         <thead>
-          <tr>
-            <th className="w-28 border-b border-white-02 px-2 pb-2 text-xs font-medium text-gray-05">
+          <tr className="bg-white-05">
+            <th className="w-32 border-b border-r border-border px-3 py-3 font-mont text-xs font-semibold text-gray-06">
               Period
             </th>
             {days.map((day) => (
               <th
                 key={day.day_of_week}
-                className="border-b border-white-02 px-2 pb-2 text-xs font-medium text-gray-05"
+                className="border-b border-border px-3 py-3 font-mont text-xs font-semibold text-gray-06"
               >
                 {day.day_label}
               </th>
@@ -75,7 +77,7 @@ export function TimetableGrid({
             <tr key={row.period}>
               <td
                 className={cn(
-                  "border-b border-white-02 px-2 py-2 align-top",
+                  "border-b border-r border-border px-3 py-2.5 align-top last:border-b-0",
                   row.kind !== "LESSON" && "bg-white-05",
                 )}
               >
@@ -90,16 +92,11 @@ export function TimetableGrid({
                 <p className="mt-0.5 whitespace-nowrap text-[11px] text-gray-05">
                   {row.time}
                 </p>
-                {row.runsOn.length > 0 && (
-                  <p className="mt-0.5 text-[10px] uppercase tracking-wide text-gray-05">
-                    {row.runsOn.join(", ")} only
-                  </p>
-                )}
               </td>
               {row.cells.map((cell, dayIndex) => (
                 <td
                   key={dayIndex}
-                  className="border-b border-l border-white-02 p-0 align-top"
+                  className="border-b border-r border-border p-0 align-top last:border-r-0"
                 >
                   <Cell
                     cell={cell}
@@ -139,7 +136,7 @@ function Cell({
   // would offer to schedule a lesson into a period that is not there.
   if (!cell) {
     return (
-      <div className="grid min-h-16 place-content-center bg-white-05/60">
+      <div className="grid min-h-[68px] place-content-center bg-white-05/60">
         <span className="text-[11px] text-gray-05">-</span>
       </div>
     );
@@ -147,8 +144,8 @@ function Cell({
 
   if (cell.kind !== "LESSON") {
     return (
-      <div className="grid min-h-16 place-content-center bg-white-05">
-        <span className="text-[11px] text-gray-05">
+      <div className="grid min-h-[68px] place-content-center bg-white-05">
+        <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-medium text-gray-05">
           {cell.label ?? cell.kind}
         </span>
       </div>
@@ -160,7 +157,8 @@ function Cell({
     const body = (
       // "Add" is an instruction, not content: on paper there is nothing to
       // press, and a grid of the word repeated forty times reads as data.
-      <span className="print-blank text-[11px] text-gray-05/70">
+      <span className="print-blank inline-flex items-center gap-1 text-[11px] font-medium text-gray-05/70">
+        <Plus className="print-hide size-3.5" />
         {emptyLabel}
       </span>
     );
@@ -169,12 +167,12 @@ function Cell({
         type="button"
         onClick={onClick}
         aria-label={`Fill ${cell.period_label}`}
-        className="grid min-h-16 w-full place-content-center hover:bg-pry-01/40"
+        className="grid min-h-[68px] w-full place-content-center transition-colors hover:bg-pry-01/40 hover:text-primary active:bg-pry-01/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
       >
         {body}
       </button>
     ) : (
-      <div className="grid min-h-16 place-content-center">{body}</div>
+      <div className="grid min-h-[68px] place-content-center">{body}</div>
     );
   }
 
@@ -210,7 +208,7 @@ function Cell({
   );
 
   const shell = cn(
-    "block min-h-16 w-full",
+    "block min-h-[68px] w-full",
     inClash && "bg-error-text/5",
   );
 
@@ -219,7 +217,10 @@ function Cell({
       type="button"
       onClick={onClick}
       aria-label={`${slot.subject_name}, ${cell.period_label}`}
-      className={cn(shell, "hover:bg-pry-01/40")}
+      className={cn(
+        shell,
+        "transition-colors hover:bg-pry-01/40 active:bg-pry-01/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary",
+      )}
     >
       {body}
     </button>

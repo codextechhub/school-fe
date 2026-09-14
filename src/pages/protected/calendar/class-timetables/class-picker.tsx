@@ -1,3 +1,5 @@
+import { GraduationCap } from "lucide-react";
+
 import type { ClassTimetableRow } from "@/redux/services/calendar/calendar-types";
 import { RowPicker } from "../components/row-picker";
 
@@ -25,6 +27,8 @@ export function ClassPicker({
       current={current}
       searchPlaceholder="Search classes"
       emptyText="No class matches that."
+      presentation="card"
+      icon={GraduationCap}
       subtitle={(c) =>
         [
           `${c.lesson_count} lesson${c.lesson_count === 1 ? "" : "s"}`,
