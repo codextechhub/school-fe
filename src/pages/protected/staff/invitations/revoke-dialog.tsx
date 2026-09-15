@@ -72,9 +72,12 @@ export function RevokeDialog({
         </Field>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={saving}>Keep it</AlertDialogCancel>
+          <AlertDialogCancel disabled={saving}>
+            Keep invitation
+          </AlertDialogCancel>
           <AlertDialogAction
             disabled={saving || reason.trim().length === 0}
+            className="bg-destructive text-white hover:bg-destructive/90"
             onClick={(event) => {
               // The dialog closes itself on action, and a refusal would then
               // have nothing to reopen. Held open so a server error lands on
@@ -84,7 +87,7 @@ export function RevokeDialog({
               setReason("");
             }}
           >
-            {saving ? "Withdrawing…" : "Withdraw"}
+            {saving ? "Withdrawing…" : "Withdraw invitation"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

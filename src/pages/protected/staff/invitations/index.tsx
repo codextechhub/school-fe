@@ -1,14 +1,25 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Info, MailCheck, UserPlus } from "lucide-react";
+import {
+  ChevronRight,
+  Clock3,
+  Info,
+  MailCheck,
+  RefreshCw,
+  Search,
+  UserPlus,
+} from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
+import KpiCard from "@/components/custom/kpi-card";
 import PermissionGate from "@/components/custom/permission-gate";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { P } from "@/permissions";
+import { useBranchLens } from "@/hooks/use-branch-lens";
 import { usePermissions } from "@/hooks/use-permissions";
 import { routesPath } from "@/routes/routesPath";
 import { apiErrorMessage } from "@/utils/api-error";
@@ -21,43 +32,53 @@ import type { StaffListRow } from "@/redux/services/staff/staff-types";
 
 import { PersonAvatar } from "../../students/person-avatar";
 import { formatDate } from "../../students/format";
+import { InvitationDetailDrawer } from "./invitation-detail-drawer";
+import {
+  invitationAgeDays,
+  invitationPageMetrics,
+  waitingLabel,
+} from "./invitation-model";
 import { RevokeDialog } from "./revoke-dialog";
 
 /**
  * Who has been invited and has not yet accepted.
  *
- * The same rows as the directory, filtered to `INVITED` by the server rather
- * than on the client: a page of twenty-five with three invitations on it would
- * otherwise show three, and the count in the sidebar would disagree with the
- * screen it points at.
+ * The server applies the `INVITED` filter and the active branch lens before it
+ * counts or returns anything. Search also stays server-side so finding a name
+ * is not limited to the current page.
  *
- * **There is no "Mark accepted", and its absence is the decision.** Activation
- * is the invited person opening a single-use link and setting their first
- * password, which is what promotes the account. An administrator cannot do that
- * for them without being handed a way to set another person's credential, which
- * is a larger decision than this screen should take. Marking it here would move
- * the employment status alone: Mrs. Okonkwo presses it on 20 October, Mr.
- * Adeyemo reads Active on every screen in the school, and he still cannot sign
- * in. Resend is the control that actually helps, and Revoke is the one for an
- * address that was wrong.
+ * Activation remains an action only the invited person can complete by opening
+ * the single-use link and setting a first password. Resend helps a person who
+ * has not done that; withdrawal protects a school when the hire or address is
+ * wrong.
  */
 export default function StaffInvitations() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
+  const { branch, applies: multiBranch } = useBranchLens();
+  const [search, setSearch] = useState("");
+  const deferredSearch = useDeferredValue(search.trim());
   const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<StaffListRow | null>(null);
   const [revoking, setRevoking] = useState<StaffListRow | null>(null);
 
   const { data, isLoading, isFetching, isError, refetch } = useGetStaffListQuery({
     page,
+    search: deferredSearch || undefined,
     employment_status: "INVITED",
+    branch: multiBranch && branch !== "all" ? String(branch) : undefined,
   });
   const [resend, { isLoading: resending }] = useResendStaffInvitationMutation();
   const [revoke, { isLoading: revokingNow }] =
     useRevokeStaffInvitationMutation();
 
   const rows = useMemo(() => data?.data ?? [], [data]);
+  const metrics = useMemo(() => invitationPageMetrics(rows), [rows]);
   const pagination = data?.pagination;
+  const total = pagination?.totalItems ?? 0;
+  const multiplePages = (pagination?.totalPages ?? 0) > 1;
   const showBranch = data?.multi_branch ?? false;
+  const canWithdraw = hasPermission(P.MANAGE_TEACHERS);
 
   async function resendTo(person: StaffListRow) {
     if (!person.can_resend) {
@@ -76,6 +97,11 @@ export default function StaffInvitations() {
         apiErrorMessage(error, "We could not resend that invitation. Try again."),
       );
     }
+  }
+
+  function startRevoke(person: StaffListRow) {
+    setSelected(null);
+    setRevoking(person);
   }
 
   async function confirmRevoke(reason: string) {
@@ -109,10 +135,12 @@ export default function StaffInvitations() {
     <PageShell className="content-start gap-5" grid>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-black-01">Invitations</h2>
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
+            Invitations
+          </h1>
           <p className="mt-1 text-sm text-gray-01">
-            {pagination?.totalItems
-              ? `${pagination.totalItems} ${pagination.totalItems === 1 ? "person has" : "people have"} been invited and not yet set a password.`
+            {total
+              ? `${total} ${total === 1 ? "person is" : "people are"} waiting to activate their account.`
               : "Everybody who has been invited has accepted."}
           </p>
         </div>
@@ -124,103 +152,168 @@ export default function StaffInvitations() {
         </PermissionGate>
       </div>
 
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <KpiCard
+          label="Awaiting response"
+          value={total}
+          foot={deferredSearch ? "Matching this search" : "Pending activation"}
+          tone="live"
+        />
+        <KpiCard
+          label="Needs follow-up"
+          value={metrics.followUp}
+          foot={
+            multiplePages
+              ? "On this page, waiting 7+ days"
+              : "Waiting 7+ days"
+          }
+          tone={metrics.followUp > 0 ? "warn" : "default"}
+        />
+        <KpiCard
+          label="Oldest invitation"
+          value={waitingLabel(metrics.oldestDays)}
+          foot={multiplePages ? "Oldest on this page" : "Longest waiting"}
+        />
+      </div>
+
+      <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-white p-3.5 sm:p-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+          <div className="relative min-w-55 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
+            <input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(1);
+              }}
+              placeholder="Search name or email"
+              aria-label="Search invitations"
+              className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
+            />
+          </div>
+          <p className="ml-auto text-xs text-gray-05" aria-live="polite">
+            {total} {total === 1 ? "invitation" : "invitations"}
+          </p>
+        </div>
+      </div>
+
       <CustomTable
         tableHeaderList={[
           "Person",
           "Role",
-          ...(showBranch ? ["Posted to"] : []),
-          "Invited",
-          "",
+          ...(showBranch ? ["Branch"] : []),
+          "Sent",
+          "Waiting",
+          "Status",
+          "Actions",
         ]}
         loading={isLoading || isFetching}
+        loadingText="Loading invitations"
         defaultBodyList={rows}
-        dropDown
-        disabledDropdown={resending || revokingNow}
-        dropDownList={[
-          {
-            label: "View record",
-            onActionClick: (row: { _id: number }) =>
-              navigate(routesPath.PROTECTED.STAFF.PROFILE_ID(row._id)),
-          },
-          {
-            label: "Resend invitation",
-            onActionClick: (row: { _id: number }) => {
-              const person = rows.find((entry) => entry.id === row._id);
-              if (person) void resendTo(person);
-            },
-          },
-          // Withdrawing is a lifecycle move and needs the manage key, so it is
-          // offered only to somebody who holds it rather than shown to
-          // everybody and refused at the confirm.
-          ...(hasPermission(P.MANAGE_TEACHERS)
-            ? [
-                {
-                  label: "Withdraw invitation",
-                  onActionClick: (row: { _id: number }) => {
-                    const person = rows.find((entry) => entry.id === row._id);
-                    if (person) setRevoking(person);
-                  },
-                },
-              ]
-            : []),
-        ]}
-        tableBodyList={rows.map((person) => ({
-          _id: person.id,
-          Person: (
-            <span className="flex min-w-0 items-center gap-2.5">
-              <PersonAvatar
-                name={person.full_name}
-                className="size-8.5 shrink-0"
-                textClassName="text-xs"
-              />
-              <span className="min-w-0">
-                <span className="block truncate text-sm text-black-01">
-                  {person.full_name}
-                </span>
-                <span
-                  className="block max-w-60 truncate text-xs text-gray-05"
-                  title={person.email}
-                >
-                  {person.email}
+        cardBreakpoint="lg"
+        tableBodyList={rows.map((person) => {
+          const age = invitationAgeDays(person.invited_at);
+          return {
+            _id: person.id,
+            Person: (
+              <span className="flex min-w-0 items-center gap-2.5">
+                <PersonAvatar
+                  name={person.full_name}
+                  className="size-8.5 shrink-0"
+                  textClassName="text-xs"
+                />
+                <span className="min-w-0">
+                  <span className="block truncate text-sm text-black-01">
+                    {person.full_name}
+                  </span>
+                  <span
+                    className="block max-w-60 truncate text-xs text-gray-05"
+                    title={person.email}
+                  >
+                    {person.email}
+                  </span>
                 </span>
               </span>
-            </span>
-          ),
-          Role: person.roles.length ? (
-            <span className="whitespace-nowrap text-gray-01">
-              {person.roles.join(", ")}
-            </span>
-          ) : (
-            <span className="text-gray-02">No role</span>
-          ),
-          ...(showBranch
-            ? {
-                "Posted to": person.posted_school_wide
-                  ? "School-wide"
-                  : (person.branch_name ?? "-"),
-              }
-            : {}),
-          Invited: person.invited_at ? formatDate(person.invited_at) : "-",
-        }))}
-        onRowClick={(person: StaffListRow) => {
-          if (person?.id) {
-            navigate(routesPath.PROTECTED.STAFF.PROFILE_ID(person.id));
-          }
-        }}
+            ),
+            Role: person.roles.length ? (
+              <span className="whitespace-nowrap text-gray-01">
+                {person.roles.join(", ")}
+              </span>
+            ) : (
+              <span className="text-gray-02">No role</span>
+            ),
+            ...(showBranch
+              ? {
+                  Branch: person.posted_school_wide
+                    ? "School-wide"
+                    : (person.branch_name ?? "-"),
+                }
+              : {}),
+            Sent: person.invited_at ? formatDate(person.invited_at) : "-",
+            Waiting: (
+              <Badge variant={age != null && age >= 7 ? "amber" : "inactive"}>
+                <Clock3 className="size-3" />
+                {waitingLabel(age)}
+              </Badge>
+            ),
+            Status: <Badge variant="pending">Awaiting response</Badge>,
+            Actions: (
+              <span
+                className="flex items-center justify-end gap-1.5"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={resending || !person.can_resend}
+                  onClick={() => void resendTo(person)}
+                >
+                  <RefreshCw className="size-3.5" />
+                  Resend
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  aria-label={`View ${person.full_name}'s invitation details`}
+                  onClick={() => setSelected(person)}
+                >
+                  <ChevronRight className="size-4" />
+                </Button>
+              </span>
+            ),
+          };
+        })}
+        onRowClick={(person: StaffListRow) => setSelected(person)}
         currentPage={pagination?.currentPage ?? 1}
         totalPage={pagination?.totalPages ?? 1}
         onPageChange={(next) => setPage(Number(next) || 1)}
         hidePagination={(pagination?.totalPages ?? 0) < 2}
-        emptyText="Everybody who has been invited has accepted."
+        emptyText={
+          deferredSearch
+            ? "No invitations match this search."
+            : "Everybody who has been invited has accepted."
+        }
       />
 
-      <p className="flex items-start gap-1.5 text-xs text-gray-05">
+      <p className="flex items-start gap-1.5 text-xs leading-5 text-gray-05">
         <Info className="mt-px size-3.5 shrink-0" />
-        Resending reuses the account that is already there, so chasing somebody
-        never creates a second record for them. There is no way to accept an
-        invitation on somebody's behalf: setting the first password is what
-        promotes the account, and only they can do it.
+        Only the invited person can activate this account by opening the link
+        and setting their first password. Resending keeps the same staff record
+        and invalidates the previous link.
       </p>
+
+      <InvitationDetailDrawer
+        person={selected}
+        showBranch={showBranch}
+        canWithdraw={canWithdraw}
+        resending={resending}
+        onClose={() => setSelected(null)}
+        onResend={(person) => void resendTo(person)}
+        onWithdraw={startRevoke}
+        onViewRecord={(person) =>
+          navigate(routesPath.PROTECTED.STAFF.PROFILE_ID(person.id))
+        }
+      />
 
       <RevokeDialog
         person={revoking}
