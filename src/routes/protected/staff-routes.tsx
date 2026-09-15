@@ -89,8 +89,11 @@ export const staffRoutes = [
     Component: TeachingDuties,
     handle: {
       title: "Teaching duties",
-      lens: true,
-      lenses: "branch",
+      // Coverage is the active year's school-wide work queue. The endpoint
+      // scopes a branch-tied reader itself but has no interactive branch or
+      // year filter, so a lens here would promise to change data that it does
+      // not send to the server.
+      lenses: "none",
     } satisfies DashboardHandle,
   },
   {

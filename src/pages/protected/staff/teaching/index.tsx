@@ -1,14 +1,22 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Check, GraduationCap } from "lucide-react";
+import {
+  AlertTriangle,
+  BookOpenCheck,
+  CalendarClock,
+  Check,
+  GraduationCap,
+  UserRoundCheck,
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { PageShell } from "@/components/layout/page-shell";
-import { Panel as Surface } from "@/components/custom/surface";
-import { Skeleton } from "@/components/ui/skeleton";
-import { SegmentedToggle } from "@/components/custom/segmented-toggle";
-import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import KpiCard from "@/components/custom/kpi-card";
 import PermissionGate from "@/components/custom/permission-gate";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
+import { Panel as Surface } from "@/components/custom/surface";
+import { PageShell } from "@/components/layout/page-shell";
+import { Skeleton } from "@/components/ui/skeleton";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+import { Pager } from "@/pages/protected/students/pager";
 import { P } from "@/permissions";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
@@ -26,63 +34,63 @@ import { ClassTeachers } from "./class-teachers";
 import { ClashPanel } from "./clash-panel";
 import { CoverageGrid } from "./coverage-grid";
 import { PairingDrawer } from "./pairing-drawer";
+import { teachingSummary } from "./teaching-summary";
+
+type Section = "coverage" | "classTeachers" | "clashes";
+type CoverageView = "grid" | "teachers";
 
 /**
  * Who teaches which subject to which class this session.
  *
- * **An assignment says WHAT; the timetable says when and where.** Nothing on
- * this screen schedules a lesson, and the only thing it can warn about is a
- * subject with nobody on it, because that is the one question answerable by
- * counting rows. It says nothing about whether the assigned teacher is a good
- * choice, how many periods a subject needs, or whether anybody is overloaded -
- * no specialism, no contract and no weekly frequency is recorded anywhere.
+ * The coverage view answers whether every class subject has a teacher. Class
+ * teachers and timetable clashes are separate inner views because they are
+ * different facts: one person looks after a class, while a timetable clash
+ * means one person has been placed in two lessons at the same time.
  *
- * **Two lenses over one dataset, one at a time.** The grid answers "is this
- * class covered"; the by-teacher list answers "what does this person carry".
- * Showing both at once was noise, so the toggle picks one.
- *
- * **Two kinds of gap, counted apart.** A subject nobody teaches, and a subject
- * being taught by people assisting with no main teacher over them. The second
- * looks covered until you ask who enters its results, and folding it into the
- * first would hide it.
- *
- * **One vocabulary, because two were being read as one.** The person carrying
- * a subject in a class is its MAIN TEACHER and everybody else on it is
- * ASSISTING; the person looking after the class itself is its CLASS TEACHER.
- * Both were previously described as being responsible for the class, which is
- * how a reader concludes that the two are the same designation.
+ * A subject with nobody teaching it and one taught only by assistants remain
+ * separate warnings. The first has no teacher at all; the second has teachers
+ * but nobody designated to enter its results.
  */
 export default function TeachingDuties() {
   const navigate = useNavigate();
-  const [view, setView] = useState<"grid" | "teachers">("grid");
-  // Held as the cell that was pressed, but READ from the live list below, so a
-  // change made in the drawer shows in the drawer as well as behind it. The
-  // captured one is the fallback for the moment a filled square leaves a
-  // "Only gaps" list: the drawer stays open on what it was opened on rather
-  // than closing itself the instant the work succeeds.
+  const [section, setSection] = useState<Section>("coverage");
+  const [view, setView] = useState<CoverageView>("grid");
   const [pairing, setPairing] = useState<CoverageCell | null>(null);
   const [onlyGaps, setOnlyGaps] = useState(false);
   const [page, setPage] = useState(1);
+  const [teacherPage, setTeacherPage] = useState(1);
+  const [classTeacherPage, setClassTeacherPage] = useState(1);
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
 
-  const coverage = useGetTeachingCoverageQuery({ page, only_gaps: onlyGaps });
-  const { data: classData } = useGetClassesQuery();
-  // Everybody who carries a duty, plus what they carry. The directory already
-  // counts assignments per person, so the by-teacher lens is one call rather
-  // than one per teacher.
-  const { data: staffData } = useGetStaffListQuery(
-    { page: 1, teaching: "true" },
-    { skip: view !== "teachers" },
+  // The unfiltered page owns the global total even while the work list below
+  // is narrowed to gaps. Without it, "All class subjects" would shrink when
+  // the checkbox was pressed and turn a filter into a changed school fact.
+  const summaryQuery = useGetTeachingCoverageQuery({ page: 1 });
+  const coverage = useGetTeachingCoverageQuery(
+    onlyGaps ? { page, only_gaps: true } : { page },
+  );
+  const { data: classData, isLoading: loadingClasses } = useGetClassesQuery(
+    { page: classTeacherPage },
+    { skip: section !== "classTeachers" },
+  );
+  const staffQuery = useGetStaffListQuery(
+    { page: teacherPage, teaching: "true" },
+    { skip: section !== "coverage" || view !== "teachers" },
   );
 
   const cells = useMemo(() => coverage.data?.data ?? [], [coverage.data]);
   const classes = useMemo(() => classData?.data ?? [], [classData]);
-  const teachers = useMemo(() => staffData?.data ?? [], [staffData]);
+  const teachers = useMemo(() => staffQuery.data?.data ?? [], [staffQuery.data]);
   const pagination = coverage.data?.pagination;
+  const teacherPagination = staffQuery.data?.pagination;
+  const classPagination = classData?.pagination;
+  const summary = teachingSummary(
+    summaryQuery.data?.pagination.totalItems ?? 0,
+    summaryQuery.data?.coverage_gaps ?? 0,
+    summaryQuery.data?.lead_gaps ?? 0,
+  );
 
-  // The session is closed to a school still being set up, and to one whose year
-  // has been archived. Both are refusals rather than errors.
-  if (coverage.isError) {
+  if (summaryQuery.isError || coverage.isError) {
     return (
       <PageShell>
         <OutlinedNotice
@@ -108,224 +116,310 @@ export default function TeachingDuties() {
   return (
     <PageShell className="content-start gap-5" grid>
       <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-black-01">Teaching duties</h2>
-        <p className="mt-1 max-w-2xl text-sm text-gray-01">
-          Who teaches which subject to which class
-          {coverage.data ? ` in ${coverage.data.session.name}` : ""}. Each
-          subject in a class has one main teacher, who enters its results, and
-          may have others assisting. This says what is taught; the timetable
-          says when and where.
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
+          Teaching duties
+        </h1>
+        <p className="mt-1 max-w-3xl text-sm text-gray-01">
+          {summaryQuery.data
+            ? `See who teaches every class subject in ${summaryQuery.data.session.name}, set class teachers, and follow timetable clashes.`
+            : "See who teaches every class subject, set class teachers, and follow timetable clashes."}
         </p>
       </div>
 
-      <Surface as="section" className="px-6 py-5">
-        {coverage.isLoading ? (
-          <Skeleton className="h-5 w-72" />
-        ) : (
-          <>
-            <p className="text-sm text-black-01">{coverage.data?.headline}</p>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              <Figure
-                count={coverage.data?.coverage_gaps ?? 0}
-                label="with no teacher at all"
-                tone={coverage.data?.coverage_gaps ? "alert" : "plain"}
-              />
-              <Figure
-                count={coverage.data?.lead_gaps ?? 0}
-                label="taught, but with no main teacher"
-                tone={coverage.data?.lead_gaps ? "warn" : "plain"}
-              />
-            </div>
-          </>
-        )}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <KpiCard
+          label="Class subjects"
+          value={summaryQuery.isLoading ? "..." : summary.total}
+          foot="Expected this year"
+        />
+        <KpiCard
+          label="Fully covered"
+          value={summaryQuery.isLoading ? "..." : summary.covered}
+          foot="Teacher and main teacher set"
+          tone="live"
+        />
+        <KpiCard
+          label="No teacher"
+          value={summaryQuery.isLoading ? "..." : summary.noTeacher}
+          foot="Nobody assigned"
+          tone={summary.noTeacher ? "alert" : "default"}
+        />
+        <KpiCard
+          label="No main teacher"
+          value={summaryQuery.isLoading ? "..." : summary.noMainTeacher}
+          foot="Results have no owner"
+          tone={summary.noMainTeacher ? "warn" : "default"}
+        />
+      </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2.5 border-t border-white-02 pt-4">
-          <SegmentedToggle
-            ariaLabel="Teaching duties view"
-            value={view}
-            onChange={setView}
-            options={[
-              { value: "grid", label: "By class" },
-              { value: "teachers", label: "By teacher" },
-            ]}
-          />
-          {view === "grid" && (
-            <button
-              type="button"
-              onClick={() => {
-                setOnlyGaps((current) => !current);
-                setPage(1);
-              }}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-[13.5px] font-medium",
-                onlyGaps
-                  ? "border-primary bg-white-03 text-primary"
-                  : "border-white-02 bg-white text-gray-01 hover:bg-gray-03",
-              )}
-            >
-              <span
-                aria-hidden
-                className={cn(
-                  "grid size-4 place-content-center rounded-[4px] border-[1.5px] text-white",
-                  onlyGaps ? "border-primary bg-primary" : "border-gray-02",
-                )}
-              >
-                {onlyGaps && <Check className="size-2.5" />}
-              </span>
-              Only gaps
-            </button>
+      <Surface as="section" className="grid gap-4 px-4 py-4 sm:px-5">
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
+          <div className="max-w-full overflow-x-auto">
+            <SegmentedToggle
+              ariaLabel="Teaching duties section"
+              value={section}
+              onChange={setSection}
+              options={[
+                {
+                  value: "coverage",
+                  label: "Subject coverage",
+                  icon: BookOpenCheck,
+                },
+                {
+                  value: "classTeachers",
+                  label: "Class teachers",
+                  icon: UserRoundCheck,
+                },
+                {
+                  value: "clashes",
+                  label: "Timetable clashes",
+                  icon: CalendarClock,
+                },
+              ]}
+            />
+          </div>
+          {summaryQuery.data && (
+            <span className="rounded-full bg-gray-04 px-3 py-1.5 text-xs font-medium text-gray-01">
+              {summaryQuery.data.session.name}
+            </span>
           )}
         </div>
+
+        {section === "coverage" && (
+          <div className="flex min-w-0 flex-wrap items-center gap-2.5 border-t border-white-02 pt-4">
+            <SegmentedToggle
+              ariaLabel="Teaching coverage"
+              value={view}
+              onChange={setView}
+              options={[
+                { value: "grid", label: "By class" },
+                { value: "teachers", label: "By teacher" },
+              ]}
+            />
+            {view === "grid" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setOnlyGaps((current) => !current);
+                  setPage(1);
+                }}
+                className={cn(
+                  "inline-flex items-center gap-2 rounded-lg border px-3.5 py-2 text-[13.5px] font-medium transition-colors",
+                  onlyGaps
+                    ? "border-primary bg-white-03 text-primary"
+                    : "border-white-02 bg-white text-gray-01 hover:bg-gray-03",
+                )}
+              >
+                <span
+                  aria-hidden
+                  className={cn(
+                    "grid size-4 place-content-center rounded-[4px] border-[1.5px] text-white",
+                    onlyGaps ? "border-primary bg-primary" : "border-gray-02",
+                  )}
+                >
+                  {onlyGaps && <Check className="size-2.5" />}
+                </span>
+                Only gaps
+              </button>
+            )}
+            {!summaryQuery.isLoading && (
+              <p className="min-w-0 text-xs text-gray-05 sm:ml-auto">
+                {summaryQuery.data?.headline}
+              </p>
+            )}
+          </div>
+        )}
       </Surface>
 
-      {view === "grid" ? (
-        <Surface as="section" className="px-6 py-5">
+      {section === "coverage" && view === "grid" && (
+        <Surface as="section" className="px-4 py-5 sm:px-6">
+          <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-black-01">
+                Subject coverage
+              </h2>
+              <p className="mt-1 text-xs text-gray-05">
+                Open a subject to add a teacher or change who enters its
+                results.
+              </p>
+            </div>
+            {onlyGaps && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-900">
+                <AlertTriangle className="size-3.5" />
+                Attention only
+              </span>
+            )}
+          </div>
+
           {coverage.isLoading || coverage.isFetching ? (
             <div className="grid gap-3">
               <Skeleton className="h-5 w-32" />
               <Skeleton className="h-16 w-full" />
+              <Skeleton className="h-16 w-full" />
             </div>
           ) : cells.length ? (
             <>
-              <CoverageGrid
-                cells={cells}
-                // Every square opens the square that was pressed, empty or
-                // not. It used to open the main teacher's own duties where
-                // there was one and jump to the list of teachers where there
-                // was not - so the press that most needed answering, on a
-                // subject nobody teaches, was the one that threw away which
-                // subject in which class had just been chosen.
-                onOpen={setPairing}
-              />
-              {(pagination?.totalPages ?? 1) > 1 && (
-                <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white-02 pt-4">
-                  <p className="text-xs text-gray-05">
-                    Page {pagination?.currentPage} of {pagination?.totalPages},{" "}
-                    {pagination?.totalItems} class subjects in all
+              <CoverageGrid cells={cells} onOpen={setPairing} />
+              <div className="mt-5 border-t border-white-02 pt-4">
+                <Pager
+                  page={pagination?.currentPage ?? 1}
+                  totalPages={pagination?.totalPages ?? 1}
+                  onGo={setPage}
+                />
+                {(pagination?.totalPages ?? 1) > 1 && (
+                  <p className="mt-2 text-center text-xs text-gray-05">
+                    {pagination?.totalItems} class subjects in this view
                   </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      disabled={(pagination?.currentPage ?? 1) <= 1}
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      disabled={
-                        (pagination?.currentPage ?? 1) >=
-                        (pagination?.totalPages ?? 1)
-                      }
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </>
           ) : (
-            <p className="py-6 text-center text-[13px] text-gray-05">
+            <p className="py-8 text-center text-[13px] text-gray-05">
               {onlyGaps
                 ? "Every subject has a teacher, and each one has a main teacher."
                 : "No classes and subjects yet. They are built in Academic Structure."}
             </p>
           )}
         </Surface>
-      ) : (
-        <Surface as="section" className="px-6 py-5">
-          <h3 className="mb-1 text-sm font-semibold text-black-01">
-            By teacher
-          </h3>
-          <p className="mb-4 text-xs text-gray-05">
-            A count of assignments. There is no target to compare it against.
-          </p>
-          {teachers.length ? (
-            <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-              {teachers.map((person) => (
-                <li key={person.id}>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setDrawer({
-                        kind: "duties",
-                        staffId: person.id,
-                        personName: person.full_name,
-                      })
-                    }
-                    className="flex w-full min-w-0 items-center gap-3 rounded-lg border border-white-02 px-3.5 py-2.5 text-left hover:border-primary"
-                  >
-                    <PersonAvatar
-                      name={person.full_name}
-                      className="size-8.5 shrink-0"
-                      textClassName="text-xs"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate text-sm text-black-01">
-                        {person.full_name}
-                      </span>
-                      <span className="block truncate text-xs text-gray-05">
-                        {person.job_title || "No job title"}
-                      </span>
-                    </span>
-                    <span className="text-xs text-gray-05">
-                      {person.teaching_load}{" "}
-                      {person.teaching_load === 1 ? "class" : "classes"}
-                    </span>
-                  </button>
-                </li>
+      )}
+
+      {section === "coverage" && view === "teachers" && (
+        <Surface as="section" className="px-4 py-5 sm:px-6">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-black-01">By teacher</h2>
+            <p className="mt-1 text-xs text-gray-05">
+              Open a teacher to see and change everything they carry. Assignment
+              counts have no workload target to compare against.
+            </p>
+          </div>
+
+          {staffQuery.isLoading || staffQuery.isFetching ? (
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={index} className="h-16 w-full" />
               ))}
-            </ul>
+            </div>
+          ) : teachers.length ? (
+            <>
+              <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {teachers.map((person) => (
+                  <li key={person.id}>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDrawer({
+                          kind: "duties",
+                          staffId: person.id,
+                          personName: person.full_name,
+                        })
+                      }
+                      className="flex w-full min-w-0 items-center gap-3 rounded-lg border border-white-02 px-3.5 py-2.5 text-left transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-sm active:scale-[0.99]"
+                    >
+                      <PersonAvatar
+                        name={person.full_name}
+                        className="size-8.5 shrink-0"
+                        textClassName="text-xs"
+                      />
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm text-black-01">
+                          {person.full_name}
+                        </span>
+                        <span className="block truncate text-xs text-gray-05">
+                          {person.job_title || "No job title"}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-xs text-gray-05">
+                        {person.teaching_load}{" "}
+                        {person.teaching_load === 1 ? "duty" : "duties"}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <div className="mt-5 border-t border-white-02 pt-4">
+                <Pager
+                  page={teacherPagination?.currentPage ?? 1}
+                  totalPages={teacherPagination?.totalPages ?? 1}
+                  onGo={setTeacherPage}
+                />
+              </div>
+            </>
           ) : (
-            <p className="py-6 text-center text-[13px] text-gray-05">
+            <p className="py-8 text-center text-[13px] text-gray-05">
               Nobody has teaching duties yet.
             </p>
           )}
         </Surface>
       )}
 
-      <Surface as="section" className="px-6 py-5">
-        <h3 className="mb-1 text-sm font-semibold text-black-01">
-          Class teachers
-        </h3>
-        <p className="mb-4 text-xs text-gray-05">
-          The person who looks after the class itself, its register and its day.
-          Teaching a subject to that class is a separate job, set above.
-        </p>
-        <ClassTeachers
-          classes={classes}
-          onSet={(row: SchoolClass) =>
-            setDrawer({
-              kind: "classTeacher",
-              schoolClassId: row.id,
-              className: row.name,
-              currentStaffId: row.class_teacher?.staff_id ?? null,
-            })
-          }
-        />
-      </Surface>
+      {section === "classTeachers" && (
+        <Surface as="section" className="px-4 py-5 sm:px-6">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-black-01">
+              Class teachers
+            </h2>
+            <p className="mt-1 max-w-2xl text-xs text-gray-05">
+              The person who looks after the class, its register and its day.
+              Teaching a subject to that class is a separate duty.
+            </p>
+          </div>
+          {loadingClasses ? (
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={index} className="h-16 w-full" />
+              ))}
+            </div>
+          ) : (
+            <>
+              <ClassTeachers
+                classes={classes}
+                onSet={(row: SchoolClass) =>
+                  setDrawer({
+                    kind: "classTeacher",
+                    schoolClassId: row.id,
+                    className: row.name,
+                    currentStaffId: row.class_teacher?.staff_id ?? null,
+                  })
+                }
+              />
+              <div className="mt-5 border-t border-white-02 pt-4">
+                <Pager
+                  page={classPagination?.currentPage ?? 1}
+                  totalPages={classPagination?.totalPages ?? 1}
+                  onGo={setClassTeacherPage}
+                />
+              </div>
+            </>
+          )}
+        </Surface>
+      )}
 
-      <Surface as="section" className="px-6 py-5">
-        <h3 className="mb-1 flex flex-wrap items-center gap-2 text-sm font-semibold text-black-01">
-          Timetable clashes
-          <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-05">
-            Reported
-          </span>
-        </h3>
-        <p className="mb-4 text-xs text-gray-05">
-          Found when a lesson is placed, not when a subject is assigned. Nothing
-          on this screen can discover one.
-        </p>
-        <ClashPanel />
-      </Surface>
+      {section === "clashes" && (
+        <Surface as="section" className="px-4 py-5 sm:px-6">
+          <div className="mb-4">
+            <h2 className="flex flex-wrap items-center gap-2 text-sm font-semibold text-black-01">
+              Timetable clashes
+              <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-05">
+                Reported
+              </span>
+            </h2>
+            <p className="mt-1 max-w-2xl text-xs text-gray-05">
+              Found when a lesson is placed, not when a subject is assigned.
+              Open the affected teacher's timetable to resolve the collision.
+            </p>
+          </div>
+          <ClashPanel />
+        </Surface>
+      )}
 
-      <PermissionGate permission={P.ASSIGN_TEACHING}>
-        <p className="text-xs text-gray-05">
-          Open any subject above to change who teaches it, or a teacher to
-          change everything they carry.
-        </p>
-      </PermissionGate>
+      {section === "coverage" && (
+        <PermissionGate permission={P.ASSIGN_TEACHING}>
+          <p className="text-xs text-gray-05">
+            Open any subject to change who teaches it, or switch to By teacher
+            to change everything one person carries.
+          </p>
+        </PermissionGate>
+      )}
 
       {openPairing && (
         <PairingDrawer cell={openPairing} onClose={() => setPairing(null)} />
@@ -333,31 +427,5 @@ export default function TeachingDuties() {
 
       <StaffDrawers request={drawer} onClose={() => setDrawer(null)} />
     </PageShell>
-  );
-}
-
-function Figure({
-  count,
-  label,
-  tone,
-}: {
-  count: number;
-  label: string;
-  tone: "plain" | "warn" | "alert";
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-[13px]",
-        tone === "alert"
-          ? "bg-destructive/10 text-error-text"
-          : tone === "warn"
-            ? "bg-amber-50 text-amber-900"
-            : "bg-gray-04 text-gray-01",
-      )}
-    >
-      <span className="font-semibold">{count}</span>
-      {label}
-    </span>
   );
 }

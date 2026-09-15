@@ -12,7 +12,7 @@ import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useSessionLens } from "@/hooks/use-session-lens";
 
 /** Which lenses a route reads. Omit for both, which is what most screens want. */
-export type LensChoice = "both" | "branch" | "session";
+export type LensChoice = "both" | "branch" | "session" | "none";
 
 /**
  * Read `lenses` off the deepest matched route.

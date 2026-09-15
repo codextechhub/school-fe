@@ -47,7 +47,7 @@ export function ClassTeachers({
       {classes.map((row) => (
         <li
           key={row.id}
-          className="flex min-w-0 items-center gap-3 rounded-lg border border-white-02 px-3.5 py-2.5"
+          className="flex min-w-0 items-center gap-3 rounded-lg border border-white-02 px-3.5 py-2.5 transition-colors hover:border-primary/50"
         >
           <UserRoundCheck
             className="size-4 shrink-0 text-gray-05"

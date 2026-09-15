@@ -68,7 +68,8 @@ function Cell({ cell, onOpen }: { cell: CoverageCell; onOpen: () => void }) {
       type="button"
       onClick={onOpen}
       className={cn(
-        "w-full rounded-lg border px-3.5 py-2.5 text-left transition-colors",
+        "w-full cursor-pointer rounded-lg border px-3.5 py-2.5 text-left transition-all",
+        "hover:-translate-y-0.5 hover:shadow-sm active:scale-[0.99]",
         cell.gap
           ? "border-dashed border-gray-02 bg-white hover:border-primary"
           : cell.lead_gap
