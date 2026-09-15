@@ -200,4 +200,5 @@ export const {
   useActivationPreviewQuery,
   useActivateAccountMutation,
   useGetMeQuery,
+  useLazyGetMeQuery,
 } = authApi;

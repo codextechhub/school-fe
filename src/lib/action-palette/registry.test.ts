@@ -175,6 +175,7 @@ function gateCodes(action: ActionDef): PermissionCode[] {
   const gate = action.gate;
   if (gate === null) return [];
   if ("perm" in gate) return [gate.perm];
+  if ("required" in gate) return [...gate.required, ...gate.any];
   if ("any" in gate) return gate.any;
   if ("all" in gate) return gate.all;
   return [];

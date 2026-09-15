@@ -39,6 +39,12 @@ function passesGateWithSet(
 ): boolean {
   if (gate === null) return true;
   if ("perm" in gate) return holds(held, gate.perm);
+  if ("required" in gate) {
+    return (
+      gate.required.every((code) => holds(held, code)) &&
+      gate.any.some((code) => holds(held, code))
+    );
+  }
   if ("any" in gate) return gate.any.some((code) => holds(held, code));
   if ("all" in gate) return gate.all.every((code) => holds(held, code));
   if ("module" in gate) {

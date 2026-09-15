@@ -479,6 +479,8 @@ export const baseApi = createApi({
     // two ways, and every write to a duty moves both.
     "StaffTeaching",
     "PermissionCatalogue",
+    "RoleFieldAccess",
+    "UserFieldAccessOverrides",
     "Notifications",
     "ImportTemplates",
     "ImportBatches",

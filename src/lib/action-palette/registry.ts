@@ -610,6 +610,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     gate: { perm: P.VIEW_ROLES },
     run: { to: R.ROLES.INDEX },
   },
+  {
+    id: "view-field-access",
+    label: "View field access",
+    aliases: ["field permissions", "read write fields"],
+    section: "Settings",
+    group: "Administration",
+    kind: "view",
+    gate: {
+      required: [P.VIEW_ROLES],
+      any: [P.VIEW_FIELD_ACCESS, P.MANAGE_FIELD_ACCESS],
+    },
+    run: { to: R.ROLES.FIELD_ACCESS },
+  },
 
   // ── Workflow ───────────────────────────────────────────────────────────────
   // The first four carry no gate, exactly as the sidebar's own items do not: an

@@ -147,6 +147,7 @@ export const routesPath = {
       // purchase order, so it waits in /workflow/approvals with everything else
       // the reader has to decide, and the roles screen links there.
       INDEX: "/roles",
+      FIELD_ACCESS: "/roles/field-access",
     },
     // The approval inbox: purchase orders, expense claims, payment runs and
     // anything else a workflow template routes for a decision. Personal by

@@ -1,10 +1,8 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { ChevronDown, Lock, Search, X } from "lucide-react";
+import { Lock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -13,24 +11,22 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
 import { CustomInput } from "@/components/custom/custom-input";
 import { CustomTextArea } from "@/components/custom/custom-textarea";
+import { AccessCataloguePicker } from "@/components/custom/access-catalogue-picker";
 import { usePermissions } from "@/hooks/use-permissions";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import {
   useCreateSchoolRoleMutation,
-  useGetPermissionCatalogueQuery,
+  useGetAccessCatalogueQuery,
   useGetRoleHoldersQuery,
   useGetSchoolRoleQuery,
   useSetSchoolRoleStatusMutation,
   useUpdateSchoolRoleMutation,
   useCreateRoleChangeRequestMutation,
 } from "@/redux/services/roles/roles-api";
-import type { CataloguePermission } from "@/redux/services/roles/roles-types";
 import { writeErrorMessage, fieldErrors } from "@/utils/api-error";
-import { MODULE_LABEL } from "../onboarding-labels";
 import { AssignRolePanel } from "@/pages/protected/roles/assign-role-panel";
 
 /**
@@ -49,12 +45,9 @@ import { AssignRolePanel } from "@/pages/protected/roles/assign-role-panel";
  * already holds is not removed just because the module it belongs to is not on
  * the school's package today.
  *
- * **Modules start collapsed.** There are over three hundred permissions. An
- * open list of all of them is not a picker, it is a scroll.
- *
- * **Search opens what it finds.** Typing "invoice" is a question about
- * invoices, not about which module invoices live in, so matching groups open
- * themselves and the rest drop away.
+ * **Allocation narrows before it lists.** Module, then Resource leaves only the
+ * readable permission sentences for one resource on screen. Unavailable rows
+ * stay visible and explained, so a plan limit cannot look like missing data.
  *
  * **A locked role is read-only and says so.** CodeX owns the baseline roles;
  * the server refuses to change one, so there is no Save rather than a Save that
@@ -77,7 +70,7 @@ export function RoleDrawer({
   const role = useGetSchoolRoleQuery(roleKey as string, {
     skip: !open || creating,
   });
-  const catalogue = useGetPermissionCatalogueQuery(undefined, { skip: !open });
+  const catalogue = useGetAccessCatalogueQuery(undefined, { skip: !open });
   const [createRole, { isLoading: saving }] = useCreateSchoolRoleMutation();
   const [updateRole, { isLoading: updating }] = useUpdateSchoolRoleMutation();
   const [raiseRequest, { isLoading: raising }] =
@@ -87,8 +80,6 @@ export function RoleDrawer({
   const locked = detail?.is_locked ?? false;
   const readOnly = locked || !mayWrite;
 
-  const [search, setSearch] = useState("");
-  const [openModules, setOpenModules] = useState<Set<string>>(new Set());
   // Controlled rather than URL-driven: a drawer is not an address, and a
   // ?tab= left in the bar after it closes describes a screen nobody is on.
   const [tab, setTab] = useState("reach");
@@ -127,7 +118,8 @@ export function RoleDrawer({
     // permissions inside each group rather than on the group.
     const restricted = new Set(
       (catalogue.data?.data ?? [])
-        .flatMap((group) => group.permissions)
+        .flatMap((group) => group.resources)
+        .flatMap((resource) => resource.permissions)
         .filter((entry) => entry.is_restricted)
         .map((entry) => entry.key),
     );
@@ -202,75 +194,11 @@ export function RoleDrawer({
       return { ...base, key: roleKey, ticked: next };
     });
 
-  /** Tick or untick every permission in one module that this school can use. */
-  const toggleGroup = (permissions: CataloguePermission[], on: boolean) =>
-    setEdits((current) => {
-      const base =
-        current && current.key === roleKey
-          ? current
-          : {
-              key: roleKey,
-              ticked: baseline,
-              name: detail?.name ?? "",
-              description: detail?.description ?? "",
-              reason: "",
-            };
-      const next = new Set(base.ticked);
-      for (const entry of permissions) {
-        // Never touch a permission the school cannot use: a "select all" that
-        // silently grants a module they have not bought is a lie on save.
-        if (!entry.available) continue;
-        if (on) next.add(entry.key);
-        else next.delete(entry.key);
-      }
-      return { ...base, key: roleKey, ticked: next };
-    });
-
-  // The catalogue as this school may see it: modules and permissions the plan
-  // does not reach are dropped rather than dimmed, so a group left with nothing
-  // in it never draws a heading.
-  //
-  // No exception for a permission the role already holds, because after a tier
-  // change it does not hold it: moving down a tier revokes the grants the new
-  // tier does not reach, in `apply_plan_entitlements`. Showing a row here for a
-  // grant that no longer exists would be the picker disagreeing with the
-  // product about what the school has.
-  const modules = useMemo(
-    () =>
-      (catalogue.data?.data ?? [])
-        .map((group) => ({
-          ...group,
-          permissions: group.permissions.filter((entry) => entry.available),
-        }))
-        .filter((group) => group.permissions.length > 0),
-    [catalogue.data],
-  );
-  const searching = search.trim().length > 0;
-
-  /** Groups narrowed by the search box, with empty ones dropped. */
-  const shown = useMemo(() => {
-    const needle = search.trim().toLowerCase();
-    if (!needle) return modules;
-    return modules
-      .map((group) => ({
-        ...group,
-        permissions: group.permissions.filter(
-          (entry) =>
-            entry.label.toLowerCase().includes(needle) ||
-            entry.key.toLowerCase().includes(needle) ||
-            (MODULE_LABEL[group.module] ?? group.module)
-              .toLowerCase()
-              .includes(needle),
-        ),
-      }))
-      .filter((group) => group.permissions.length > 0);
-  }, [modules, search]);
+  const modules = catalogue.data?.data ?? [];
 
   const close = () => {
     setEdits(null);
-    setSearch("");
     setErrors({});
-    setOpenModules(new Set());
     onClose();
   };
 
@@ -535,27 +463,6 @@ export function RoleDrawer({
               <span className="text-xs text-gray-05">{ticked.size} granted</span>
             </div>
 
-            <div className="relative mt-2.5">
-              <Input
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search permissions"
-                aria-label="Search permissions"
-                className="h-9.5 pr-9 text-[13px]"
-              />
-              {searching ? (
-                <button
-                  type="button"
-                  aria-label="Clear search"
-                  onClick={() => setSearch("")}
-                  className="absolute right-2.5 top-2.5 text-gray-05 hover:text-black-01"
-                >
-                  <X className="size-4" />
-                </button>
-              ) : (
-                <Search className="pointer-events-none absolute right-3 top-2.5 size-4 text-gray-05" />
-              )}
-            </div>
           </div>
 
           {loading &&
@@ -566,110 +473,14 @@ export function RoleDrawer({
               </div>
             ))}
 
-          {!loading && searching && !shown.length && (
-            <p className="py-6 text-center text-[13px] text-gray-06">
-              Nothing matches "{search.trim()}".
-            </p>
+          {!loading && (
+            <AccessCataloguePicker
+              modules={modules}
+              selected={ticked}
+              onToggle={toggle}
+              readOnly={readOnly}
+            />
           )}
-
-          {!loading &&
-            shown.map((group) => {
-              // Searching opens what it finds: a hit hidden inside a shut group
-              // is a search that answers "somewhere in there".
-              const isOpen = searching || openModules.has(group.module);
-              const granted = group.permissions.filter((entry) =>
-                ticked.has(entry.key),
-              ).length;
-              const selectable = group.permissions.filter(
-                (entry) => entry.available,
-              );
-              const allOn =
-                selectable.length > 0 &&
-                selectable.every((entry) => ticked.has(entry.key));
-
-              return (
-                <div
-                  key={group.module}
-                  className="rounded-md border border-border overflow-hidden"
-                >
-                  <button
-                    type="button"
-                    aria-expanded={isOpen}
-                    onClick={() =>
-                      setOpenModules((current) => {
-                        const next = new Set(current);
-                        if (next.has(group.module)) next.delete(group.module);
-                        else next.add(group.module);
-                        return next;
-                      })
-                    }
-                    className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left hover:bg-gray-03"
-                  >
-                    <ChevronDown
-                      className={cn(
-                        "size-4 shrink-0 text-gray-05 transition-transform",
-                        isOpen && "rotate-180",
-                      )}
-                    />
-                    <span className="min-w-0 flex-1 text-[13px] font-semibold font-mont text-black-01">
-                      {MODULE_LABEL[group.module] ?? group.module}
-                    </span>
-
-                    <span className="shrink-0 text-xs text-gray-05">
-                      {granted} of {group.permissions.length}
-                    </span>
-                  </button>
-
-                  {isOpen && (
-                    <div className="border-t border-border px-3 py-2.5">
-                      {!readOnly && selectable.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => toggleGroup(group.permissions, !allOn)}
-                          className="mb-2 text-xs font-medium text-primary hover:underline"
-                        >
-                          {allOn
-                            ? "Clear all in this group"
-                            : "Select all in this group"}
-                        </button>
-                      )}
-                      <div className="flex flex-col gap-2">
-                        {group.permissions.map((entry) => {
-                          const on = ticked.has(entry.key);
-                          // Everything here is on the plan: the list above
-                          // dropped what is not. It was greyed with "Available
-                          // once this module is on your plan", which offered a
-                          // school something it cannot have from inside the
-                          // product; what a school could buy is a conversation
-                          // with CodeX, not a dead row in a picker.
-                          const disabled = readOnly;
-                          return (
-                            <label
-                              key={entry.key}
-                              title={entry.key}
-                              className={cn(
-                                "flex items-start gap-2.5 text-[13px] text-pretty",
-                                on ? "text-black-01" : "text-gray-05",
-                                disabled ? "cursor-default" : "cursor-pointer",
-                                !entry.available && "opacity-60",
-                              )}
-                            >
-                              <Checkbox
-                                checked={on}
-                                disabled={disabled}
-                                onCheckedChange={() => toggle(entry.key)}
-                                className="mt-0.5 shrink-0"
-                              />
-                              <span className="min-w-0">{entry.label}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
           </>)}
         </div>
 

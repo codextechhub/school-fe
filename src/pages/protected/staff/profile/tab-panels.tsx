@@ -2,6 +2,7 @@ import { CalendarPlus, FileText, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import PermissionGate from "@/components/custom/permission-gate";
+import FieldAccessOverrides from "@/components/custom/field-access-overrides";
 import { P } from "@/permissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -86,10 +87,14 @@ function SectionNote({ children }: { children: React.ReactNode }) {
 export function AccessTab({
   roles,
   staffId,
+  userId,
+  userName,
   onOpenDrawer,
 }: {
   roles: StaffRoles;
   staffId: number;
+  userId: number;
+  userName: string;
   onOpenDrawer: (request: { kind: "role"; staffId: number }) => void;
 }) {
   const openRoles = () => onOpenDrawer({ kind: "role", staffId });
@@ -204,6 +209,8 @@ export function AccessTab({
           </ul>
         </section>
       )}
+
+      <FieldAccessOverrides userId={userId} userName={userName} />
     </div>
   );
 }

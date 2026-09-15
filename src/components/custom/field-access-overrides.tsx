@@ -1,0 +1,536 @@
+import { useMemo, useState } from "react";
+import {
+  CalendarClock,
+  Info,
+  Plus,
+  ShieldMinus,
+  ShieldPlus,
+  Trash2,
+} from "lucide-react";
+import { toast } from "sonner";
+
+import { CustomDateInput } from "@/components/custom/custom-date-input";
+import { SearchSelect } from "@/components/custom/search-select";
+import {
+  SkeletonCard,
+  SkeletonLoadingLabel,
+} from "@/components/custom/skeletons";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { usePermissions } from "@/hooks/use-permissions";
+import { cn } from "@/lib/utils";
+import { P } from "@/permissions";
+import { selectUser } from "@/redux/features/auth/auth-slice";
+import {
+  useCreateUserFieldAccessOverrideMutation,
+  useDeleteUserFieldAccessOverrideMutation,
+  useGetAccessCatalogueQuery,
+  useGetUserFieldAccessOverridesQuery,
+} from "@/redux/services/roles/roles-api";
+import type {
+  CatalogueModule,
+  FieldAccessKind,
+  FieldAccessMode,
+  UserFieldAccessOverride,
+} from "@/redux/services/roles/roles-types";
+import { useAppSelector } from "@/redux/store";
+import { formatRelativeDate } from "@/utils/helpers";
+
+interface Props {
+  userId: number;
+  userName?: string | null;
+  className?: string;
+}
+
+const formatExpiry = (value: string): string =>
+  new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+
+/**
+ * The catalogue narrowed to what a field picker can use.
+ *
+ * Most resources carry permissions and no fields, so the unfiltered tree opens
+ * on an empty resource. Only resources with at least one field are kept, and a
+ * module is kept only while it still has such a resource.
+ */
+export function modulesWithFields(modules: CatalogueModule[]): CatalogueModule[] {
+  return modules
+    .map((module) => ({
+      ...module,
+      resources: module.resources.filter((resource) => resource.fields.length > 0),
+    }))
+    .filter((module) => module.resources.length > 0);
+}
+
+/**
+ * One sentence comparing an exception with the switch the person's roles give.
+ *
+ * It names switch states only. Whether a screen shows or greys the field is
+ * decided elsewhere, so the sentence never claims a visible effect.
+ */
+export function fieldExceptionEffect(row: UserFieldAccessOverride): string {
+  const roleAllows =
+    row.access === "READ" ? row.role_state.read : row.role_state.write;
+  const expiry = row.expires_at && !row.is_expired
+    ? ` until ${formatExpiry(row.expires_at)}`
+    : "";
+
+  const kind = row.access === "READ" ? "Read" : "Write";
+
+  if (row.is_expired) return "Expired. This person's roles decide the access again.";
+  if (row.mode === "ALLOW") {
+    return roleAllows
+      ? `The role already allows ${kind}. The exception keeps ${kind} allowed${expiry}.`
+      : `The role does not allow ${kind}. ${kind} is allowed for this person${expiry}.`;
+  }
+  return roleAllows
+    ? `The role allows ${kind}. ${kind} is denied for this person${expiry}.`
+    : `The role already denies ${kind}. The denial stays in place${expiry}.`;
+}
+
+/** Field exceptions sit beside permission exceptions and share their guards. */
+export default function FieldAccessOverrides({
+  userId,
+  userName,
+  className,
+}: Props) {
+  const { hasPermission, hasAnyPermission } = usePermissions();
+  const signedInUser = useAppSelector(selectUser);
+  const canView =
+    hasPermission(P.VIEW_ROLES) &&
+    hasAnyPermission(P.VIEW_USER_OVERRIDES, P.MANAGE_USER_OVERRIDES);
+  const isSelf = String(userId) === String(signedInUser?.id ?? "");
+
+  if (!canView) return null;
+
+  return (
+    <FieldExceptionsSection
+      userId={userId}
+      userName={userName}
+      canManage={hasPermission(P.MANAGE_USER_OVERRIDES) && !isSelf}
+      className={className}
+    />
+  );
+}
+
+function FieldExceptionsSection({
+  userId,
+  userName,
+  canManage,
+  className,
+}: {
+  userId: number;
+  userName?: string | null;
+  canManage: boolean;
+  className?: string;
+}) {
+  const [addOpen, setAddOpen] = useState(false);
+  const [pendingLift, setPendingLift] =
+    useState<UserFieldAccessOverride | null>(null);
+  const query = useGetUserFieldAccessOverridesQuery({ userId });
+  const rows = query.data?.data ?? [];
+  const [lift, lifting] = useDeleteUserFieldAccessOverrideMutation();
+
+  const confirmLift = async () => {
+    if (!pendingLift) return;
+    try {
+      await lift({ userId, id: pendingLift.id }).unwrap();
+      toast.success("Field exception lifted.");
+      setPendingLift(null);
+    } catch {
+      // The shared API error handler presents the backend response.
+    }
+  };
+
+  return (
+    <section className={cn("min-w-0", className)}>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold text-black-01">Field exceptions</h3>
+          <p className="mt-1 text-xs text-gray-05">
+            Read or Write access changed for this person alone, on top of their roles.
+          </p>
+        </div>
+        {canManage && (
+          <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
+            <Plus className="size-3.5" /> Add exception
+          </Button>
+        )}
+      </div>
+
+      <div className="mt-4">
+        {query.isLoading ? (
+          <div className="rounded-md border border-white-02">
+            <SkeletonLoadingLabel text="Loading field exceptions..." />
+            {[0, 1].map((index) => (
+              <SkeletonCard key={index} lines={2} rowIndex={index} />
+            ))}
+          </div>
+        ) : query.isError ? (
+          <p className="rounded-md bg-gray-03 px-3 py-6 text-center text-sm text-gray-01">
+            Could not load field exceptions.
+          </p>
+        ) : rows.length === 0 ? (
+          <p className="rounded-md bg-gray-03 px-3 py-6 text-center text-sm text-gray-01">
+            No field exceptions. Field access comes entirely from roles.
+          </p>
+        ) : (
+          <ul className="grid gap-3">
+            {rows.map((row) => (
+              <li
+                key={row.id}
+                className={cn(
+                  "min-w-0 rounded-lg border border-white-02 px-3.5 py-3",
+                  row.is_expired && "border-dashed bg-gray-04/40",
+                )}
+              >
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className={cn(
+                      "text-sm font-medium text-black-01",
+                      row.is_expired && "text-gray-01 line-through",
+                    )}>
+                      {row.field_label}
+                    </p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      <Badge variant="outline">{row.access === "READ" ? "Read" : "Write"}</Badge>
+                      <Badge variant={row.mode === "ALLOW" ? "success" : "rejected"}>
+                        {row.mode === "ALLOW" ? (
+                          <ShieldPlus className="size-3" />
+                        ) : (
+                          <ShieldMinus className="size-3" />
+                        )}
+                        {row.mode === "ALLOW" ? "Allowed" : "Denied"}
+                      </Badge>
+                    </div>
+                  </div>
+                  {canManage && (
+                    <button
+                      type="button"
+                      onClick={() => setPendingLift(row)}
+                      className="inline-flex items-center gap-1 rounded-md border border-white-02 px-1.5 py-1 text-[11px] font-semibold text-gray-01 hover:border-destructive/40 hover:text-destructive"
+                    >
+                      <Trash2 className="size-3" /> Lift
+                    </button>
+                  )}
+                </div>
+                <p className="mt-2 flex items-start gap-1.5 text-xs text-gray-01">
+                  <Info className="mt-0.5 size-3 shrink-0" />
+                  <span>{fieldExceptionEffect(row)}</span>
+                </p>
+                <p className="mt-2 rounded-md bg-gray-04/60 px-2.5 py-1.5 text-xs text-gray-01">
+                  “{row.reason}”
+                </p>
+                <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-gray-05">
+                  <span>
+                    Set by {row.created_by_name || "-"} · {formatRelativeDate(row.created_at)}
+                  </span>
+                  {row.expires_at ? (
+                    <span className="inline-flex items-center gap-1">
+                      <CalendarClock className="size-3" />
+                      {row.is_expired ? "Expired" : `Expires ${formatExpiry(row.expires_at)}`}
+                    </span>
+                  ) : (
+                    <span>No expiry</span>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {canManage && (
+        <AddFieldExceptionDrawer
+          open={addOpen}
+          onOpenChange={setAddOpen}
+          userId={userId}
+          userName={userName}
+          existing={rows}
+        />
+      )}
+
+      <Dialog
+        open={Boolean(pendingLift)}
+        onOpenChange={(open) => !open && setPendingLift(null)}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-base">Lift this field exception?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-01">
+            {pendingLift?.field_label} returns to the access provided by this person's roles.
+          </p>
+          <DialogFooter className="gap-2">
+            <Button variant="white" size="sm" disabled={lifting.isLoading} onClick={() => setPendingLift(null)}>
+              Cancel
+            </Button>
+            <Button size="sm" loading={lifting.isLoading} onClick={() => void confirmLift()}>
+              Lift exception
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </section>
+  );
+}
+
+function AddFieldExceptionDrawer({
+  open,
+  onOpenChange,
+  userId,
+  userName,
+  existing,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  userId: number;
+  userName?: string | null;
+  existing: UserFieldAccessOverride[];
+}) {
+  const [moduleKey, setModuleKey] = useState("");
+  const [resourceKey, setResourceKey] = useState("");
+  const [fieldKey, setFieldKey] = useState("");
+  const [access, setAccess] = useState<FieldAccessKind>("READ");
+  const [mode, setMode] = useState<FieldAccessMode>("DENY");
+  const [reason, setReason] = useState("");
+  const [expiresAt, setExpiresAt] = useState("");
+  const [touched, setTouched] = useState(false);
+  const catalogue = useGetAccessCatalogueQuery(undefined, { skip: !open });
+  const modules = useMemo(() => modulesWithFields(catalogue.data?.data ?? []), [catalogue.data]);
+  const activeModule = modules.find((entry) => entry.module === moduleKey) ?? modules[0];
+  const activeResource =
+    activeModule?.resources.find((entry) => entry.resource === resourceKey) ??
+    activeModule?.resources[0];
+  const selectedField = activeResource?.fields.find((field) => field.key === fieldKey);
+  const alreadyExists = existing.find(
+    (row) => row.field_key === fieldKey && row.access === access,
+  );
+  const [create, saving] = useCreateUserFieldAccessOverrideMutation();
+
+  const fieldOptions = useMemo(
+    () =>
+      (activeResource?.fields ?? []).map((field) => ({
+        value: field.key,
+        label: field.group ? `${field.label} - ${field.group}` : field.label,
+      })),
+    [activeResource],
+  );
+
+  const reset = () => {
+    setModuleKey("");
+    setResourceKey("");
+    setFieldKey("");
+    setAccess("READ");
+    setMode("DENY");
+    setReason("");
+    setExpiresAt("");
+    setTouched(false);
+  };
+
+  const submit = async () => {
+    setTouched(true);
+    if (!fieldKey || !reason.trim()) return;
+    try {
+      await create({
+        userId,
+        field: fieldKey,
+        access,
+        mode,
+        reason: reason.trim(),
+        expires_at: expiresAt
+          ? new Date(`${expiresAt}T23:59:59`).toISOString()
+          : null,
+      }).unwrap();
+      toast.success("Field exception applied.");
+      reset();
+      onOpenChange(false);
+    } catch {
+      // The shared API error handler presents the backend response.
+    }
+  };
+
+  return (
+    <Sheet
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) reset();
+        onOpenChange(next);
+      }}
+    >
+      <SheetContent className="flex w-full flex-col sm:max-w-[500px]">
+        <SheetHeader className="border-b border-white-02">
+          <SheetTitle className="text-base font-semibold font-mont">
+            Add field exception
+          </SheetTitle>
+          <SheetDescription>
+            Set Read or Write for one field, for {userName || "this user"} alone.
+          </SheetDescription>
+        </SheetHeader>
+        <ScrollArea className="min-w-0 flex-1">
+          <div className="space-y-5 px-4 py-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SearchSelect
+                id="field-exception-module"
+                label="Module"
+                options={modules.map((entry) => ({ value: entry.module, label: entry.label }))}
+                loading={catalogue.isFetching}
+                value={activeModule?.module ?? ""}
+                onChange={(event) => {
+                  setModuleKey(event.target.value);
+                  setResourceKey("");
+                  setFieldKey("");
+                }}
+              />
+              <SearchSelect
+                id="field-exception-resource"
+                label="Resource"
+                options={(activeModule?.resources ?? []).map((entry) => ({ value: entry.resource, label: entry.label }))}
+                loading={catalogue.isFetching}
+                value={activeResource?.resource ?? ""}
+                onChange={(event) => {
+                  setResourceKey(event.target.value);
+                  setFieldKey("");
+                }}
+              />
+            </div>
+            <SearchSelect
+              id="field-exception-field"
+              label="Field"
+              isRequired
+              placeholder="Search field labels"
+              revealOnSearch
+              options={fieldOptions}
+              loading={catalogue.isFetching}
+              value={fieldKey}
+              error={touched && !fieldKey ? "Choose a field." : undefined}
+              onChange={(event) => {
+                const next = event.target.value;
+                setFieldKey(next);
+                const field = activeResource?.fields.find((entry) => entry.key === next);
+                if (field && !field.writable) setAccess("READ");
+              }}
+            />
+
+            <ChoiceButtons<FieldAccessKind>
+              label="Access"
+              value={access}
+              options={[
+                { value: "READ", label: "Read", note: "The Read switch for this field." },
+                { value: "WRITE", label: "Write", note: "The Write switch for this field.", disabled: selectedField ? !selectedField.writable : false },
+              ]}
+              onChange={setAccess}
+            />
+            <ChoiceButtons<FieldAccessMode>
+              label="Mode"
+              value={mode}
+              options={[
+                { value: "DENY", label: "Deny", note: "Deny even when a role allows it." },
+                { value: "ALLOW", label: "Allow", note: "Allow even when no role allows it." },
+              ]}
+              onChange={setMode}
+            />
+
+            {alreadyExists && (
+              <p className="rounded-md bg-yellow-01/10 px-3 py-2 text-xs text-yellow-01">
+                Saving replaces the existing {alreadyExists.mode.toLowerCase()} {alreadyExists.access.toLowerCase()} exception on this field.
+              </p>
+            )}
+
+            <div className="grid gap-1">
+              <label htmlFor="field-exception-reason" className="text-sm text-black-01 after:pl-1.5 after:text-error after:content-['*']">
+                Reason
+              </label>
+              <textarea
+                id="field-exception-reason"
+                rows={3}
+                value={reason}
+                onChange={(event) => setReason(event.target.value)}
+                onBlur={() => setTouched(true)}
+                className="w-full rounded-md border border-white-02 px-3 py-2 text-sm focus:border-primary focus:outline-none"
+                placeholder="Why this person needs the exception."
+              />
+              {touched && !reason.trim() && (
+                <p className="text-xs font-medium text-error">A reason is required.</p>
+              )}
+            </div>
+            <CustomDateInput
+              id="field-exception-expiry"
+              label="Expires on (optional)"
+              placeholder="Never expires"
+              value={expiresAt}
+              onValueChange={setExpiresAt}
+            />
+          </div>
+        </ScrollArea>
+        <SheetFooter className="border-t border-white-02">
+          <div className="flex flex-col-reverse gap-2 sm:flex-row">
+            <Button variant="white" className="sm:flex-1" disabled={saving.isLoading} onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button className="sm:flex-1" loading={saving.isLoading} onClick={() => void submit()}>
+              {alreadyExists ? "Replace exception" : "Apply exception"}
+            </Button>
+          </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function ChoiceButtons<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: { value: T; label: string; note: string; disabled?: boolean }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-1.5 text-sm text-black-01">{label}</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            disabled={option.disabled}
+            aria-pressed={value === option.value}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              "rounded-md border p-3 text-left transition-colors disabled:cursor-not-allowed disabled:opacity-45",
+              value === option.value
+                ? "border-primary bg-primary/5"
+                : "border-white-02 hover:border-primary/40",
+            )}
+          >
+            <span className="block text-sm font-medium text-black-01">{option.label}</span>
+            <span className="mt-1 block text-xs text-gray-01">{option.note}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}

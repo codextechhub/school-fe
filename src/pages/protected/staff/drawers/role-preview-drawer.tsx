@@ -3,7 +3,7 @@ import { Users } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import {
-  useGetPermissionCatalogueQuery,
+  useGetAccessCatalogueQuery,
   useGetRoleHoldersQuery,
   useGetSchoolRoleQuery,
 } from "@/redux/services/roles/roles-api";
@@ -38,7 +38,7 @@ export function RolePreviewDrawer({
   // before deciding whether to hand somebody the money. The catalogue is the
   // one place those keys have labels, and the roles screen has usually fetched
   // it already, so this costs nothing on the common path.
-  const catalogue = useGetPermissionCatalogueQuery();
+  const catalogue = useGetAccessCatalogueQuery();
 
   const detail = role.data?.data;
   const rows = holders.data?.data ?? [];
@@ -46,8 +46,10 @@ export function RolePreviewDrawer({
   const labels = useMemo(() => {
     const found = new Map<string, string>();
     for (const module of catalogue.data?.data ?? []) {
-      for (const permission of module.permissions) {
-        found.set(permission.key, permission.label);
+      for (const resource of module.resources) {
+        for (const permission of resource.permissions) {
+          found.set(permission.key, permission.label);
+        }
       }
     }
     return found;

@@ -58,6 +58,10 @@ const REGISTRY: Record<string, string> = {
   "100317": "school.students.import",
   "100318": "school.students.export",
   "100339": "school.students.view_sensitive",
+
+  // ── school / field access  (MM=10, RR=14) ─────────────────────────────────
+  "101401": "school.field_access.view",
+  "101408": "school.field_access.manage",
   // Moving a cohort up a level at the end of a session. Its own key, not part
   // of `.manage`: a registrar who may withdraw one student is not therefore
   // the person who may advance the whole school by a year.
@@ -419,6 +423,10 @@ export const P = {
   DELETE_ROLE:             "100804",  // remove a custom role
   APPROVE_ROLE_CHANGE:     "100805",  // approve a role edit routed through maker-checker
   ASSIGN_ROLE:             "100811",  // assign or revoke roles from school users
+
+  // ── Field Access ───────────────────────────────────────────────────────────
+  VIEW_FIELD_ACCESS:       "101401",  // see which fields each role may read or write
+  MANAGE_FIELD_ACCESS:     "101408",  // change a role's field switches
 
   // Named the console's way because the shared approval screens name them that
   // way, and carrying their own codes because the registry is a bijection: one

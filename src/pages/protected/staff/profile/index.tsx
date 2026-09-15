@@ -383,6 +383,8 @@ function TabBody({
       <AccessTab
         roles={roles.data.data}
         staffId={person.id}
+        userId={person.user_id}
+        userName={person.full_name}
         onOpenDrawer={onOpenDrawer}
       />
     );

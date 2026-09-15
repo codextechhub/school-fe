@@ -55,14 +55,78 @@ export interface CataloguePermission {
    * switching the module on would give them.
    */
   available: boolean;
+  band: string | null;
+  depth_label: string | null;
+  unavailable_reason: string | null;
 }
 
-/** The catalogue, grouped the way the drawer groups it. */
-export interface CatalogueModule {
-  module: string;
-  /** True when anything in the group is usable by this school. */
+export interface CatalogueField {
+  key: string;
+  name: string;
+  api_names: string[];
+  label: string;
+  group: string;
+  description: string;
+  sensitive: boolean;
+  writable: boolean;
+  default: { read: boolean; write: boolean };
+}
+
+export interface CatalogueResource {
+  resource: string;
+  label: string;
   available: boolean;
   permissions: CataloguePermission[];
+  fields: CatalogueField[];
+}
+
+/** The catalogue, grouped by module and then resource. */
+export interface CatalogueModule {
+  module: string;
+  label: string;
+  /** True when anything in the group is usable by this school. */
+  available: boolean;
+  resources: CatalogueResource[];
+}
+
+export interface RoleFieldAccessEntry extends CatalogueField {
+  module: string;
+  resource: string;
+  read: boolean;
+  write: boolean;
+  source: "default" | "role";
+  set_by_name: string | null;
+  set_at: string | null;
+}
+
+export interface RoleFieldAccessResponse {
+  role: { key: string; name: string; branch_name: string | null };
+  fields: RoleFieldAccessEntry[];
+}
+
+export type RoleFieldAccessChange =
+  | { field: string; reset: true }
+  | { field: string; read?: boolean; write?: boolean };
+
+export type FieldAccessMode = "ALLOW" | "DENY";
+export type FieldAccessKind = "READ" | "WRITE";
+
+export interface UserFieldAccessOverride {
+  id: number;
+  user_id: string;
+  field: string;
+  field_key: string;
+  field_label: string;
+  access: FieldAccessKind;
+  mode: FieldAccessMode;
+  reason: string;
+  expires_at: string | null;
+  is_expired: boolean;
+  role_state: { read: boolean; write: boolean };
+  created_by_id: string | null;
+  created_by_name: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 /** What creating a role of the school's own needs. */

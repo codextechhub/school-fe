@@ -1,15 +1,22 @@
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import { getTenantSlug } from "@/utils/tenant-context";
+import { fetchAllPages } from "@/utils/fetch-all-pages";
 import type {
   CatalogueModule,
+  FieldAccessKind,
+  FieldAccessMode,
   NewRole,
   NewRoleChangeRequest,
   RoleHolder,
   RoleChangeRequest,
   RoleUpdate,
+  RoleFieldAccessChange,
+  RoleFieldAccessResponse,
   SchoolRole,
   SchoolRoleDetail,
+  UserFieldAccessOverride,
 } from "./roles-types";
 
 /**
@@ -36,6 +43,28 @@ export const rolesApi = baseApi.injectEndpoints({
       providesTags: ["Roles"],
     }),
 
+    /**
+     * Every role the school holds, for pickers that must offer all of them.
+     *
+     * The roles list is paginated with at most 100 rows a page and has no
+     * search, so a single request silently drops later roles once a school
+     * outgrows one page. This walks every page at the largest size instead,
+     * and leaves the single-page query above as the Roles screen uses it.
+     */
+    getFieldAccessRoles: builder.query<SchoolRole[], void>({
+      queryFn: (_arg, _api, _extra, baseQuery) =>
+        fetchAllPages<SchoolRole, FetchBaseQueryError>(async (page) => {
+          const { data, error } = await baseQuery({
+            url: `${scope()}/roles/`,
+            method: "GET",
+            params: { page, page_size: 100 },
+          });
+          return error ? { error } : { data: data as PaginatedEnvelope<SchoolRole> };
+        }),
+      extraOptions: { silent: true },
+      providesTags: ["Roles"],
+    }),
+
     /** One role, with every permission it holds. Backs the preview drawer. */
     getSchoolRole: builder.query<Envelope<SchoolRoleDetail>, string>({
       query: (key) => ({ url: `${scope()}/roles/${key}/`, method: "GET" }),
@@ -51,10 +80,81 @@ export const rolesApi = baseApi.injectEndpoints({
      * the save is checked against, so the drawer cannot offer a box that
      * ticking would fail.
      */
-    getPermissionCatalogue: builder.query<Envelope<CatalogueModule[]>, void>({
-      query: () => ({ url: `${scope()}/permission-catalogue/`, method: "GET" }),
+    getAccessCatalogue: builder.query<
+      Envelope<CatalogueModule[]>,
+      { module?: string; resource?: string; search?: string } | void
+    >({
+      query: (params) => ({
+        url: `${scope()}/access-catalogue/`,
+        method: "GET",
+        params: params || undefined,
+      }),
       extraOptions: { silent: true },
       providesTags: ["PermissionCatalogue"],
+    }),
+
+    getRoleFieldAccess: builder.query<
+      Envelope<RoleFieldAccessResponse>,
+      { key: string; module?: string; resource?: string; search?: string; state?: "hidden" | "read_only" | "full" }
+    >({
+      query: ({ key, ...params }) => ({
+        url: `${scope()}/roles/${encodeURIComponent(key)}/field-access/`,
+        method: "GET",
+        params,
+      }),
+      extraOptions: { silent: true },
+      providesTags: (_result, _error, { key }) => [{ type: "RoleFieldAccess", id: key }],
+    }),
+
+    updateRoleFieldAccess: builder.mutation<
+      Envelope<RoleFieldAccessResponse>,
+      { key: string; changes: RoleFieldAccessChange[] }
+    >({
+      query: ({ key, changes }) => ({
+        url: `${scope()}/roles/${encodeURIComponent(key)}/field-access/`,
+        method: "PATCH",
+        body: { changes },
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: (_result, _error, { key }) => [{ type: "RoleFieldAccess", id: key }],
+    }),
+
+    getUserFieldAccessOverrides: builder.query<
+      PaginatedEnvelope<UserFieldAccessOverride>,
+      { userId: number; access?: FieldAccessKind; mode?: FieldAccessMode }
+    >({
+      query: ({ userId, ...params }) => ({
+        url: `${scope()}/users/${userId}/field-access-overrides/`,
+        method: "GET",
+        params,
+      }),
+      extraOptions: { silent: true },
+      providesTags: (_result, _error, { userId }) => [{ type: "UserFieldAccessOverrides", id: userId }],
+    }),
+
+    createUserFieldAccessOverride: builder.mutation<
+      Envelope<UserFieldAccessOverride>,
+      { userId: number; field: string; access: FieldAccessKind; mode: FieldAccessMode; reason: string; expires_at: string | null }
+    >({
+      query: ({ userId, ...body }) => ({
+        url: `${scope()}/users/${userId}/field-access-overrides/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: (_result, _error, { userId }) => [{ type: "UserFieldAccessOverrides", id: userId }],
+    }),
+
+    deleteUserFieldAccessOverride: builder.mutation<
+      { success: boolean; message: string },
+      { userId: number; id: number }
+    >({
+      query: ({ userId, id }) => ({
+        url: `${scope()}/users/${userId}/field-access-overrides/${id}/`,
+        method: "DELETE",
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: (_result, _error, { userId }) => [{ type: "UserFieldAccessOverrides", id: userId }],
     }),
 
     createSchoolRole: builder.mutation<Envelope<SchoolRoleDetail>, NewRole>({
@@ -208,8 +308,14 @@ export const rolesApi = baseApi.injectEndpoints({
 
 export const {
   useGetSchoolRolesQuery,
+  useGetFieldAccessRolesQuery,
   useGetSchoolRoleQuery,
-  useGetPermissionCatalogueQuery,
+  useGetAccessCatalogueQuery,
+  useGetRoleFieldAccessQuery,
+  useUpdateRoleFieldAccessMutation,
+  useGetUserFieldAccessOverridesQuery,
+  useCreateUserFieldAccessOverrideMutation,
+  useDeleteUserFieldAccessOverrideMutation,
   useCreateSchoolRoleMutation,
   useUpdateSchoolRoleMutation,
   useSetSchoolRoleStatusMutation,

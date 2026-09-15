@@ -39,6 +39,7 @@ import {
   FileDown,
   Rocket,
   ShieldCheck,
+  ShieldAlert,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -84,6 +85,7 @@ interface NavItem {
   isActive: boolean;
   childActive: boolean;
   permission?: NavPermission;
+  requiredPermissions?: PermissionCode[];
   /** Plan capability key, for a door that is sold rather than included. */
   capability?: string;
   permissionMode?: "any" | "all";
@@ -199,6 +201,12 @@ export function AppSidebar({
   // yes for them and says nothing about whether the school bought the product.
   const canSee = (item: NavItem): boolean => {
     if (!hasCapability(item.capability)) return false;
+    if (
+      item.requiredPermissions &&
+      !hasAllPermissions(...item.requiredPermissions)
+    ) {
+      return false;
+    }
     const permission = item.permission;
     if (permission === null || permission === undefined) return true;
     const codes = Array.isArray(permission) ? permission : [permission];
@@ -686,12 +694,23 @@ export function AppSidebar({
         title: "Roles & Permissions",
         url: routesPath.PROTECTED.ROLES.INDEX,
         icon: ShieldCheck,
-        // No deeper door under /roles, so nothing is excluded. Approvals is not
-        // a sibling either: a role change waits in the workflow inbox at
-        // /workflow/approvals, which cannot match this path.
-        isActive: owns(routesPath.PROTECTED.ROLES.INDEX),
+        // Field Access is its own door under /roles, so it is excluded here.
+        // Approvals is not a sibling: a role change waits in the workflow
+        // inbox at /workflow/approvals, which cannot match this path.
+        isActive:
+          owns(routesPath.PROTECTED.ROLES.INDEX) &&
+          !location.startsWith(routesPath.PROTECTED.ROLES.FIELD_ACCESS),
         childActive: false,
         permission: P.VIEW_ROLES,
+      },
+      {
+        title: "Field Access",
+        url: routesPath.PROTECTED.ROLES.FIELD_ACCESS,
+        icon: ShieldAlert,
+        isActive: location.startsWith(routesPath.PROTECTED.ROLES.FIELD_ACCESS),
+        childActive: false,
+        permission: [P.VIEW_FIELD_ACCESS, P.MANAGE_FIELD_ACCESS],
+        requiredPermissions: [P.VIEW_ROLES],
       },
       {
         // Documents routed for a decision. Two personal queues under one door:
