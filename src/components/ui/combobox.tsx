@@ -5,6 +5,7 @@ import { Combobox as ComboboxPrimitive } from "@base-ui/react";
 import { CheckIcon, ChevronDownIcon, XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { usePopupScroll } from "@/hooks/use-popup-scroll";
 import { Button } from "@/components/ui/button";
 import {
   InputGroup,
@@ -123,6 +124,10 @@ function ComboboxContent({
         // rendered, highlighted on hover, and swallowed every click - a
         // dropdown that looked entirely well and could not be used, in every
         // drawer that has one.
+        // The third of the same family is the wheel: the lock cancels every
+        // wheel and touchmove aimed outside the dialog, so the option list
+        // would not scroll by mouse or finger in a drawer. That one is answered
+        // on ComboboxList - see usePopupScroll.
         className="isolate z-[60] pointer-events-auto"
       >
         <ComboboxPrimitive.Popup
@@ -140,6 +145,11 @@ function ComboboxContent({
 }
 
 function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
+  // The list portals to <body>, i.e. outside the scroll lock a Dialog/Sheet
+  // installs - without this it cannot be wheel- or finger-scrolled while a
+  // modal is open. See usePopupScroll.
+  const scrollProps = usePopupScroll<HTMLDivElement>();
+
   return (
     <ComboboxPrimitive.List
       data-slot="combobox-list"
@@ -147,6 +157,7 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
         "max-h-[min(calc(--spacing(96)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1 overflow-y-auto p-1 data-empty:p-0",
         className,
       )}
+      {...scrollProps}
       {...props}
     />
   );

@@ -52,6 +52,17 @@ import { AssignRolePanel } from "@/pages/protected/roles/assign-role-panel";
  * **A locked role is read-only and says so.** CodeX owns the baseline roles;
  * the server refuses to change one, so there is no Save rather than a Save that
  * fails.
+ *
+ * **It widens in two steps:** 560px from `sm`, 720px from `lg`, 960px from
+ * `xl`. The picker sets Module and Resource side by side and gives the
+ * permission list and its search the whole width beneath them, so the drawer's
+ * width is the width that list is read in: roughly 660px on a laptop and 900px
+ * on a desktop, against 150px when the drawer stayed 560px throughout. The
+ * second step waits for `xl` because a 960px drawer covers a 1024px laptop
+ * almost entirely, and a drawer that hides the page it is drawn over has
+ * stopped being a drawer. The text fields, the holders list and the footer
+ * buttons cap their own width, so the extra room goes to the picker rather
+ * than to inputs stretched across the drawer.
  */
 export function RoleDrawer({
   open,
@@ -350,7 +361,7 @@ export function RoleDrawer({
 
   return (
     <Sheet open={open} onOpenChange={(next) => !next && close()}>
-      <SheetContent className="w-full sm:max-w-[560px] flex flex-col gap-0 p-0">
+      <SheetContent className="w-full sm:max-w-[560px] lg:max-w-[720px] xl:max-w-[960px] flex flex-col gap-0 p-0">
         <SheetHeader className="border-b border-border px-5 py-4">
           <p className="text-xs font-medium uppercase tracking-[0.08em] text-gray-05 font-mont">
             {creating ? "New role" : "Role"}
@@ -400,7 +411,7 @@ export function RoleDrawer({
           )}
 
           {!readOnly && (
-            <div className="space-y-3.5">
+            <div className="space-y-3.5 lg:max-w-2xl">
               <CustomInput
                 id="role-name"
                 label="Role name"
@@ -511,13 +522,13 @@ export function RoleDrawer({
           </div>
         )}
 
-        <div className="border-t border-border px-5 py-3.5 flex gap-2.5">
-          <Button variant="outline" className="flex-1" onClick={close}>
+        <div className="border-t border-border px-5 py-3.5 flex gap-2.5 lg:justify-end">
+          <Button variant="outline" className="flex-1 lg:flex-none lg:min-w-40" onClick={close}>
             {readOnly ? "Close" : "Cancel"}
           </Button>
           {!readOnly && (
             <Button
-              className="flex-1"
+              className="flex-1 lg:flex-none lg:min-w-40"
               onClick={commit}
               loading={saving || updating || raising}
               disabled={!creating && !dirty}
@@ -573,7 +584,7 @@ function RoleHolders({
   }
   if (holders.length === 0) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-3 lg:max-w-2xl">
         <p className="rounded-md border border-border px-3 py-2.5 text-[13px] text-gray-06">
           Nobody holds this role yet. Until somebody does, it grants nothing and
           anything routed to it waits.
@@ -590,7 +601,7 @@ function RoleHolders({
     );
   }
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 lg:max-w-2xl">
       <ul className="space-y-2">
         {holders.map((holder) => (
           <li

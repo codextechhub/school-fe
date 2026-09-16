@@ -10,6 +10,12 @@ import {
 import { toast } from "sonner";
 
 import { CustomDateInput } from "@/components/custom/custom-date-input";
+import { useCatalogueScope } from "@/components/custom/catalogue-scope";
+import {
+  CatalogueScopeNotice,
+  CatalogueScopePrompt,
+  CatalogueScopeSelect,
+} from "@/components/custom/catalogue-scope-select";
 import { SearchSelect } from "@/components/custom/search-select";
 import {
   SkeletonCard,
@@ -294,6 +300,16 @@ function FieldExceptionsSection({
   );
 }
 
+/**
+ * The form that adds one field exception for one person.
+ *
+ * The field is narrowed in the catalogue's Module, Resource, Field order, and
+ * only resources that carry fields are offered. Nothing is preselected: the
+ * Field box appears once a resource is chosen, with a prompt in its place until
+ * then. Changing the module or the resource clears the chosen field, because a
+ * field key belongs to exactly one resource. Access, mode, reason and expiry
+ * keep what was entered.
+ */
 function AddFieldExceptionDrawer({
   open,
   onOpenChange,
@@ -307,8 +323,6 @@ function AddFieldExceptionDrawer({
   userName?: string | null;
   existing: UserFieldAccessOverride[];
 }) {
-  const [moduleKey, setModuleKey] = useState("");
-  const [resourceKey, setResourceKey] = useState("");
   const [fieldKey, setFieldKey] = useState("");
   const [access, setAccess] = useState<FieldAccessKind>("READ");
   const [mode, setMode] = useState<FieldAccessMode>("DENY");
@@ -317,10 +331,8 @@ function AddFieldExceptionDrawer({
   const [touched, setTouched] = useState(false);
   const catalogue = useGetAccessCatalogueQuery(undefined, { skip: !open });
   const modules = useMemo(() => modulesWithFields(catalogue.data?.data ?? []), [catalogue.data]);
-  const activeModule = modules.find((entry) => entry.module === moduleKey) ?? modules[0];
-  const activeResource =
-    activeModule?.resources.find((entry) => entry.resource === resourceKey) ??
-    activeModule?.resources[0];
+  const scope = useCatalogueScope(modules);
+  const { activeModule, activeResource } = scope;
   const selectedField = activeResource?.fields.find((field) => field.key === fieldKey);
   const alreadyExists = existing.find(
     (row) => row.field_key === fieldKey && row.access === access,
@@ -337,8 +349,7 @@ function AddFieldExceptionDrawer({
   );
 
   const reset = () => {
-    setModuleKey("");
-    setResourceKey("");
+    scope.clear();
     setFieldKey("");
     setAccess("READ");
     setMode("DENY");
@@ -388,48 +399,47 @@ function AddFieldExceptionDrawer({
         </SheetHeader>
         <ScrollArea className="min-w-0 flex-1">
           <div className="space-y-5 px-4 py-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <SearchSelect
-                id="field-exception-module"
-                label="Module"
-                options={modules.map((entry) => ({ value: entry.module, label: entry.label }))}
-                loading={catalogue.isFetching}
-                value={activeModule?.module ?? ""}
-                onChange={(event) => {
-                  setModuleKey(event.target.value);
-                  setResourceKey("");
-                  setFieldKey("");
-                }}
-              />
-              <SearchSelect
-                id="field-exception-resource"
-                label="Resource"
-                options={(activeModule?.resources ?? []).map((entry) => ({ value: entry.resource, label: entry.label }))}
-                loading={catalogue.isFetching}
-                value={activeResource?.resource ?? ""}
-                onChange={(event) => {
-                  setResourceKey(event.target.value);
-                  setFieldKey("");
-                }}
-              />
-            </div>
-            <SearchSelect
-              id="field-exception-field"
-              label="Field"
-              isRequired
-              placeholder="Search field labels"
-              revealOnSearch
-              options={fieldOptions}
+            <CatalogueScopeSelect
+              idPrefix="field-exception"
+              modules={modules}
+              activeModule={activeModule}
+              activeResource={activeResource}
               loading={catalogue.isFetching}
-              value={fieldKey}
-              error={touched && !fieldKey ? "Choose a field." : undefined}
-              onChange={(event) => {
-                const next = event.target.value;
-                setFieldKey(next);
-                const field = activeResource?.fields.find((entry) => entry.key === next);
-                if (field && !field.writable) setAccess("READ");
+              onModuleChange={(key) => {
+                scope.chooseModule(key);
+                setFieldKey("");
+              }}
+              onResourceChange={(key) => {
+                scope.chooseResource(key);
+                setFieldKey("");
               }}
             />
+            <CatalogueScopeNotice activeModule={activeModule} activeResource={activeResource} />
+            {activeResource ? (
+              <SearchSelect
+                id="field-exception-field"
+                label="Field"
+                isRequired
+                placeholder="Search field labels"
+                revealOnSearch
+                options={fieldOptions}
+                loading={catalogue.isFetching}
+                value={fieldKey}
+                error={touched && !fieldKey ? "Choose a field." : undefined}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setFieldKey(next);
+                  const field = activeResource.fields.find((entry) => entry.key === next);
+                  if (field && !field.writable) setAccess("READ");
+                }}
+              />
+            ) : (
+              <div className="grid gap-1.5">
+                <p className="text-sm text-black-01 after:pl-1.5 after:text-error after:content-['*']">Field</p>
+                <CatalogueScopePrompt noun="fields" />
+                {touched && <p className="text-xs font-medium text-destructive/70">Choose a field.</p>}
+              </div>
+            )}
 
             <ChoiceButtons<FieldAccessKind>
               label="Access"
