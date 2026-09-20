@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle, Info, Network } from "lucide-react";
 
 import { NativeSelect } from "@/components/ui/native-select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
-import { useMoveStaffPostingMutation } from "@/redux/services/staff/staff-api";
+import {
+  useGetStaffRolesQuery,
+  useMoveStaffPostingMutation,
+} from "@/redux/services/staff/staff-api";
 
 import {
   DrawerShell,
@@ -42,6 +46,9 @@ export function PostingDrawer({
 }) {
   const { data: branchData } = useGetMyBranchesQuery();
   const [move, { isLoading: saving }] = useMoveStaffPostingMutation();
+  const roles = useGetStaffRolesQuery(staffIds[0] ?? 0, {
+    skip: staffIds.length !== 1,
+  });
 
   const [branch, setBranch] = useState("");
   const [reason, setReason] = useState("");
@@ -125,6 +132,54 @@ export function PostingDrawer({
             className={inputClass}
           />
         </Field>
+
+        {staffIds.length === 1 && (
+          <section className="rounded-lg border border-white-02 px-3.5 py-3">
+            <div className="flex items-center gap-2">
+              <Network className="size-4 text-primary" />
+              <h3 className="text-xs font-semibold text-black-01">
+                Role reach stays the same
+              </h3>
+            </div>
+
+            {roles.isLoading ? (
+              <div className="mt-3 grid gap-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-full" />
+              </div>
+            ) : roles.data ? (
+              <div className="mt-2.5">
+                <div className="flex flex-wrap gap-1.5">
+                  {roles.data.data.reach.school_wide ? (
+                    <span className="rounded-full bg-pry-01 px-2.5 py-1 text-xs font-medium text-primary">
+                      Every branch
+                    </span>
+                  ) : roles.data.data.reach.branches.length ? (
+                    roles.data.data.reach.branches.map((entry) => (
+                      <span
+                        key={entry.id}
+                        className="rounded-full bg-gray-04 px-2.5 py-1 text-xs text-gray-01"
+                      >
+                        {entry.name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-gray-01">
+                      School-wide records only
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-gray-05">
+                  {roles.data.data.reach.note}
+                </p>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-gray-05">
+                Reach is managed from this person's Roles &amp; access tab.
+              </p>
+            )}
+          </section>
+        )}
 
         <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
           <Info className="mt-px size-3.5 shrink-0 text-primary" />

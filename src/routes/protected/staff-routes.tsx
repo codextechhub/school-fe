@@ -75,8 +75,10 @@ export const staffRoutes = [
     Component: StaffPosting,
     handle: {
       title: "Posting & reach",
-      lens: true,
-      lenses: "branch",
+      // A roster requires one branch and this screen owns that picker. The
+      // endpoint has no all-branch response, so a global lens would offer a
+      // state the screen cannot truthfully load.
+      lenses: "none",
       pendingSurface: true,
     } satisfies DashboardHandle,
   },
