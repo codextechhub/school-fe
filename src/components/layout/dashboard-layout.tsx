@@ -303,7 +303,7 @@ export default function DashboardLayout() {
         <SidebarInset className="bg-white-05 min-w-0 w-auto">
           {/* Banner + header pin together: two independently sticky bars at
               top-0 would overlap as soon as the page scrolls. */}
-          <div className="sticky top-0 z-10 shrink-0">
+          <div className="sticky top-0 z-20 shrink-0">
           <ProxySessionBanner />
           {/* `relative`: the search box is centred on the header itself rather
               than laid out between its neighbours, and on a phone it expands
@@ -532,7 +532,7 @@ function AppSearchFallback() {
     <>
       <div
         aria-hidden="true"
-        className="absolute left-1/2 top-1/2 hidden h-9 w-[min(38vw,430px)] -translate-x-1/2 -translate-y-1/2 items-center rounded-xl border border-gray-200 bg-gray-50/70 px-3 text-gray-400 lg:flex"
+        className="absolute left-1/2 top-1/2 hidden h-9 w-[min(38vw,430px)] -translate-x-1/2 -translate-y-1/2 items-center rounded-xl border border-gray-200 bg-gray-50 px-3 text-gray-400 lg:flex"
       >
         <Search className="mr-2 size-4" />
         <span className="text-sm">Search your workspace</span>
