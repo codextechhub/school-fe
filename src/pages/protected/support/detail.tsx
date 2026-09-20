@@ -19,6 +19,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/utils/relative-date";
 import { apiErrorMessage } from "@/utils/api-error";
+import { openAttachment } from "@/utils/attachment-download";
 import { routesPath } from "@/routes/routesPath";
 import {
   useAddTicketCommentMutation,
@@ -28,9 +29,13 @@ import {
   useTransitionTicketMutation,
 } from "@/redux/services/support/support-api";
 import type {
-  TicketComment,
+  TicketAttachment,
   TicketStatus,
 } from "@/redux/services/support/support-types";
+import {
+  buildConversationDays,
+  partitionTicketAttachments,
+} from "./conversation-model";
 
 /**
  * One ticket, and the conversation on it.
@@ -84,6 +89,43 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
+const dayLabel = (date: Date): string => {
+  if (!Number.isFinite(date.getTime())) return "Date unknown";
+  return date.toLocaleDateString("en-NG", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
+const messageTime = (value: string): string => {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "Time unknown";
+  return date.toLocaleTimeString("en-NG", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+function AttachmentLink({ file }: { file: TicketAttachment }) {
+  const open = () => {
+    openAttachment(file.url, file.original_filename).catch((error) => {
+      toast.error(error instanceof Error ? error.message : "We could not open that file.");
+    });
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={open}
+      className="inline-flex min-w-0 items-center gap-1.5 text-left text-xs font-medium text-primary hover:underline"
+    >
+      <Paperclip className="size-3.5 shrink-0" />
+      <span className="truncate">{file.original_filename}</span>
+    </button>
+  );
+}
+
 export default function SupportTicketDetail() {
   const navigate = useNavigate();
   const { id = "" } = useParams<{ id: string }>();
@@ -104,12 +146,13 @@ export default function SupportTicketDetail() {
   // thread shows a conversation from three weeks ago and the reply box below
   // something nobody is answering.
   const threadRef = useRef<HTMLDivElement>(null);
-  const commentCount = ticket?.comments?.length ?? 0;
+  const conversationItemCount =
+    (ticket?.comments?.length ?? 0) + (ticket?.attachments?.length ?? 0);
   useEffect(() => {
     const viewport = threadRef.current;
     if (!viewport) return;
     viewport.scrollTop = viewport.scrollHeight;
-  }, [commentCount, id]);
+  }, [conversationItemCount, id]);
 
   if (isLoading) {
     return (
@@ -147,7 +190,15 @@ export default function SupportTicketDetail() {
   // Absent means following: the server only records a row once somebody has
   // deliberately muted, and everyone on a ticket hears about it by default.
   const following = ticket.is_following !== false;
-  const ticketAttachments = (ticket.attachments ?? []).filter((file) => !file.comment_id);
+  const unattachedFiles = (ticket.attachments ?? []).filter((file) => !file.comment_id);
+  const ticketAttachments = partitionTicketAttachments(
+    unattachedFiles,
+    ticket.created_at,
+  );
+  const conversationDays = buildConversationDays(
+    ticket.comments ?? [],
+    ticketAttachments.conversation,
+  );
 
   const send = async () => {
     if (!reply.trim()) return;
@@ -254,23 +305,6 @@ export default function SupportTicketDetail() {
               <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-01">
                 {ticket.description}
               </p>
-
-              {ticketAttachments.length > 0 && (
-                <div className="mt-4 border-t border-white-02 pt-3">
-                  <p className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-01">
-                    <Paperclip className="size-3.5" />
-                    {ticketAttachments.length} attachment
-                    {ticketAttachments.length === 1 ? "" : "s"}
-                  </p>
-                  <ul className="mt-2 grid gap-1">
-                    {ticketAttachments.map((file) => (
-                      <li key={file.id} className="truncate text-xs text-gray-05">
-                        {file.original_filename}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
             </div>
 
             {/* ── The conversation ──────────────────────────────────────────
@@ -283,7 +317,7 @@ export default function SupportTicketDetail() {
                 `min-h-0` on the middle row is what lets it shrink: a grid row
                 sizes to its content by default, and without it the list simply
                 pushes the composer out of the box instead of scrolling. */}
-            <div className="grid max-h-[60dvh] min-h-[22rem] grid-rows-[auto_minmax(0,1fr)_auto] lg:max-h-[62dvh]">
+            <div className="grid h-[72dvh] min-h-[34rem] max-h-[52rem] grid-rows-[auto_minmax(0,1fr)_auto] lg:h-[calc(100dvh-10rem)] lg:min-h-[38rem] lg:max-h-[58rem]">
               {/* The rule is the top edge of the scrolling box, not decoration.
                   Without it the thread simply stops mid-air when you scroll and
                   the oldest message looks cut off by nothing; with it the
@@ -293,7 +327,7 @@ export default function SupportTicketDetail() {
                 Conversation
               </p>
 
-              {!ticket.comments?.length ? (
+              {!conversationDays.length ? (
                 <p className="px-5 py-3 text-sm text-gray-01 sm:px-6">
                   No replies yet. Anything written here is seen by everybody on
                   the ticket.
@@ -304,47 +338,72 @@ export default function SupportTicketDetail() {
                   className="min-h-0"
                   viewportClassName="px-5 py-4 sm:px-6"
                 >
-                <ul className="grid gap-5">
-                  {ticket.comments.map((comment: TicketComment) => {
-                    const fromCodex = comment.author?.tenant_kind === "PLATFORM";
-                    return (
-                      <li key={comment.id} className="grid min-w-0 gap-1.5">
-                        <div className="flex flex-wrap items-baseline gap-2">
-                          <span className="font-mont text-sm font-medium text-black-01">
-                            {comment.author?.name ?? "Unknown"}
-                          </span>
-                          {fromCodex && (
-                            <span className="rounded-full bg-pry-01 px-2 py-0.5 text-[10px] font-medium text-primary">
-                              XVS
-                            </span>
-                          )}
-                          <span className="text-xs text-gray-05">
-                            {formatRelativeDate(comment.created_at)}
-                          </span>
+                  <ol className="grid gap-4">
+                    {conversationDays.map((day) => (
+                      <li key={day.key} className="grid min-w-0 gap-3">
+                        <div className="flex items-center gap-3" aria-label={dayLabel(day.date)}>
+                          <span className="h-px flex-1 bg-white-02" />
+                          <time className="shrink-0 text-[11px] font-medium text-gray-05">
+                            {dayLabel(day.date)}
+                          </time>
+                          <span className="h-px flex-1 bg-white-02" />
                         </div>
-                        <div
-                          className={cn(
-                            "min-w-0 whitespace-pre-wrap rounded-md px-3 py-2 text-sm leading-6",
-                            // A reply from CodeX reads as coming from outside
-                            // the school, which is what it is.
-                            fromCodex
-                              ? "bg-pry-01/40 text-black-01"
-                              : "bg-gray-03 text-gray-01",
-                          )}
-                        >
-                          {comment.body}
-                        </div>
-                        {comment.attachments?.length > 0 && (
-                          <p className="inline-flex items-center gap-1 text-xs text-gray-05">
-                            <Paperclip className="size-3.5" />
-                            {comment.attachments.length} file
-                            {comment.attachments.length === 1 ? "" : "s"}
-                          </p>
-                        )}
+
+                        {day.groups.map((group, groupIndex) => {
+                          const fromCodex = group.author?.tenant_kind === "PLATFORM";
+                          return (
+                            <div
+                              key={`${day.key}-${group.author?.id ?? "unknown"}-${groupIndex}`}
+                              className="grid min-w-0 gap-1"
+                            >
+                              <div className="flex flex-wrap items-baseline gap-2">
+                                <span className="font-mont text-sm font-medium text-black-01">
+                                  {group.author?.name ?? "Unknown"}
+                                </span>
+                                {fromCodex && (
+                                  <span className="rounded-full bg-pry-01 px-2 py-0.5 text-[10px] font-medium text-primary">
+                                    XVS
+                                  </span>
+                                )}
+                                <time className="ml-auto shrink-0 text-[11px] text-gray-05">
+                                  {messageTime(group.items.at(-1)?.createdAt ?? "")}
+                                </time>
+                              </div>
+
+                              <div className="grid gap-1">
+                                {group.items.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className={cn(
+                                      "min-w-0 rounded-md px-3 py-1.5 text-sm leading-5",
+                                      fromCodex
+                                        ? "bg-pry-01/40 text-black-01"
+                                        : "bg-gray-03 text-gray-01",
+                                    )}
+                                  >
+                                    {item.kind === "comment" ? (
+                                      <>
+                                        <p className="whitespace-pre-wrap">{item.comment.body}</p>
+                                        {item.comment.attachments?.length > 0 && (
+                                          <div className="mt-2 grid gap-1 border-t border-black/5 pt-2">
+                                            {item.comment.attachments.map((file) => (
+                                              <AttachmentLink key={file.id} file={file} />
+                                            ))}
+                                          </div>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <AttachmentLink file={item.attachment} />
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </li>
-                    );
-                  })}
-                </ul>
+                    ))}
+                  </ol>
                 </ScrollArea>
               )}
 
@@ -408,6 +467,25 @@ export default function SupportTicketDetail() {
               ) : null}
             </dl>
           </div>
+
+          {ticketAttachments.initial.length > 0 && (
+            <div className={cn(CARD, "p-5")}>
+              <h2 className="inline-flex items-center gap-1.5 font-mont text-sm font-semibold">
+                <Paperclip className="size-4 text-primary" />
+                Files attached
+              </h2>
+              <p className="mt-1 text-xs leading-5 text-gray-05">
+                Included when this ticket was raised.
+              </p>
+              <ul className="mt-3 grid max-h-48 gap-2 overflow-y-auto pr-1">
+                {ticketAttachments.initial.map((file) => (
+                  <li key={file.id} className="min-w-0 rounded-md bg-gray-03 px-3 py-2">
+                    <AttachmentLink file={file} />
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {canManage && (
             <div className={cn(CARD, "p-5")}>
