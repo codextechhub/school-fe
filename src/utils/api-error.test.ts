@@ -73,6 +73,11 @@ describe("apiErrorMessage", () => {
     );
   });
 
+  it("converts minor-unit amounts before returning the sentence", () => {
+    const error = rejection(422, "AMOUNT_TOO_SMALL", "The minimum is 850 kobo.");
+    expect(apiErrorMessage(error, "fallback")).toBe("The minimum is ₦8.50.");
+  });
+
   it("never prints a machine code at a person", () => {
     // A backend slip that puts the code in `message` must not reach the screen.
     const error = rejection(422, "TASK_CONDITION_NOT_MET", "TASK_CONDITION_NOT_MET");

@@ -15,6 +15,7 @@ import {
 import type { ActiveImpersonation, TenantInfo } from "../features/auth/auth-types";
 import { getTenantSlug } from "@/utils/tenant-context";
 import { toast } from "sonner";
+import { userFacingMessage } from "@/utils/user-facing-message";
 import { askToPostWithoutApproval } from "@/lib/approval-confirm";
 import { routesPath } from "@/routes/routesPath";
 import { refreshTokenSingleFlight } from "@/utils/token-refresh";
@@ -232,7 +233,7 @@ export const baseQueryInterceptor: BaseQueryFn<
   // refresh/retry and force-logout machinery still runs.
   const silent = !!(extraOptions as { silent?: boolean } | undefined)?.silent;
   const notify = (message: string) => {
-    if (!silent) toast.error(message);
+    if (!silent) toast.error(userFacingMessage(message));
   };
 
   // FetchBaseQueryError uses a string status for transport-level failures

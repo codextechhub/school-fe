@@ -1,3 +1,5 @@
+import { userFacingMessage } from "./user-facing-message";
+
 /**
  * Host-contract module for @xvs/finance, which imports `@/utils/api-errors`.
  *
@@ -38,7 +40,8 @@ const SERVER_ERROR_CODE = "SERVER_ERROR";
 
 /** Replace a backend message that is not fit to show with one that is. */
 export function humanizeApiMessage(message: string): string {
-  return DJANGO_NOT_FOUND.test(message.trim()) ? NOT_FOUND_MESSAGE : message;
+  const humanized = DJANGO_NOT_FOUND.test(message.trim()) ? NOT_FOUND_MESSAGE : message;
+  return userFacingMessage(humanized);
 }
 
 /**
@@ -83,7 +86,8 @@ export function apiFieldError(error: unknown, field: string): string | null {
   const envelope = unwrapErrorEnvelope(error);
   const errorObject = asRecord(envelope?.error);
   const detail = asRecord(errorObject?.detail);
-  return extractFirstDetail(detail?.[field]);
+  const message = extractFirstDetail(detail?.[field]);
+  return message ? humanizeApiMessage(message) : null;
 }
 
 function unwrapErrorEnvelope(error: unknown): Record<string, unknown> | null {

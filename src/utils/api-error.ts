@@ -1,3 +1,5 @@
+import { userFacingMessage } from "./user-facing-message";
+
 /**
  * api-error - read the platform's error envelope off an RTK Query rejection.
  *
@@ -44,7 +46,7 @@ export function parseApiError(error: unknown): ApiError {
     // `code` sits inside `error` for domain refusals and at the top level for
     // `error_response(code=…)`. Both spellings are in the backend today.
     code: asString(inner.code) || asString(body.code),
-    message: asString(body.message),
+    message: userFacingMessage(asString(body.message)),
     detail: asRecord(inner.detail),
   };
 }
@@ -131,7 +133,7 @@ export function fieldErrors(error: unknown): Record<string, string> {
     const text = Array.isArray(value)
       ? value.map(asString).filter(Boolean).join(" ")
       : asString(value);
-    if (text) out[field] = text;
+    if (text) out[field] = userFacingMessage(text);
   }
   return out;
 }

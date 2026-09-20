@@ -105,4 +105,18 @@ describe("TENANT_NOT_LIVE handling", () => {
     expect(navigate).not.toHaveBeenCalled();
     expect(toastError).toHaveBeenCalledWith("You do not have permission to do that.");
   });
+
+  it("shows the readable permission name instead of the machine key", async () => {
+    respondWith(403, {
+      success: false,
+      message: "'finance.invoice.create' is restricted and cannot be placed in a permission group.",
+      error: { code: "PERMISSION_DENIED", detail: {} },
+    });
+
+    await baseQueryInterceptor("/roles/", apiStub(), {});
+
+    expect(toastError).toHaveBeenCalledWith(
+      "'Create invoice' is restricted and cannot be placed in a permission group.",
+    );
+  });
 });
