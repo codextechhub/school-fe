@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList, ComboboxEmpty } from "@/components/ui/combobox";
 import { cn } from "@/lib/utils";
 import { formatBytes } from "@/utils/format-bytes";
+import { useFieldAccess } from "@/components/finance-ui/field-access";
 import { toast } from "sonner";
 import {
   useGetImportTemplatesQuery,
@@ -997,6 +998,9 @@ export function ConfirmStep({
   const summary = batch.validation_summary as Record<string, number> | null;
   const errorCount = summary?.error_count ?? batch.error_count;
   const rowsReady = errorCount === 0 ? batch.total_rows : 0;
+  // The parsed preview is a Field Access field: a viewer who may not read it gets no preview.
+  const access = useFieldAccess("import.batches", batch);
+  const previewRows = access.isHidden("preview_rows") ? [] : batch.preview_rows ?? [];
   const statementContext = batch.domain_context?.type === "bank_statement"
     ? batch.domain_context
     : null;
@@ -1042,9 +1046,9 @@ export function ConfirmStep({
       </div>
 
       {/* Data preview */}
-      {batch.preview_rows && batch.preview_rows.length > 0 && (
+      {previewRows.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-black-01 mb-2">Data preview <span className="text-gray-400 font-normal">(first {batch.preview_rows.length} {batch.preview_rows.length === 1 ? "row" : "rows"})</span></p>
+          <p className="text-xs font-semibold text-black-01 mb-2">Data preview <span className="text-gray-400 font-normal">(first {previewRows.length} {previewRows.length === 1 ? "row" : "rows"})</span></p>
           <div className="rounded-md border border-gray-200 overflow-x-auto">
             <table className="text-[11px] w-full">
               <thead>
@@ -1055,7 +1059,7 @@ export function ConfirmStep({
                 </tr>
               </thead>
               <tbody>
-                {batch.preview_rows.map((row, ri) => (
+                {previewRows.map((row, ri) => (
                   <tr key={ri} className="border-b border-white-02 last:border-0 hover:bg-gray-50/50">
                     {batch.uploaded_headers.map((h, ci) => (
                       <td key={ci} className="px-3 py-2 font-mono text-gray-600 whitespace-nowrap max-w-[180px] truncate border-r border-white-02 last:border-r-0">

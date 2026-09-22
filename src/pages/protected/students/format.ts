@@ -56,3 +56,18 @@ export function titleCaseCode(code: string | null | undefined): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
+
+/**
+ * The line under a guardian in a search result: their phone number, then how
+ * many students they already stand for.
+ *
+ * The phone is a Field Access field, absent when the viewer may not read it,
+ * and the line then carries the ward count alone rather than a blank.
+ */
+export function guardianMatchLine(g: { phone?: string; ward_count: number }): string {
+  const wards =
+    g.ward_count > 0
+      ? `already guardian of ${g.ward_count} ${g.ward_count === 1 ? "student" : "students"}`
+      : "no students yet";
+  return g.phone ? `${g.phone} · ${wards}` : wards;
+}

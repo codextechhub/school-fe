@@ -51,7 +51,6 @@ const packageAlias: { find: string; replacement: string }[] = [
   { find: "@/utils/money", replacement: pkg("src/utils/money.ts") },
   { find: "@/utils/posting-window", replacement: pkg("src/utils/posting-window.ts") },
   { find: "@/utils/quantity", replacement: pkg("src/utils/quantity.ts") },
-  { find: "@/utils/fls", replacement: pkg("src/utils/fls.ts") },
   { find: "@/utils/finance-export", replacement: path.resolve(__dirname, "./src/xvs-host/finance-export.ts") },
   { find: "@/utils/finance-documents", replacement: path.resolve(__dirname, "./src/xvs-host/finance-documents.ts") },
   { find: "@/utils/chart-of-accounts", replacement: pkg("src/utils/chart-of-accounts.ts") },

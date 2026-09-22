@@ -10,6 +10,8 @@ import { PageShell } from "@/components/layout/page-shell";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { cn } from "@/lib/utils";
+import { AccessField, useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { writeErrorMessage, fieldErrors, parseApiError } from "@/utils/api-error";
 import {
   useEnrolStudentMutation,
@@ -125,10 +127,20 @@ const STEPS: readonly Step[] = [
  *     hiding two steps back when you arrive at Review.
  *   - A server refusal jumps to the step that owns the field it names.
  */
+/** The medical inputs, each governed by its own Field Access switch. */
+const MEDICAL_INPUTS = [
+  { name: "blood_group", label: "Blood group" },
+  { name: "allergies", label: "Allergies" },
+  { name: "conditions", label: "Conditions" },
+] as const;
+
 export default function EnrolStudent() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const branchLens = useBranchLens();
+  // An Add form: no record yet, so the signed-in user's map decides.
+  const access = useFieldAccess(FIELD_RESOURCE.STUDENTS);
+  const guardianAccess = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
 
   // ?applicant=1 flips the form before anything is typed, so the Applicants
   // board can send someone straight to the right shape.
@@ -378,7 +390,7 @@ export default function EnrolStudent() {
 
   function body(extra: Partial<EnrolWrite>): EnrolWrite {
     const clean = (v: string) => v.trim();
-    return {
+    return access.writableOnly({
       first_name: clean(form.first_name),
       middle_name: clean(form.middle_name),
       last_name: clean(form.last_name),
@@ -417,16 +429,16 @@ export default function EnrolStudent() {
                 relationship: g.relationship,
                 is_primary: g.is_primary,
               }
-            : {
+            : guardianAccess.writableOnly({
                 full_name: g.full_name.trim(),
                 phone: g.phone.trim(),
                 ...(g.email.trim() ? { email: g.email.trim() } : {}),
                 relationship: g.relationship,
                 is_primary: g.is_primary,
-              },
+              }),
         ),
       ...extra,
-    };
+    });
   }
 
   async function submit(extra: Partial<EnrolWrite> = {}) {
@@ -752,13 +764,15 @@ export default function EnrolStudent() {
                   ))}
                 </NativeSelect>
               </Field>
-              <Field label="Admission date">
-                <DatePickerInput
-                  value={form.enrolment_date}
-                  onChange={(e) => set("enrolment_date", e.target.value)}
-                  className={inputClass}
-                />
-              </Field>
+              <AccessField access={access} name="enrolment_date">
+                <Field label="Admission date">
+                  <DatePickerInput
+                    value={form.enrolment_date}
+                    onChange={(e) => set("enrolment_date", e.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+              </AccessField>
             </>
           )}
 
@@ -842,30 +856,20 @@ export default function EnrolStudent() {
 
       <Section
         title="Medical"
-        note="Optional, and restricted: only staff who hold the sensitive-data permission can read these back."
+        note="Optional. Your school decides which roles can read these back."
       >
         <div className="grid gap-3.5 sm:grid-cols-2">
-          <Field label="Blood group">
-            <input
-              value={form.blood_group}
-              onChange={(e) => set("blood_group", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Allergies">
-            <input
-              value={form.allergies}
-              onChange={(e) => set("allergies", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Conditions">
-            <input
-              value={form.conditions}
-              onChange={(e) => set("conditions", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
+          {MEDICAL_INPUTS.map(({ name, label }) => (
+            <AccessField key={name} access={access} name={name}>
+              <Field label={label}>
+                <input
+                  value={form[name]}
+                  onChange={(e) => set(name, e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
+          ))}
           <Field label="Emergency contact">
             <input
               value={form.emergency_contact_name}
@@ -897,6 +901,7 @@ export default function EnrolStudent() {
       {step === "review" && (
         <Review
           form={form}
+          hidden={access.isHidden}
           guardians={guardians}
           asApplicant={asApplicant}
           className={chosenClass?.name}
@@ -996,6 +1001,7 @@ function Section({
  */
 function Review({
   form,
+  hidden,
   guardians,
   asApplicant,
   className,
@@ -1004,6 +1010,8 @@ function Review({
   onJump,
 }: {
   form: Record<string, string>;
+  /** Field Access: a field the registrar may not read is not summarised either. */
+  hidden: (name: string) => boolean;
   guardians: GuardianDraft[];
   asApplicant: boolean;
   className?: string;
@@ -1020,9 +1028,7 @@ function Review({
     .join(" ");
 
   const medical = [
-    form.blood_group,
-    form.allergies,
-    form.conditions,
+    ...MEDICAL_INPUTS.filter(({ name }) => !hidden(name)).map(({ name }) => form[name]),
     form.emergency_contact_name,
   ].some(Boolean);
 
@@ -1050,7 +1056,9 @@ function Review({
         ) : (
           <>
             <Line label="Entry class" value={className ?? "Not picked"} />
-            <Line label="Admission date" value={form.enrolment_date} />
+            {!hidden("enrolment_date") && (
+              <Line label="Admission date" value={form.enrolment_date} />
+            )}
           </>
         )}
         <Line

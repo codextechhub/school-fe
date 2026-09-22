@@ -235,7 +235,8 @@ export interface ImportBatch {
     published_statement_id: number | null;
   } | null;
   original_filename: string;
-  file: string | null;
+  /** A Field Access field (`import.batches`): absent when the viewer may not read it. */
+  file?: string | null;
   file_format: FileFormat;
   dataset_type: DatasetType;
   status: BatchStatus;
@@ -246,7 +247,8 @@ export interface ImportBatch {
   sheet_name: string;
   uploaded_headers: string[];
   template_headers_snapshot: string[];
-  preview_rows: Array<Record<string, unknown>>;
+  /** A Field Access field (`import.batches`): absent when the viewer may not read it. */
+  preview_rows?: Array<Record<string, unknown>>;
   validation_summary: Record<string, unknown> | null;
   structure_matches_template: boolean;
   has_critical_errors: boolean;
@@ -314,9 +316,10 @@ export interface ImportJobRowResult {
   target_model: string;
   target_object_pk: string;
   status_message: string;
-  error_details: Record<string, unknown>;
-  row_payload: Record<string, unknown>;
-  normalized_payload: Record<string, unknown>;
+  // Field Access fields (`import.jobs`): absent when the viewer may not read them.
+  error_details?: Record<string, unknown>;
+  row_payload?: Record<string, unknown>;
+  normalized_payload?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }
@@ -324,11 +327,12 @@ export interface ImportJobRowResult {
 export interface ImportJob extends ImportJobListItem {
   queued_by: UserMini;
   task_id: string;
-  last_error_code: string;
-  last_error_message: string;
+  // Field Access fields (`import.jobs`): absent when the viewer may not read them.
+  last_error_code?: string;
+  last_error_message?: string;
   rollback_started_at: string | null;
   rollback_completed_at: string | null;
-  execution_summary: Record<string, unknown>;
+  execution_summary?: Record<string, unknown>;
   row_results: ImportJobRowResult[];
   updated_at: string;
 }

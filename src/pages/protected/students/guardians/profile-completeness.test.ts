@@ -31,6 +31,16 @@ describe("guardian profile completeness", () => {
     expect(result).toMatchObject({ completed: 3, total: 5, percentage: 60 });
   });
 
+  it("leaves out a field the viewer may not read, rather than calling it missing", () => {
+    const restricted: GuardianDetail = { ...guardian, email: "" };
+    delete restricted.phone;
+
+    const result = getGuardianProfileCompleteness(restricted);
+
+    expect(result.gaps.map((gap) => gap.label)).toEqual(["Email address"]);
+    expect(result).toMatchObject({ completed: 3, total: 4, percentage: 75 });
+  });
+
   it("reports a complete contact record", () => {
     expect(getGuardianProfileCompleteness(guardian)).toEqual({
       completed: 5,

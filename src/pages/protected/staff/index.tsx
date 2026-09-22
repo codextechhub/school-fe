@@ -12,6 +12,8 @@ import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { P } from "@/permissions";
 import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import type {
@@ -43,6 +45,8 @@ export default function StaffDirectory() {
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
+  // The search box names email only to a viewer who may read it.
+  const emailVisible = !useFieldAccess(FIELD_RESOURCE.STAFF).isHidden("email");
   const [role, setRole] = useState("all");
   const [employment, setEmployment] = useState<EmploymentStatus | "all">("all");
   const [account, setAccount] = useState<AccountStatus | "all">("all");
@@ -193,7 +197,7 @@ export default function StaffDirectory() {
             <input
               value={search}
               onChange={(e) => resetTo(() => setSearch(e.target.value))}
-              placeholder="Search name, email or staff ID"
+              placeholder={emailVisible ? "Search name, email or staff ID" : "Search name or staff ID"}
               aria-label="Search staff"
               className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
             />

@@ -5,6 +5,13 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { writeErrorMessage } from "@/utils/api-error";
+import {
+  AccessField,
+  fieldWriteErrors,
+  useFieldAccess,
+  type FieldErrors,
+} from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { useUpdateStudentMutation } from "@/redux/services/students/students-api";
 import type {
   StudentDetail,
@@ -74,10 +81,14 @@ function dobProblem(value: string): string {
  * be a field that looks editable and 400s.
  *
  * **Only what changed is sent.** A PATCH of every field would rewrite values
- * the user never touched, and on this record that matters twice over: the three
- * medical fields need `view_sensitive` to WRITE, so echoing them back
- * unchanged would turn an address correction into a 403 for a caller who can
- * see the form but not those fields.
+ * the user never touched, and an audit line would name them.
+ *
+ * **Field Access decides what is on the form.** The record says which fields
+ * this viewer may read (the rest are absent from it and not drawn here) and,
+ * through `_read_only_fields`, which of those they may not change: those are
+ * shown greyed and disabled, and the body is filtered through `writableOnly`
+ * so one is never sent. A refusal the backend still returns (403
+ * `field_write_denied`) is shown under the fields it names.
  */
 export function EditDrawer({
   student,
@@ -93,9 +104,8 @@ export function EditDrawer({
   const [section, setSection] = useState<EditSectionKey>(initialSection);
   const [draft, setDraft] = useState<Partial<StudentWrite>>({});
   const [update, { isLoading }] = useUpdateStudentMutation();
-
-  // The server drops sensitive health fields for a caller without the key.
-  const canSeeMedical = student.blood_group !== undefined;
+  const access = useFieldAccess(FIELD_RESOURCE.STUDENTS, student);
+  const [refused, setRefused] = useState<FieldErrors | null>(null);
 
   const value = (key: FieldKey): string => {
     if (key in draft) return String(draft[key] ?? "");
@@ -123,11 +133,11 @@ export function EditDrawer({
       ...SECTIONS.medical,
     ];
     return all.filter((f) => {
-      if (!(f.key in draft)) return false;
+      if (!(f.key in draft) || access.isReadOnly(f.key)) return false;
       const before = (student as unknown as Record<string, unknown>)[f.key];
       return String(draft[f.key as FieldKey] ?? "").trim() !== String(before ?? "").trim();
     });
-  }, [draft, student]);
+  }, [access, draft, student]);
 
   const valid = Object.keys(problems).length === 0 && changed.length > 0;
 
@@ -141,23 +151,30 @@ export function EditDrawer({
     for (const f of changed) {
       body[f.key] = String(draft[f.key as FieldKey] ?? "").trim();
     }
+    setRefused(null);
     try {
-      await update({ id: student.id, ...(body as Partial<StudentWrite>) }).unwrap();
+      await update({
+        id: student.id,
+        ...(access.writableOnly(body) as Partial<StudentWrite>),
+      }).unwrap();
       toast.success(`${student.full_name}'s record updated.`);
       setDraft({});
       onClose();
     } catch (error) {
-      toast.error(writeErrorMessage(error, "We could not save those changes."));
+      const denied = fieldWriteErrors(error);
+      if (denied) setRefused(denied);
+      else toast.error(writeErrorMessage(error, "We could not save those changes."));
     }
   }
 
-  const fields = SECTIONS[section];
+  const fields = SECTIONS[section].filter((f) => !access.isHidden(f.key));
 
   return (
     <DrawerShell
       open={open}
       onClose={() => {
         setDraft({});
+        setRefused(null);
         onClose();
       }}
       title="Edit record"
@@ -181,19 +198,14 @@ export function EditDrawer({
         />
       </div>
 
-      {section === "medical" && !canSeeMedical ? (
-        <p className="rounded-lg bg-gray-04 px-3 py-2 text-sm text-gray-05">
-          Medical details are restricted. You do not hold the permission that
-          allows reading or changing them.
-        </p>
-      ) : (
-        <div className="grid gap-3.5">
-          {fields.map((f) => {
-            const key = f.key as FieldKey;
-            const err = problems[key];
-            const type = "type" in f ? f.type : "text";
-            return (
-              <Field key={f.key} label={f.label} error={err}>
+      <div className="grid gap-3.5">
+        {fields.map((f) => {
+          const key = f.key as FieldKey;
+          const err = problems[key] ?? refused?.[key];
+          const type = "type" in f ? f.type : "text";
+          return (
+            <AccessField key={f.key} access={access} name={f.key}>
+              <Field label={f.label} error={err}>
                 {type === "gender" ? (
                   <NativeSelect
                     value={value(key)}
@@ -229,10 +241,10 @@ export function EditDrawer({
                   />
                 )}
               </Field>
-            );
-          })}
-        </div>
-      )}
+            </AccessField>
+          );
+        })}
+      </div>
 
       <p className="mt-4 rounded-lg bg-gray-04 px-3 py-2 text-xs text-gray-05">
         Class and status are not edited here. Use Transfer class and Change

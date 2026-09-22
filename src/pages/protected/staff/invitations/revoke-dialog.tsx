@@ -56,7 +56,9 @@ export function RevokeDialog({
             Withdraw {person?.full_name}&apos;s invitation?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            The link sent to {person?.email} stops working. Their record stays
+            {person?.email
+              ? `The link sent to ${person.email} stops working.`
+              : "The invitation link stops working."} Their record stays
             on the staff list as Invited, and inviting them again starts from
             the beginning.
           </AlertDialogDescription>

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import {
+  selectFieldAccess,
   selectImpersonation,
   selectPermissions,
   selectSchool,
@@ -50,6 +51,7 @@ export function ProxyUserDialog({
   const school = useAppSelector(selectSchool);
   const tenant = useAppSelector(selectTenant);
   const permissions = useAppSelector(selectPermissions);
+  const fieldAccess = useAppSelector(selectFieldAccess);
   const impersonation = useAppSelector(selectImpersonation);
 
   const [search, setSearch] = useState("");
@@ -94,6 +96,7 @@ export function ProxyUserDialog({
       school: school ?? null,
       tenant: tenant ?? null,
       permissions,
+      field_access: fieldAccess,
     };
     onOpenChange(false);
     await startProxySession({ dispatch, navigate }, { target, actor });

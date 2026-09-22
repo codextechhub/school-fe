@@ -54,7 +54,8 @@ export function useBranches(): HostQueryResult<HostBranch> {
 export function useDirectory(): HostQueryResult<HostPerson> {
   const { data, isLoading, isError } = useGetStaffListQuery();
   const rows = data?.data.map((s) => ({
-    id: String(s.user_id), full_name: s.full_name, email: s.email,
+    // A viewer who may not read a staff email gets "" rather than the address.
+    id: String(s.user_id), full_name: s.full_name, email: s.email ?? "",
     role: s.roles[0] ?? "", status: s.account_status,
   }));
   return { data: rows, isLoading, isError };

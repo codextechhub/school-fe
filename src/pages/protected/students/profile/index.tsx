@@ -43,6 +43,9 @@ import { StudentDrawers, type DrawerRequest } from "../drawers";
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
 import PermissionGate from "@/components/custom/permission-gate";
+import { resolveFieldAccess, useFieldAccess } from "@/components/finance-ui";
+import { usePermissions } from "@/hooks/use-permissions";
+import { FIELD_RESOURCE, STUDENT_MEDICAL_FIELDS } from "@/lib/field-resources";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import { useStudentsLens } from "@/hooks/use-students-lens";
@@ -331,6 +334,13 @@ function Overview({
   const navigate = useNavigate();
   const { data: subjectsData, isLoading: subjectsLoading } =
     useGetStudentSubjectsQuery(student?.id ?? 0, { skip: !student });
+  const access = useFieldAccess(FIELD_RESOURCE.STUDENTS, student);
+  const primaryGuardian =
+    guardians?.find((link) => link.is_primary) ?? guardians?.[0];
+  const guardianAccess = useFieldAccess(
+    FIELD_RESOURCE.GUARDIANS,
+    primaryGuardian?.guardian,
+  );
 
   if (loading || !student) return <PanelSkeleton />;
 
@@ -351,7 +361,9 @@ function Overview({
   ];
   const school: Row[] = [
     { label: "Admission number", value: student.student_number || "Not issued" },
-    { label: "Admission date", value: formatDate(student.enrolment_date) },
+    ...(access.isHidden("enrolment_date")
+      ? []
+      : [{ label: "Admission date", value: formatDate(student.enrolment_date ?? null) }]),
     { label: "Class", value: student.class_name || "Unassigned" },
     { label: "Level", value: student.level_name || "Not recorded" },
     { label: "Session", value: student.session_name || "-" },
@@ -363,8 +375,6 @@ function Overview({
       value: student.previous_school || "Not recorded",
     },
   ];
-  const primaryGuardian =
-    guardians?.find((link) => link.is_primary) ?? guardians?.[0];
   const requiredDocuments = documents?.filter((document) => document.required);
   const attachedRequired = requiredDocuments?.filter(
     (document) => document.attached,
@@ -444,12 +454,16 @@ function Overview({
                 {primaryGuardian.relationship_label}
                 {primaryGuardian.is_primary ? " · Primary contact" : ""}
               </p>
-              <p className="mt-1 text-sm text-black-01">
-                {primaryGuardian.guardian.phone || "No phone recorded"}
-              </p>
-              <p className="break-words text-xs text-gray-05">
-                {primaryGuardian.guardian.email || "No email recorded"}
-              </p>
+              {!guardianAccess.isHidden("phone") && (
+                <p className="mt-1 text-sm text-black-01">
+                  {primaryGuardian.guardian.phone || "No phone recorded"}
+                </p>
+              )}
+              {!guardianAccess.isHidden("email") && (
+                <p className="break-words text-xs text-gray-05">
+                  {primaryGuardian.guardian.email || "No email recorded"}
+                </p>
+              )}
             </div>
           ) : (
             <p className="text-sm text-amber-700">No guardian linked.</p>
@@ -721,41 +735,61 @@ function MissingInformation({
   );
 }
 
+const MEDICAL_LABELS: Record<(typeof STUDENT_MEDICAL_FIELDS)[number], string> = {
+  blood_group: "Blood group",
+  allergies: "Allergies",
+  conditions: "Conditions",
+};
+
+/**
+ * The medical rows this viewer may read on this record, in display order.
+ *
+ * Field Access leaves out what the viewer may not read, so a row is drawn only
+ * for a field the record carries, and the rest leave no trace behind.
+ */
+function useMedicalRows(student: StudentDetail): Row[] {
+  const access = useFieldAccess(FIELD_RESOURCE.STUDENTS, student);
+  return STUDENT_MEDICAL_FIELDS.filter((name) => !access.isHidden(name)).map(
+    (name) => ({ label: MEDICAL_LABELS[name], value: student[name] || "Not recorded" }),
+  );
+}
+
+/**
+ * The health side panel on the overview.
+ *
+ * Emergency contact details are open to everybody who may open the record; the
+ * medical rows follow Field Access, and the "Sensitive" marker belongs to them,
+ * so it goes when none of them is shown.
+ */
 function HealthSnapshot({ student }: { student: StudentDetail }) {
-  const permitted = student.blood_group !== undefined;
+  const medical = useMedicalRows(student);
 
   return (
     <Panel
-      title="Health and emergency"
+      title={medical.length > 0 ? "Health and emergency" : "Emergency contact"}
       icon={HeartPulse}
       action={
-        <span className="inline-flex items-center gap-1 text-[11px] text-gray-05">
-          <LockKeyhole className="size-3" />
-          Sensitive
-        </span>
+        medical.length > 0 ? (
+          <span className="inline-flex items-center gap-1 text-[11px] text-gray-05">
+            <LockKeyhole className="size-3" />
+            Sensitive
+          </span>
+        ) : undefined
       }
     >
-      {permitted ? (
-        <Rows
-          rows={[
-            { label: "Blood group", value: student.blood_group || "Not recorded" },
-            { label: "Allergies", value: student.allergies || "Not recorded" },
-            { label: "Conditions", value: student.conditions || "Not recorded" },
-            {
-              label: "Emergency contact",
-              value: student.emergency_contact_name || "Not recorded",
-            },
-            {
-              label: "Emergency phone",
-              value: student.emergency_contact_phone || "Not recorded",
-            },
-          ]}
-        />
-      ) : (
-        <p className="text-sm text-gray-05">
-          You do not hold permission to view these details.
-        </p>
-      )}
+      <Rows
+        rows={[
+          ...medical,
+          {
+            label: "Emergency contact",
+            value: student.emergency_contact_name || "Not recorded",
+          },
+          {
+            label: "Emergency phone",
+            value: student.emergency_contact_phone || "Not recorded",
+          },
+        ]}
+      />
     </Panel>
   );
 }
@@ -790,6 +824,7 @@ function GuardiansTab({
   loading?: boolean;
 }) {
   const navigate = useNavigate();
+  const { fieldAccess } = usePermissions();
 
   if (loading) return <PanelSkeleton />;
   if (links.length === 0) {
@@ -800,66 +835,80 @@ function GuardiansTab({
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      {links.map((link) => (
-        <Panel
-          key={link.id}
-          title={link.guardian.full_name}
-          badge={link.is_primary ? "Primary contact" : undefined}
-        >
-          <Rows
-            rows={[
-              { label: "Relationship", value: link.relationship_label },
-              { label: "Phone", value: link.guardian.phone || "Not recorded" },
-              { label: "Email", value: link.guardian.email || "Not recorded" },
-              {
-                label: "Occupation",
-                value: link.guardian.occupation || "Not recorded",
-              },
-            ]}
-          />
-          <div className="mt-3 border-t border-white-02 pt-3">
-            {link.siblings.length > 0 && (
-              <p className="text-xs text-gray-05">
-                Also guardian of{" "}
-                {/* Each sibling is a link. A registrar reading "also guardian
-                    of Tobi (JSS1 A)" is one click from Tobi, and making them
-                    search for a name they can already see is the kind of
-                    friction that ends in the wrong Tobi. */}
-                {link.siblings.map((sib, i) => (
-                  <span key={sib.id}>
-                    {i > 0 && ", "}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          routesPath.PROTECTED.STUDENTS.PROFILE_ID(sib.id),
-                        )
-                      }
-                      className="text-primary underline-offset-2 hover:underline"
-                    >
-                      {sib.name}
-                    </button>
-                    {sib.class ? ` (${sib.class})` : ""}
-                  </span>
-                ))}
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={() =>
-                navigate(
-                  routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(
-                    link.guardian.id,
-                  ),
-                )
-              }
-              className="mt-2 text-xs text-primary underline-offset-2 hover:underline"
-            >
-              Open {link.guardian.full_name}
-            </button>
-          </div>
-        </Panel>
-      ))}
+      {links.map((link) => {
+        const access = resolveFieldAccess(
+          fieldAccess,
+          FIELD_RESOURCE.GUARDIANS,
+          link.guardian,
+        );
+        const contact = (
+          [
+            ["phone", "Phone"],
+            ["email", "Email"],
+            ["occupation", "Occupation"],
+          ] as const
+        )
+          .filter(([name]) => !access.isHidden(name))
+          .map(([name, label]) => ({
+            label,
+            value: link.guardian[name] || "Not recorded",
+          }));
+        return (
+          <Panel
+            key={link.id}
+            title={link.guardian.full_name}
+            badge={link.is_primary ? "Primary contact" : undefined}
+          >
+            <Rows
+              rows={[
+                { label: "Relationship", value: link.relationship_label },
+                ...contact,
+              ]}
+            />
+            <div className="mt-3 border-t border-white-02 pt-3">
+              {link.siblings.length > 0 && (
+                <p className="text-xs text-gray-05">
+                  Also guardian of{" "}
+                  {/* Each sibling is a link. A registrar reading "also guardian
+                      of Tobi (JSS1 A)" is one click from Tobi, and making them
+                      search for a name they can already see is the kind of
+                      friction that ends in the wrong Tobi. */}
+                  {link.siblings.map((sib, i) => (
+                    <span key={sib.id}>
+                      {i > 0 && ", "}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          navigate(
+                            routesPath.PROTECTED.STUDENTS.PROFILE_ID(sib.id),
+                          )
+                        }
+                        className="text-primary underline-offset-2 hover:underline"
+                      >
+                        {sib.name}
+                      </button>
+                      {sib.class ? ` (${sib.class})` : ""}
+                    </span>
+                  ))}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() =>
+                  navigate(
+                    routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(
+                      link.guardian.id,
+                    ),
+                  )
+                }
+                className="mt-2 text-xs text-primary underline-offset-2 hover:underline"
+              >
+                Open {link.guardian.full_name}
+              </button>
+            </div>
+          </Panel>
+        );
+      })}
     </div>
   );
 }
@@ -963,33 +1012,28 @@ function MedicalTab({
   loading?: boolean;
 }) {
   if (loading || !student) return <PanelSkeleton />;
+  return <MedicalPanels student={student} />;
+}
 
-  // These five are gated on school.students.view_sensitive. The server drops
-  // them entirely for a caller without it, so `undefined` means "not allowed to
-  // see" while "" means "nothing recorded" - two different sentences, and
-  // collapsing them would tell a nurse a child has no allergies when the truth
-  // is that she is not cleared to know.
-  const permitted = student.blood_group !== undefined;
-  if (!permitted) {
-    return (
-      <Empty>
-        Medical details are restricted. You do not hold the permission that
-        allows reading them.
-      </Empty>
-    );
-  }
+/**
+ * The medical and emergency panels of a loaded record.
+ *
+ * A medical field the viewer may not read is absent from the record and is not
+ * drawn, and the Medical panel goes with its last field. A field that is drawn
+ * and empty says "Not recorded", which is a different sentence from "not
+ * shown to you": collapsing the two would tell a nurse a child has no
+ * allergies when the record simply was not filled in.
+ */
+function MedicalPanels({ student }: { student: StudentDetail }) {
+  const medical = useMedicalRows(student);
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      <Panel title="Medical">
-        <Rows
-          rows={[
-            { label: "Blood group", value: student.blood_group || "Not recorded" },
-            { label: "Allergies", value: student.allergies || "Not recorded" },
-            { label: "Conditions", value: student.conditions || "Not recorded" },
-          ]}
-        />
-      </Panel>
+      {medical.length > 0 && (
+        <Panel title="Medical">
+          <Rows rows={medical} />
+        </Panel>
+      )}
       <Panel title="Emergency contact">
         <Rows
           rows={[

@@ -109,9 +109,6 @@
       "@/utils/quantity": [
             "./node_modules/@xvs/finance/src/utils/quantity.ts"
       ],
-      "@/utils/fls": [
-            "./node_modules/@xvs/finance/src/utils/fls.ts"
-      ],
       "@/utils/finance-export": [
             "./src/xvs-host/finance-export.ts"
       ],

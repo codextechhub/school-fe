@@ -1,6 +1,6 @@
 # Frontend Permission Guide
 
-This document explains how the Frontend Layout Security (FLS) system works in school-fe. Any developer adding new menu items or action buttons must follow this guide. If the permission system changes, update this file at the same time.
+This document explains how the frontend permission system works in school-fe. Any developer adding new menu items or action buttons must follow this guide. If the permission system changes, update this file at the same time.
 
 ---
 
@@ -244,64 +244,52 @@ The frontend checks the flat `permissions[]` array. If a school_admin's login re
 
 ---
 
-## Field-Level Security (FLS) - Hiding Stripped Response Fields
+## Field Access - hiding and greying individual fields
 
-The backend serializer mixin (`FieldSecurityMixin` in `vs_rbac/fls.py`) can strip individual fields from an API response when the requesting user lacks the required read permission. Instead of sending the field at all, the backend appends a `_stripped_fields` array to the response listing every field it removed.
+An administrator turns **Read** and **Write** on or off per role, per field, on the Field Access screen. The backend applies those switches on every response and every save; a screen follows them through one shared hook, so the two never disagree.
 
-```json
-{
-  "name": "John Doe",
-  "email": "john@school.com",
-  "_stripped_fields": ["medical_notes", "guardian_contacts"]
-}
-```
+What the backend sends:
 
-This lets the frontend distinguish two different states:
+| Where | What it says |
+|-------|--------------|
+| Any response | A field the user may not read is **absent**. There is no list of removed names. |
+| A detail response | `_read_only_fields` names fields present in the payload that the user may not change. |
+| Login and `/user/auth/me/` | `field_access`: `{ "module.resource": { hidden?, read_only?, open_on_create? } }`. An absent resource or name means full access. |
+| A refused write | 403 with `error.code` `field_write_denied` and per-field messages in `error.detail`. |
 
-| State | What it means | What to show |
-|-------|--------------|-------------|
-| Field in `_stripped_fields` | User has no permission to see it | Hide the element entirely |
-| Field absent / null / empty, not stripped | Field exists, no data yet | Render `"-"` |
-
-School users have four admin-metadata fields (`password_changed_at`, `last_login_at`, `invited_by_id`, `invited_by_name`) stripped from their own user payload; the sensitive-student fields are gated behind `P.VIEW_STUDENT_SENSITIVE` (`school.students.view_sensitive`).
+The map is stored in the auth slice beside `permissions`, swapped with it on a proxy start or exit, and returned by `usePermissions()` as `fieldAccess`.
 
 ### Usage
 
-Import from `@/utils/fls`:
+The hook and the form-field wrapper come from the shared finance package, so this app and the console use one copy. Resource names for the school's own screens are in `src/lib/field-resources.ts`.
 
 ```tsx
-import { isStripped, strippedFields } from "@/utils/fls";
+import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 
-// Single field check
-{!isStripped(student, "medical_notes") && (
-  <Row label="Medical Notes" value={student.medical_notes ?? "-"} />
-)}
+// An existing record: the record decides (absent = hidden, _read_only_fields = greyed).
+const access = useFieldAccess(FIELD_RESOURCE.STUDENTS, student);
 
-// Multiple fields - build a Set once to avoid repeated .includes() calls
-const stripped = strippedFields(student);
+// An Add form or a table's columns: the signed-in user's map decides.
+const access = useFieldAccess(FIELD_RESOURCE.STUDENTS);
 
-<Row label="Medical Notes"        hidden={stripped.has("medical_notes")}        value={student.medical_notes ?? "-"} />
-<Row label="Guardian Contacts"    hidden={stripped.has("guardian_contacts")}    value={student.guardian_contacts ?? "-"} />
+{!access.isHidden("allergies") && <Row label="Allergies" value={student.allergies || "Not recorded"} />}
+
+<AccessField access={access} name="allergies">
+  <Field label="Allergies"><input ... /></Field>
+</AccessField>
+
+await save(access.writableOnly(body));        // never sends a field the user may not write
+const perField = fieldWriteErrors(error);     // per-field messages of a field_write_denied 403
 ```
 
-### Typing API responses
+### Rules
 
-Wrap any RTK Query response type with `WithFls<T>` to make `_stripped_fields` visible to TypeScript:
-
-```ts
-import type { WithFls } from "@/utils/fls";
-
-type StudentDetail = WithFls<{
-  name: string;
-  email: string;
-  medical_notes?: string | null;
-  guardian_contacts?: string | null;
-}>;
-```
-
-### Rule: backend and frontend must be updated in the same PR
-
-Whenever a serializer gains a `read_permissions` entry, the corresponding frontend page **must** be updated in the same PR to guard those fields with `isStripped` / `strippedFields`. `_stripped_fields` is the contract between them; one side without the other is a bug.
+- **Hidden means not there.** No label, no lock, no "Restricted" text, no empty space, no column. A section whose fields are all hidden disappears.
+- **Read-only means greyed, disabled and never sent.**
+- **`open_on_create` fields stay editable on an Add form** (`creating` defaults to true when no record is passed), and follow the Write switch afterwards.
+- A field the viewer cannot see is neither complete nor a gap: completeness scores count only the fields a record carries.
+- The request interceptor stays silent on `field_write_denied`; the form shows each message under its field.
 
 ---
 

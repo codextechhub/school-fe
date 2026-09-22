@@ -3,6 +3,7 @@ import type { ActiveImpersonation, Auth, User } from "./auth-types";
 import {
   authSliceReducer,
   selectActorPermissions,
+  selectFieldAccess,
   selectTenantIsPending,
   setAuthContext,
   updateSchool,
@@ -24,13 +25,14 @@ const stateWith = (partial: Partial<Auth>): Auth => ({
   permissions: [],
   school: null,
   tenant: null,
+  field_access: {},
   ...partial,
 });
 
 describe("updatePermissions", () => {
   it("returns the SAME state reference for an identical permissions array", () => {
     const state = stateWith({ permissions: ["student.view", "student.create"] });
-    const next = authSliceReducer(state, updatePermissions(["student.view", "student.create"]));
+    const next = authSliceReducer(state, updatePermissions({ permissions: ["student.view", "student.create"] }));
 
     expect(next).toBe(state);
   });
@@ -41,7 +43,7 @@ describe("updatePermissions", () => {
     // order - so a reordering is rare and a needless re-render is the safe
     // side to err on (never a missed permission update).
     const state = stateWith({ permissions: ["student.view", "student.create"] });
-    const next = authSliceReducer(state, updatePermissions(["student.create", "student.view"]));
+    const next = authSliceReducer(state, updatePermissions({ permissions: ["student.create", "student.view"] }));
 
     expect(next).not.toBe(state);
     expect(next.permissions).toEqual(["student.create", "student.view"]);
@@ -50,11 +52,11 @@ describe("updatePermissions", () => {
   it("applies a genuine change (added / removed permission)", () => {
     const state = stateWith({ permissions: ["student.view"] });
 
-    const added = authSliceReducer(state, updatePermissions(["student.view", "student.create"]));
+    const added = authSliceReducer(state, updatePermissions({ permissions: ["student.view", "student.create"] }));
     expect(added).not.toBe(state);
     expect(added.permissions).toEqual(["student.view", "student.create"]);
 
-    const removed = authSliceReducer(state, updatePermissions([]));
+    const removed = authSliceReducer(state, updatePermissions({ permissions: [] }));
     expect(removed).not.toBe(state);
     expect(removed.permissions).toEqual([]);
   });
@@ -63,10 +65,58 @@ describe("updatePermissions", () => {
     // samePermissions() requires a truthy existing array, so undefined always
     // takes the assignment branch - even for an empty incoming list.
     const state = stateWith({ permissions: undefined });
-    const next = authSliceReducer(state, updatePermissions([]));
+    const next = authSliceReducer(state, updatePermissions({ permissions: [] }));
 
     expect(next).not.toBe(state);
     expect(next.permissions).toEqual([]);
+  });
+});
+
+describe("Field Access map", () => {
+  const map = { "school.students": { hidden: ["allergies"], read_only: ["blood_group"] } };
+
+  it("keeps the SAME state reference when /me brings an equal map", () => {
+    // Equal content in a brand-new object is what every focus refetch sends.
+    const state = stateWith({ permissions: ["school.students.view"], field_access: map });
+    const next = authSliceReducer(
+      state,
+      updatePermissions({
+        permissions: ["school.students.view"],
+        field_access: { "school.students": { hidden: ["allergies"], read_only: ["blood_group"] } },
+      }),
+    );
+
+    expect(next).toBe(state);
+  });
+
+  it("applies a changed map alongside unchanged permissions", () => {
+    const state = stateWith({ permissions: ["school.students.view"], field_access: map });
+    const next = authSliceReducer(
+      state,
+      updatePermissions({ permissions: ["school.students.view"], field_access: {} }),
+    );
+
+    expect(next).not.toBe(state);
+    expect(next.field_access).toEqual({});
+    expect(next.permissions).toBe(state.permissions);
+  });
+
+  it("swaps the map with the identity, so a proxied user never keeps the actor's", () => {
+    const state = stateWith({ field_access: {} });
+    const next = authSliceReducer(
+      state,
+      setAuthContext({ user: null, school: null, tenant: null, permissions: [], field_access: map }),
+    );
+
+    expect(next.field_access).toEqual(map);
+  });
+
+  it("reads a session persisted before the map existed as no restrictions", () => {
+    const state = stateWith({ field_access: undefined });
+    const first = selectFieldAccess({ auth: state } as never);
+
+    expect(first).toEqual({});
+    expect(selectFieldAccess({ auth: state } as never)).toBe(first);
   });
 });
 
@@ -257,6 +307,7 @@ describe("setAuthContext", () => {
         school: null,
         tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
         permissions: ["school.dashboard.view"],
+        field_access: {},
       }),
     );
 
@@ -276,6 +327,7 @@ describe("setAuthContext", () => {
         school: null,
         tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
         permissions: ["academics.classes.view"],
+        field_access: {},
       }),
     );
 
@@ -295,6 +347,7 @@ describe("setAuthContext", () => {
         school: null,
         tenant: null,
         permissions: [],
+        field_access: {},
       }),
     );
 
@@ -322,6 +375,7 @@ describe("selectActorPermissions", () => {
       school: null,
       tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
       permissions: ["school.impersonation.start", "school.impersonation.end"],
+      field_access: {},
     },
   };
 

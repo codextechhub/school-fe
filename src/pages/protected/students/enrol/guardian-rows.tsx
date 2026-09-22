@@ -3,10 +3,13 @@ import { Trash2 } from "lucide-react";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { AccessField, useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { useGetGuardiansQuery } from "@/redux/services/students/students-api";
 import { RELATIONSHIPS } from "@/redux/services/students/students-types";
 
 import { Field, inputClass } from "../drawers/drawer-shell";
+import { guardianMatchLine } from "../format";
 
 /** A row on the form: either a guardian already at the school, or a new one. */
 export interface GuardianDraft {
@@ -35,6 +38,12 @@ export interface GuardianDraft {
  * **Exactly one primary contact.** Ticking one row unticks the others here
  * rather than letting the server sort it out, because a form that lets you tick
  * two and then rejects the save has taught you nothing about the rule.
+ *
+ * **A new guardian follows Field Access.** Each contact input is hidden or
+ * greyed by the registrar's switches on `school.guardians`. A new guardian
+ * cannot be saved without a phone number, so a registrar who may not write
+ * one is offered only the search for a guardian already at the school: the
+ * alternative is a form that can never be sent.
  */
 export function GuardianRows({
   rows,
@@ -45,6 +54,9 @@ export function GuardianRows({
   onChange: (rows: GuardianDraft[]) => void;
   error?: string;
 }) {
+  const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
+  const canAddNew = !access.isReadOnly("phone");
+
   function patch(index: number, next: Partial<GuardianDraft>) {
     onChange(rows.map((r, i) => (i === index ? { ...r, ...next } : r)));
   }
@@ -85,26 +97,28 @@ export function GuardianRows({
           >
             Find an existing guardian
           </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() =>
-              onChange([
-                ...rows,
-                {
-                  kind: "new",
-                  full_name: "",
-                  phone: "",
-                  email: "",
-                  relationship: "",
-                  is_primary: rows.length === 0,
-                },
-              ])
-            }
-          >
-            Add a new one
-          </Button>
+          {canAddNew && (
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                onChange([
+                  ...rows,
+                  {
+                    kind: "new",
+                    full_name: "",
+                    phone: "",
+                    email: "",
+                    relationship: "",
+                    is_primary: rows.length === 0,
+                  },
+                ])
+              }
+            >
+              Add a new one
+            </Button>
+          )}
         </div>
       </div>
 
@@ -144,24 +158,28 @@ export function GuardianRows({
                       className={inputClass}
                     />
                   </Field>
-                  <Field
-                    label="Phone"
-                    hint="A number the school can reach."
-                  >
-                    <input
-                      value={row.phone}
-                      onChange={(e) => patch(index, { phone: e.target.value })}
-                      className={inputClass}
-                    />
-                  </Field>
-                  <Field label="Email (optional)">
-                    <input
-                      type="email"
-                      value={row.email}
-                      onChange={(e) => patch(index, { email: e.target.value })}
-                      className={inputClass}
-                    />
-                  </Field>
+                  <AccessField access={access} name="phone">
+                    <Field
+                      label="Phone"
+                      hint="A number the school can reach."
+                    >
+                      <input
+                        value={row.phone}
+                        onChange={(e) => patch(index, { phone: e.target.value })}
+                        className={inputClass}
+                      />
+                    </Field>
+                  </AccessField>
+                  <AccessField access={access} name="email">
+                    <Field label="Email (optional)">
+                      <input
+                        type="email"
+                        value={row.email}
+                        onChange={(e) => patch(index, { email: e.target.value })}
+                        className={inputClass}
+                      />
+                    </Field>
+                  </AccessField>
                 </div>
               )}
 
@@ -240,10 +258,7 @@ function ExistingPicker({
   );
   const matches = (data?.data ?? []).slice(0, 5);
 
-  const wardLine = (g: { phone: string; ward_count: number }) =>
-    g.ward_count > 0
-      ? `${g.phone} · already guardian of ${g.ward_count} ${g.ward_count === 1 ? "student" : "students"}`
-      : `${g.phone} · no students yet`;
+  const wardLine = guardianMatchLine;
 
   if (row.guardianId) {
     return (

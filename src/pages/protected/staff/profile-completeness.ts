@@ -54,16 +54,20 @@ export function getStaffDirectoryHealth(person: StaffListRow) {
  * Qualifications and documents are intentionally excluded because the API
  * does not declare a required checklist for either collection. A screen must
  * not label a professional certificate as missing for a role that needs none.
+ *
+ * A field the record does not carry is left out: Field Access withholds the
+ * ones this viewer may not read, and those are neither complete nor a gap.
  */
 export function getStaffProfileCompleteness(person: StaffDetail) {
-  const gaps = PROFILE_FIELDS.filter((field) => !hasValue(person[field.key]));
-  const total = PROFILE_FIELDS.length;
+  const fields = PROFILE_FIELDS.filter((field) => field.key in person);
+  const gaps = fields.filter((field) => !hasValue(person[field.key]));
+  const total = fields.length;
   const completed = total - gaps.length;
 
   return {
     completed,
     total,
     gaps,
-    percentage: Math.round((completed / total) * 100),
+    percentage: total === 0 ? 100 : Math.round((completed / total) * 100),
   };
 }

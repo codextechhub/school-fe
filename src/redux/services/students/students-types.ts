@@ -98,17 +98,18 @@ export interface StudentDetail extends StudentScoped {
   phone: string;
   email: string;
   previous_school: string;
-  // The five sensitive fields. Gated on school.students.view_sensitive, so a
-  // caller without it gets them absent rather than empty - do not read "" as
-  // "not recorded" without checking the permission first.
+  // Field Access fields (`school.students`): absent, never empty, when the
+  // viewer may not read them, so "" still means "nothing recorded".
   blood_group?: string;
   allergies?: string;
   conditions?: string;
-  emergency_contact_name?: string;
-  emergency_contact_phone?: string;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
   status: StudentStatus;
   status_label: string;
-  enrolment_date: string | null;
+  enrolment_date?: string | null;
+  /** Fields present in this record that the viewer may not change. */
+  _read_only_fields?: string[];
   class_name: string;
   level_name: string;
   session_name: string;
@@ -152,13 +153,17 @@ export interface StudentSummary {
   session: string;
 }
 
+/**
+ * A guardian's own details. Phone, email, occupation and address are Field
+ * Access fields (`school.guardians`), absent when the viewer may not read them.
+ */
 export interface GuardianSummary {
   id: number;
   full_name: string;
-  phone: string;
-  email: string;
-  occupation: string;
-  address: string;
+  phone?: string;
+  email?: string;
+  occupation?: string;
+  address?: string;
   /** Whether the guardian has a login of their own. */
   has_account: boolean;
   /** "" when the school holds none, which is the ordinary case. */
@@ -255,12 +260,12 @@ export interface GuardianSearchHit {
   ward_names: string[];
 }
 
-/** The guardian directory row. */
+/** The guardian directory row. Phone and email are absent when the viewer may not read them. */
 export interface GuardianRow {
   id: number;
   full_name: string;
-  phone: string;
-  email: string;
+  phone?: string;
+  email?: string;
   ward_count: number;
   ward_names: string[];
   /** More than one child at this school, so the row stands for a household. */
@@ -431,9 +436,10 @@ export interface AdmissionPolicy {
  * `branch` is refused explicitly too - a school that types a branch and gets a
  * 200 believes the student moved.
  *
- * The three medical fields need `school.students.view_sensitive` to WRITE as
- * well as to read, and `enrolment_date` needs `school.students.manage`. Sending
- * one without the key is a 403, not a silent drop.
+ * The medical fields and `enrolment_date` are Field Access fields
+ * (`school.students`): sending one the viewer may not write is a 403
+ * `field_write_denied`, not a silent drop, so a form sends only what changed
+ * and only what it may write.
  */
 export interface StudentWrite {
   student_number: string;

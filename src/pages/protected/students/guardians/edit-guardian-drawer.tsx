@@ -2,6 +2,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { writeErrorMessage, fieldErrors } from "@/utils/api-error";
+import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { useUpdateGuardianMutation } from "@/redux/services/students/students-api";
 import type { GuardianDetail } from "@/redux/services/students/students-types";
 
@@ -35,6 +37,10 @@ type FieldKey = (typeof FIELDS)[number]["key"];
  *
  * Only what changed is sent, so an unchanged save is not an audit entry saying
  * somebody edited a record they did not.
+ *
+ * The contact fields follow Field Access (`school.guardians`): one the viewer
+ * may not read is absent from the record and not on the form, one they may
+ * read but not change is greyed and never sent.
  */
 export function EditGuardianDrawer({
   guardian,
@@ -54,9 +60,13 @@ export function EditGuardianDrawer({
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [update, { isLoading }] = useUpdateGuardianMutation();
+  const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS, guardian);
+  const fields = FIELDS.filter((f) => !access.isHidden(f.key));
 
-  const changed = FIELDS.filter(
-    (f) => draft[f.key].trim() !== (guardian[f.key] ?? "").trim(),
+  const changed = fields.filter(
+    (f) =>
+      !access.isReadOnly(f.key) &&
+      draft[f.key].trim() !== (guardian[f.key] ?? "").trim(),
   );
   const nameBlank = !draft.full_name.trim();
 
@@ -74,7 +84,7 @@ export function EditGuardianDrawer({
       // A field-keyed refusal belongs under its field: the one that actually
       // happens here is an email another guardian already holds, and it names
       // them - which is only useful beside the box you would retype.
-      const named = fieldErrors(error);
+      const named = fieldWriteErrors(error) ?? fieldErrors(error);
       if (Object.keys(named).length) setErrors(named);
       else toast.error(writeErrorMessage(error, "We could not save that."));
     }
@@ -92,31 +102,32 @@ export function EditGuardianDrawer({
       saving={isLoading}
     >
       <div className="grid gap-4">
-        {FIELDS.map((f) => (
-          <Field
-            key={f.key}
-            label={f.label}
-            required={"required" in f ? f.required : undefined}
-            error={
-              errors[f.key] ??
-              (f.key === "full_name" && nameBlank
-                ? "A guardian needs a name."
-                : undefined)
-            }
-            hint={"hint" in f ? f.hint : undefined}
-          >
-            <input
-              value={draft[f.key]}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, [f.key]: e.target.value }))
+        {fields.map((f) => (
+          <AccessField key={f.key} access={access} name={f.key}>
+            <Field
+              label={f.label}
+              required={"required" in f ? f.required : undefined}
+              error={
+                errors[f.key] ??
+                (f.key === "full_name" && nameBlank
+                  ? "A guardian needs a name."
+                  : undefined)
               }
-              className={
-                errors[f.key] || (f.key === "full_name" && nameBlank)
-                  ? errorInputClass
-                  : inputClass
-              }
-            />
-          </Field>
+              hint={"hint" in f ? f.hint : undefined}
+            >
+              <input
+                value={draft[f.key]}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, [f.key]: e.target.value }))
+                }
+                className={
+                  errors[f.key] || (f.key === "full_name" && nameBlank)
+                    ? errorInputClass
+                    : inputClass
+                }
+              />
+            </Field>
+          </AccessField>
         ))}
 
         {/* Says what will move, so Save is not a leap. The same line the edit

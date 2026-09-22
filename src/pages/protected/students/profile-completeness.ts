@@ -40,7 +40,7 @@ const RECORD_FIELDS: FieldDefinition[] = [
   { key: "enrolment_date", label: "Admission date" },
 ];
 
-const SENSITIVE_FIELDS: FieldDefinition[] = [
+const MEDICAL_FIELDS: FieldDefinition[] = [
   { key: "blood_group", label: "Blood group" },
   { key: "allergies", label: "Allergies" },
   { key: "conditions", label: "Medical conditions" },
@@ -80,8 +80,9 @@ export function getDirectoryRecordHealth(student: StudentRow) {
 /**
  * Measures the information a school needs to maintain a useful student file.
  *
- * Medical fields participate only when the API exposed them to this viewer.
- * Required document checklist rows and guardian links participate only after
+ * A field participates only when the record carries it. Field Access leaves
+ * out whatever this viewer may not read, and a field they cannot see is
+ * neither complete nor a gap for them. Required document checklist rows and guardian links participate only after
  * those supporting calls have loaded, so a pending request never lowers the
  * score or reports a false gap.
  */
@@ -94,10 +95,9 @@ export function getStudentProfileCompleteness({
   guardians?: StudentGuardianLink[];
   documents?: StudentDocumentRow[];
 }): ProfileCompleteness {
-  const visibleFields =
-    student.blood_group === undefined
-      ? RECORD_FIELDS
-      : [...RECORD_FIELDS, ...SENSITIVE_FIELDS];
+  const visibleFields = [...RECORD_FIELDS, ...MEDICAL_FIELDS].filter(
+    (field) => field.key in student,
+  );
   const gaps: ProfileGap[] = [];
   let completed = 0;
 

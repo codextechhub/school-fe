@@ -80,9 +80,11 @@ export function InvitationDetailDrawer({
                   <p className="truncate text-sm font-semibold text-black-01">
                     {person.full_name}
                   </p>
-                  <p className="truncate text-xs text-gray-05" title={person.email}>
-                    {person.email}
-                  </p>
+                  {person.email && (
+                    <p className="truncate text-xs text-gray-05" title={person.email}>
+                      {person.email}
+                    </p>
+                  )}
                 </div>
                 <Badge variant="pending" className="text-xs">
                   Awaiting response

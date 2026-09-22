@@ -10,6 +10,8 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Panel as Surface } from "@/components/custom/surface";
 import { routesPath } from "@/routes/routesPath";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
+import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
   useGetClassesQuery,
@@ -75,6 +77,13 @@ function roleTeaches(label: string, key: string): boolean {
  * that grant the moment the school went live with no second pair of eyes on it.
  * The server refuses any other role on the POST as well, so the narrowed list
  * describes the rule rather than being it.
+ *
+ * **Personal details follow Field Access (`school.teachers`).** Gender, date of
+ * birth and phone are hidden or greyed by the adder's switches, and one they
+ * may not write is never sent. The email address is the exception and is
+ * always offered: it is declared open on create, every new account needs one
+ * to receive its invitation, and the backend accepts it at creation whatever
+ * the switches say, so withholding it here would stop the role adding anybody.
  */
 export default function AddStaff() {
   const navigate = useNavigate();
@@ -90,6 +99,7 @@ export default function AddStaff() {
   const { data: classData } = useGetClassesQuery();
 
   const [create, { isLoading: creating }] = useCreateStaffMutation();
+  const access = useFieldAccess(FIELD_RESOURCE.STAFF);
   const [update] = useUpdateStaffMutation();
 
   const roles = useMemo(() => listData?.role_options ?? [], [listData]);
@@ -172,29 +182,32 @@ export default function AddStaff() {
     let person: StaffDetail;
     try {
       const result = await create({
-        first_name: form.first_name.trim(),
-        last_name: form.last_name.trim(),
-        middle_name: form.middle_name.trim(),
-        gender: form.gender,
-        date_of_birth: form.date_of_birth || null,
+        ...access.writableOnly({
+          first_name: form.first_name.trim(),
+          last_name: form.last_name.trim(),
+          middle_name: form.middle_name.trim(),
+          gender: form.gender,
+          date_of_birth: form.date_of_birth || null,
+          phone: form.phone.trim(),
+          staff_number: form.staff_number.trim(),
+          job_title: form.job_title.trim(),
+          employment_type: (form.employment_type || "") as EmploymentType | "",
+          hire_date: form.hire_date || null,
+          branch: form.branch || null,
+          role: form.role,
+          role_branch: roleReach === SCHOOL_WIDE ? null : roleReach,
+          // Blank rows are dropped rather than sent: an empty row is somebody
+          // pressing Add and changing their mind, not a qualification.
+          qualifications: quals.filter((q) => q.qualification.trim()),
+          subjects: canAssignTeaching ? pickedSubjects : [],
+          classes: canAssignTeaching ? pickedClasses : [],
+        }),
+        // Always sent, whatever the switches say: see the doc block above.
         email: form.email.trim(),
-        phone: form.phone.trim(),
-        staff_number: form.staff_number.trim(),
-        job_title: form.job_title.trim(),
-        employment_type: (form.employment_type || "") as EmploymentType | "",
-        hire_date: form.hire_date || null,
-        branch: form.branch || null,
-        role: form.role,
-        role_branch: roleReach === SCHOOL_WIDE ? null : roleReach,
-        // Blank rows are dropped rather than sent: an empty row is somebody
-        // pressing Add and changing their mind, not a qualification.
-        qualifications: quals.filter((q) => q.qualification.trim()),
-        subjects: canAssignTeaching ? pickedSubjects : [],
-        classes: canAssignTeaching ? pickedClasses : [],
       }).unwrap();
       person = result.data;
     } catch (error) {
-      const perField = fieldErrors(error);
+      const perField = fieldWriteErrors(error) ?? fieldErrors(error);
       if (Object.keys(perField).length) {
         setErrors(perField);
         return;
@@ -300,18 +313,20 @@ export default function AddStaff() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Gender" error={errors.gender}>
-              <NativeSelect
-                aria-label="Gender"
-                value={form.gender}
-                onChange={(e) => set("gender")(e.target.value)}
-                className="h-9"
-              >
-                <option value="">Not recorded</option>
-                <option value="FEMALE">Female</option>
-                <option value="MALE">Male</option>
-              </NativeSelect>
-            </Field>
+            <AccessField access={access} name="gender">
+              <Field label="Gender" error={errors.gender}>
+                <NativeSelect
+                  aria-label="Gender"
+                  value={form.gender}
+                  onChange={(e) => set("gender")(e.target.value)}
+                  className="h-9"
+                >
+                  <option value="">Not recorded</option>
+                  <option value="FEMALE">Female</option>
+                  <option value="MALE">Male</option>
+                </NativeSelect>
+              </Field>
+            </AccessField>
             <Field
               label="Email address"
               required
@@ -326,24 +341,26 @@ export default function AddStaff() {
                 className={inputClass}
               />
             </Field>
-            <Field label="Phone" error={errors.phone}>
-              <input
-                value={form.phone}
-                onChange={(e) => set("phone")(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Date of birth" error={errors.date_of_birth}>
-              {/* h-9 to match everything else on this form. The control's own
-                  default is the app's taller one, which beside a 36px select
-                  reads as a mistake rather than as a choice. */}
-              <DatePickerInput
-                aria-label="Date of birth"
-                className="h-9"
-                value={form.date_of_birth}
-                onChange={(e) => set("date_of_birth")(e.target.value)}
-              />
-            </Field>
+            <AccessField access={access} name="phone">
+              <Field label="Phone" error={errors.phone}>
+                <input
+                  value={form.phone}
+                  onChange={(e) => set("phone")(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
+            <AccessField access={access} name="date_of_birth">
+              <Field label="Date of birth" error={errors.date_of_birth}>
+                {/* h-9 to match the select beside it rather than the control's taller default. */}
+                <DatePickerInput
+                  aria-label="Date of birth"
+                  className="h-9"
+                  value={form.date_of_birth}
+                  onChange={(e) => set("date_of_birth")(e.target.value)}
+                />
+              </Field>
+            </AccessField>
           </div>
           <div className="mt-4">
             <PhotoField

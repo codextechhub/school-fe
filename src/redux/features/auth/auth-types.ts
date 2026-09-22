@@ -1,7 +1,28 @@
+/**
+ * The `field_access` map as the login response and `/user/auth/me/` send it.
+ *
+ * Stored in this mutable shape because the store's reducers cannot hold the
+ * read-only arrays of the finance package's `FieldAccessMap`. Every reader
+ * gets it back as a `FieldAccessMap`, which this shape satisfies.
+ */
+export type FieldAccessPayload = Record<string, {
+  hidden?: string[]
+  read_only?: string[]
+  open_on_create?: string[]
+}>
+
 export interface Auth {
   session_id?: number
   user?: User | null
   permissions?: string[]
+  /**
+   * Which fields the effective user may not read or change, keyed by
+   * `module.resource`, exactly as the login response and `/user/auth/me/`
+   * send it. An absent resource or name means full access, so `{}` is a user
+   * with no restrictions. It always describes the same person as
+   * `permissions`: the proxied target while proxying, the actor otherwise.
+   */
+  field_access?: FieldAccessPayload
   school?: SchoolInfo | null
   tenant?: TenantInfo | null
   /** Set only while this admin is proxying another user in their own school. */
@@ -36,12 +57,14 @@ export interface ProxyTargetIdentity {
   school_name: string | null
 }
 
-/** The four pieces of state that together define "who the app thinks I am". */
+/** The pieces of state that together define "who the app thinks I am". */
 export interface AuthContextSnapshot {
   user: User | null
   school: SchoolInfo | null
   tenant: TenantInfo | null
   permissions: string[]
+  /** Required, so a writer can never swap identities and keep the old map. */
+  field_access: FieldAccessPayload
 }
 
 // The caller's asserted tenant, from the login / me payload. Every tenant-owned
@@ -88,10 +111,8 @@ export interface User {
   branch_name: string | null
   created_at: string
   updated_at: string
-  // FLS-strippable admin-metadata fields - absent from the payload for school
-  // users who lack `platform.team.view`; the backend lists them in
-  // `_stripped_fields` instead (see @/utils/fls). Optional so consumers must
-  // guard rather than assume presence.
+  // Field Access fields (`platform.team`): absent from the payload when the
+  // viewer may not read them, so consumers must guard rather than assume presence.
   password_changed_at?: string | null
   last_login_at?: string
   invited_by_id?: number | null

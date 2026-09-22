@@ -9,6 +9,8 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { routesPath } from "@/routes/routesPath";
 import { useGetGuardiansQuery } from "@/redux/services/students/students-api";
 import { useStudentsLens } from "@/hooks/use-students-lens";
+import { useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 
 import { EmptyRing } from "../empty-ring";
 import { Pager } from "../pager";
@@ -19,6 +21,11 @@ import { FooterLead, PersonCard, SiblingsPill } from "./person-card";
  *
  * Cards keep every linked student's name visible. Search is the only filter
  * because guardians do not have their own status, class, or branch.
+ *
+ * Phone and email follow Field Access (`school.guardians`): a card shows only
+ * the contact details the viewer may read, and says "Contact missing" only
+ * when a detail they may read is genuinely empty, never for one withheld from
+ * them. The search box names only the details the viewer can see.
  */
 export default function Guardians() {
   const navigate = useNavigate();
@@ -36,6 +43,13 @@ export default function Guardians() {
   const rows = useMemo(() => data?.data ?? [], [data]);
   const pagination = data?.pagination;
   const busy = isLoading || isFetching;
+  const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
+  const showPhone = !access.isHidden("phone");
+  const showEmail = !access.isHidden("email");
+  const searchHint = ["name", showPhone && "phone", showEmail && "email"]
+    .filter(Boolean)
+    .join(", ")
+    .replace(/, ([^,]*)$/, " or $1");
 
   if (isError) {
     return (
@@ -104,7 +118,7 @@ export default function Guardians() {
               setSearch(e.target.value);
               setPage(1);
             }}
-            placeholder="Search by name, phone or email"
+            placeholder={`Search by ${searchHint}`}
             aria-label="Search guardians"
             className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
@@ -130,30 +144,36 @@ export default function Guardians() {
       ) : (
         <>
           <div className="grid gap-3.5 lg:grid-cols-2 xl:grid-cols-3">
-            {rows.map((g) => (
-              <PersonCard
-                key={g.id}
-                name={g.full_name}
-                photoUrl={g.photo_url}
-                sub={g.phone || g.email || "Contact missing"}
-                secondary={g.phone && g.email ? g.email : undefined}
-                subTone={!g.phone && !g.email ? "warn" : "default"}
-                chip={g.is_sibling_household ? <SiblingsPill /> : undefined}
-                footerLead={
-                  <FooterLead>
-                    {g.ward_count} {g.ward_count === 1 ? "student" : "students"}
-                  </FooterLead>
-                }
-                // The names, not just the count. "3 students" makes a reader
-                // open the card to answer what the card could have answered.
-                footerRest={g.ward_names.join(", ")}
-                onOpen={() =>
-                  navigate(
-                    routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(g.id),
-                  )
-                }
-              />
-            ))}
+            {rows.map((g) => {
+              const contacts = [showPhone && g.phone, showEmail && g.email].filter(
+                (value): value is string => Boolean(value),
+              );
+              const missing = (showPhone || showEmail) && contacts.length === 0;
+              return (
+                <PersonCard
+                  key={g.id}
+                  name={g.full_name}
+                  photoUrl={g.photo_url}
+                  sub={contacts[0] ?? (missing ? "Contact missing" : undefined)}
+                  secondary={contacts[1]}
+                  subTone={missing ? "warn" : "default"}
+                  chip={g.is_sibling_household ? <SiblingsPill /> : undefined}
+                  footerLead={
+                    <FooterLead>
+                      {g.ward_count} {g.ward_count === 1 ? "student" : "students"}
+                    </FooterLead>
+                  }
+                  // The names, not just the count. "3 students" makes a reader
+                  // open the card to answer what the card could have answered.
+                  footerRest={g.ward_names.join(", ")}
+                  onOpen={() =>
+                    navigate(
+                      routesPath.PROTECTED.STUDENTS.GUARDIAN_DETAILS_ID(g.id),
+                    )
+                  }
+                />
+              );
+            })}
           </div>
 
           <Pager

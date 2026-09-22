@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 
 import PermissionGate from "@/components/custom/permission-gate";
+import { useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { ClickableCard, Panel } from "@/components/custom/surface";
 import { PageShell } from "@/components/layout/page-shell";
@@ -55,6 +57,10 @@ function relationshipLabel(code: string) {
  *
  * Guardian-owned contact details remain separate from relationship and
  * primary-contact facts, which belong to each individual student link.
+ *
+ * Phone, email, occupation and address follow Field Access
+ * (`school.guardians`): one the viewer may not read is absent from the record
+ * and drawn nowhere on this page, header, details and checklist alike.
  */
 export default function GuardianDetail() {
   const navigate = useNavigate();
@@ -72,6 +78,9 @@ export default function GuardianDetail() {
     () => (guardian ? getGuardianProfileCompleteness(guardian) : undefined),
     [guardian],
   );
+  const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS, guardian);
+  const shows = (name: "phone" | "email" | "occupation" | "address") =>
+    !access.isHidden(name);
 
   if (isError) {
     return (
@@ -121,18 +130,24 @@ export default function GuardianDetail() {
                     Guardian of {wards.length}{" "}
                     {wards.length === 1 ? "student" : "students"}
                   </p>
-                  <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-gray-01">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Phone className="size-3.5 text-gray-05" />
-                      {guardian.phone || "No phone recorded"}
-                    </span>
-                    <span className="inline-flex min-w-0 items-center gap-1.5">
-                      <Mail className="size-3.5 shrink-0 text-gray-05" />
-                      <span className="break-all">
-                        {guardian.email || "No email recorded"}
-                      </span>
-                    </span>
-                  </div>
+                  {(shows("phone") || shows("email")) && (
+                    <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px] text-gray-01">
+                      {shows("phone") && (
+                        <span className="inline-flex items-center gap-1.5">
+                          <Phone className="size-3.5 text-gray-05" />
+                          {guardian.phone || "No phone recorded"}
+                        </span>
+                      )}
+                      {shows("email") && (
+                        <span className="inline-flex min-w-0 items-center gap-1.5">
+                          <Mail className="size-3.5 shrink-0 text-gray-05" />
+                          <span className="break-all">
+                            {guardian.email || "No email recorded"}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -164,16 +179,19 @@ export default function GuardianDetail() {
               <DetailGrid
                 rows={[
                   { label: "Full name", value: guardian.full_name },
-                  { label: "Phone", value: guardian.phone || "Not recorded" },
-                  { label: "Email", value: guardian.email || "Not recorded" },
-                  {
-                    label: "Occupation",
-                    value: guardian.occupation || "Not recorded",
-                  },
-                  {
-                    label: "Home address",
-                    value: guardian.address || "Not recorded",
-                  },
+                  ...(
+                    [
+                      ["phone", "Phone"],
+                      ["email", "Email"],
+                      ["occupation", "Occupation"],
+                      ["address", "Home address"],
+                    ] as const
+                  )
+                    .filter(([name]) => shows(name))
+                    .map(([name, label]) => ({
+                      label,
+                      value: guardian[name] || "Not recorded",
+                    })),
                   {
                     label: "Parent account",
                     value: guardian.has_account
@@ -245,18 +263,22 @@ export default function GuardianDetail() {
             <ProfilePanel title="Contact and access" icon={ShieldCheck}>
               <CheckList
                 rows={[
-                  {
-                    label: guardian.phone
-                      ? "Reachable by phone"
-                      : "Phone number missing",
-                    ready: Boolean(guardian.phone),
-                  },
-                  {
-                    label: guardian.email
-                      ? "Email on file"
-                      : "Email address missing",
-                    ready: Boolean(guardian.email),
-                  },
+                  ...(shows("phone")
+                    ? [{
+                        label: guardian.phone
+                          ? "Reachable by phone"
+                          : "Phone number missing",
+                        ready: Boolean(guardian.phone),
+                      }]
+                    : []),
+                  ...(shows("email")
+                    ? [{
+                        label: guardian.email
+                          ? "Email on file"
+                          : "Email address missing",
+                        ready: Boolean(guardian.email),
+                      }]
+                    : []),
                   {
                     label: guardian.has_account
                       ? "Parent account available"

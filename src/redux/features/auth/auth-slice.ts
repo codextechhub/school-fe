@@ -3,6 +3,7 @@ import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 import {
   type ActiveImpersonation,
   type Auth,
+  type FieldAccessPayload,
   type AuthContextSnapshot,
   type SchoolInfo,
   type TenantInfo,
@@ -16,7 +17,14 @@ interface AuthPayload {
   permissions?: string[];
   school?: SchoolInfo | null;
   tenant?: TenantInfo | null;
+  field_access?: FieldAccessPayload;
 }
+
+/**
+ * The map of a user with no field restrictions. One frozen instance, so a
+ * selector falling back to it hands every render the same reference.
+ */
+const EMPTY_FIELD_ACCESS: FieldAccessPayload = Object.freeze({});
 
 const initialState: Auth = {
    session_id: 0,
@@ -25,6 +33,7 @@ const initialState: Auth = {
    school: null,
    tenant: null,
    impersonation: null,
+   field_access: EMPTY_FIELD_ACCESS,
 };
 
 /**
@@ -38,6 +47,41 @@ const initialState: Auth = {
  */
 const samePermissions = (a: string[] | undefined, b: string[]): boolean =>
   !!a && a.length === b.length && a.every((perm, i) => perm === b[i]);
+
+/** Order-sensitive, like `samePermissions`: the backend sends a stable order. */
+const sameNames = (a: string[] | undefined, b: string[] | undefined): boolean => {
+  const left = a ?? [];
+  const right = b ?? [];
+  return left.length === right.length && left.every((name, i) => name === right[i]);
+};
+
+/**
+ * Whether two Field Access maps say the same thing.
+ *
+ * `/me` answers with a new object on every run, so without this every focus
+ * would hand `useFieldAccess` a new map and rebuild every memoised field check
+ * in the app. A missing stored map (a session persisted before the field
+ * existed) never equals an incoming one, so the first `/me` always writes it.
+ */
+const sameFieldAccess = (
+  a: FieldAccessPayload | undefined,
+  b: FieldAccessPayload,
+): boolean => {
+  if (a === b) return true;
+  if (!a) return false;
+  const keys = Object.keys(a);
+  if (keys.length !== Object.keys(b).length) return false;
+  return keys.every((key) => {
+    const left = a[key];
+    const right = b[key];
+    if (!left || !right) return left === right;
+    return (
+      sameNames(left.hidden, right.hidden) &&
+      sameNames(left.read_only, right.read_only) &&
+      sameNames(left.open_on_create, right.open_on_create)
+    );
+  });
+};
 
 /**
  * Every field the app reads off the tenant belongs in this comparison. It used
@@ -71,7 +115,7 @@ const sameSchool = (
  * re-runs on mount, refresh and focus, and its `user` payload is a brand-new
  * object every time. `updated_at` moves whenever anything about the record
  * changes, so id + updated_at + the fields the shell renders is enough to know
- * the identity is unchanged without deep-comparing an FLS-variable object.
+ * the identity is unchanged without deep-comparing an object whose fields vary with Field Access.
  */
 const sameUser = (a: User | null | undefined, b: User | null): boolean =>
   a === b ||
@@ -95,6 +139,7 @@ const authSlice = createSlice({
       state.permissions = action.payload.permissions ?? [];
       state.school = action.payload.school ?? null;
       state.tenant = action.payload.tenant ?? null;
+      state.field_access = action.payload.field_access ?? EMPTY_FIELD_ACCESS;
     },
     updateAuthUser: (state, action: PayloadAction<Partial<User>>) => {
       state.user = { ...(state.user as User), ...action.payload };
@@ -102,9 +147,15 @@ const authSlice = createSlice({
     setSessionId: (state, action: PayloadAction<number>) => {
       state.session_id = action.payload;
     },
-    updatePermissions: (state, action: PayloadAction<string[]>) => {
-      if (samePermissions(state.permissions, action.payload)) return;
-      state.permissions = action.payload;
+    /** Refreshes what the user may do, keeping the two halves in step. */
+    updatePermissions: (
+      state,
+      action: PayloadAction<{ permissions: string[]; field_access?: FieldAccessPayload }>,
+    ) => {
+      const { permissions } = action.payload;
+      const fieldAccess = action.payload.field_access ?? EMPTY_FIELD_ACCESS;
+      if (!samePermissions(state.permissions, permissions)) state.permissions = permissions;
+      if (!sameFieldAccess(state.field_access, fieldAccess)) state.field_access = fieldAccess;
     },
     /**
      * Refresh the cached school identity.
@@ -137,6 +188,11 @@ const authSlice = createSlice({
       if (!sameTenant(state.tenant, action.payload.tenant)) state.tenant = action.payload.tenant;
       if (!samePermissions(state.permissions, action.payload.permissions)) {
         state.permissions = action.payload.permissions;
+      }
+      // An actor snapshot persisted before the map existed carries none.
+      const fieldAccess = action.payload.field_access ?? EMPTY_FIELD_ACCESS;
+      if (!sameFieldAccess(state.field_access, fieldAccess)) {
+        state.field_access = fieldAccess;
       }
     },
     setImpersonation: (state, action: PayloadAction<ActiveImpersonation | null>) => {
@@ -175,6 +231,14 @@ export const selectIsPlatformTenant = (state: RootStateType) =>
 
 export const selectPermissions = (state: RootStateType) =>
   state.auth.permissions ?? NO_PERMISSIONS;
+/**
+ * The effective user's Field Access map, as received. Falls back to the one
+ * shared empty map, so a reader never sees a new object for "no restrictions".
+ * The shape satisfies the finance package's `FieldAccessMap`, and stays the
+ * mutable one so an identity snapshot can carry it unchanged.
+ */
+export const selectFieldAccess = (state: RootStateType): FieldAccessPayload =>
+  state.auth.field_access ?? EMPTY_FIELD_ACCESS;
 export const selectSchool = (state: RootStateType) => state.auth.school ?? null;
 export const selectTenant = (state: RootStateType) => state.auth.tenant ?? null;
 /**

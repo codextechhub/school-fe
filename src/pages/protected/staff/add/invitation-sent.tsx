@@ -40,7 +40,7 @@ export function InvitationSent({
     try {
       await resend(person.id).unwrap();
       toast.success(
-        `Sent again to ${person.email}. The previous link no longer works.`,
+        `Sent again${person.email ? ` to ${person.email}` : ""}. The previous link no longer works.`,
       );
     } catch (error) {
       toast.error(
@@ -62,7 +62,7 @@ export function InvitationSent({
         </p>
 
         <dl className="mt-5 grid max-w-md gap-2.5">
-          <Row label="Sent to" value={person.email} />
+          {person.email && <Row label="Sent to" value={person.email} />}
           <Row label="Role" value={roleLabel || person.roles.join(", ") || "-"} />
           {person.staff_number && (
             <Row label="Staff ID" value={person.staff_number} />

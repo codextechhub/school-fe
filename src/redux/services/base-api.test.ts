@@ -120,3 +120,24 @@ describe("TENANT_NOT_LIVE handling", () => {
     );
   });
 });
+
+describe("field_write_denied handling", () => {
+  it("returns the refusal to the form without a toast or a redirect", async () => {
+    // The form shows each message beside its own field; a toast would repeat it where nobody can place it.
+    respondWith(403, {
+      success: false,
+      message: "Some fields cannot be changed.",
+      error: {
+        code: "field_write_denied",
+        detail: { allergies: ["You cannot change this field."] },
+      },
+    });
+
+    const result = await baseQueryInterceptor("/students/7/", apiStub(), {});
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(toastError).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(result.error?.status).toBe(403);
+  });
+});

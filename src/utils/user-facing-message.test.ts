@@ -25,7 +25,7 @@ describe("user-facing API messages", () => {
     )).toBe(
       "'Create invoice' is restricted and cannot be placed in a permission group.",
     );
-    expect(humanizePermissionKeys("Missing school.teachers.view_sensitive."))
-      .toBe("Missing View sensitive teachers.");
+    expect(humanizePermissionKeys("Missing platform.tasks.view_sensitive."))
+      .toBe("Missing View sensitive tasks.");
   });
 });

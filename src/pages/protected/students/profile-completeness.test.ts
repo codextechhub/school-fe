@@ -131,14 +131,22 @@ describe("student profile completeness", () => {
     delete restricted.blood_group;
     delete restricted.allergies;
     delete restricted.conditions;
-    delete restricted.emergency_contact_name;
-    delete restricted.emergency_contact_phone;
 
     const result = getStudentProfileCompleteness({ student: restricted });
 
-    expect(result.total).toBe(12);
+    expect(result.total).toBe(14);
     expect(result.gaps).toEqual([]);
     expect(result.percentage).toBe(100);
+  });
+
+  it("scores each medical field on its own, so one hidden field drops only itself", () => {
+    const restricted = { ...detail, conditions: "" };
+    delete restricted.allergies;
+
+    const result = getStudentProfileCompleteness({ student: restricted });
+
+    expect(result.total).toBe(16);
+    expect(result.gaps.map((gap) => gap.label)).toEqual(["Medical conditions"]);
   });
 
   it("does not report unloaded supporting data as missing", () => {

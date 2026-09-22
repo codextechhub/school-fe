@@ -134,6 +134,7 @@ export default function Authenticated() {
       school: authContextResponse.data.school ?? null,
       tenant: authContextResponse.data.tenant ?? null,
       permissions: authContextResponse.data.permissions,
+      field_access: authContextResponse.data.field_access ?? {},
     };
     dispatch(setImpersonation({
       id: restorableImpersonation.id,
@@ -150,6 +151,7 @@ export default function Authenticated() {
         kind: restorableImpersonation.target.tenant_kind,
       },
       permissions: [],
+      field_access: {},
     }));
     void refetchContext();
   }, [authContextResponse, dispatch, impersonation, refetchContext, restorableImpersonation]);

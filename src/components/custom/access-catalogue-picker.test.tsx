@@ -144,7 +144,11 @@ describe("AccessCataloguePicker", () => {
       Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
       input.dispatchEvent(new Event("input", { bubbles: true }));
     });
-  const listed = () => [...container.querySelectorAll("label[title]")].map((row) => row.textContent);
+  // A permission row is a label holding a checkbox, whatever attributes it carries.
+  const listed = () =>
+    [...container.querySelectorAll("label")]
+      .filter((row) => row.querySelector('[role="checkbox"]'))
+      .map((row) => row.textContent);
   const PROMPT = "Choose a module, then a resource, to see its permissions.";
 
   it("keeps Resource disabled and lists nothing until a module is chosen", async () => {

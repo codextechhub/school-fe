@@ -22,7 +22,6 @@ import {
  *                       10=reactivate
  *                       11=assign  12=start   13=end   14=run   15=execute
  *                       16=publish 17=import  18=export  19=apply
- *                       39=view_sensitive
  *
  * ── Adding a permission ───────────────────────────────────────────────────────
  *   1. Pick the next free code in the right MM RR range.
@@ -57,7 +56,6 @@ const REGISTRY: Record<string, string> = {
   "100308": "school.students.manage",
   "100317": "school.students.import",
   "100318": "school.students.export",
-  "100339": "school.students.view_sensitive",
 
   // ── school / field access  (MM=10, RR=14) ─────────────────────────────────
   "101401": "school.field_access.view",
@@ -372,7 +370,6 @@ export const P = {
   // button had no way to be gated at all.
   IMPORT_STUDENTS:         "100317",  // load a roll from a spreadsheet
   EXPORT_STUDENTS:         "100318",  // export the directory as it is filtered
-  VIEW_STUDENT_SENSITIVE:  "100339",  // read FLS-gated sensitive student fields
   PROMOTE_STUDENTS:        "100307",  // advance a cohort to the next level
 
   // ── Staff Management ───────────────────────────────────────────────────────

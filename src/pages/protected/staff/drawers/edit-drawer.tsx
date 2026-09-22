@@ -3,6 +3,8 @@ import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
+import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import { useUpdateStaffMutation } from "@/redux/services/staff/staff-api";
 import type {
@@ -49,6 +51,10 @@ const TYPES: { value: EmploymentType; label: string }[] = [
  * it - which is also why there is no effect seeding a form: the record IS the
  * initial state, and a copy taken at mount is a copy that goes stale the moment
  * anything else writes to the same person.
+ *
+ * **Gender, date of birth and phone follow Field Access (`school.teachers`).**
+ * One the viewer may not read is absent from the record and not on the form;
+ * one the record lists in `_read_only_fields` is greyed and never sent.
  */
 export function EditDrawer({
   person,
@@ -62,6 +68,7 @@ export function EditDrawer({
 
   const [draft, setDraft] = useState<Partial<StaffUpdate>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const access = useFieldAccess(FIELD_RESOURCE.STAFF, person);
 
   const branches = branchData?.data ?? [];
 
@@ -103,7 +110,7 @@ export function EditDrawer({
   };
 
   const changed = (Object.keys(draft) as FieldKey[]).filter(
-    (key) => String(draft[key] ?? "") !== fromRecord[key],
+    (key) => !access.isReadOnly(key) && String(draft[key] ?? "") !== fromRecord[key],
   );
 
   const canSave =
@@ -135,7 +142,7 @@ export function EditDrawer({
       toast.success("Record updated.");
       onClose();
     } catch (error) {
-      const perField = fieldErrors(error);
+      const perField = fieldWriteErrors(error) ?? fieldErrors(error);
       if (Object.keys(perField).length) {
         setErrors(perField);
         return;
@@ -177,33 +184,39 @@ export function EditDrawer({
             className={inputClass}
           />
         </Field>
-        <Field label="Gender" error={errors.gender}>
-          <NativeSelect
-            aria-label="Gender"
-            value={value("gender")}
-            onChange={(e) => set("gender")(e.target.value)}
-            className="h-9"
-          >
-            <option value="">Not recorded</option>
-            <option value="FEMALE">Female</option>
-            <option value="MALE">Male</option>
-          </NativeSelect>
-        </Field>
-        <Field label="Date of birth" error={errors.date_of_birth}>
-          <input
-            type="date"
-            value={value("date_of_birth")}
-            onChange={(e) => set("date_of_birth")(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Phone" error={errors.phone}>
-          <input
-            value={value("phone")}
-            onChange={(e) => set("phone")(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
+        <AccessField access={access} name="gender">
+          <Field label="Gender" error={errors.gender}>
+            <NativeSelect
+              aria-label="Gender"
+              value={value("gender")}
+              onChange={(e) => set("gender")(e.target.value)}
+              className="h-9"
+            >
+              <option value="">Not recorded</option>
+              <option value="FEMALE">Female</option>
+              <option value="MALE">Male</option>
+            </NativeSelect>
+          </Field>
+        </AccessField>
+        <AccessField access={access} name="date_of_birth">
+          <Field label="Date of birth" error={errors.date_of_birth}>
+            <input
+              type="date"
+              value={value("date_of_birth")}
+              onChange={(e) => set("date_of_birth")(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </AccessField>
+        <AccessField access={access} name="phone">
+          <Field label="Phone" error={errors.phone}>
+            <input
+              value={value("phone")}
+              onChange={(e) => set("phone")(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </AccessField>
 
         <Field
           label="Staff ID"

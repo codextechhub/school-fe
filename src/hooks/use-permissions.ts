@@ -1,9 +1,19 @@
-import { selectPermissions } from "@/redux/features/auth/auth-slice";
+import { selectFieldAccess, selectPermissions } from "@/redux/features/auth/auth-slice";
 import { useAppSelector } from "@/redux/store";
 import { type PermissionCode, resolvePermissionKey } from "@/permissions";
 
+/**
+ * What the signed-in (or proxied) user may do: permission checks, plus
+ * `fieldAccess`, the Field Access map read by `useFieldAccess` in this app and
+ * in the shared finance package.
+ *
+ * `fieldAccess` is the store's own object, and the slice replaces it only when
+ * a login, a `/me` refresh or an identity swap brings a different map, so
+ * memoised field checks built on it stay stable between renders.
+ */
 export function usePermissions() {
   const permissions = useAppSelector(selectPermissions);
+  const fieldAccess = useAppSelector(selectFieldAccess);
 
   const hasPermission = (code: PermissionCode): boolean =>
     permissions.includes(resolvePermissionKey(code));
@@ -22,5 +32,5 @@ export function usePermissions() {
   const hasModuleAccess = (...prefixes: string[]): boolean =>
     permissions.some((key) => prefixes.some((p) => key.startsWith(p)));
 
-  return { hasPermission, hasAnyPermission, hasAllPermissions, hasModuleAccess };
+  return { hasPermission, hasAnyPermission, hasAllPermissions, hasModuleAccess, fieldAccess };
 }

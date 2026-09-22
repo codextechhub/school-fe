@@ -25,6 +25,8 @@ import PermissionGate from "@/components/custom/permission-gate";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { useAppSelector } from "@/redux/store";
 import { selectUser } from "@/redux/features/auth/auth-slice";
 import { apiErrorMessage } from "@/utils/api-error";
@@ -134,7 +136,7 @@ export default function StaffProfile() {
     try {
       await resend(person.id).unwrap();
       toast.success(
-        `Invitation resent to ${person.email}. The previous link no longer works.`,
+        `Invitation resent${person.email ? ` to ${person.email}` : ""}. The previous link no longer works.`,
       );
     } catch (error) {
       toast.error(
@@ -464,14 +466,16 @@ function OverviewTab({
   onOpenDrawer: (request: StaffDrawerRequest) => void;
   onOpenTab: (tab: string) => void;
 }) {
+  // Personal details follow Field Access: one the viewer may not read is not listed.
+  const access = useFieldAccess(FIELD_RESOURCE.STAFF, person);
   const personal = [
     { label: "Full name", value: person.full_name },
     { label: "Middle name", value: person.middle_name || "-" },
-    { label: "Gender", value: titleCase(person.gender) || "-" },
-    { label: "Date of birth", value: formatDate(person.date_of_birth) },
-    { label: "Email", value: person.email },
-    { label: "Phone", value: person.phone || "Not recorded" },
-  ];
+    { name: "gender", label: "Gender", value: titleCase(person.gender) || "-" },
+    { name: "date_of_birth", label: "Date of birth", value: formatDate(person.date_of_birth ?? null) },
+    { name: "email", label: "Email", value: person.email || "Not recorded" },
+    { name: "phone", label: "Phone", value: person.phone || "Not recorded" },
+  ].filter((row) => !row.name || !access.isHidden(row.name));
   const employment = [
     { label: "Staff ID", value: person.staff_number || "Not issued" },
     { label: "Job title", value: person.job_title || "Not recorded" },

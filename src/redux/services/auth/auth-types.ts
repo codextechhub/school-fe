@@ -1,4 +1,4 @@
-import type { SchoolInfo, TenantInfo, User } from "@/redux/features/auth/auth-types";
+import type { FieldAccessPayload, SchoolInfo, TenantInfo, User } from "@/redux/features/auth/auth-types";
 
 export interface ResponseMessage {
     status: boolean;
@@ -18,5 +18,7 @@ export interface LoginResponse extends ResponseMessage {
      * `user_type` column that has since been removed.
      */
     tenant: TenantInfo | null
+    /** Which fields this user may not read or change; absent means none. */
+    field_access?: FieldAccessPayload
   }
 }

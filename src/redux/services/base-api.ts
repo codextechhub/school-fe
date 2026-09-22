@@ -12,7 +12,7 @@ import {
   updatePermissions,
   updateTenant,
 } from "../features/auth/auth-slice";
-import type { ActiveImpersonation, TenantInfo } from "../features/auth/auth-types";
+import type { ActiveImpersonation, FieldAccessPayload, TenantInfo } from "../features/auth/auth-types";
 import { getTenantSlug } from "@/utils/tenant-context";
 import { toast } from "sonner";
 import { userFacingMessage } from "@/utils/user-facing-message";
@@ -32,6 +32,15 @@ import { FINANCE_TAG_TYPES } from "@xvs/finance/redux/tag-types";
 import { getAccessToken } from "@/utils/access-token";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
+
+/**
+ * The code of a 403 refusing a write to fields the user may not change.
+ *
+ * The form that sent it shows the per-field messages from `error.detail` beside
+ * each field (see `fieldWriteErrors` in the finance package), so the
+ * interceptor stays silent for it.
+ */
+const FIELD_WRITE_DENIED = "field_write_denied";
 
 // The endpoint-name sets (auth / tenant-exempt / impersonation) live in
 // ./api-endpoints - see that module for why and how to extend them.
@@ -97,11 +106,15 @@ const forceLogoutAndRedirect = (api: Parameters<BaseQueryFn>[1]) => {
 };
 
 // /user/auth/me/ is tenant-exempt, so this raw fetch needs no ?tenant=. It
-// refreshes both the permission set and the cached tenant context.
+// refreshes the permission set, the Field Access map and the tenant context.
 const fetchFreshMe = async (
   accessToken: string,
   impersonation: ActiveImpersonation | null,
-): Promise<{ permissions: string[] | null; tenant: TenantInfo | null }> => {
+): Promise<{
+  permissions: string[] | null;
+  fieldAccess: FieldAccessPayload | null;
+  tenant: TenantInfo | null;
+}> => {
   try {
     const response = await fetch(`${baseUrl}/user/auth/me/`, {
       headers: {
@@ -115,14 +128,15 @@ const fetchFreshMe = async (
           : {}),
       },
     });
-    if (!response.ok) return { permissions: null, tenant: null };
+    if (!response.ok) return { permissions: null, fieldAccess: null, tenant: null };
     const data = await response.json();
     return {
       permissions: data?.data?.permissions ?? null,
+      fieldAccess: data?.data?.field_access ?? null,
       tenant: data?.data?.tenant ?? null,
     };
   } catch {
-    return { permissions: null, tenant: null };
+    return { permissions: null, fieldAccess: null, tenant: null };
   }
 };
 
@@ -301,10 +315,15 @@ export const baseQueryInterceptor: BaseQueryFn<
     const refreshed = await refreshTokenSingleFlight();
 
     if (refreshed.ok) {
-      // Role may have changed since last login - keep permissions + tenant fresh.
+      // Role may have changed since last login: refresh permissions, fields and tenant.
       const activeImpersonation = readImpersonation(api.getState);
       const fresh = await fetchFreshMe(refreshed.access, activeImpersonation);
-      if (fresh.permissions) api.dispatch(updatePermissions(fresh.permissions));
+      if (fresh.permissions) {
+        api.dispatch(updatePermissions({
+          permissions: fresh.permissions,
+          field_access: fresh.fieldAccess ?? {},
+        }));
+      }
       if (fresh.tenant) api.dispatch(updateTenant(fresh.tenant));
 
       const retry = await baseQuery(tenantArgs, api, extraOptions);
@@ -345,6 +364,8 @@ export const baseQueryInterceptor: BaseQueryFn<
       redirectToOnboardingNotLive();
       return result;
     }
+    // A refused field write is answered on the form, beside each field it names.
+    if (res?.data?.error?.code === FIELD_WRITE_DENIED) return result;
     if (!isAuthRoute(args)) {
       const msg =
         extractFirstDetailError(res?.data?.error?.detail) ||

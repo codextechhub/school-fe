@@ -17,7 +17,11 @@ import {
 
 import { Checkbox } from "@/components/ui/checkbox";
 
+import { AccessField, useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
+
 import { DrawerShell, Field, inputClass } from "./drawer-shell";
+import { guardianMatchLine } from "../format";
 
 /**
  * Link a guardian to a student.
@@ -50,6 +54,9 @@ export function LinkGuardianDrawer({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
+  // A new guardian needs a phone, so without Write on it only the search is offered.
+  const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
+  const canAddNew = !access.isReadOnly("phone");
 
   const query = search.trim();
   const { data: matchesData, isFetching } = useGetGuardiansQuery(
@@ -91,11 +98,11 @@ export function LinkGuardianDrawer({
         is_primary: primary,
         ...(mode === "search"
           ? { guardian_id: picked as number }
-          : {
+          : access.writableOnly({
               full_name: name.trim(),
               phone: phone.trim(),
               ...(email.trim() ? { email: email.trim() } : {}),
-            }),
+            })),
       }).unwrap();
       toast.success("Guardian linked.");
       reset();
@@ -124,19 +131,21 @@ export function LinkGuardianDrawer({
           that decides whether a household stays whole or gets a duplicate
           parent, so which side you are on has to be unmistakable - and a plain
           background swap is the weakest way to say it. */}
-      <SegmentedToggle
-        className="mb-4"
-        ariaLabel="How to link a guardian"
-        value={mode}
-        onChange={(next) => {
-          setMode(next);
-          setPicked(null);
-        }}
-        options={[
-          { value: "search", label: "Find an existing guardian" },
-          { value: "new", label: "Add a new one" },
-        ]}
-      />
+      {canAddNew && (
+        <SegmentedToggle
+          className="mb-4"
+          ariaLabel="How to link a guardian"
+          value={mode}
+          onChange={(next) => {
+            setMode(next);
+            setPicked(null);
+          }}
+          options={[
+            { value: "search", label: "Find an existing guardian" },
+            { value: "new", label: "Add a new one" },
+          ]}
+        />
+      )}
 
       <div className="grid gap-4">
         {mode === "search" ? (
@@ -185,9 +194,7 @@ export function LinkGuardianDrawer({
                         <p className="truncate text-xs text-gray-05">
                           {linked
                             ? "Already linked to this student"
-                            : g.ward_count > 0
-                              ? `${g.phone} · already guardian of ${g.ward_count} ${g.ward_count === 1 ? "student" : "students"}`
-                              : `${g.phone} · no students yet`}
+                            : guardianMatchLine(g)}
                         </p>
                       </button>
                     );
@@ -205,24 +212,28 @@ export function LinkGuardianDrawer({
                 className={inputClass}
               />
             </Field>
-            <Field
-              label="Phone"
-              hint="A guardian needs a number the school can reach."
-            >
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Email (optional)">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
+            <AccessField access={access} name="phone">
+              <Field
+                label="Phone"
+                hint="A guardian needs a number the school can reach."
+              >
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
+            <AccessField access={access} name="email">
+              <Field label="Email (optional)">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
           </>
         )}
 

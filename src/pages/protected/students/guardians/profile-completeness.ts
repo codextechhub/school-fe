@@ -16,19 +16,20 @@ const PROFILE_FIELDS: GuardianProfileGap[] = [
 /**
  * Measures the guardian details the school can edit from this profile.
  *
- * The score uses the five guardian-owned fields supported by the edit API.
+ * The score uses the five guardian-owned fields supported by the edit API,
+ * less any the record does not carry: Field Access leaves out the fields this
+ * viewer may not read, and those are neither complete nor a gap for them.
  */
 export function getGuardianProfileCompleteness(guardian: GuardianDetail) {
-  const gaps = PROFILE_FIELDS.filter(
-    (field) => !guardian[field.key]?.trim(),
-  );
-  const total = PROFILE_FIELDS.length;
+  const fields = PROFILE_FIELDS.filter((field) => field.key in guardian);
+  const gaps = fields.filter((field) => !guardian[field.key]?.trim());
+  const total = fields.length;
   const completed = total - gaps.length;
 
   return {
     completed,
     total,
     gaps,
-    percentage: Math.round((completed / total) * 100),
+    percentage: total === 0 ? 100 : Math.round((completed / total) * 100),
   };
 }

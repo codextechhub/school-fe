@@ -90,7 +90,7 @@ export default function StaffInvitations() {
     try {
       await resend(person.id).unwrap();
       toast.success(
-        `Sent again to ${person.email}. The previous link no longer works.`,
+        `Sent again${person.email ? ` to ${person.email}` : ""}. The previous link no longer works.`,
       );
     } catch (error) {
       toast.error(
@@ -226,12 +226,14 @@ export default function StaffInvitations() {
                   <span className="block truncate text-sm text-black-01">
                     {person.full_name}
                   </span>
-                  <span
-                    className="block max-w-60 truncate text-xs text-gray-05"
-                    title={person.email}
-                  >
-                    {person.email}
-                  </span>
+                  {person.email && (
+                    <span
+                      className="block max-w-60 truncate text-xs text-gray-05"
+                      title={person.email}
+                    >
+                      {person.email}
+                    </span>
+                  )}
                 </span>
               </span>
             ),

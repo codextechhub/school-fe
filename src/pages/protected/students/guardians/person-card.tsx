@@ -63,8 +63,8 @@ export function PersonCard({
   onOpen,
 }: {
   name: string;
-  /** Under the name: a phone number, or an admission number. */
-  sub: string;
+  /** Under the name: a phone number, or an admission number. Absent draws no line. */
+  sub?: string;
   /** Optional second contact line for guardian directory cards. */
   secondary?: string;
   subTone?: "default" | "warn";
@@ -101,14 +101,16 @@ export function PersonCard({
           <span className="block truncate text-[14.5px] font-semibold text-black-01">
             {name}
           </span>
-          <span
-            className={cn(
-              "mt-0.5 block truncate text-[12.5px]",
-              subTone === "warn" ? "text-amber-700" : "text-gray-05",
-            )}
-          >
-            {sub}
-          </span>
+          {sub && (
+            <span
+              className={cn(
+                "mt-0.5 block truncate text-[12.5px]",
+                subTone === "warn" ? "text-amber-700" : "text-gray-05",
+              )}
+            >
+              {sub}
+            </span>
+          )}
           {secondary && (
             <span className="mt-0.5 block truncate text-[12.5px] text-gray-05">
               {secondary}

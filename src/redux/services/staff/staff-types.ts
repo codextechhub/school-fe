@@ -90,7 +90,8 @@ export interface StaffListRow {
   /** The account, not the staff record. Payroll rows point at this. */
   user_id: number;
   full_name: string;
-  email: string;
+  /** A Field Access field (`school.teachers`): absent when the viewer may not read it. */
+  email?: string;
   staff_number: string;
   job_title: string;
   /**
@@ -190,9 +191,12 @@ export interface StaffTenure {
 export interface StaffDetail extends StaffListRow {
   account: StaffAccountState;
   middle_name: string;
-  date_of_birth: string | null;
-  phone: string;
-  gender: string;
+  // Field Access fields (`school.teachers`): absent when the viewer may not read them.
+  date_of_birth?: string | null;
+  phone?: string;
+  gender?: string;
+  /** Fields present in this record that the viewer may not change. */
+  _read_only_fields?: string[];
   photo_url: string | null;
   exit_date: string | null;
   tenure: StaffTenure | null;
