@@ -15,6 +15,8 @@ import {
 } from "@/redux/services/staff/staff-api";
 import type { StaffListRow } from "@/redux/services/staff/staff-types";
 import { apiErrorMessage, fieldErrors, parseApiError } from "@/utils/api-error";
+import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
+import { CREATING, FIELD_RESOURCE } from "@/lib/field-resources";
 import { OutlinedNotice } from "./outlined-notice";
 import { humanDate } from "../onboarding-format";
 
@@ -81,6 +83,14 @@ function StatusChip({ status }: { status?: string }) {
   );
 }
 
+/**
+ * The invitation form and the list of who has been invited.
+ *
+ * An invitation creates a staff member, so the form asks Field Access
+ * (`school.teachers`) with `CREATING`: the email is declared open on create and
+ * is offered and sent even to an administrator who may not read it on an
+ * existing staff member.
+ */
 export function InvitationsPanel() {
   const [page, setPage] = useState(1);
   const [form, setForm] = useState(EMPTY);
@@ -88,6 +98,7 @@ export function InvitationsPanel() {
 
   const list = useGetStaffListQuery({ page });
   const [invite, { isLoading: inviting }] = useCreateStaffMutation();
+  const access = useFieldAccess(FIELD_RESOURCE.STAFF);
   const [resend, { isLoading: resending }] = useResendStaffInvitationMutation();
 
   const people = useMemo(() => list.data?.data ?? [], [list.data]);
@@ -119,9 +130,12 @@ export function InvitationsPanel() {
     const found: Record<string, string> = {};
     if (!form.first_name.trim()) found.first_name = "Enter their first name.";
     if (!form.last_name.trim()) found.last_name = "Enter their last name.";
-    if (!form.email.trim()) found.email = "Enter an email address.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      found.email = "That does not look like an email address.";
+    // Only an email the form offers is the sender's to supply.
+    if (!access.isReadOnly("email", CREATING)) {
+      if (!form.email.trim()) found.email = "Enter an email address.";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+        found.email = "That does not look like an email address.";
+      }
     }
     if (!form.role) found.role = "Choose the role they will hold.";
     setErrors(found);
@@ -131,13 +145,15 @@ export function InvitationsPanel() {
   const send = async () => {
     if (!validate()) return;
     try {
-      await invite({
+      await invite(access.writableOnly({
         first_name: form.first_name.trim(),
         last_name: form.last_name.trim(),
         email: form.email.trim(),
         role: form.role,
-      }).unwrap();
-      toast.success(`Invitation sent to ${form.email.trim()}.`);
+      }, CREATING)).unwrap();
+      toast.success(
+        form.email.trim() ? `Invitation sent to ${form.email.trim()}.` : "Invitation sent.",
+      );
       setForm(EMPTY);
       setErrors({});
       setPage(1);
@@ -145,7 +161,7 @@ export function InvitationsPanel() {
       // The server's per-field refusals belong under the fields that caused
       // them: "A user with this email already exists" is unreadable as a toast
       // on a form with four inputs.
-      const perField = fieldErrors(error);
+      const perField = fieldWriteErrors(error) ?? fieldErrors(error);
       if (Object.keys(perField).length) {
         setErrors(perField);
         return;
@@ -249,16 +265,18 @@ export function InvitationsPanel() {
             onChange={(event) => set("last_name")(event.target.value)}
             placeholder="Okonkwo"
           />
-          <CustomInput
-            id="invite-email"
-            label="Email address"
-            type="email"
-            isRequired
-            value={form.email}
-            error={errors.email}
-            onChange={(event) => set("email")(event.target.value)}
-            placeholder="name@yourschool.edu.ng"
-          />
+          <AccessField access={access} name="email" creating>
+            <CustomInput
+              id="invite-email"
+              label="Email address"
+              type="email"
+              isRequired
+              value={form.email}
+              error={errors.email}
+              onChange={(event) => set("email")(event.target.value)}
+              placeholder="name@yourschool.edu.ng"
+            />
+          </AccessField>
           <CustomNativeSelect
             id="invite-role"
             label="Role"

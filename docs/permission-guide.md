@@ -265,13 +265,10 @@ The hook and the form-field wrapper come from the shared finance package, so thi
 
 ```tsx
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
-import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { CREATING, FIELD_RESOURCE } from "@/lib/field-resources";
 
 // An existing record: the record decides (absent = hidden, _read_only_fields = greyed).
 const access = useFieldAccess(FIELD_RESOURCE.STUDENTS, student);
-
-// An Add form or a table's columns: the signed-in user's map decides.
-const access = useFieldAccess(FIELD_RESOURCE.STUDENTS);
 
 {!access.isHidden("allergies") && <Row label="Allergies" value={student.allergies || "Not recorded"} />}
 
@@ -281,13 +278,24 @@ const access = useFieldAccess(FIELD_RESOURCE.STUDENTS);
 
 await save(access.writableOnly(body));        // never sends a field the user may not write
 const perField = fieldWriteErrors(error);     // per-field messages of a field_write_denied 403
+
+// A table's columns: the signed-in user's map decides.
+const columns = useFieldAccess(FIELD_RESOURCE.STUDENTS);
+
+// An Add form: the map decides, and every question is asked as a record being created.
+const access = useFieldAccess(FIELD_RESOURCE.STUDENTS);
+
+<AccessField access={access} name="enrolment_date" creating>...</AccessField>
+{access.anyVisible("blood_group", "allergies", CREATING) && <MedicalSection />}
+await enrol(access.writableOnly(body, CREATING));
 ```
 
 ### Rules
 
 - **Hidden means not there.** No label, no lock, no "Restricted" text, no empty space, no column. A section whose fields are all hidden disappears.
 - **Read-only means greyed, disabled and never sent.**
-- **`open_on_create` fields stay editable on an Add form** (`creating` defaults to true when no record is passed), and follow the Write switch afterwards.
+- **Every Add form asks as a record being created.** It passes `creating` to `AccessField` and `CREATING` to `isHidden`, `isReadOnly`, `anyVisible` and `writableOnly`. A field listed under `open_on_create` is then offered, editable and sent even when it is also under `hidden` or `read_only`: a staff member's email, a guardian's phone and a pupil's admission date. On an existing record those switches apply as usual. Without the option, a hidden open-on-create field stays hidden, which is right for columns and headings and wrong for an Add form.
+- **Adding a new guardian depends on its required fields.** `canCreateGuardian(access)` offers "Add a new one" only when the user may give every field a new guardian requires at creation; otherwise only the search for an existing guardian is offered.
 - A field the viewer cannot see is neither complete nor a gap: completeness scores count only the fields a record carries.
 - The request interceptor stays silent on `field_write_denied`; the form shows each message under its field.
 

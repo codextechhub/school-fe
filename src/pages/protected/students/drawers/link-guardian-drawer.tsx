@@ -18,7 +18,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 
 import { AccessField, useFieldAccess } from "@/components/finance-ui";
-import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { CREATING, FIELD_RESOURCE, canCreateGuardian } from "@/lib/field-resources";
 
 import { DrawerShell, Field, inputClass } from "./drawer-shell";
 import { guardianMatchLine } from "../format";
@@ -36,6 +36,13 @@ import { guardianMatchLine } from "../format";
  * **A student has exactly one primary contact.** Marking a new link primary
  * MOVES the marker rather than adding a second, which the note says out loud
  * before the save rather than after it.
+ *
+ * **A new guardian follows Field Access as a record being created.** Its
+ * contact inputs and the body ask `school.guardians` with `creating`, so a
+ * field the backend declares open on create (the phone) is offered and sent
+ * even to a user who may not read or change it on an existing guardian. "Add a
+ * new one" is offered whenever the user may give every field a new guardian
+ * requires ({@link canCreateGuardian}); otherwise the drawer is search only.
  */
 export function LinkGuardianDrawer({
   student,
@@ -54,9 +61,8 @@ export function LinkGuardianDrawer({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
-  // A new guardian needs a phone, so without Write on it only the search is offered.
   const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
-  const canAddNew = !access.isReadOnly("phone");
+  const canAddNew = canCreateGuardian(access);
 
   const query = search.trim();
   const { data: matchesData, isFetching } = useGetGuardiansQuery(
@@ -98,11 +104,14 @@ export function LinkGuardianDrawer({
         is_primary: primary,
         ...(mode === "search"
           ? { guardian_id: picked as number }
-          : access.writableOnly({
-              full_name: name.trim(),
-              phone: phone.trim(),
-              ...(email.trim() ? { email: email.trim() } : {}),
-            })),
+          : access.writableOnly(
+              {
+                full_name: name.trim(),
+                phone: phone.trim(),
+                ...(email.trim() ? { email: email.trim() } : {}),
+              },
+              CREATING,
+            )),
       }).unwrap();
       toast.success("Guardian linked.");
       reset();
@@ -168,7 +177,7 @@ export function LinkGuardianDrawer({
                   <p className="text-xs text-gray-05">Searching…</p>
                 ) : matches.length === 0 ? (
                   <p className="text-xs text-gray-05">
-                    Nobody at this school matches "{query}". Use "Add a new one".
+                    Nobody at this school matches "{query}".{canAddNew ? ' Use "Add a new one".' : ""}
                   </p>
                 ) : (
                   matches.map((g) => {
@@ -212,7 +221,7 @@ export function LinkGuardianDrawer({
                 className={inputClass}
               />
             </Field>
-            <AccessField access={access} name="phone">
+            <AccessField access={access} name="phone" creating>
               <Field
                 label="Phone"
                 hint="A guardian needs a number the school can reach."
@@ -224,7 +233,7 @@ export function LinkGuardianDrawer({
                 />
               </Field>
             </AccessField>
-            <AccessField access={access} name="email">
+            <AccessField access={access} name="email" creating>
               <Field label="Email (optional)">
                 <input
                   type="email"

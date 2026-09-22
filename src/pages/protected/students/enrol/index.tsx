@@ -11,7 +11,7 @@ import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { cn } from "@/lib/utils";
 import { AccessField, useFieldAccess } from "@/components/finance-ui";
-import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { CREATING, FIELD_RESOURCE } from "@/lib/field-resources";
 import { writeErrorMessage, fieldErrors, parseApiError } from "@/utils/api-error";
 import {
   useEnrolStudentMutation,
@@ -93,6 +93,13 @@ const STEPS: readonly Step[] = [
   { key: "review", label: "Review", hint: "Check, then save.", fields: [] },
 ];
 
+/** The medical inputs, each governed by its own Field Access switch. */
+const MEDICAL_INPUTS = [
+  { name: "blood_group", label: "Blood group" },
+  { name: "allergies", label: "Allergies" },
+  { name: "conditions", label: "Conditions" },
+] as const;
+
 /**
  * Enrol one student by hand, or save them as an applicant.
  *
@@ -126,19 +133,19 @@ const STEPS: readonly Step[] = [
  *   - The rail carries a per-step count of what is still missing, so nothing is
  *     hiding two steps back when you arrive at Review.
  *   - A server refusal jumps to the step that owns the field it names.
+ *
+ * **Field Access applies as to a record being created.** The pupil's fields
+ * (`school.students`) and each new guardian's (`school.guardians`) are offered,
+ * summarised and sent according to the registrar's switches, asked with
+ * `CREATING`. A field the backend declares open on create, such as the
+ * admission date, is therefore offered even to a registrar who may not read or
+ * change it on an existing pupil.
  */
-/** The medical inputs, each governed by its own Field Access switch. */
-const MEDICAL_INPUTS = [
-  { name: "blood_group", label: "Blood group" },
-  { name: "allergies", label: "Allergies" },
-  { name: "conditions", label: "Conditions" },
-] as const;
-
 export default function EnrolStudent() {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const branchLens = useBranchLens();
-  // An Add form: no record yet, so the signed-in user's map decides.
+  // An Add form: every Field Access question below is asked with CREATING.
   const access = useFieldAccess(FIELD_RESOURCE.STUDENTS);
   const guardianAccess = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
 
@@ -435,10 +442,10 @@ export default function EnrolStudent() {
                 ...(g.email.trim() ? { email: g.email.trim() } : {}),
                 relationship: g.relationship,
                 is_primary: g.is_primary,
-              }),
+              }, CREATING),
         ),
       ...extra,
-    });
+    }, CREATING);
   }
 
   async function submit(extra: Partial<EnrolWrite> = {}) {
@@ -764,7 +771,7 @@ export default function EnrolStudent() {
                   ))}
                 </NativeSelect>
               </Field>
-              <AccessField access={access} name="enrolment_date">
+              <AccessField access={access} name="enrolment_date" creating>
                 <Field label="Admission date">
                   <DatePickerInput
                     value={form.enrolment_date}
@@ -860,7 +867,7 @@ export default function EnrolStudent() {
       >
         <div className="grid gap-3.5 sm:grid-cols-2">
           {MEDICAL_INPUTS.map(({ name, label }) => (
-            <AccessField key={name} access={access} name={name}>
+            <AccessField key={name} access={access} name={name} creating>
               <Field label={label}>
                 <input
                   value={form[name]}
@@ -901,7 +908,7 @@ export default function EnrolStudent() {
       {step === "review" && (
         <Review
           form={form}
-          hidden={access.isHidden}
+          hidden={(name) => access.isHidden(name, CREATING)}
           guardians={guardians}
           asApplicant={asApplicant}
           className={chosenClass?.name}
@@ -1010,7 +1017,7 @@ function Review({
   onJump,
 }: {
   form: Record<string, string>;
-  /** Field Access: a field the registrar may not read is not summarised either. */
+  /** Field Access on this Add form: a field it does not offer is not summarised either. */
   hidden: (name: string) => boolean;
   guardians: GuardianDraft[];
   asApplicant: boolean;

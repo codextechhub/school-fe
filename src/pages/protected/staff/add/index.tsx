@@ -11,7 +11,7 @@ import { Panel as Surface } from "@/components/custom/surface";
 import { routesPath } from "@/routes/routesPath";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
-import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { CREATING, FIELD_RESOURCE } from "@/lib/field-resources";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
   useGetClassesQuery,
@@ -78,12 +78,12 @@ function roleTeaches(label: string, key: string): boolean {
  * The server refuses any other role on the POST as well, so the narrowed list
  * describes the rule rather than being it.
  *
- * **Personal details follow Field Access (`school.teachers`).** Gender, date of
- * birth and phone are hidden or greyed by the adder's switches, and one they
- * may not write is never sent. The email address is the exception and is
- * always offered: it is declared open on create, every new account needs one
- * to receive its invitation, and the backend accepts it at creation whatever
- * the switches say, so withholding it here would stop the role adding anybody.
+ * **Personal details follow Field Access (`school.teachers`) as a record being
+ * created.** Gender, date of birth, phone and email are offered, greyed or left
+ * out by the adder's switches, asked with `CREATING`, and one they may not
+ * write is never sent. The backend declares the email open on create, because
+ * every new account needs one to receive its invitation, so it is offered and
+ * sent even to a role that may not read it on an existing staff member.
  */
 export default function AddStaff() {
   const navigate = useNavigate();
@@ -100,6 +100,7 @@ export default function AddStaff() {
 
   const [create, { isLoading: creating }] = useCreateStaffMutation();
   const access = useFieldAccess(FIELD_RESOURCE.STAFF);
+  const emailOffered = !access.isReadOnly("email", CREATING);
   const [update] = useUpdateStaffMutation();
 
   const roles = useMemo(() => listData?.role_options ?? [], [listData]);
@@ -168,9 +169,12 @@ export default function AddStaff() {
     const found: Record<string, string> = {};
     if (!form.first_name.trim()) found.first_name = "Enter their first name.";
     if (!form.last_name.trim()) found.last_name = "Enter their last name.";
-    if (!form.email.trim()) found.email = "Enter an email address.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
-      found.email = "That does not look like an email address.";
+    // Only an email the form offers is the adder's to supply.
+    if (emailOffered) {
+      if (!form.email.trim()) found.email = "Enter an email address.";
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+        found.email = "That does not look like an email address.";
+      }
     }
     if (!form.role) found.role = "Pick the role this person will hold.";
     setErrors(found);
@@ -181,30 +185,27 @@ export default function AddStaff() {
     if (!validate()) return;
     let person: StaffDetail;
     try {
-      const result = await create({
-        ...access.writableOnly({
-          first_name: form.first_name.trim(),
-          last_name: form.last_name.trim(),
-          middle_name: form.middle_name.trim(),
-          gender: form.gender,
-          date_of_birth: form.date_of_birth || null,
-          phone: form.phone.trim(),
-          staff_number: form.staff_number.trim(),
-          job_title: form.job_title.trim(),
-          employment_type: (form.employment_type || "") as EmploymentType | "",
-          hire_date: form.hire_date || null,
-          branch: form.branch || null,
-          role: form.role,
-          role_branch: roleReach === SCHOOL_WIDE ? null : roleReach,
-          // Blank rows are dropped rather than sent: an empty row is somebody
-          // pressing Add and changing their mind, not a qualification.
-          qualifications: quals.filter((q) => q.qualification.trim()),
-          subjects: canAssignTeaching ? pickedSubjects : [],
-          classes: canAssignTeaching ? pickedClasses : [],
-        }),
-        // Always sent, whatever the switches say: see the doc block above.
+      const result = await create(access.writableOnly({
+        first_name: form.first_name.trim(),
+        last_name: form.last_name.trim(),
+        middle_name: form.middle_name.trim(),
+        gender: form.gender,
+        date_of_birth: form.date_of_birth || null,
+        phone: form.phone.trim(),
         email: form.email.trim(),
-      }).unwrap();
+        staff_number: form.staff_number.trim(),
+        job_title: form.job_title.trim(),
+        employment_type: (form.employment_type || "") as EmploymentType | "",
+        hire_date: form.hire_date || null,
+        branch: form.branch || null,
+        role: form.role,
+        role_branch: roleReach === SCHOOL_WIDE ? null : roleReach,
+        // Blank rows are dropped rather than sent: an empty row is somebody
+        // pressing Add and changing their mind, not a qualification.
+        qualifications: quals.filter((q) => q.qualification.trim()),
+        subjects: canAssignTeaching ? pickedSubjects : [],
+        classes: canAssignTeaching ? pickedClasses : [],
+      }, CREATING)).unwrap();
       person = result.data;
     } catch (error) {
       const perField = fieldWriteErrors(error) ?? fieldErrors(error);
@@ -313,7 +314,7 @@ export default function AddStaff() {
                 className={inputClass}
               />
             </Field>
-            <AccessField access={access} name="gender">
+            <AccessField access={access} name="gender" creating>
               <Field label="Gender" error={errors.gender}>
                 <NativeSelect
                   aria-label="Gender"
@@ -327,21 +328,23 @@ export default function AddStaff() {
                 </NativeSelect>
               </Field>
             </AccessField>
-            <Field
-              label="Email address"
-              required
-              error={errors.email}
-              hint="Where the invitation goes, and the address they sign in with."
-            >
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => set("email")(e.target.value)}
-                placeholder="name@yourschool.edu.ng"
-                className={inputClass}
-              />
-            </Field>
-            <AccessField access={access} name="phone">
+            <AccessField access={access} name="email" creating>
+              <Field
+                label="Email address"
+                required
+                error={errors.email}
+                hint="Where the invitation goes, and the address they sign in with."
+              >
+                <input
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => set("email")(e.target.value)}
+                  placeholder="name@yourschool.edu.ng"
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
+            <AccessField access={access} name="phone" creating>
               <Field label="Phone" error={errors.phone}>
                 <input
                   value={form.phone}
@@ -350,7 +353,7 @@ export default function AddStaff() {
                 />
               </Field>
             </AccessField>
-            <AccessField access={access} name="date_of_birth">
+            <AccessField access={access} name="date_of_birth" creating>
               <Field label="Date of birth" error={errors.date_of_birth}>
                 {/* h-9 to match the select beside it rather than the control's taller default. */}
                 <DatePickerInput

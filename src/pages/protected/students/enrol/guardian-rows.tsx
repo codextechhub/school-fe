@@ -4,7 +4,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { AccessField, useFieldAccess } from "@/components/finance-ui";
-import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { FIELD_RESOURCE, canCreateGuardian } from "@/lib/field-resources";
 import { useGetGuardiansQuery } from "@/redux/services/students/students-api";
 import { RELATIONSHIPS } from "@/redux/services/students/students-types";
 
@@ -39,11 +39,14 @@ export interface GuardianDraft {
  * rather than letting the server sort it out, because a form that lets you tick
  * two and then rejects the save has taught you nothing about the rule.
  *
- * **A new guardian follows Field Access.** Each contact input is hidden or
- * greyed by the registrar's switches on `school.guardians`. A new guardian
- * cannot be saved without a phone number, so a registrar who may not write
- * one is offered only the search for a guardian already at the school: the
- * alternative is a form that can never be sent.
+ * **A new guardian follows Field Access as a record being created.** Each
+ * contact input asks `school.guardians` with `creating`, so a field the backend
+ * declares open on create (the phone) is offered even to a registrar who may
+ * not read or change it on an existing guardian, while the optional ones follow
+ * their switches. "Add a new one" is offered whenever the registrar may give
+ * every field a new guardian requires ({@link canCreateGuardian}); otherwise
+ * only the search for a guardian already at the school is, because a form
+ * missing a required field could never be sent.
  */
 export function GuardianRows({
   rows,
@@ -55,7 +58,7 @@ export function GuardianRows({
   error?: string;
 }) {
   const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
-  const canAddNew = !access.isReadOnly("phone");
+  const canAddNew = canCreateGuardian(access);
 
   function patch(index: number, next: Partial<GuardianDraft>) {
     onChange(rows.map((r, i) => (i === index ? { ...r, ...next } : r)));
@@ -144,6 +147,7 @@ export function GuardianRows({
               {row.kind === "existing" ? (
                 <ExistingPicker
                   row={row}
+                  canAddNew={canAddNew}
                   takenIds={rows
                     .filter((r, i) => i !== index && r.guardianId)
                     .map((r) => r.guardianId as number)}
@@ -158,7 +162,7 @@ export function GuardianRows({
                       className={inputClass}
                     />
                   </Field>
-                  <AccessField access={access} name="phone">
+                  <AccessField access={access} name="phone" creating>
                     <Field
                       label="Phone"
                       hint="A number the school can reach."
@@ -170,7 +174,7 @@ export function GuardianRows({
                       />
                     </Field>
                   </AccessField>
-                  <AccessField access={access} name="email">
+                  <AccessField access={access} name="email" creating>
                     <Field label="Email (optional)">
                       <input
                         type="email"
@@ -244,10 +248,13 @@ export function GuardianRows({
  */
 function ExistingPicker({
   row,
+  canAddNew,
   takenIds,
   onPatch,
 }: {
   row: GuardianDraft;
+  /** Whether the form offers "Add a new one", so a miss only points there when it does. */
+  canAddNew: boolean;
   takenIds: number[];
   onPatch: (next: Partial<GuardianDraft>) => void;
 }) {
@@ -312,7 +319,7 @@ function ExistingPicker({
           </p>
         ) : matches.length === 0 ? (
           <p className="rounded-lg border border-white-02 bg-white px-3 py-2 text-xs text-gray-05 shadow-sm">
-            Nobody here matches "{query}". Use "Add a new one" instead.
+            Nobody here matches "{query}".{canAddNew ? ' Use "Add a new one" instead.' : ""}
           </p>
         ) : (
           matches.map((g) => {
