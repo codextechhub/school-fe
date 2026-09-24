@@ -146,7 +146,8 @@ export default function Programs() {
   // would only answer 409.
   const canEdit = hasPermission(P.MODIFY_STRUCTURE) && !readOnlyYear;
   const canCreate = hasPermission(P.CREATE_STRUCTURE) && !readOnlyYear;
-  const canManage = hasPermission(P.MANAGE_STRUCTURE) && !readOnlyYear;
+  const canArchive = hasPermission(P.ARCHIVE_STRUCTURE) && !readOnlyYear;
+  const canRestore = hasPermission(P.REACTIVATE_STRUCTURE) && !readOnlyYear;
 
   // "Add a programme" from the search box. `canCreate` is CREATE_STRUCTURE and
   // the read-only year, which is exactly what wraps the Add button.
@@ -160,7 +161,8 @@ export default function Programs() {
     multiBranch,
     canEdit,
     canCreate,
-    canManage,
+    canArchive,
+    canRestore,
     onToggle: () => setOpen((o) => ({ ...o, [program.id]: !o[program.id] })),
     onEdit: () => setProgramDrawer(program),
     onArchive: () =>
@@ -674,7 +676,8 @@ function ProgramRow({
   multiBranch,
   canEdit,
   canCreate,
-  canManage,
+  canArchive,
+  canRestore,
   onToggle,
   onEdit,
   onArchive,
@@ -688,7 +691,8 @@ function ProgramRow({
   multiBranch: boolean;
   canEdit: boolean;
   canCreate: boolean;
-  canManage: boolean;
+  canArchive: boolean;
+  canRestore: boolean;
   onToggle: () => void;
   onEdit: () => void;
   onArchive: () => void;
@@ -697,6 +701,7 @@ function ProgramRow({
   onEditLevel: (level: Level) => void;
   onArchiveLevel: (level: Level) => void;
 }) {
+  const canManage = program.is_active ? canArchive : canRestore;
   const levels = program.levels ?? [];
   const activeLevels = levels.filter((level) => level.is_active);
   const unwired = activeLevels.filter((level) => level.promotion === "unset").length;
@@ -936,7 +941,7 @@ function ProgramRow({
                   index={index}
                   multiBranch={multiBranch}
                   canEdit={canEdit && canChangeLevels}
-                  canManage={canManage && canChangeLevels}
+                  canManage={(level.is_active ? canArchive : canRestore) && canChangeLevels}
                   onEdit={() => onEditLevel(level)}
                   onArchive={() => onArchiveLevel(level)}
                 />

@@ -416,11 +416,11 @@ function PromotionWorkflow({
           )}
           {step === 2 && (
             <PermissionGate
-              permission={[P.MANAGE_STUDENTS, P.ASSIGN_CLASS]}
+              permission={[P.PROMOTE_STUDENTS, P.ASSIGN_CLASS]}
               mode="all"
               fallback={
                 <p className="text-xs text-gray-05">
-                  Running a promotion needs student-lifecycle and class-assignment permissions.
+                  Running a promotion needs promotion and class-assignment permissions.
                 </p>
               }
             >

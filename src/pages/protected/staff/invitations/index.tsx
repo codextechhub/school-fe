@@ -78,7 +78,7 @@ export default function StaffInvitations() {
   const total = pagination?.totalItems ?? 0;
   const multiplePages = (pagination?.totalPages ?? 0) > 1;
   const showBranch = data?.multi_branch ?? false;
-  const canWithdraw = hasPermission(P.MANAGE_TEACHERS);
+  const canWithdraw = hasPermission(P.TRANSITION_TEACHER);
 
   async function resendTo(person: StaffListRow) {
     if (!person.can_resend) {

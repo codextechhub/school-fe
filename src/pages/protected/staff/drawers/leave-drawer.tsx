@@ -28,7 +28,7 @@ const TYPES: { value: LeaveType; label: string }[] = [
  *
  * **One drawer behind two verbs**, because it is one endpoint behind two keys.
  * Applying for your own needs `school.leave.apply`, which every member of staff
- * holds; filing somebody else's needs `school.leave.manage`. The server decides
+ * holds; filing somebody else's needs `school.leave.update`. The server decides
  * which by looking at whose record it is, so a second form here would be a
  * second set of rules about who may file what, and the two would drift.
  *

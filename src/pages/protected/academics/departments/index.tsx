@@ -107,7 +107,8 @@ export default function Departments() {
   const pagination = data?.pagination;
 
   const canEdit = hasPermission(P.MODIFY_STRUCTURE);
-  const canManage = hasPermission(P.MANAGE_STRUCTURE);
+  const canArchive = hasPermission(P.ARCHIVE_STRUCTURE);
+  const canRestore = hasPermission(P.REACTIVATE_STRUCTURE);
   const filtered = !!search || showArchived !== "true";
 
   const openNew = () => {
@@ -128,7 +129,8 @@ export default function Departments() {
             dept={dept}
             multiBranch={multiBranch}
             canEdit={canEdit}
-            canManage={canManage}
+            canArchive={canArchive}
+            canRestore={canRestore}
             onOpen={() => setViewing(dept)}
             onEdit={() => openEdit(dept)}
             onArchive={() => setConfirm({ kind: "archive", department: dept })}
@@ -383,7 +385,8 @@ export default function Departments() {
         open={!!viewing}
         multiBranch={multiBranch}
         canEdit={canEdit}
-        canManage={canManage}
+        canArchive={canArchive}
+        canRestore={canRestore}
         onClose={() => setViewing(null)}
         onEdit={() => viewing && openEdit(viewing)}
         onArchive={() => {
@@ -495,7 +498,8 @@ function DepartmentDetails({
   open,
   multiBranch,
   canEdit,
-  canManage,
+  canArchive,
+  canRestore,
   onClose,
   onEdit,
   onArchive,
@@ -504,7 +508,8 @@ function DepartmentDetails({
   open: boolean;
   multiBranch: boolean;
   canEdit: boolean;
-  canManage: boolean;
+  canArchive: boolean;
+  canRestore: boolean;
   onClose: () => void;
   onEdit: () => void;
   onArchive: () => void;
@@ -602,9 +607,9 @@ function DepartmentDetails({
           </div>
         </ScrollArea>
 
-        {(canEdit || canManage) && (
+        {(canEdit || (department.is_active ? canArchive : canRestore)) && (
           <div className="flex flex-wrap justify-end gap-2 border-t border-border px-5 py-4">
-            {canManage && (
+            {(department.is_active ? canArchive : canRestore) && (
               <Button variant="outline" onClick={onArchive}>
                 {department.is_active ? (
                   <Archive className="size-4" />
@@ -681,7 +686,8 @@ function DepartmentCard({
   dept,
   multiBranch,
   canEdit,
-  canManage,
+  canArchive,
+  canRestore,
   onOpen,
   onEdit,
   onArchive,
@@ -690,7 +696,8 @@ function DepartmentCard({
   dept: Department;
   multiBranch: boolean;
   canEdit: boolean;
-  canManage: boolean;
+  canArchive: boolean;
+  canRestore: boolean;
   onOpen: () => void;
   onEdit: () => void;
   onArchive: () => void;
@@ -722,7 +729,7 @@ function DepartmentCard({
           >
             {dept.is_active ? "Active" : "Archived"}
           </Badge>
-          {(canEdit || canManage) && (
+          {(canEdit || (dept.is_active ? canArchive : canRestore)) && (
             <CardActions>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -741,13 +748,13 @@ function DepartmentCard({
                       Edit
                     </DropdownMenuItem>
                   )}
-                  {canManage && dept.is_active && (
+                  {canArchive && dept.is_active && (
                     <DropdownMenuItem onClick={onArchive}>
                       <Archive className="size-4" />
                       Archive
                     </DropdownMenuItem>
                   )}
-                  {canManage && !dept.is_active && (
+                  {canRestore && !dept.is_active && (
                     <DropdownMenuItem onClick={onRestore}>
                       <RotateCcw className="size-4" />
                       Restore

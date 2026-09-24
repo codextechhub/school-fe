@@ -245,7 +245,7 @@ export default function StaffProfile() {
                     Edit staff
                   </Button>
                 </PermissionGate>
-                <PermissionGate permission={P.MANAGE_TEACHERS}>
+                <PermissionGate permission={P.TRANSITION_TEACHER}>
                   <Button
                     size="sm"
                     variant="outline"
@@ -358,10 +358,10 @@ function TabBody({
   // would make everybody's leave look like somebody else's.
   const isSelf = signedInUserId != null && signedInUserId === person.user_id;
   // Applying for your own needs the apply key, which every member of staff
-  // holds; filing somebody else's needs manage, which is a different job.
+  // holds; filing somebody else's needs update, which is a different job.
   const mayFileLeave = isSelf
     ? hasPermission(P.APPLY_FOR_LEAVE)
-    : hasPermission(P.MANAGE_LEAVE);
+    : hasPermission(P.UPDATE_LEAVE);
 
   const roles = useGetStaffRolesQuery(person.id, { skip: tab !== "access" });
   const teaching = useGetStaffTeachingQuery(

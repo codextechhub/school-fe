@@ -108,7 +108,8 @@ export default function Subjects() {
   const departments = useMemo(() => deptData?.data ?? [], [deptData]);
 
   const canEdit = hasPermission(P.MODIFY_SUBJECT) && !readOnlyYear;
-  const canManage = hasPermission(P.MANAGE_SUBJECTS) && !readOnlyYear;
+  const canArchive = hasPermission(P.ARCHIVE_SUBJECT) && !readOnlyYear;
+  const canRestore = hasPermission(P.REACTIVATE_SUBJECT) && !readOnlyYear;
   const filtered = !!search || type !== "all" || status !== "true";
 
   const drawerKey = drawerOpen ? String(editing?.id ?? "new") : "shut";
@@ -296,7 +297,7 @@ export default function Subjects() {
               sessionName={sessionName}
               multiBranch={multiBranch}
               canEdit={canEdit && subject.is_active}
-              canManage={canManage}
+              canManage={subject.is_active ? canArchive : canRestore}
               onEdit={() => open(subject)}
               onDelete={() => setConfirm(subject)}
             />

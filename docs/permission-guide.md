@@ -142,7 +142,7 @@ import { P } from "@/permissions";
 
 // Render disabled button instead of hiding
 <PermissionGate
-  permission={P.MANAGE_FEES}
+  permission={P.UPDATE_FEES}
   fallback={<Button disabled>Manage Fees</Button>}
 >
   <Button>Manage Fees</Button>
@@ -179,7 +179,7 @@ dropDownList={(row) => [
     label: "Edit Student",
     onActionClick: () => navigate(routesPath.EDIT(row._slug)),
   }] : []),
-  ...(hasPermission(P.MANAGE_STUDENTS) ? [{
+  ...(hasPermission(P.TRANSITION_STUDENT) ? [{
     label: "Withdraw",
     className: "text-destructive",
     onActionClick: () => handleWithdraw(row._slug),
@@ -196,7 +196,7 @@ When adding a new section to the app, work through this checklist:
 - [ ] **Verify the permission keys exist** in the backend registry (`vs_rbac` app / `seed_school_permissions`). Don't invent keys - a typo silently denies access to everyone.
 - [ ] **Add the key** to `REGISTRY` and a UI-intent `P.*` constant in `src/permissions/index.ts` - nowhere else references the raw string.
 - [ ] **Add a sidebar item** in `app-sidebar.tsx` with the correct `permission` and `permissionMode`.
-- [ ] **Add `PermissionGate`** around action buttons inside the page (Add, Edit, Manage).
+- [ ] **Add `PermissionGate`** around action buttons inside the page (Add, Edit, Delete).
 - [ ] **Use `hasPermission()` directly** to filter dropdown action items.
 - [ ] **Trust the backend** - the protected endpoint must enforce the same key server-side. The frontend gate is presentation only.
 - [ ] **Test both paths**: (a) a user with the permission sees the affordance, (b) a user without does not - and the API returns 403 if they force the request.
@@ -335,25 +335,28 @@ User navigates to URL
 | school.branches.view | 100201 | NORMAL | `BROWSE_BRANCHES` |
 | school.branches.create | 100202 | SENSITIVE | `ADD_BRANCH` |
 | school.branches.update | 100203 | NORMAL | `MODIFY_BRANCH` |
-| school.branches.manage | 100208 | SENSITIVE | `MANAGE_BRANCH` |
+| school.branches.delete | 100208 | SENSITIVE | `DELETE_BRANCH` |
 | school.students.view | 100301 | NORMAL | `BROWSE_STUDENTS` |
 | school.students.create | 100302 | NORMAL | `ENROLL_STUDENT` |
 | school.students.update | 100303 | NORMAL | `MODIFY_STUDENT` |
-| school.students.manage | 100308 | SENSITIVE | `MANAGE_STUDENTS` |
+| school.students.transition | 100308 | SENSITIVE | `TRANSITION_STUDENT` |
+| school.students.transfer | 100312 | SENSITIVE | `TRANSFER_STUDENT` |
+| school.students.suspend | 100309 | SENSITIVE | `SUSPEND_STUDENT` |
+| school.students.reactivate | 100310 | SENSITIVE | `REACTIVATE_STUDENT` |
 | school.students.view_sensitive | 100339 | SENSITIVE | `VIEW_STUDENT_SENSITIVE` |
 | school.teachers.view | 100401 | NORMAL | `BROWSE_TEACHERS` |
 | school.teachers.create | 100402 | NORMAL | `INVITE_TEACHER` |
 | school.teachers.update | 100403 | NORMAL | `MODIFY_TEACHER` |
-| school.teachers.manage | 100408 | SENSITIVE | `MANAGE_TEACHERS` |
+| school.teachers.transition | 100408 | SENSITIVE | `TRANSITION_TEACHER` |
 | school.administrators.view | 100501 | NORMAL | `BROWSE_ADMINISTRATORS` |
 | school.administrators.create | 100502 | SENSITIVE | `INVITE_ADMINISTRATOR` |
 | school.administrators.update | 100503 | SENSITIVE | `MODIFY_ADMINISTRATOR` |
 | school.administrators.suspend | 100509 | SENSITIVE | `SUSPEND_ADMINISTRATOR` |
 | school.administrators.reactivate | 100510 | SENSITIVE | `REACTIVATE_ADMINISTRATOR` |
 | school.fees.view | 100601 | NORMAL | `VIEW_FEES` |
-| school.fees.manage | 100608 | SENSITIVE | `MANAGE_FEES` |
+| school.fees.update | 100608 | SENSITIVE | `UPDATE_FEES` |
 | school.settings.view | 100701 | NORMAL | `VIEW_SETTINGS` |
-| school.settings.manage | 100708 | SENSITIVE | `MANAGE_SETTINGS` |
+| school.settings.update | 100708 | SENSITIVE | `UPDATE_SETTINGS` |
 | school.profile.view | 101201 | NORMAL | `VIEW_SCHOOL_PROFILE` |
 | school.profile.update | 101203 | SENSITIVE | `UPDATE_SCHOOL_PROFILE` |
 | school.roles.view | 100801 | NORMAL | `VIEW_ROLES` |
@@ -386,13 +389,16 @@ however the key was obtained, so a school app has no use for them.
 | academics.session.view | 300101 | NORMAL | `BROWSE_SESSIONS` |
 | academics.session.create | 300102 | NORMAL | `CREATE_SESSION` |
 | academics.session.update | 300103 | NORMAL | `MODIFY_SESSION` |
-| academics.session.manage | 300108 | SENSITIVE | `MANAGE_SESSIONS` |
+| academics.session.activate | 300108 | SENSITIVE | `ACTIVATE_SESSION` |
+| academics.session.archive | 300161 | SENSITIVE | `ARCHIVE_SESSION` |
+| academics.session.delete | 300104 | SENSITIVE | `DELETE_SESSION` |
 | academics.calendar.view | 300201 | NORMAL | `BROWSE_CALENDAR` |
 | academics.calendar.create | 300202 | NORMAL | `CREATE_CALENDAR_EVENT` |
 | academics.calendar.update | 300203 | NORMAL | `MODIFY_CALENDAR_EVENT` |
-| academics.calendar.manage | 300208 | SENSITIVE | `MANAGE_CALENDAR` |
+| academics.calendar.delete | 300208 | SENSITIVE | `DELETE_CALENDAR_EVENT` |
 | academics.classes.view | 300301 | NORMAL | `BROWSE_CLASSES` |
 | academics.classes.create | 300302 | NORMAL | `CREATE_CLASS` |
 | academics.classes.update | 300303 | NORMAL | `MODIFY_CLASS` |
-| academics.classes.manage | 300308 | SENSITIVE | `MANAGE_CLASSES` |
+| academics.classes.archive | 300308 | SENSITIVE | `ARCHIVE_CLASS` |
+| academics.classes.reactivate | 300310 | SENSITIVE | `REACTIVATE_CLASS` |
 | academics.classes.assign | 300311 | SENSITIVE | `ASSIGN_CLASS` |

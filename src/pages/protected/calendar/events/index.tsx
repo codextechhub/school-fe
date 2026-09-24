@@ -99,7 +99,7 @@ export default function CalendarEvents() {
   // ever answer 409.
   const canCreate = hasPermission(P.CREATE_CALENDAR_EVENT) && !readOnlyYear;
   const canEdit = hasPermission(P.MODIFY_CALENDAR_EVENT) && !readOnlyYear;
-  const canDelete = hasPermission(P.MANAGE_CALENDAR) && !readOnlyYear;
+  const canDelete = hasPermission(P.DELETE_CALENDAR_EVENT) && !readOnlyYear;
 
   const filtered =
     !!facets.search ||
@@ -324,4 +324,3 @@ export default function CalendarEvents() {
     </PageShell>
   );
 }
-

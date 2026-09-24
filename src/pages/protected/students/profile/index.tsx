@@ -239,7 +239,7 @@ export default function StudentProfile() {
                     {student.class_name ? "Change class" : "Assign a class"}
                   </Button>
                 </PermissionGate>
-                <PermissionGate permission={P.MANAGE_STUDENTS}>
+                <PermissionGate permission={P.TRANSITION_STUDENT}>
                   <Button
                     size="sm"
                     variant="outline"

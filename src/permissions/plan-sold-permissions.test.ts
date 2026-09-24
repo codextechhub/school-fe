@@ -25,7 +25,7 @@ describe("Exams, priced apart from the weekly timetable", () => {
     expect(resolvePermissionKey(P.BROWSE_EXAMS)).toBe("academics.exam.view");
     expect(resolvePermissionKey(P.CREATE_EXAM)).toBe("academics.exam.create");
     expect(resolvePermissionKey(P.MODIFY_EXAM)).toBe("academics.exam.update");
-    expect(resolvePermissionKey(P.MANAGE_EXAMS)).toBe("academics.exam.manage");
+    expect(resolvePermissionKey(P.DELETE_EXAM)).toBe("academics.exam.delete");
     expect(resolvePermissionKey(P.PUBLISH_EXAM_TIMETABLE)).toBe(
       "academics.exam.publish",
     );
@@ -87,8 +87,8 @@ describe("The remaining keys the backend grants a school role", () => {
     expect(resolvePermissionKey(P.CREATE_EXPORT_SCHEDULE)).toBe(
       "exports.schedule.create",
     );
-    expect(resolvePermissionKey(P.MANAGE_EXPORT_SCHEDULES)).toBe(
-      "exports.schedule.manage",
+    expect(resolvePermissionKey(P.UPDATE_EXPORT_SCHEDULE)).toBe(
+      "exports.schedule.update",
     );
   });
 });
@@ -106,11 +106,11 @@ describe("The registry stays a bijection", () => {
 
   it("leaves no new code unresolved", () => {
     for (const code of [
-      P.BROWSE_EXAMS, P.CREATE_EXAM, P.MODIFY_EXAM, P.MANAGE_EXAMS,
+      P.BROWSE_EXAMS, P.CREATE_EXAM, P.MODIFY_EXAM, P.DELETE_EXAM,
       P.PUBLISH_EXAM_TIMETABLE, P.VIEW_STAFF_RECORDS, P.UPDATE_STAFF_RECORD,
       P.PROMOTE_STUDENTS, P.IMPORT_STRUCTURE, P.IMPORT_ADMINISTRATORS,
       P.VIEW_EXPORT_SCHEDULES, P.CREATE_EXPORT_SCHEDULE,
-      P.MANAGE_EXPORT_SCHEDULES,
+      P.UPDATE_EXPORT_SCHEDULE,
     ]) {
       expect(resolvePermissionKey(code)).not.toBe("");
     }

@@ -18,7 +18,7 @@ import {
  *                       92=exports (the Export Centre, shared with console-fe)
  *   RR = resource       01 02 03 … (assigned sequentially per module)
  *   AA = action         01=view   02=create  03=update  04=delete
- *                       05=approve 07=promote 08=manage  09=suspend
+ *                       05=approve 07=promote 08=legacy slot 09=suspend
  *                       10=reactivate
  *                       11=assign  12=start   13=end   14=run   15=execute
  *                       16=publish 17=import  18=export  19=apply
@@ -47,21 +47,24 @@ const REGISTRY: Record<string, string> = {
   "100201": "school.branches.view",
   "100202": "school.branches.create",
   "100203": "school.branches.update",
-  "100208": "school.branches.manage",
+  "100208": "school.branches.delete",
 
   // ── school / students  (MM=10, RR=03) ──────────────────────────────────────
   "100301": "school.students.view",
   "100302": "school.students.create",
   "100303": "school.students.update",
-  "100308": "school.students.manage",
+  "100308": "school.students.transition",
+  "100312": "school.students.transfer",
+  "100309": "school.students.suspend",
+  "100310": "school.students.reactivate",
   "100317": "school.students.import",
   "100318": "school.students.export",
 
   // ── school / field access  (MM=10, RR=14) ─────────────────────────────────
   "101401": "school.field_access.view",
-  "101408": "school.field_access.manage",
+  "101408": "school.field_access.update",
   // Moving a cohort up a level at the end of a session. Its own key, not part
-  // of `.manage`: a registrar who may withdraw one student is not therefore
+  // of student transition: a registrar who may withdraw one student is not therefore
   // the person who may advance the whole school by a year.
   "100307": "school.students.promote",
 
@@ -72,16 +75,15 @@ const REGISTRY: Record<string, string> = {
   "100401": "school.teachers.view",
   "100402": "school.teachers.create",
   "100403": "school.teachers.update",
-  "100408": "school.teachers.manage",
+  "100408": "school.teachers.transition",
   "100411": "school.teachers.assign",
 
   // ── school / staff records  (MM=10, RR=11) ─────────────────────────────────
   // Employment history, qualifications and contract documents, kept apart from
   // the directory keys above for the same reason leave is: a colleague's
   // salary grade and disciplinary record are not something everyone who may
-  // read the staff list may also read. There is no `.create` and no `.manage`
-  // - a record is written alongside the person it belongs to, and it is
-  // corrected rather than deleted.
+  // read the staff list may also read. A record is updated alongside the
+  // person it belongs to rather than created or deleted separately.
   "101101": "school.staff_records.view",
   "101103": "school.staff_records.update",
 
@@ -91,7 +93,8 @@ const REGISTRY: Record<string, string> = {
   // admin roles only, while `.apply` reaches teachers as well, since applying
   // for leave is the one thing every member of staff does.
   "101001": "school.leave.view",
-  "101008": "school.leave.manage",
+  "101008": "school.leave.update",
+  "101028": "school.leave.cancel",
   "101019": "school.leave.apply",
 
   // ── school / administrators  (MM=10, RR=05) ────────────────────────────────
@@ -105,11 +108,11 @@ const REGISTRY: Record<string, string> = {
 
   // ── school / fees  (MM=10, RR=06) ──────────────────────────────────────────
   "100601": "school.fees.view",
-  "100608": "school.fees.manage",
+  "100608": "school.fees.update",
 
   // ── school / settings  (MM=10, RR=07) ──────────────────────────────────────
   "100701": "school.settings.view",
-  "100708": "school.settings.manage",
+  "100708": "school.settings.update",
 
   // ── school / profile  (MM=10, RR=12) ───────────────────────────────────────
   // The school's own identity record: ownership type, term structure, currency,
@@ -145,11 +148,11 @@ const REGISTRY: Record<string, string> = {
 
   // ── school / per-user permission exceptions  (MM=10, RR=13) ────────────────
   // CRITICAL + restricted, school_admin only. `.view` is as restricted as
-  // `.manage` on purpose: without it a user must not be able to learn that
-  // exceptions exist on their own account. No screen reads these yet - the
-  // codes are here so the registry matches what the backend grants.
+  // write access on purpose: without it a user must not be able to learn that
+  // exceptions exist on their own account.
   "101301": "school.user_overrides.view",
-  "101308": "school.user_overrides.manage",
+  "101308": "school.user_overrides.create",
+  "101304": "school.user_overrides.delete",
 
   // ── onboarding / progress  (MM=20, RR=01) ──────────────────────────────────
   // The control room's own keys. Approve, reject and reinstate are deliberately
@@ -171,7 +174,7 @@ const REGISTRY: Record<string, string> = {
   // names one anyway is refused. See backend vs_import_data/datasets.py.
   "400101": "import.templates.view",
   "400102": "import.templates.create",
-  "400108": "import.templates.manage",
+  "400108": "import.templates.update",
 
   // ── import / batches  (MM=40, RR=02) ───────────────────────────────────────
   "400201": "import.batches.view",
@@ -207,19 +210,22 @@ const REGISTRY: Record<string, string> = {
   "300101": "academics.session.view",
   "300102": "academics.session.create",
   "300103": "academics.session.update",
-  "300108": "academics.session.manage",
+  "300108": "academics.session.activate",
+  "300161": "academics.session.archive",
+  "300104": "academics.session.delete",
 
   // ── academics / calendar  (MM=30, RR=02) ───────────────────────────────────
   "300201": "academics.calendar.view",
   "300202": "academics.calendar.create",
   "300203": "academics.calendar.update",
-  "300208": "academics.calendar.manage",
+  "300208": "academics.calendar.delete",
 
   // ── academics / classes  (MM=30, RR=03) ────────────────────────────────────
   "300301": "academics.classes.view",
   "300302": "academics.classes.create",
   "300303": "academics.classes.update",
-  "300308": "academics.classes.manage",
+  "300308": "academics.classes.archive",
+  "300310": "academics.classes.reactivate",
   "300311": "academics.classes.assign",
 
   // ── Export Centre  (MM=92) - vs_exports.constants.ExportPermission ─────────
@@ -247,43 +253,46 @@ const REGISTRY: Record<string, string> = {
   // data leaving the school unattended.
   "920701": "exports.schedule.view",
   "920702": "exports.schedule.create",
-  "920708": "exports.schedule.manage",
+  "920708": "exports.schedule.update",
+  "920704": "exports.schedule.delete",
+  "920709": "exports.schedule.suspend",
+  "920710": "exports.schedule.reactivate",
 
   // ── academics / structure  (MM=30, RR=04) ──────────────────────────────────
   // Departments, programs and levels. One resource because they are one screen
   // group and one mental object to a school - see the backend's
   // seed_school_permissions.py, whose table this must stay in lockstep with.
-  // `.manage` is the DELETE verb on all three; bulk level creation is `.create`.
+  // Archive and reactivate are separate actions; bulk level creation is `.create`.
   "300401": "academics.structure.view",
   "300402": "academics.structure.create",
   "300403": "academics.structure.update",
-  "300408": "academics.structure.manage",
+  "300408": "academics.structure.archive",
+  "300410": "academics.structure.reactivate",
   // Loading a whole structure from a spreadsheet, which is how a school with
   // forty levels arrives rather than typing them.
   "300417": "academics.structure.import",
 
   // ── academics / subject  (MM=30, RR=05) ────────────────────────────────────
-  // Subjects and the levels they are offered at. Editing offerings is `.update`,
-  // not `.manage` - `.manage` is the DELETE verb.
+  // Subjects and their offerings use update for edits, archive for removal,
+  // and reactivate for restoration.
   "300501": "academics.subject.view",
   "300502": "academics.subject.create",
   "300503": "academics.subject.update",
-  "300508": "academics.subject.manage",
+  "300508": "academics.subject.archive",
+  "300510": "academics.subject.reactivate",
 
   // ── academics / timetable  (MM=30, RR=06) ──────────────────────────────────
   // Rooms, the bell schedule and class timetables. NOT more uses of the
   // calendar keys - adding a public holiday and rebuilding the school's entire
   // timetable are not one act, and merging them would hand
-  // `academics.calendar.manage` to anyone who may edit a lesson.
+  // `academics.calendar.delete` to anyone who may edit a lesson.
   //
-  // `.manage` is the DELETE verb here as everywhere else, and it is also what
-  // "Clear this class's timetable" demands. `.publish` is its own action rather
-  // than part of `.manage`: a branch admin publishes a timetable and does not
-  // delete one, so the two cannot share a key.
+  // Delete also controls clearing a whole class timetable. Publish stays
+  // separate so a branch admin may publish without deleting lessons.
   "300601": "academics.timetable.view",
   "300602": "academics.timetable.create",
   "300603": "academics.timetable.update",
-  "300608": "academics.timetable.manage",
+  "300608": "academics.timetable.delete",
   "300616": "academics.timetable.publish",
 
   // ── academics / exams  (MM=30, RR=07) ──────────────────────────────────────
@@ -295,7 +304,7 @@ const REGISTRY: Record<string, string> = {
   "300701": "academics.exam.view",
   "300702": "academics.exam.create",
   "300703": "academics.exam.update",
-  "300708": "academics.exam.manage",
+  "300708": "academics.exam.delete",
   "300716": "academics.exam.publish",
 
   // ── platform surfaces the shared screens reach  (MM=11) ────────────────────
@@ -325,7 +334,8 @@ const REGISTRY: Record<string, string> = {
   // to declare. The codes match the console's because they name the same
   // backend keys: a school reading its own approval rules and CodeX reading a
   // school's are one permission.
-  "600108": "workflow.template.manage",
+  "600108": "workflow.template.update",
+  "600162": "workflow.template.publish",
 
   // ── workflow / instances  (MM=60, RR=02) ───────────────────────────────────
   "600201": "workflow.instance.view",
@@ -337,7 +347,9 @@ const REGISTRY: Record<string, string> = {
 
   // ── workflow / approver groups  (MM=60, RR=04) ─────────────────────────────
   "600401": "workflow.group.view",
-  "600408": "workflow.group.manage",      // create groups and edit membership
+  "600408": "workflow.group.create",
+  "600403": "workflow.group.update",
+  "600404": "workflow.group.delete",
 
 };
 
@@ -358,13 +370,14 @@ export const P = {
   BROWSE_BRANCHES:         "100201",  // view the school's branches list and detail
   ADD_BRANCH:              "100202",  // add a new branch to the school
   MODIFY_BRANCH:           "100203",  // edit branch details
-  MANAGE_BRANCH:           "100208",  // transition branch lifecycle / configuration
+  DELETE_BRANCH:           "100208",  // transition branch lifecycle / configuration
 
   // ── Student Management ─────────────────────────────────────────────────────
   BROWSE_STUDENTS:         "100301",  // view the student roster and profiles
   ENROLL_STUDENT:          "100302",  // enroll / add a new student
   MODIFY_STUDENT:          "100303",  // edit an existing student's record
-  MANAGE_STUDENTS:         "100308",  // student lifecycle: transfer, withdraw, graduate
+  TRANSITION_STUDENT:         "100308",  // student lifecycle: transfer, withdraw, graduate
+  TRANSFER_STUDENT: "100312", SUSPEND_STUDENT: "100309", REACTIVATE_STUDENT: "100310",
   // Both are real backend keys (vs_students/constants.py) seeded onto school
   // roles, and neither had a code here - so the import wizard and the export
   // button had no way to be gated at all.
@@ -378,7 +391,7 @@ export const P = {
   BROWSE_TEACHERS:         "100401",  // read the staff directory and profiles
   INVITE_TEACHER:          "100402",  // add somebody and invite them
   MODIFY_TEACHER:          "100403",  // edit a record, its records and its posting
-  MANAGE_TEACHERS:         "100408",  // employment transitions and deletions
+  TRANSITION_TEACHER:         "100408",  // employment transitions and deletions
   ASSIGN_TEACHING:         "100411",  // write a teaching duty, set a class teacher
 
   // ── Staff Records ──────────────────────────────────────────────────────────
@@ -390,7 +403,8 @@ export const P = {
 
   // ── Staff Leave ────────────────────────────────────────────────────────────
   VIEW_LEAVE:              "101001",  // read somebody else's leave
-  MANAGE_LEAVE:            "101008",  // file, correct or cancel it on their behalf
+  UPDATE_LEAVE:            "101008",  // file, correct or cancel it on their behalf
+  CANCEL_LEAVE: "101028",
   APPLY_FOR_LEAVE:         "101019",  // apply for your own
 
   // ── Administrator Management ───────────────────────────────────────────────
@@ -403,11 +417,11 @@ export const P = {
 
   // ── Fees ───────────────────────────────────────────────────────────────────
   VIEW_FEES:               "100601",  // view fee structures and balances
-  MANAGE_FEES:             "100608",  // create/edit fee structures and adjustments
+  UPDATE_FEES:             "100608",  // create/edit fee structures and adjustments
 
   // ── Settings ───────────────────────────────────────────────────────────────
   VIEW_SETTINGS:           "100701",  // view school-level settings
-  MANAGE_SETTINGS:         "100708",  // edit school-level settings and configuration
+  UPDATE_SETTINGS:         "100708",  // edit school-level settings and configuration
 
   // ── School Profile ─────────────────────────────────────────────────────────
   VIEW_SCHOOL_PROFILE:     "101201",  // read the school's own identity record
@@ -423,7 +437,7 @@ export const P = {
 
   // ── Field Access ───────────────────────────────────────────────────────────
   VIEW_FIELD_ACCESS:       "101401",  // see which fields each role may read or write
-  MANAGE_FIELD_ACCESS:     "101408",  // change a role's field switches
+  UPDATE_FIELD_ACCESS:     "101408",  // change a role's field switches
 
   // Named the console's way because the shared approval screens name them that
   // way, and carrying their own codes because the registry is a bijection: one
@@ -437,13 +451,15 @@ export const P = {
   // the console because they name the same backend keys: a school reading its
   // own approval rules and CodeX reading a school's are the same permission.
   VIEW_WORKFLOW_TEMPLATES:   "600101",  // read the approval rules that govern this school
-  MANAGE_WORKFLOW_TEMPLATES: "600108",  // publish or edit an approval rule
+  UPDATE_WORKFLOW_TEMPLATE: "600108",  // publish or edit an approval rule
+  PUBLISH_WORKFLOW_TEMPLATE: "600162",
   VIEW_WORKFLOW_INSTANCES:   "600201",  // read documents in flight
   SUBMIT_WORKFLOW:           "600202",  // send a document for approval
   CANCEL_WORKFLOW:           "600204",  // cancel a stuck instance
   REVERSE_WORKFLOW_ACTION:   "600305",  // reverse a recorded decision
   VIEW_APPROVER_GROUPS:      "600401",  // browse the named approver pools
-  MANAGE_APPROVER_GROUPS:    "600408",  // create groups, add or remove members
+  CREATE_APPROVER_GROUP:    "600408",  // create groups, add or remove members
+  UPDATE_APPROVER_GROUP: "600403", DELETE_APPROVER_GROUP: "600404",
 
   // ── Proxy (view the app as another user in this school) ────────────────────
   VIEW_PROXY_SESSIONS:     "100901",  // read the proxy session history / trail
@@ -454,7 +470,8 @@ export const P = {
   // No screen reads these yet. Registered so the app can name every key the
   // backend grants a school admin.
   VIEW_USER_OVERRIDES:     "101301",  // see that a user has permission exceptions
-  MANAGE_USER_OVERRIDES:   "101308",  // grant or revoke a per-user exception
+  CREATE_USER_OVERRIDE:   "101308",  // grant or revoke a per-user exception
+  DELETE_USER_OVERRIDE: "101304",
 
   // ── School Onboarding (the control room, before go-live) ───────────────────
   VIEW_ONBOARDING:         "200101",  // read the control room: checklist, counts, gate
@@ -476,7 +493,7 @@ export const P = {
   // absent here rather than being offered and refused.
   VIEW_IMPORT_TEMPLATES:   "400101",  // see which datasets this school may load
   CREATE_IMPORT_TEMPLATE:  "400102",  // platform-only: shape what a valid file is
-  MANAGE_IMPORT_TEMPLATES: "400108",  // platform-only: edit drafts, publish, retire
+  UPDATE_IMPORT_TEMPLATE: "400108",  // platform-only: edit drafts, publish, retire
   VIEW_IMPORT_BATCHES:     "400201",  // read this school's upload history
   UPLOAD_IMPORT_BATCH:     "400202",  // upload a file against a template
   EDIT_IMPORT_BATCH:       "400203",  // platform-only: edit batch metadata
@@ -497,39 +514,43 @@ export const P = {
   BROWSE_SESSIONS:         "300101",  // view academic sessions / terms
   CREATE_SESSION:          "300102",  // create a new academic session
   MODIFY_SESSION:          "300103",  // edit an academic session
-  MANAGE_SESSIONS:         "300108",  // session lifecycle: activate, archive, close
+  ACTIVATE_SESSION:         "300108",  // session lifecycle: activate, archive, close
+  ARCHIVE_SESSION: "300161", DELETE_SESSION: "300104",
 
   // ── Academic Calendar ──────────────────────────────────────────────────────
   BROWSE_CALENDAR:         "300201",  // view the academic calendar and events
   CREATE_CALENDAR_EVENT:   "300202",  // add a calendar event
   MODIFY_CALENDAR_EVENT:   "300203",  // edit a calendar event
-  MANAGE_CALENDAR:         "300208",  // manage calendar configuration and bulk events
+  DELETE_CALENDAR_EVENT:         "300208",  // manage calendar configuration and bulk events
 
   // ── Classes ────────────────────────────────────────────────────────────────
   BROWSE_CLASSES:          "300301",  // view classes and their rosters
   CREATE_CLASS:            "300302",  // create a new class
   MODIFY_CLASS:            "300303",  // edit a class
-  MANAGE_CLASSES:          "300308",  // class lifecycle and configuration
+  ARCHIVE_CLASS:          "300308",  // class lifecycle and configuration
+  REACTIVATE_CLASS: "300310",
   ASSIGN_CLASS:            "300311",  // assign teachers/students to a class
 
   // ── Academic Structure (departments, programs, levels) ─────────────────────
   BROWSE_STRUCTURE:        "300401",  // view departments, programs and levels
   CREATE_STRUCTURE:        "300402",  // add a department, program or level (incl. bulk levels)
   MODIFY_STRUCTURE:        "300403",  // edit a department, program or level
-  MANAGE_STRUCTURE:        "300408",  // delete a department, program or level
+  ARCHIVE_STRUCTURE:        "300408",  // delete a department, program or level
+  REACTIVATE_STRUCTURE: "300410",
   IMPORT_STRUCTURE:        "300417",  // load departments, programs and levels from a file
 
   // ── Subjects ───────────────────────────────────────────────────────────────
   BROWSE_SUBJECTS:         "300501",  // view subjects and where they are offered
   CREATE_SUBJECT:          "300502",  // add a subject
   MODIFY_SUBJECT:          "300503",  // edit a subject, incl. the levels it is offered at
-  MANAGE_SUBJECTS:         "300508",  // delete a subject
+  ARCHIVE_SUBJECT:         "300508",  // delete a subject
+  REACTIVATE_SUBJECT: "300510",
 
   // ── Rooms, Bell Schedule and Timetables ────────────────────────────────────
   BROWSE_TIMETABLES:       "300601",  // view rooms, bells and the class/teacher grids
   CREATE_TIMETABLE_ENTRY:  "300602",  // add a room, a period or a lesson
   MODIFY_TIMETABLE_ENTRY:  "300603",  // edit one, and duplicate a class's week into another
-  MANAGE_TIMETABLES:       "300608",  // delete a room or period, and clear a whole grid
+  DELETE_TIMETABLE:       "300608",  // delete a room or period, and clear a whole grid
   PUBLISH_TIMETABLE:       "300616",  // publish a class timetable
 
   // ── Exams ──────────────────────────────────────────────────────────────────
@@ -538,7 +559,7 @@ export const P = {
   BROWSE_EXAMS:            "300701",  // view exam papers and the exam timetable
   CREATE_EXAM:             "300702",  // add an exam paper and place it
   MODIFY_EXAM:             "300703",  // edit a paper, its room or its slot
-  MANAGE_EXAMS:            "300708",  // delete a paper, clear an exam timetable
+  DELETE_EXAM:            "300708",  // delete a paper, clear an exam timetable
   PUBLISH_EXAM_TIMETABLE:  "300716",  // publish the exam timetable to the school
 
   // ── Export Centre ──────────────────────────────────────────────────────────
@@ -559,7 +580,8 @@ export const P = {
   VIEW_EXPORT_ACTIVITY:    "920601",  // read who exported what
   VIEW_EXPORT_SCHEDULES:   "920701",  // read exports that run on a timetable
   CREATE_EXPORT_SCHEDULE:  "920702",  // put a saved export on a timetable
-  MANAGE_EXPORT_SCHEDULES: "920708",  // pause, edit or delete a scheduled export
+  UPDATE_EXPORT_SCHEDULE: "920708",  // pause, edit or delete a scheduled export
+  DELETE_EXPORT_SCHEDULE: "920704", SUSPEND_EXPORT_SCHEDULE: "920709", REACTIVATE_EXPORT_SCHEDULE: "920710",
 
 } as const;
 

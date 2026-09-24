@@ -74,7 +74,7 @@ export default function Rooms() {
 
   const canCreate = hasPermission(P.CREATE_TIMETABLE_ENTRY) && !readOnlyYear;
   const canEdit = hasPermission(P.MODIFY_TIMETABLE_ENTRY) && !readOnlyYear;
-  const canDelete = hasPermission(P.MANAGE_TIMETABLES) && !readOnlyYear;
+  const canDelete = hasPermission(P.DELETE_TIMETABLE) && !readOnlyYear;
 
   const filtered =
     !!facets.search || facets.type !== "all" || facets.active !== "all";

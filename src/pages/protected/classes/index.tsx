@@ -113,7 +113,8 @@ export default function Classes() {
   // The server refuses every write into an archived year, so an Edit here
   // would only answer 409.
   const canEdit = hasPermission(P.MODIFY_CLASS) && !readOnlyYear;
-  const canManage = hasPermission(P.MANAGE_CLASSES) && !readOnlyYear;
+  const canArchive = hasPermission(P.ARCHIVE_CLASS) && !readOnlyYear;
+  const canRestore = hasPermission(P.REACTIVATE_CLASS) && !readOnlyYear;
 
   // "Add a class" from the search box, on the Add button's own gate.
   useActionParam("new", hasPermission(P.CREATE_CLASS) && !readOnlyYear, () => {
@@ -299,7 +300,7 @@ export default function Classes() {
               klass={klass}
               multiBranch={multiBranch}
               canEdit={canEdit && klass.is_active}
-              canManage={canManage}
+              canManage={klass.is_active ? canArchive : canRestore}
               onOpen={() =>
                 navigate(
                   routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASS_DETAILS_ID(

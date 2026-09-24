@@ -126,7 +126,7 @@ export default function ClassTimetables() {
     useDuplicateTimetableMutation();
 
   const canEdit = hasPermission(P.MODIFY_TIMETABLE_ENTRY) && !readOnlyYear;
-  const canManage = hasPermission(P.MANAGE_TIMETABLES) && !readOnlyYear;
+  const canManage = hasPermission(P.DELETE_TIMETABLE) && !readOnlyYear;
   const canPublish = hasPermission(P.PUBLISH_TIMETABLE) && !readOnlyYear;
 
   const warnings = grid?.warnings ?? [];

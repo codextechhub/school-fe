@@ -337,13 +337,13 @@ export const CONSOLE_CREATE_ACTIONS: {
     url: "/procurement/inventory/items",
     label: "Add a stock item",
     aliases: ["new store item", "add supplies"],
-    gate: { perm: P.PROC_MANAGE_STOCK },
+    gate: { perm: P.PROC_CREATE_STOCK },
   },
   {
     url: "/procurement/inventory/locations",
     label: "Add a store location",
     aliases: ["new store", "new warehouse"],
-    gate: { perm: P.PROC_MANAGE_STOCK },
+    gate: { perm: P.PROC_CREATE_STOCK },
   },
   {
     url: "/procurement/analytics/performance",

@@ -21,7 +21,7 @@ describe("Staff permission registry", () => {
     expect(resolvePermissionKey(P.BROWSE_TEACHERS)).toBe("school.teachers.view");
     expect(resolvePermissionKey(P.INVITE_TEACHER)).toBe("school.teachers.create");
     expect(resolvePermissionKey(P.MODIFY_TEACHER)).toBe("school.teachers.update");
-    expect(resolvePermissionKey(P.MANAGE_TEACHERS)).toBe("school.teachers.manage");
+    expect(resolvePermissionKey(P.TRANSITION_TEACHER)).toBe("school.teachers.transition");
   });
 
   it("resolves the teaching-duty key, which is separate from the record keys", () => {
@@ -48,7 +48,7 @@ describe("Staff permission registry", () => {
     // teacher read who is off sick.
     expect(resolvePermissionKey(P.APPLY_FOR_LEAVE)).toBe("school.leave.apply");
     expect(resolvePermissionKey(P.VIEW_LEAVE)).toBe("school.leave.view");
-    expect(resolvePermissionKey(P.MANAGE_LEAVE)).toBe("school.leave.manage");
+    expect(resolvePermissionKey(P.UPDATE_LEAVE)).toBe("school.leave.update");
   });
 
   it("gives every staff key its own code", () => {
@@ -56,8 +56,8 @@ describe("Staff permission registry", () => {
     // number would hand one of them the other's meaning, and the screen gated
     // on the quieter key would open for somebody who holds only the louder one.
     const codes = [
-      P.BROWSE_TEACHERS, P.INVITE_TEACHER, P.MODIFY_TEACHER, P.MANAGE_TEACHERS,
-      P.ASSIGN_TEACHING, P.APPLY_FOR_LEAVE, P.VIEW_LEAVE, P.MANAGE_LEAVE,
+      P.BROWSE_TEACHERS, P.INVITE_TEACHER, P.MODIFY_TEACHER, P.TRANSITION_TEACHER,
+      P.ASSIGN_TEACHING, P.APPLY_FOR_LEAVE, P.VIEW_LEAVE, P.UPDATE_LEAVE,
     ];
     expect(new Set(codes).size).toBe(codes.length);
     for (const code of codes) expect(resolvePermissionKey(code)).not.toBe("");

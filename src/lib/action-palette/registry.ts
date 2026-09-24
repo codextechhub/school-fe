@@ -154,7 +154,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     section: "People",
     group: "Students",
     kind: "view",
-    gate: { perm: P.MANAGE_STUDENTS },
+    gate: { perm: P.PROMOTE_STUDENTS },
     run: { to: R.STUDENTS.PROMOTION },
   },
   {
@@ -619,7 +619,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: {
       required: [P.VIEW_ROLES],
-      any: [P.VIEW_FIELD_ACCESS, P.MANAGE_FIELD_ACCESS],
+      any: [P.VIEW_FIELD_ACCESS, P.UPDATE_FIELD_ACCESS],
     },
     run: { to: R.ROLES.FIELD_ACCESS },
   },
@@ -680,7 +680,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     section: "Settings",
     group: "Workflow",
     kind: "view",
-    gate: { perm: P.MANAGE_WORKFLOW_TEMPLATES },
+    gate: { perm: P.UPDATE_WORKFLOW_TEMPLATE },
     run: { to: R.WORKFLOW.NOTIFICATIONS },
   },
   {
@@ -700,7 +700,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     section: "Settings",
     group: "Workflow",
     kind: "do",
-    gate: { perm: P.MANAGE_APPROVER_GROUPS },
+    gate: { perm: P.CREATE_APPROVER_GROUP },
     run: { to: `${R.WORKFLOW.APPROVER_GROUPS}?tab=rules&action=new` },
   },
   {

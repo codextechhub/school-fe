@@ -333,7 +333,7 @@ export const staffApi = baseApi.injectEndpoints({
     /**
      * File a request. Applying for your own needs `school.leave.apply`, which
      * every member of staff holds; filing somebody else's needs
-     * `school.leave.manage`. The server picks the key from whose record it is,
+     * `school.leave.update`. The server picks the key from whose record it is,
      * so this is one call behind two gates rather than two calls.
      *
      * The request goes to the school's own approver group. Overlapping leave

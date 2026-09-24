@@ -417,7 +417,7 @@ export function AppSidebar({
       icon: GraduationCap,
       isActive: location.startsWith(routesPath.PROTECTED.STUDENTS.PROMOTION),
       childActive: false,
-      permission: P.MANAGE_STUDENTS,
+      permission: P.PROMOTE_STUDENTS,
     },
   ];
 
@@ -709,7 +709,7 @@ export function AppSidebar({
         icon: ShieldAlert,
         isActive: location.startsWith(routesPath.PROTECTED.ROLES.FIELD_ACCESS),
         childActive: false,
-        permission: [P.VIEW_FIELD_ACCESS, P.MANAGE_FIELD_ACCESS],
+        permission: [P.VIEW_FIELD_ACCESS, P.UPDATE_FIELD_ACCESS],
         requiredPermissions: [P.VIEW_ROLES],
       },
       {
@@ -763,7 +763,7 @@ export function AppSidebar({
           // already on the document's own approval panel.
           // Whether approvals write to people is the school's answer, and the
           // same access decides it as decides who approves what.
-          ...(hasPermission(P.MANAGE_WORKFLOW_TEMPLATES)
+          ...(hasPermission(P.UPDATE_WORKFLOW_TEMPLATE)
             ? [{
                 title: "Notifications",
                 url: routesPath.PROTECTED.WORKFLOW.NOTIFICATIONS,
@@ -772,7 +772,7 @@ export function AppSidebar({
                 ),
               }]
             : []),
-          ...(hasPermission(P.MANAGE_WORKFLOW_TEMPLATES)
+          ...(hasPermission(P.UPDATE_WORKFLOW_TEMPLATE)
             ? [{
                 title: "Templates",
                 url: routesPath.PROTECTED.WORKFLOW.TEMPLATES,

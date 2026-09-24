@@ -1,7 +1,7 @@
 // Support desk shapes, as a school sees them.
 //
 // A school's tickets are its own. Its staff raise them, whoever holds
-// `tickets.ticket.manage` inside the school triages them, and only what that
+// `tickets.ticket.triage` inside the school triages them, and only what that
 // person sends up reaches CodeX. So this file describes two audiences at once:
 // the person who raised a ticket and follows one thread, and the person who
 // works the school's whole queue.
@@ -96,7 +96,7 @@ export interface TicketCapabilities {
   can_comment?: boolean;
   can_attach?: boolean;
   can_update?: boolean;
-  can_manage?: boolean;
+  can_transition?: boolean;
   /**
    * Whether escalating would be accepted, not merely whether the reader could
    * in principle. The server folds in "already escalated" and "this is CodeX's

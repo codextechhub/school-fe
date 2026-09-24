@@ -152,7 +152,7 @@ export default function Applicants() {
           totalPages={waiting.data?.pagination.totalPages ?? 1}
           onPageChange={(page) => setPage("waiting", page)}
           actions={(student) => (
-            <PermissionGate permission={P.MANAGE_STUDENTS}>
+            <PermissionGate permission={P.TRANSITION_STUDENT}>
               <Button size="sm" onClick={() => setEnrolling(student)}>
                 Put on the roll
               </Button>

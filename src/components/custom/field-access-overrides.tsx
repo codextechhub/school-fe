@@ -123,7 +123,7 @@ export default function FieldAccessOverrides({
   const signedInUser = useAppSelector(selectUser);
   const canView =
     hasPermission(P.VIEW_ROLES) &&
-    hasAnyPermission(P.VIEW_USER_OVERRIDES, P.MANAGE_USER_OVERRIDES);
+    hasAnyPermission(P.VIEW_USER_OVERRIDES, P.CREATE_USER_OVERRIDE, P.DELETE_USER_OVERRIDE);
   const isSelf = String(userId) === String(signedInUser?.id ?? "");
 
   if (!canView) return null;
@@ -132,7 +132,8 @@ export default function FieldAccessOverrides({
     <FieldExceptionsSection
       userId={userId}
       userName={userName}
-      canManage={hasPermission(P.MANAGE_USER_OVERRIDES) && !isSelf}
+      canCreate={hasPermission(P.CREATE_USER_OVERRIDE) && !isSelf}
+      canDelete={hasPermission(P.DELETE_USER_OVERRIDE) && !isSelf}
       className={className}
     />
   );
@@ -141,12 +142,14 @@ export default function FieldAccessOverrides({
 function FieldExceptionsSection({
   userId,
   userName,
-  canManage,
+  canCreate,
+  canDelete,
   className,
 }: {
   userId: number;
   userName?: string | null;
-  canManage: boolean;
+  canCreate: boolean;
+  canDelete: boolean;
   className?: string;
 }) {
   const [addOpen, setAddOpen] = useState(false);
@@ -176,7 +179,7 @@ function FieldExceptionsSection({
             Read or Write access changed for this person alone, on top of their roles.
           </p>
         </div>
-        {canManage && (
+        {canCreate && (
           <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>
             <Plus className="size-3.5" /> Add exception
           </Button>
@@ -229,7 +232,7 @@ function FieldExceptionsSection({
                       </Badge>
                     </div>
                   </div>
-                  {canManage && (
+                  {canDelete && (
                     <button
                       type="button"
                       onClick={() => setPendingLift(row)}
@@ -265,7 +268,7 @@ function FieldExceptionsSection({
         )}
       </div>
 
-      {canManage && (
+      {canCreate && (
         <AddFieldExceptionDrawer
           open={addOpen}
           onOpenChange={setAddOpen}

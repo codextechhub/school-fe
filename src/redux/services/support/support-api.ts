@@ -11,7 +11,7 @@ import type {
 // The support desk, at /v1/support/tickets/.
 //
 // A school runs its own desk. Its staff raise tickets, whoever holds
-// `tickets.ticket.manage` inside the school works the queue, and only what that
+// `tickets.ticket.triage` inside the school works the queue, and only what that
 // person escalates reaches CodeX. So a school reads and writes the same
 // endpoints CodeX does; what differs is which rows come back, and the server
 // decides that - see visible_tickets_qs in vs_tickets.

@@ -110,7 +110,8 @@ export default function AcademicSessions() {
   // The copy WRITES structure, so it answers to the structure key the server
   // checks, not to "may edit this session".
   const canSeed = hasPermission(P.CREATE_STRUCTURE);
-  const canManage = hasPermission(P.MANAGE_SESSIONS);
+  const canActivate = hasPermission(P.ACTIVATE_SESSION);
+  const canArchive = hasPermission(P.ARCHIVE_SESSION);
 
   const openNew = () => {
     setDrawerFor(null);
@@ -249,7 +250,8 @@ export default function AcademicSessions() {
               key={session.id}
               session={session}
               canEdit={canEdit}
-              canManage={canManage}
+              canActivate={canActivate}
+              canArchive={canArchive}
               onOpen={() =>
                 navigate(
                   routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSION_DETAILS_ID(
@@ -451,7 +453,8 @@ function confirmBody(confirm: Confirmation | null, activeName?: string) {
 function SessionCard({
   session,
   canEdit,
-  canManage,
+  canActivate,
+  canArchive,
   onOpen,
   onEdit,
   onActivate,
@@ -461,7 +464,8 @@ function SessionCard({
 }: {
   session: AcademicSession;
   canEdit: boolean;
-  canManage: boolean;
+  canActivate: boolean;
+  canArchive: boolean;
   onOpen: () => void;
   onEdit: () => void;
   onActivate: () => void;
@@ -474,7 +478,7 @@ function SessionCard({
   const weeks = teachingWeeks(session.terms);
   // An archived year is read-only on the server, so its Edit is not offered
   // rather than offered and refused.
-  const showMenu = ((canEdit || canSeed) && !archived) || canManage;
+  const showMenu = ((canEdit || canSeed) && !archived) || canActivate || canArchive;
 
   return (
     <ClickableCard
@@ -517,7 +521,7 @@ function SessionCard({
                     Edit session
                   </DropdownMenuItem>
                 )}
-                {canManage && !isActive && (
+                {canActivate && !isActive && (
                   <DropdownMenuItem onClick={onActivate}>
                     <CircleCheck className="size-4" />
                     Set as active
@@ -529,7 +533,7 @@ function SessionCard({
                     Copy structure in
                   </DropdownMenuItem>
                 )}
-                {canManage && !archived && (
+                {canArchive && !archived && (
                   <DropdownMenuItem variant="destructive" onClick={onArchive}>
                     <Archive className="size-4" />
                     Archive

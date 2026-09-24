@@ -102,7 +102,7 @@ export default function TermView() {
   const [remove, { isLoading: removing }] = useDeleteCalendarEventMutation();
   const canCreate = hasPermission(P.CREATE_CALENDAR_EVENT) && !readOnlyYear;
   const canEdit = hasPermission(P.MODIFY_CALENDAR_EVENT) && !readOnlyYear;
-  const canDelete = hasPermission(P.MANAGE_CALENDAR) && !readOnlyYear;
+  const canDelete = hasPermission(P.DELETE_CALENDAR_EVENT) && !readOnlyYear;
 
   /**
    * Pressing a day.

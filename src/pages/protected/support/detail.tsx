@@ -180,7 +180,7 @@ export default function SupportTicketDetail() {
   }
 
   const canComment = ticket.capabilities?.can_comment !== false;
-  const canManage = ticket.capabilities?.can_manage === true;
+  const canManage = ticket.capabilities?.can_transition === true;
   // Offered exactly when the endpoint would accept it: the server already
   // accounts for "already escalated" and for a CodeX ticket.
   const canEscalate = ticket.capabilities?.can_escalate === true;

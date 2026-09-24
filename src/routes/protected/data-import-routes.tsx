@@ -7,7 +7,7 @@ import { routesPath } from "@/routes/routes-path";
  * The Data Imports console, served from `@xvs/finance`.
  *
  * Template authoring is mounted alongside the batches even though no school
- * role holds `import.templates.create` or `.manage`: the screens are shared
+ * role holds `import.templates.create` or `.update`: the screens are shared
  * with the platform console, and gating a route on a key the caller lacks
  * refuses it in one place rather than hiding it in two. A school reaching
  * `/data-imports/templates/new` is told it may not; it does not 404.

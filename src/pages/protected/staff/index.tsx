@@ -343,7 +343,7 @@ export default function StaffDirectory() {
                 },
               ]
             : []),
-          ...(hasPermission(P.MANAGE_TEACHERS)
+          ...(hasPermission(P.TRANSITION_TEACHER)
             ? [
                 {
                   label: "Change status",

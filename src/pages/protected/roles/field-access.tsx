@@ -57,8 +57,8 @@ export default function FieldAccess() {
   const { hasAnyPermission, hasPermission } = usePermissions();
   const canView =
     hasPermission(P.VIEW_ROLES) &&
-    hasAnyPermission(P.VIEW_FIELD_ACCESS, P.MANAGE_FIELD_ACCESS);
-  const canManage = hasPermission(P.MANAGE_FIELD_ACCESS);
+    hasAnyPermission(P.VIEW_FIELD_ACCESS, P.UPDATE_FIELD_ACCESS);
+  const canManage = hasPermission(P.UPDATE_FIELD_ACCESS);
   const roles = useGetFieldAccessRolesQuery(undefined, { skip: !canView });
   const catalogue = useGetAccessCatalogueQuery(undefined, { skip: !canView });
   const [selectedRole, setSelectedRole] = useState("");

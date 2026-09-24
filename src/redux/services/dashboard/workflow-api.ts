@@ -250,7 +250,7 @@ export const workflowApi = baseApi.injectEndpoints({
     // ── Stage approver overrides ────────────────────────────────────────────
     // A tenant's own approver for a stage of a template it did not author.
     // Repointing a step is a template-level decision, so these need
-    // workflow.template.manage rather than the lighter group rights.
+    // workflow.template.update rather than the lighter group rights.
     getStageApproverOverrides: builder.query<
       StageApproverOverridesResponse, QueryParams | void
     >({

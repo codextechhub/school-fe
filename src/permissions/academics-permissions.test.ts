@@ -12,21 +12,21 @@ describe("Academic Structure permission registry", () => {
     expect(resolvePermissionKey(P.BROWSE_STRUCTURE)).toBe("academics.structure.view");
     expect(resolvePermissionKey(P.CREATE_STRUCTURE)).toBe("academics.structure.create");
     expect(resolvePermissionKey(P.MODIFY_STRUCTURE)).toBe("academics.structure.update");
-    expect(resolvePermissionKey(P.MANAGE_STRUCTURE)).toBe("academics.structure.manage");
+    expect(resolvePermissionKey(P.ARCHIVE_STRUCTURE)).toBe("academics.structure.archive");
   });
 
   it("resolves the subject keys", () => {
     expect(resolvePermissionKey(P.BROWSE_SUBJECTS)).toBe("academics.subject.view");
     expect(resolvePermissionKey(P.CREATE_SUBJECT)).toBe("academics.subject.create");
     expect(resolvePermissionKey(P.MODIFY_SUBJECT)).toBe("academics.subject.update");
-    expect(resolvePermissionKey(P.MANAGE_SUBJECTS)).toBe("academics.subject.manage");
+    expect(resolvePermissionKey(P.ARCHIVE_SUBJECT)).toBe("academics.subject.archive");
   });
 
   it("resolves the session and class keys the same screens read", () => {
     expect(resolvePermissionKey(P.BROWSE_SESSIONS)).toBe("academics.session.view");
-    expect(resolvePermissionKey(P.MANAGE_SESSIONS)).toBe("academics.session.manage");
+    expect(resolvePermissionKey(P.ACTIVATE_SESSION)).toBe("academics.session.activate");
     expect(resolvePermissionKey(P.BROWSE_CLASSES)).toBe("academics.classes.view");
-    expect(resolvePermissionKey(P.MANAGE_CLASSES)).toBe("academics.classes.manage");
+    expect(resolvePermissionKey(P.ARCHIVE_CLASS)).toBe("academics.classes.archive");
   });
 
   it("resolves the timetable keys rooms, bells, grids and exams gate on", () => {
@@ -41,16 +41,16 @@ describe("Academic Structure permission registry", () => {
     expect(resolvePermissionKey(P.MODIFY_TIMETABLE_ENTRY)).toBe(
       "academics.timetable.update",
     );
-    expect(resolvePermissionKey(P.MANAGE_TIMETABLES)).toBe("academics.timetable.manage");
+    expect(resolvePermissionKey(P.DELETE_TIMETABLE)).toBe("academics.timetable.delete");
     expect(resolvePermissionKey(P.PUBLISH_TIMETABLE)).toBe("academics.timetable.publish");
   });
 
   it("keeps the calendar and the timetable on their own resources", () => {
     // The backend seeds them apart and says why: adding a public holiday and
     // rebuilding the school's timetable are not one act. Collapsing them here
-    // would hand calendar.manage to anyone who may edit a lesson.
-    expect(resolvePermissionKey(P.MANAGE_CALENDAR)).not.toBe(
-      resolvePermissionKey(P.MANAGE_TIMETABLES),
+    // would hand calendar.delete to anyone who may edit a lesson.
+    expect(resolvePermissionKey(P.DELETE_CALENDAR_EVENT)).not.toBe(
+      resolvePermissionKey(P.DELETE_TIMETABLE),
     );
     expect(resolvePermissionKey(P.BROWSE_CALENDAR)).not.toBe(
       resolvePermissionKey(P.BROWSE_TIMETABLES),
@@ -62,7 +62,7 @@ describe("Academic Structure permission registry", () => {
     // seeds publish to school_admin AND branch_admin, manage to school_admin
     // only, so one key doing both jobs would quietly promote every branch admin.
     expect(resolvePermissionKey(P.PUBLISH_TIMETABLE)).not.toBe(
-      resolvePermissionKey(P.MANAGE_TIMETABLES),
+      resolvePermissionKey(P.DELETE_TIMETABLE),
     );
   });
 
@@ -71,13 +71,20 @@ describe("Academic Structure permission registry", () => {
     // branch admin subject-delete along with department-delete. The backend
     // seeds them apart (subject.create/update reach branch_admin; structure's
     // do not), so the registry must keep them apart.
-    expect(resolvePermissionKey(P.MANAGE_STRUCTURE)).not.toBe(
-      resolvePermissionKey(P.MANAGE_SUBJECTS),
+    expect(resolvePermissionKey(P.ARCHIVE_STRUCTURE)).not.toBe(
+      resolvePermissionKey(P.ARCHIVE_SUBJECT),
     );
   });
 });
 
 describe("Permission registry integrity", () => {
+  it("uses concrete actions throughout the frontend registry", () => {
+    expect(Object.values(P).map(resolvePermissionKey).filter((key) => key.endsWith(".manage"))).toEqual([]);
+    expect(resolvePermissionKey(P.ARCHIVE_SESSION)).toBe("academics.session.archive");
+    expect(resolvePermissionKey(P.REACTIVATE_STRUCTURE)).toBe("academics.structure.reactivate");
+    expect(resolvePermissionKey(P.FIN_UPDATE_DUNNING)).toBe("finance.dunning.update");
+  });
+
   it("resolves every P constant to a dotted backend key", () => {
     const unresolved = Object.entries(P).filter(
       ([, code]) => !resolvePermissionKey(code).includes("."),
