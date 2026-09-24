@@ -1,5 +1,11 @@
 import { useState } from "react";
-import { CalendarRange, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  CalendarDays,
+  CalendarRange,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -50,6 +56,7 @@ import {
   parts,
   toIso,
 } from "../components/dates";
+import { monthWindow } from "./month-window";
 
 /**
  * The same events as the list, read as a shape instead of as rows.
@@ -185,16 +192,43 @@ export default function TermView() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      {/* ── The year as one bar ──────────────────────────────────────────── */}
-      <Panel className="p-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="font-mont text-[15px] font-semibold text-black-01">
-            {session.name}
-          </h2>
-          <p className="text-[13px] text-gray-05">
-            {formatRange(session.start_date, session.end_date)}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
+            Term view
+          </h1>
+          <p className="mt-1 text-sm text-gray-01">
+            See the shape of {session.name} and open any day to manage its events.
           </p>
         </div>
+        {canCreate && (
+          <Button onClick={() => setAddingOn(today || session.start_date)}>
+            <Plus className="size-4" /> Add event
+          </Button>
+        )}
+      </div>
+
+      <Panel as="section" className="p-5 sm:p-6" aria-labelledby="school-year-heading">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2
+            id="school-year-heading"
+            className="flex items-center gap-2 text-sm font-semibold text-black-01"
+          >
+            <span className="grid size-8 place-content-center rounded-full bg-pry-01 text-primary">
+              <CalendarRange className="size-4" />
+            </span>
+            School year timeline
+          </h2>
+          {session.read_only && (
+            <Badge variant="inactive" className="rounded-full text-xs">
+              Read-only year
+            </Badge>
+          )}
+        </div>
+
+        <p className="mt-4 text-xs text-gray-05">
+          Breaks appear as spaces between terms.
+        </p>
         <Timeline
           start={session.start_date}
           end={session.end_date}
@@ -203,12 +237,22 @@ export default function TermView() {
         />
       </Panel>
 
-      {/* ── One month at a time ──────────────────────────────────────────── */}
-      <Panel className="p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h3 className="font-mont text-[15px] font-semibold text-black-01">
-            {monthLabel(view.y, view.m)}
-          </h3>
+      <Panel as="section" className="p-4 sm:p-5" aria-labelledby="month-heading">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <span className="grid size-9 shrink-0 place-content-center rounded-full bg-pry-01 text-primary">
+              <CalendarDays className="size-4" />
+            </span>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-gray-06">Month calendar</p>
+              <h2
+                id="month-heading"
+                className="mt-0.5 font-mont text-lg font-semibold text-black-01"
+              >
+                {monthLabel(view.y, view.m)}
+              </h2>
+            </div>
+          </div>
           <div className="inline-flex items-center gap-1.5">
             <Button
               variant="outline"
@@ -236,21 +280,26 @@ export default function TermView() {
           </div>
         </div>
 
-        {/* A whole month, at every width.
-            
-            The grid was given a fixed 38rem and left to scroll sideways inside
-            its box. That kept the PAGE from overflowing, which is the rule, but
-            it left a phone showing Sunday to Wednesday - a month calendar you
-            have to drag to read is not one you can browse, and browsing is what
-            a phone is for here.
-            
-            So below `sm` all seven columns fit and the cells carry a dot per
-            event instead of its name: a 50px column cannot hold "Inter-house
-            Sports" at any font size worth reading, and a dot the right colour
-            answers "is anything on that day" - which is the question the month
-            view is being asked. The name is one tap away. */}
-        <div className="mt-4 -mx-1 overflow-x-auto px-1">
-          <div className="min-w-0 sm:min-w-[38rem]">
+        <div className="mt-4 flex max-w-full flex-wrap items-center gap-x-4 gap-y-2 border-y border-white-02 py-3 text-[11px] text-gray-05">
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-primary" /> Today
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-error-text/70" /> School closed
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="size-2 rounded-full bg-green-01" /> Event
+          </span>
+          <span className="ml-auto hidden text-gray-05 sm:inline">
+            Select a day to view or add events.
+          </span>
+        </div>
+
+        {/* The full seven-day grid fits at every width. Smaller screens use
+            event dots because a narrow day cell cannot hold readable names;
+            selecting the day reveals the full event list. */}
+        <div className="mt-4 min-w-0">
+          <div className="min-w-0">
             <div className="grid grid-cols-7 gap-1.5">
               {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
                 <p
@@ -297,21 +346,22 @@ export default function TermView() {
                       }
                     }}
                     className={cn(
-                      "min-h-14 rounded-lg border p-1 sm:min-h-20 sm:p-1.5",
-                      inMonth ? "border-white-02" : "border-transparent",
-                      !inMonth && "opacity-40",
-                      closed && inMonth && "bg-white-05",
-                      iso === today && "border-primary",
+                      "min-h-14 rounded-lg border p-1 transition-all lg:min-h-24 lg:p-1.5",
+                      inMonth
+                        ? "border-white-02 bg-white"
+                        : "border-transparent bg-white-05/50 opacity-40",
+                      closed && inMonth && "border-error-text/20 bg-error-text/[0.03]",
+                      iso === today && "border-primary bg-pry-01/30 shadow-sm",
                       pressable &&
-                        "cursor-pointer hover:border-primary/60 hover:bg-pry-01/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                        "cursor-pointer hover:-translate-y-0.5 hover:border-primary/60 hover:shadow-sm active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                     )}
                   >
                     <div className="flex items-center justify-between gap-1">
                       <span
                         className={cn(
-                          "text-xs",
+                          "grid size-5 place-content-center rounded-full text-xs",
                           iso === today
-                            ? "font-semibold text-primary"
+                            ? "bg-primary font-semibold text-white"
                             : "text-gray-06",
                         )}
                       >
@@ -322,18 +372,18 @@ export default function TermView() {
                           the next day's cell; the primary border and the bold
                           number already mark today without it. */}
                       {iso === today && (
-                        <span className="hidden text-[9px] font-semibold uppercase tracking-wide text-primary sm:inline">
+                        <span className="hidden text-[9px] font-semibold uppercase tracking-wide text-primary lg:inline">
                           Today
                         </span>
                       )}
                       {closed && iso !== today && (
-                        <span className="hidden text-[9px] uppercase tracking-wide text-gray-05 sm:inline">
+                        <span className="hidden text-[9px] uppercase tracking-wide text-gray-05 lg:inline">
                           Closed
                         </span>
                       )}
                     </div>
                     {/* Named chips where there is room for a name. */}
-                    <div className="mt-1 hidden gap-1 sm:grid">
+                    <div className="mt-1 hidden gap-1 lg:grid">
                       {onDay.slice(0, 2).map((event) => (
                         <span
                           key={event.id}
@@ -357,7 +407,7 @@ export default function TermView() {
                     {/* And a dot each where there is not. The button is padded
                         to a tappable size around a 6px dot - the dot is the
                         mark, the button is the target. */}
-                    <div className="mt-0.5 flex flex-wrap items-center sm:hidden">
+                    <div className="mt-0.5 flex flex-wrap items-center lg:hidden">
                       {onDay.slice(0, 4).map((event) => (
                         <span
                           key={event.id}
@@ -495,17 +545,6 @@ export default function TermView() {
 }
 
 /** The seven-column window a month is drawn in, as ISO dates. */
-function monthWindow(y: number, m: number) {
-  const first = new Date(y, m - 1, 1);
-  const last = new Date(y, m, 0);
-  const lead = first.getDay();
-  const from = new Date(y, m - 1, 1 - lead);
-  const cells = Math.ceil((lead + last.getDate()) / 7) * 7;
-  const to = new Date(from);
-  to.setDate(from.getDate() + cells - 1);
-  return { from: toIso(from), to: toIso(to), cells };
-}
-
 /**
  * The year as one bar, with each term a block on it.
  *
@@ -564,7 +603,7 @@ function Timeline({
         {gaps.map((gap) => {
           const days = daysBetween(gap.from, gap.to);
           return (
-            <Tooltip key={gap.from}>
+            <Tooltip key={`${gap.from}-${gap.to}`}>
               <TooltipTrigger asChild>
                 <div
                   style={{
