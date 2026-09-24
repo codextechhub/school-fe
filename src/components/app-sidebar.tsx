@@ -50,8 +50,9 @@ import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { LensRail } from "./layout/lens-pills";
-import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useStudentsLens } from "@/hooks/use-students-lens";
 import { SchoolMark } from "./school-mark";
+import { deriveSidebarWorkCounts } from "./sidebar-work-counts";
 
 // A nav item may declare a permission (single code or a list). When absent the
 // item always renders. `permissionMode` decides whether a list requires ANY
@@ -136,58 +137,47 @@ export function AppSidebar({
 
   const school = useAppSelector(selectSchool);
   const user = useAppSelector(selectUser);
-  // False at a one-branch school, where every branch-shaped control recedes.
-  // Shares the branch list with the lens rail below, so it costs no request.
-  const { applies: multiBranch } = useBranchLens();
+  // Student badges use the same branch and year as their destination screens.
+  const {
+    lens: studentLens,
+    multiBranch,
+    isLoading: studentLensLoading,
+  } = useStudentsLens();
 
-  // The two live counts the design puts on the nav.
-  //
-  // **Skipped for a school that has not gone live**, and that is not an
-  // optimisation. Every student route answers 403 TENANT_NOT_LIVE to a PENDING
-  // tenant, and base-api turns that into a redirect to the not-live screen - so
-  // firing this from the SIDEBAR would bounce an onboarding school off whatever
-  // page they opened, on every page. Skipped equally without the permission the
-  // screens themselves check, so a badge cannot count work behind a door the
-  // reader may not open.
-  //
-  // Shares RTK Query's cache with the directory's own summary call, so this
-  // costs a request per cache period rather than one per navigation.
-  const { data: summary } = useGetStudentSummaryQuery(undefined, {
-    skip: onboarding || !hasPermission(P.BROWSE_STUDENTS),
+  /**
+   * Student counts are closed before go-live and behind the same permission as
+   * their screens. Waiting for the lens prevents a server-default count from
+   * appearing briefly before the selected branch and year are known.
+   */
+  const { data: summary } = useGetStudentSummaryQuery(studentLens, {
+    skip:
+      onboarding ||
+      studentLensLoading ||
+      !hasPermission(P.BROWSE_STUDENTS),
   });
-  // Documents waiting on THIS reader. The endpoint is personal - it returns
-  // only what the caller may act on - so it needs no permission key and is
-  // fetched for everybody: a teacher's queue is simply empty, and the item
-  // below is hidden when it is.
+  // This personal queue contains only documents the current reader may act on.
   const { data: pendingApprovals } = useGetPendingApprovalsQuery(undefined, {
     skip: onboarding,
   });
-  // Invitations nobody has accepted. Asked for as a page of one, because the
-  // figure wanted is the total in the pagination block rather than the rows -
-  // fetching twenty-five people to count them would be a page of staff on every
-  // screen in the app. Open before go-live, so it is NOT skipped for a pending
-  // school: chasing invitations is most of what onboarding is.
+  // The pagination total counts every unaccepted invitation, not this page.
   const { data: invited } = useGetStaffListQuery(
     { employment_status: "INVITED", page: 1 },
     { skip: !hasPermission(P.BROWSE_TEACHERS) },
   );
-  // Pairings nobody teaches. Asked for as a page of one, because the figure is
-  // in the response body rather than in the rows - a school of forty classes
-  // and fifteen subjects is six hundred pairings and must not be fetched to
-  // count two of them. Skipped before go-live, where the endpoint refuses.
+  // Aggregate gap totals avoid loading every class and subject pairing.
   const { data: coverage } = useGetTeachingCoverageQuery(
     { page: 1 },
     { skip: onboarding || !hasPermission(P.BROWSE_TEACHERS) },
   );
-  const waiting = {
+  const waiting = deriveSidebarWorkCounts({
     applicants: summary?.data?.applicants,
-    unassigned: summary?.data?.unassigned,
-    // Undefined rather than 0 when there is nothing: the badge is for work
-    // outstanding, and a nav item wearing a grey zero is noise on every screen.
-    approvals: pendingApprovals?.results?.length || undefined,
-    invitations: invited?.pagination?.totalItems || undefined,
-    coverageGaps: coverage?.coverage_gaps || undefined,
-  };
+    unassignedStudents: summary?.data?.unassigned,
+    pendingApprovals:
+      pendingApprovals?.count ?? pendingApprovals?.results?.length,
+    invitations: invited?.pagination?.totalItems,
+    uncoveredDuties: coverage?.coverage_gaps,
+    dutiesWithoutLead: coverage?.lead_gaps,
+  });
 
   const schoolName =
     school?.name ?? user?.school_name ?? "";
@@ -395,7 +385,7 @@ export function AppSidebar({
       permission: P.ASSIGN_CLASS,
       // Children on the roll with no class. The worklist this screen exists
       // to empty, so the number belongs on its door.
-      badge: waiting.unassigned,
+      badge: waiting.unassignedStudents,
     },
     {
       // The households. Its own door because "who do we call about this
@@ -468,10 +458,9 @@ export function AppSidebar({
       permission: P.BROWSE_TEACHERS,
       badge: waiting.invitations,
     },
-    // Closed before go-live, so absent then: a teaching duty belongs to an
-    // academic year and a school being set up has not started one. The badge
-    // counts pairings nobody teaches, which is work outstanding rather than a
-    // total - the kind of number that belongs on a door.
+    // Closed before go-live because a teaching duty belongs to an academic
+    // year. The badge counts uncovered duties and duties with no main teacher,
+    // the two unresolved groups shown on the destination screen.
     ...(onboarding
       ? []
       : [
@@ -483,13 +472,12 @@ export function AppSidebar({
             isActive: location.startsWith(routesPath.PROTECTED.STAFF.TEACHING),
             childActive: false,
             permission: P.BROWSE_TEACHERS,
-            badge: waiting.coverageGaps,
+            badge: waiting.teachingGaps,
           },
         ]),
     // Absent at a one-branch school rather than disabled. A posting answers
-    // which site somebody is based at, and a school with one site has no
-    // question to put behind the door; the server answers 404 there for the
-    // same reason. The screen says so too, for anybody arriving by address.
+    // which branch somebody is based at, and a school with one branch has no
+    // question to put behind the door. The server answers 404 there too.
     ...(multiBranch
       ? [
           {
@@ -723,7 +711,7 @@ export function AppSidebar({
         icon: ListChecks,
         isActive: location.startsWith("/workflow"),
         childActive: location.startsWith("/workflow"),
-        badge: waiting.approvals,
+        badge: waiting.pendingApprovals,
         items: [
           {
             title: "Approvals",
