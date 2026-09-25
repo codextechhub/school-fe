@@ -63,6 +63,8 @@ for (const vp of VIEWPORTS) {
   for (const path of targets) {
     try {
       await page.goto(`${BASE}${path}`, { waitUntil: "networkidle", timeout: 30000 }).catch(() => {});
+      await page.getByText("Preparing your workspace...").waitFor({ state: "hidden", timeout: 30000 }).catch(() => {});
+      await page.locator("h1").first().waitFor({ state: "visible", timeout: 45000 }).catch(() => {});
       await page.waitForTimeout(1200);
 
       const probe = await page.evaluate(() => {

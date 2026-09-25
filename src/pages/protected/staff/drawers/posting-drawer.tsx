@@ -2,11 +2,12 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Info, Network } from "lucide-react";
 
-import { NativeSelect } from "@/components/ui/native-select";
+import { BranchReachPicker } from "@/components/custom/branch-reach-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
-import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
+import { useGetAllMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
+  useGetStaffMemberQuery,
   useGetStaffRolesQuery,
   useMoveStaffPostingMutation,
 } from "@/redux/services/staff/staff-api";
@@ -21,7 +22,7 @@ import {
  * Move where somebody is based.
  *
  * **A posting and a reach are different facts, and this changes only the
- * first.** Where somebody is based is one branch or the whole school; which
+ * first.** Where somebody is based is a chosen branch set or the whole school; which
  * branches their access extends to comes from their role grants and can be
  * wider. Moving Mrs. Adeyemi from Lekki to Ikeja does not take Lekki away from
  * her Bursar grant, and the drawer says so before the move rather than leaving
@@ -44,32 +45,36 @@ export function PostingDrawer({
   onDone: () => void;
   onClose: () => void;
 }) {
-  const { data: branchData } = useGetMyBranchesQuery();
+  const { data: branchData } = useGetAllMyBranchesQuery();
+  const person = useGetStaffMemberQuery(staffIds[0] ?? 0, { skip: staffIds.length !== 1 });
   const [move, { isLoading: saving }] = useMoveStaffPostingMutation();
   const roles = useGetStaffRolesQuery(staffIds[0] ?? 0, {
     skip: staffIds.length !== 1,
   });
 
-  const [branch, setBranch] = useState("");
+  const [choice, setChoice] = useState<{ mode: "school" | "selected"; ids: number[] } | null>(null);
   const [reason, setReason] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const branches = branchData?.data ?? [];
-  const target =
-    branch === ""
-      ? "across the whole school"
-      : (branches.find((b) => String(b.id) === branch)?.name ?? "that branch");
+  const branches = branchData ?? [];
+  const currentIds = person.data?.data.posting_branch_ids ?? [];
+  const mode = choice?.mode ?? (staffIds.length === 1 ? (currentIds.length ? "selected" : "school") : null);
+  const ids = choice?.ids ?? currentIds;
+  const selectedIds = mode === "school" ? [] : ids;
+  const target = selectedIds.length
+    ? selectedIds.map((id) => branches.find((branch) => branch.id === id)?.name ?? `Branch ${id}`).join(" and ")
+    : "across the whole school";
 
   async function save() {
     try {
       const result = await move({
         staff_ids: staffIds,
-        branch: branch || null,
+        branch_ids: selectedIds,
         reason: reason.trim() || undefined,
       }).unwrap();
 
       toast.success(
-        `${result.data.moved} ${result.data.moved === 1 ? "person is" : "people are"} now based ${target}. Their roles reach exactly what they did before.`,
+        `${result.data.moved} ${result.data.moved === 1 ? "person is" : "people are"} now posted to ${target}. Their roles reach exactly what they did before.`,
       );
       for (const warning of result.data.warnings) {
         toast.warning(warning.message);
@@ -100,28 +105,22 @@ export function PostingDrawer({
       subtitle="Where they are based. Not which branches their roles reach."
       saveLabel="Move posting"
       onSave={() => void save()}
-      canSave={staffIds.length > 0}
+      canSave={staffIds.length > 0 && !person.isLoading && !person.isError && Boolean(branchData?.length) && mode !== null && (mode === "school" || selectedIds.length > 0)}
       saving={saving}
     >
       <div className="grid gap-4">
         <Field
           label="Posted to"
-          error={errors.branch}
-          hint="Across the whole school is a real answer, not a blank: a registrar belongs to the school and appears on every branch's roster."
+          error={errors.branch_ids}
+          hint="Selected branches are equal postings. School-wide also includes branches opened later."
         >
-          <NativeSelect
-            aria-label="Posted to"
-            value={branch}
-            onChange={(e) => setBranch(e.target.value)}
-            className="h-9"
-          >
-            <option value="">Across the whole school</option>
-            {branches.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name}
-              </option>
-            ))}
-          </NativeSelect>
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button type="button" aria-pressed={mode === "school"} onClick={() => setChoice({ mode: "school", ids: [] })} className={`rounded-lg border p-3 text-left text-sm ${mode === "school" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}>School-wide</button>
+              <button type="button" aria-pressed={mode === "selected"} onClick={() => setChoice({ mode: "selected", ids })} className={`rounded-lg border p-3 text-left text-sm ${mode === "selected" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}>Selected branches</button>
+            </div>
+            {mode === "selected" && <BranchReachPicker branches={branches} selected={ids} onChange={(next) => setChoice({ mode: "selected", ids: next })} />}
+          </div>
         </Field>
 
         <Field label="Reason" error={errors.reason}>
@@ -190,7 +189,7 @@ export function PostingDrawer({
         {staffIds.length > 1 && (
           <p className="flex items-start gap-2 rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
             <AlertTriangle className="mt-px size-3.5 shrink-0" />
-            All {staffIds.length} selected people are moved to the same place.
+            All {staffIds.length} selected people receive the same posting set.
           </p>
         )}
       </div>

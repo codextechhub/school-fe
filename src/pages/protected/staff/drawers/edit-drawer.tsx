@@ -5,7 +5,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
-import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
+import { Button } from "@/components/ui/button";
 import { useUpdateStaffMutation } from "@/redux/services/staff/staff-api";
 import type {
   EmploymentType,
@@ -59,18 +59,17 @@ const TYPES: { value: EmploymentType; label: string }[] = [
 export function EditDrawer({
   person,
   onClose,
+  onChangePostings,
 }: {
   person: StaffDetail;
   onClose: () => void;
+  onChangePostings: () => void;
 }) {
-  const { data: branchData } = useGetMyBranchesQuery();
   const [update, { isLoading: saving }] = useUpdateStaffMutation();
 
   const [draft, setDraft] = useState<Partial<StaffUpdate>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const access = useFieldAccess(FIELD_RESOURCE.STAFF, person);
-
-  const branches = branchData?.data ?? [];
 
   // The record carries a full name rather than its two halves, so the split is
   // made here: the first word is the first name and the rest is the last, which
@@ -264,29 +263,13 @@ export function EditDrawer({
           />
         </Field>
 
-        {/* Absent at a single-branch school, where a posting control would be
-            one option and no choice at all. */}
-        {branches.length > 1 && (
-          <Field
-            label="Posted to"
-            error={errors.branch}
-            hint="Where they are based. It does not change which branches their roles reach."
-          >
-            <NativeSelect
-              aria-label="Posted to"
-              value={value("branch")}
-              onChange={(e) => set("branch")(e.target.value)}
-              className="h-9"
-            >
-              <option value="">Across the whole school</option>
-              {branches.map((b) => (
-                <option key={b.id} value={b.id}>
-                  {b.name}
-                </option>
-              ))}
-            </NativeSelect>
-          </Field>
-        )}
+        <div className="rounded-lg border border-border p-3">
+          <p className="text-sm font-medium text-black-01">Posted to</p>
+          <p className="mt-1 text-sm text-gray-01">{person.branch_name || "School-wide"}</p>
+          <Button variant="outline" size="sm" className="mt-3" onClick={onChangePostings}>
+            Change postings
+          </Button>
+        </div>
       </div>
     </DrawerShell>
   );

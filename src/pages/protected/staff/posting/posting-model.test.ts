@@ -27,6 +27,7 @@ const person = (
   account_flag: null,
   roles: ["Teacher"],
   branch_id: 1,
+  posting_branch_ids: [1],
   branch_name: "Ikeja Branch",
   posted_school_wide: false,
   teaching_load: 0,

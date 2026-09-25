@@ -40,6 +40,7 @@ const ROW: StaffListRow = {
   },
   roles: ["Lead Teacher", "Teacher"],
   branch_id: 3,
+  posting_branch_ids: [3],
   branch_name: "Lekki Branch",
   posted_school_wide: false,
   teaching_load: 4,

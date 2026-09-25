@@ -465,6 +465,7 @@ export default function StaffDirectory() {
       <StaffDrawers
         request={drawer}
         onClose={() => setDrawer(null)}
+        onRequest={setDrawer}
         onSaved={() => setPicked([])}
       />
 

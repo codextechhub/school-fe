@@ -39,8 +39,8 @@ import {
  * Who is based at a branch, who reaches it through a role, and who belongs to
  * the school as a whole.
  *
- * Posting and reach remain separate. A posting is the one place a person is
- * based and can be moved here. Reach is derived from role grants, so its view
+ * Posting and reach remain separate. A posting is the selected branch set where
+ * a person is based and can be changed here. Reach is derived from role grants, so its view
  * opens the person's access record instead of presenting a posting control
  * that cannot change it.
  *
@@ -152,7 +152,7 @@ export default function StaffPosting() {
         <KpiCard
           label="Posted here"
           value={rosterQuery.isLoading ? "..." : summary.posted}
-          foot="This is their home branch"
+          foot="One of their branch postings"
           tone="live"
         />
         <KpiCard
@@ -198,7 +198,7 @@ export default function StaffPosting() {
                   size="sm"
                   onClick={() => setDrawer({ kind: "posting", staffIds: picked })}
                 >
-                  Move posting
+                  Change postings
                 </Button>
               </div>
             </PermissionGate>
@@ -263,13 +263,14 @@ export default function StaffPosting() {
 
       <p className="flex items-start gap-1.5 text-xs text-gray-05">
         <Info className="mt-px size-3.5 shrink-0" />
-        Moving a posting changes where somebody is based. Their role reach and
+        Changing postings changes where somebody is based. Their role reach and
         teaching assignments stay exactly as they were.
       </p>
 
       <StaffDrawers
         request={drawer}
         onClose={() => setDrawer(null)}
+        onRequest={setDrawer}
         onSaved={() => setPicked([])}
       />
     </PageShell>
@@ -372,7 +373,7 @@ function RosterRow({
   const left = !person.on_roll;
   const reason =
     view === "posted"
-      ? "Home branch"
+      ? person.branch_name ? `Posted to ${person.branch_name}` : "Posted here"
       : view === "schoolWide"
         ? "Every branch"
         : viaRoles
@@ -447,7 +448,7 @@ function RosterRow({
         onClick={onOpen}
         className="hidden min-w-0 text-left lg:block"
       >
-        <span className="block truncate text-xs text-black-01">{reason}</span>
+        <span className="block break-words text-xs text-black-01">{reason}</span>
         <span className="block text-[11px] text-gray-05">
           {view === "posted"
             ? "Click to change posting"
@@ -473,7 +474,7 @@ function RosterRow({
         <span className="block truncate text-xs text-black-01">
           {person.job_title || person.roles[0] || "No job title"}
         </span>
-        <span className="mt-0.5 block text-[11px] text-primary">{reason}</span>
+        <span className="mt-0.5 block break-words text-[11px] text-primary">{reason}</span>
       </button>
     </li>
   );

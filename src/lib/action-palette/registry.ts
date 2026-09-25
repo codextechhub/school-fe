@@ -529,6 +529,16 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ONBOARDING.ROLES },
   },
   {
+    id: "create-onboarding-role",
+    label: "Create a role during setup",
+    aliases: ["new role", "add role"],
+    section: "Onboarding",
+    group: "Roles and invitations",
+    kind: "do",
+    gate: { perm: P.CREATE_ROLE },
+    run: { to: R.ONBOARDING.ROLE_NEW },
+  },
+  {
     // The same screen as above, opened on its second tab. Two actions rather
     // than one because they are two different permissions and two different
     // jobs: a branch admin can reach the invitations tab and not the roles one.
@@ -609,6 +619,16 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: { perm: P.VIEW_ROLES },
     run: { to: R.ROLES.INDEX },
+  },
+  {
+    id: "create-school-role",
+    label: "Create a school role",
+    aliases: ["new role", "add role", "permissions"],
+    section: "Settings",
+    group: "Administration",
+    kind: "do",
+    gate: { perm: P.CREATE_ROLE },
+    run: { to: R.ROLES.NEW },
   },
   {
     id: "view-field-access",
@@ -965,6 +985,7 @@ export const PENDING_ONLY_ACTION_IDS: readonly string[] = [
   "view-control-room",
   "view-school-profile",
   "view-roles",
+  "create-onboarding-role",
   "view-staff-invitations",
   "upload-datasets",
   "view-go-live",

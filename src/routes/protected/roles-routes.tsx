@@ -7,6 +7,8 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 // shipping in the main bundle. Suspense fallback lives in routes/lazy-root.tsx.
 const Roles = lazy(() => import("@/pages/protected/roles"));
 const FieldAccess = lazy(() => import("@/pages/protected/roles/field-access"));
+const RoleView = lazy(() => import("@/pages/protected/roles/role-view"));
+const RoleEditor = lazy(() => import("@/pages/protected/roles/role-editor"));
 
 export const rolesRoutes = [
   {
@@ -19,4 +21,7 @@ export const rolesRoutes = [
     Component: FieldAccess,
     handle: { title: "Field Access" } satisfies DashboardHandle,
   },
+  { path: routesPath.PROTECTED.ROLES.NEW, Component: RoleEditor, handle: { title: "Create Role", back: routesPath.PROTECTED.ROLES.INDEX } satisfies DashboardHandle },
+  { path: routesPath.PROTECTED.ROLES.EDIT, Component: RoleEditor, handle: { title: "Edit Role", back: routesPath.PROTECTED.ROLES.INDEX } satisfies DashboardHandle },
+  { path: routesPath.PROTECTED.ROLES.DETAIL, Component: RoleView, handle: { title: "Role", back: routesPath.PROTECTED.ROLES.INDEX } satisfies DashboardHandle },
 ] as RouteObject[];

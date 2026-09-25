@@ -114,6 +114,9 @@ export const routesPath = {
       // One screen, two tabs. The checklist opens it from two different cards,
       // so the tab is in the URL rather than in component state.
       ROLES: "/onboarding/roles",
+      ROLE_NEW: "/onboarding/roles/new",
+      ROLE_DETAIL: "/onboarding/roles/:key",
+      ROLE_EDIT: "/onboarding/roles/:key/edit",
       STAFF: "/onboarding/roles?tab=invitations",
       // The step. The upload itself runs in the shared import wizard, and what
       // an upload DID is read on the batch under DATA_IMPORTS - one import
@@ -147,6 +150,9 @@ export const routesPath = {
       // purchase order, so it waits in /workflow/approvals with everything else
       // the reader has to decide, and the roles screen links there.
       INDEX: "/roles",
+      NEW: "/roles/new",
+      DETAIL: "/roles/:key",
+      EDIT: "/roles/:key/edit",
       FIELD_ACCESS: "/roles/field-access",
     },
     // The approval inbox: purchase orders, expense claims, payment runs and

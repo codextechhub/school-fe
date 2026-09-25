@@ -18,7 +18,7 @@ import { selectSchool } from "@/redux/features/auth/auth-slice";
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
 import { OutlinedNotice } from "./components/outlined-notice";
 import { InvitationsPanel } from "./components/invitations-panel";
-import { RoleDrawer } from "./components/role-drawer";
+import { roleDetailPath } from "@/pages/protected/roles/role-paths";
 import { useOnboardingState } from "./use-onboarding-state";
 import { PageShell } from "@/components/layout/page-shell";
 
@@ -71,15 +71,7 @@ export default function OnboardingRoles() {
     useTransitionOnboardingTaskMutation();
 
   const [search, setSearch] = useState("");
-  // `drawerKey === null` while open means "a new role"; the drawer is the one
-  // surface for naming, describing and permissioning, whichever it is.
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerKey, setDrawerKey] = useState<string | null>(null);
-
-  const openRole = (key: string | null) => {
-    setDrawerKey(key);
-    setDrawerOpen(true);
-  };
+  const openRole = (key: string) => navigate(roleDetailPath("/onboarding/roles", key));
 
   // A refusal from the roles query only blocks the roles tab. The invitations
   // panel answers its own 403 with its own sentence.
@@ -218,7 +210,7 @@ export default function OnboardingRoles() {
               <Search className="pointer-events-none absolute right-3 top-3 size-4 text-gray-05" />
             </div>
             <PermissionGate permission={P.CREATE_ROLE}>
-              <Button onClick={() => openRole(null)}>
+              <Button onClick={() => navigate("/onboarding/roles/new")}>
                 <Plus />
                 Add custom role
               </Button>
@@ -275,11 +267,6 @@ export default function OnboardingRoles() {
         </div>
       )}
 
-      <RoleDrawer
-        open={drawerOpen}
-        roleKey={drawerKey}
-        onClose={() => setDrawerOpen(false)}
-      />
 
     </PageShell>
   );

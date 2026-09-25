@@ -48,6 +48,7 @@ export function BulkRoleDrawer({
   const roles = listData?.role_options ?? [];
   const branches = branchData?.data ?? [];
   const chosen = roles.find((r) => r.value === role);
+  const configuredReach = Boolean(chosen?.branch_ids.length);
 
   async function save() {
     if (!chosen) return;
@@ -55,7 +56,7 @@ export function BulkRoleDrawer({
       const result = await grant({
         staff_ids: staffIds,
         role,
-        branch: reach || null,
+        branch: configuredReach ? null : reach || null,
       }).unwrap();
       const { granted, already_held } = result.data;
 
@@ -109,7 +110,7 @@ export function BulkRoleDrawer({
           </NativeSelect>
         </Field>
 
-        {branches.length > 1 && (
+        {branches.length > 1 && !configuredReach && (
           <Field
             label="Reaching"
             error={errors.branch}
@@ -129,6 +130,12 @@ export function BulkRoleDrawer({
               ))}
             </NativeSelect>
           </Field>
+        )}
+
+        {chosen && configuredReach && (
+          <p className="rounded-lg bg-pry-01/50 px-3.5 py-2.5 text-xs text-primary">
+            This role grants all its selected branches automatically.
+          </p>
         )}
 
         <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">

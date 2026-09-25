@@ -27,6 +27,7 @@ const row: StaffListRow = {
   account_flag: null,
   roles: ["Teacher", "Class Adviser"],
   branch_id: null,
+  posting_branch_ids: [],
   branch_name: null,
   posted_school_wide: null,
   teaching_load: 6,

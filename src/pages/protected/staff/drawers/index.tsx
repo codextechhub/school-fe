@@ -67,9 +67,11 @@ export function StaffDrawers({
   request,
   onClose,
   onSaved,
+  onRequest,
 }: {
   request: StaffDrawerRequest | null;
   onClose: () => void;
+  onRequest: (request: StaffDrawerRequest) => void;
   /** Called after a bulk write, so a screen can clear its selection. */
   onSaved?: () => void;
 }) {
@@ -153,7 +155,7 @@ export function StaffDrawers({
   if (!person) return null;
   if (request.kind === "edit") {
     return (
-      <EditDrawer key={`edit-${person.id}`} person={person} onClose={onClose} />
+      <EditDrawer key={`edit-${person.id}`} person={person} onClose={onClose} onChangePostings={() => onRequest({ kind: "posting", staffIds: [person.id], personName: person.full_name })} />
     );
   }
   return (

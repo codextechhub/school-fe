@@ -82,19 +82,24 @@ export function RoleDrawer({
       (catalogue.data?.data ?? []).map((role) => [role.key, role]),
     );
     return offered
-      .map((option) => ({ ...option, id: byKey.get(option.value)?.id }))
+      .map((option) => ({
+        ...option,
+        id: byKey.get(option.value)?.id,
+        branchIds: option.branch_ids,
+      }))
       .filter((option): option is typeof option & { id: number } =>
         Boolean(option.id),
       );
   }, [catalogue.data, offered]);
 
   const chosen = roles.find((role) => role.value === roleKey);
+  const configuredReach = Boolean(chosen?.branchIds.length);
   // Named rather than silently refused: the server would answer a duplicate,
   // and "they already hold that here" is a sentence somebody can act on.
   const duplicate = grants.some(
     (grant) =>
       grant.role_key === roleKey &&
-      (reach ? String(grant.branch_id) === reach : grant.school_wide),
+      (configuredReach ? grant.branch_id === null : reach ? String(grant.branch_id) === reach : grant.school_wide),
   );
 
   async function grant() {
@@ -104,10 +109,10 @@ export function RoleDrawer({
         // The ACCOUNT's id. The staff record's is a different number.
         user: person.user_id,
         role: chosen.id,
-        branch: reach ? Number(reach) : null,
+        branch: configuredReach ? null : reach ? Number(reach) : null,
       }).unwrap();
       toast.success(
-        `${chosen.label} granted${reach ? "" : " across the whole school"}.`,
+        `${chosen.label} granted${configuredReach ? " at all its selected branches" : reach ? "" : " across the whole school"}.`,
       );
       setRoleKey("");
       setReach("");
@@ -257,7 +262,7 @@ export function RoleDrawer({
               </NativeSelect>
             </Field>
 
-            {branches.length > 1 && (
+            {branches.length > 1 && !configuredReach && (
               <Field
                 label="This role reaches"
                 error={errors.branch}
@@ -277,6 +282,12 @@ export function RoleDrawer({
                   ))}
                 </NativeSelect>
               </Field>
+            )}
+
+            {chosen && configuredReach && (
+              <p className="rounded-lg bg-pry-01/50 px-3.5 py-2.5 text-xs text-primary">
+                This role grants all its selected branches automatically.
+              </p>
             )}
 
             {duplicate && (

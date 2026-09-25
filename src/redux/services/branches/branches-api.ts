@@ -1,6 +1,8 @@
 import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import type { SchoolBranch } from "./branches-types";
+import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
+import { fetchAllPages } from "@/utils/fetch-all-pages";
 
 /**
  * A school's own branches, at /v1/i/me/branches/.
@@ -21,6 +23,19 @@ export const branchesApi = baseApi.injectEndpoints({
       providesTags: ["Branches"],
     }),
 
+    getAllMyBranches: builder.query<SchoolBranch[], void>({
+      queryFn: (_arg, _api, _extra, baseQuery) =>
+        fetchAllPages<SchoolBranch, FetchBaseQueryError>(async (page) => {
+          const { data, error } = await baseQuery({
+            url: `/i/me/branches/`,
+            method: "GET",
+            params: { page, page_size: 100 },
+          });
+          return error ? { error } : { data: data as PaginatedEnvelope<SchoolBranch> };
+        }),
+      providesTags: ["Branches"],
+    }),
+
     getMyBranch: builder.query<Envelope<SchoolBranch>, number>({
       query: (code) => ({ url: `/i/me/branches/${code}/`, method: "GET" }),
       providesTags: ["Branches"],
@@ -28,4 +43,4 @@ export const branchesApi = baseApi.injectEndpoints({
   }),
 });
 
-export const { useGetMyBranchesQuery, useGetMyBranchQuery } = branchesApi;
+export const { useGetMyBranchesQuery, useGetAllMyBranchesQuery, useGetMyBranchQuery } = branchesApi;

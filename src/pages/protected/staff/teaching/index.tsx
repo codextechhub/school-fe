@@ -425,7 +425,7 @@ export default function TeachingDuties() {
         <PairingDrawer cell={openPairing} onClose={() => setPairing(null)} />
       )}
 
-      <StaffDrawers request={drawer} onClose={() => setDrawer(null)} />
+      <StaffDrawers request={drawer} onClose={() => setDrawer(null)} onRequest={setDrawer} />
     </PageShell>
   );
 }

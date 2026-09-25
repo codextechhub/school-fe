@@ -15,6 +15,8 @@ export interface SchoolRole {
   assigned_users_count: number;
   permissions_count: number;
   branch: number | null;
+  /** Empty means school-wide; otherwise every listed branch is part of this role's reach. */
+  branch_ids: number[];
 }
 
 /** One grant on a role, as the detail payload carries it. */
@@ -25,6 +27,8 @@ export interface RolePermissionRow {
 
 /** A role with everything it holds. */
 export interface SchoolRoleDetail extends SchoolRole {
+  /** A role with any past assignment keeps its audit trail and cannot be deleted. */
+  has_assignment_history: boolean;
   /** Whether the reader holds this role. A restricted addition to your own role
    *  goes through approval; to anybody else's it saves, so the button has to
    *  know before anything is pressed. The server computes it because a person
@@ -136,6 +140,8 @@ export interface NewRole {
   name: string;
   description?: string;
   permission_keys?: string[];
+  /** Empty means school-wide. The server checks every id belongs to this school. */
+  branch_ids: number[];
   /** Required by the server whenever `permission_keys` is sent, empty list
    *  included, and recorded on the audit entry for the change. */
   reason?: string;
@@ -148,6 +154,8 @@ export interface RoleUpdate {
   description?: string;
   /** A REPLACEMENT list, not an addition. */
   permission_keys?: string[];
+  /** Replaces the role's entire branch reach. Empty means school-wide. */
+  branch_ids?: number[];
   /** Required by the server whenever `permission_keys` is sent, and recorded on
    *  the audit entry for the change. Omitting it fails the save with a field
    *  error on `reason`. */
@@ -228,13 +236,13 @@ export interface NewRoleChangeRequest {
 }
 
 
-/** One person holding a role, as the drawer's People tab lists them. */
+/** One person holding a role, as the role's People tab lists them. */
 export interface RoleHolder {
   id: number;
   user_id: string;
   user_name: string;
   user_email: string;
-  /** Null when the role is held school-wide rather than at one branch. */
+  /** Null inherits the role's reach, which may cover selected branches. */
   branch: number | null;
   assignment_status: string;
   assigned_at: string;

@@ -1,186 +1,99 @@
 import { useMemo, useState } from "react";
-import { Info, Plus, Search } from "lucide-react";
+import { useNavigate } from "react-router";
+import { Plus, Search } from "lucide-react";
+
+import CustomTable from "@/components/custom/custom-table";
+import PageAccessDenied from "@/components/custom/page-access-denied";
+import PermissionGate from "@/components/custom/permission-gate";
+import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import CustomTable from "@/components/custom/custom-table";
-import PermissionGate from "@/components/custom/permission-gate";
-import { PageShell } from "@/components/layout/page-shell";
+import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
-import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
-import { RoleDrawer } from "../onboarding/components/role-drawer";
+import { useGetAllMyBranchesQuery } from "@/redux/services/branches/branches-api";
+import { useGetFieldAccessRolesQuery } from "@/redux/services/roles/roles-api";
+import type { SchoolRole } from "@/redux/services/roles/roles-types";
+import { roleDetailPath } from "./role-paths";
 
 /**
- * Roles & Permissions, for a school that is already running.
+ * Permanent role directory for a running school.
  *
- * The onboarding screen at /onboarding/roles asks a school to confirm its
- * baseline once, and it belongs to a checklist that disappears at go-live. This
- * is the permanent door to the same rows: the place a head teacher goes in
- * March when a new bursar joins, which until now did not exist and left the
- * API reachable only from the setup wizard.
- *
- * The drawer is the onboarding one, deliberately. Two screens for naming a role
- * and ticking its permissions would drift, and the second one to drift would be
- * the one nobody opened during setup.
+ * The list walks every API page so a role does not disappear after the first
+ * hundred. Each row opens a full-page record where granted permissions can be
+ * read without first entering an edit form.
  */
-
-const SEEDED_COLUMNS = ["Role", "People", "Permissions", "Status"];
-const OWN_COLUMNS = ["Role", "People", "Permissions"];
-
 export default function Roles() {
-  const roles = useGetSchoolRolesQuery();
-
+  const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
+  const canView = hasPermission(P.VIEW_ROLES);
+  const roles = useGetFieldAccessRolesQuery(undefined, { skip: !canView });
+  const branches = useGetAllMyBranchesQuery(undefined, { skip: !canView });
   const [search, setSearch] = useState("");
-  const [explainerOpen, setExplainerOpen] = useState(false);
-  // `drawerKey === null` while open means "a new role": one surface for naming,
-  // describing and permissioning, whichever it is.
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [drawerKey, setDrawerKey] = useState<string | null>(null);
 
-  const openRole = (key: string | null) => {
-    setDrawerKey(key);
-    setDrawerOpen(true);
-  };
-
-  const all = useMemo(() => roles.data?.data ?? [], [roles.data]);
+  const all = useMemo(() => roles.data ?? [], [roles.data]);
   const matching = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    if (!needle) return all;
-    return all.filter((role) => role.name.toLowerCase().includes(needle));
+    return needle ? all.filter((role) => role.name.toLowerCase().includes(needle)) : all;
   }, [all, search]);
-
-  // Split on is_system_role rather than on a name list, so a baseline role
-  // CodeX adds later lands in the right table with no frontend change.
   const seeded = matching.filter((role) => role.is_system_role);
-  const own = matching.filter((role) => !role.is_system_role);
+  const custom = matching.filter((role) => !role.is_system_role);
+  const totalPeople = all.reduce((sum, role) => sum + role.assigned_users_count, 0);
+  const names = new Map((branches.data ?? []).map((branch) => [branch.id, branch.name]));
 
-  const rowFor = (role: (typeof all)[number], withStatus: boolean) => ({
-    _slug: role.key,
-    role: <span className="whitespace-nowrap font-semibold">{role.name}</span>,
-    people: (
-      <span className="whitespace-nowrap text-gray-01">
-        {role.assigned_users_count === 0
-          ? "Nobody yet"
-          : `${role.assigned_users_count} ${
-              role.assigned_users_count === 1 ? "person" : "people"
-            }`}
-      </span>
-    ),
-    permissions: (
-      <span className="whitespace-nowrap text-gray-01">
-        {role.permissions_count === 0
-          ? "None yet"
-          : `${role.permissions_count} granted`}
-      </span>
-    ),
-    ...(withStatus
-      ? {
-          status:
-            role.status === "ACTIVE" ? (
-              <Badge variant="success" className="text-xs">Active</Badge>
-            ) : (
-              <Badge variant="inactive" className="text-xs">Unavailable</Badge>
-            ),
-        }
-      : {}),
-  });
+  const rowFor = (role: SchoolRole) => {
+    const ids = role.branch_ids ?? (role.branch ? [role.branch] : []);
+    return {
+      _slug: role.key,
+      role: <span className="font-semibold text-black-01">{role.name}</span>,
+      people: <span>{role.assigned_users_count} {role.assigned_users_count === 1 ? "person" : "people"}</span>,
+      permissions: <span>{role.permissions_count} granted</span>,
+      reach: <span>{ids.length ? ids.map((id) => names.get(id) ?? `Branch ${id}`).join(", ") : "School-wide"}</span>,
+      status: <Badge variant={role.status === "ACTIVE" ? "success" : "inactive"}>{role.status === "ACTIVE" ? "Active" : "Out of use"}</Badge>,
+    };
+  };
+
+  if (!canView) return <PageAccessDenied />;
 
   return (
-    <PageShell className="space-y-5">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="min-w-0 max-w-[60ch]">
-          <h2 className="flex items-center gap-1.5 text-lg font-semibold font-mont text-black-01">
-            Roles &amp; Permissions
-            <button
-              type="button"
-              onClick={() => setExplainerOpen((open) => !open)}
-              aria-expanded={explainerOpen}
-              aria-label="What approval means here"
-              className="rounded-full text-gray-01 hover:text-black-01 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-            >
-              <Info className="size-4" />
-            </button>
-          </h2>
-          <p className="mt-1 text-sm text-gray-01 text-pretty">
-            What each job at your school can reach. Open a role to see what it
-            holds, or add one of your own.
-          </p>
+    <PageShell className="content-start gap-5" grid>
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 max-w-3xl">
+          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">Roles &amp; Permissions</h1>
+          <p className="mt-1 text-sm text-gray-01">See who can do what across your school. Open a role to review its permissions, people and branch reach.</p>
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
-          <PermissionGate permission={P.CREATE_ROLE}>
-            <Button onClick={() => openRole(null)}>
-              <Plus />
-              Add a role
-            </Button>
-          </PermissionGate>
-        </div>
+        <PermissionGate permission={P.CREATE_ROLE}><Button onClick={() => navigate("/roles/new")}><Plus /> Create role</Button></PermissionGate>
       </div>
 
-      {explainerOpen && (
-        <div className="flex items-start gap-2.5 rounded-lg border border-gray-05/40 bg-gray-05/5 px-3.5 py-3">
-          <Info className="size-4 shrink-0 mt-0.5 text-gray-01" />
-          <p className="text-sm text-gray-01 text-pretty">
-            Some permissions - raising bills, taking payment, changing what a
-            role can spend - need a second look before they take effect. Ticking
-            one raises a request instead of saving straight away, and the request
-            waits under Approvals with everything else awaiting a decision.
-          </p>
-        </div>
-      )}
-
-      <div className="relative max-w-80">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-gray-01" />
-        <Input
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search roles"
-          className="pl-9"
-        />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <div className="rounded-xl border border-border bg-white p-4 sm:p-5"><p className="text-xs font-medium text-gray-05">Total roles</p><p className="mt-1 text-2xl font-semibold text-black-01">{all.length}</p></div>
+        <div className="rounded-xl border border-border bg-white p-4 sm:p-5"><p className="text-xs font-medium text-gray-05">Custom roles</p><p className="mt-1 text-2xl font-semibold text-black-01">{all.filter((role) => !role.is_system_role).length}</p></div>
+        <div className="col-span-2 rounded-xl border border-border bg-white p-4 sm:p-5 lg:col-span-1"><p className="text-xs font-medium text-gray-05">Active role assignments</p><p className="mt-1 text-2xl font-semibold text-black-01">{totalPeople}</p></div>
       </div>
 
-      <section className="space-y-2.5">
-        <h3 className="text-sm font-semibold text-black-01">
-          Roles XVS set up for this school
-        </h3>
-        <CustomTable
-          tableHeaderList={SEEDED_COLUMNS}
-          tableBodyList={seeded.map((role) => rowFor(role, true))}
-          loading={roles.isLoading}
-          loadingText="Loading roles…"
-          emptyText={
-            search
-              ? "No default role matches that."
-              : "No default roles were set up for this school."
-          }
-          hidePagination
-          onRowClick={(row) => openRole((row as { _slug: string })._slug)}
-        />
-      </section>
+      <section className="min-w-0 space-y-4">
+        <div className="flex min-w-0 flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-white p-3.5 sm:p-4">
+          <div><h2 className="text-base font-semibold text-black-01">Role directory</h2><p className="mt-1 text-xs text-gray-05">Choose a role to see every permission it holds.</p></div>
+          <div className="relative w-full sm:max-w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search roles" aria-label="Search roles" className="pl-9" /></div>
+        </div>
 
-      <section className="space-y-2.5">
-        <h3 className="text-sm font-semibold text-black-01">
-          Roles this school added
-        </h3>
-        <CustomTable
-          tableHeaderList={OWN_COLUMNS}
-          tableBodyList={own.map((role) => rowFor(role, false))}
-          loading={roles.isLoading}
-          loadingText="Loading roles…"
-          emptyText={
-            search
-              ? "No role of yours matches that."
-              : "You have not added a role of your own yet."
-          }
-          hidePagination
-          onRowClick={(row) => openRole((row as { _slug: string })._slug)}
-        />
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-05">School roles</h3>
+          {!roles.isLoading && !seeded.length ? (
+            <p className="rounded-xl border border-border bg-white p-6 text-sm text-gray-01">{search ? "No school role matches that search." : "No school roles are available."}</p>
+          ) : (
+            <CustomTable tableHeaderList={["Role", "People", "Permissions", "Reach", "Status"]} tableBodyList={seeded.map(rowFor)} loading={roles.isLoading} loadingText="Loading roles..." hidePagination cardBreakpoint="lg" onRowClick={(row) => navigate(roleDetailPath("/roles", (row as { _slug: string })._slug))} />
+          )}
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-05">Custom roles</h3>
+          {!roles.isLoading && !custom.length ? (
+            <p className="rounded-xl border border-border bg-white p-6 text-sm text-gray-01">{search ? "No custom role matches that search." : "No custom roles yet."}</p>
+          ) : (
+            <CustomTable tableHeaderList={["Role", "People", "Permissions", "Reach", "Status"]} tableBodyList={custom.map(rowFor)} loading={roles.isLoading} loadingText="Loading roles..." hidePagination cardBreakpoint="lg" onRowClick={(row) => navigate(roleDetailPath("/roles", (row as { _slug: string })._slug))} />
+          )}
+        </div>
       </section>
-
-      <RoleDrawer
-        open={drawerOpen}
-        roleKey={drawerKey}
-        onClose={() => setDrawerOpen(false)}
-      />
     </PageShell>
   );
 }

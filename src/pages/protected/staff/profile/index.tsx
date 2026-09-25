@@ -325,7 +325,7 @@ export default function StaffProfile() {
         </Surface>
       )}
 
-      <StaffDrawers request={drawer} onClose={() => setDrawer(null)} />
+      <StaffDrawers request={drawer} onClose={() => setDrawer(null)} onRequest={setDrawer} />
     </PageShell>
   );
 }

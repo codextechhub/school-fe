@@ -16,6 +16,8 @@ const SchoolProfile = lazy(
   () => import("@/pages/protected/onboarding/school-profile"),
 );
 const OnboardingRoles = lazy(() => import("@/pages/protected/onboarding/roles"));
+const RoleView = lazy(() => import("@/pages/protected/roles/role-view"));
+const RoleEditor = lazy(() => import("@/pages/protected/roles/role-editor"));
 const OnboardingImport = lazy(() => import("@/pages/protected/onboarding/import"));
 const Notifications = lazy(() => import("@/pages/protected/notifications"));
 const GoLive = lazy(() => import("@/pages/protected/onboarding/go-live"));
@@ -59,6 +61,9 @@ export const onboardingRoutes = [
     Component: OnboardingRoles,
     handle: handle("Roles & Invitations", true),
   },
+  { path: routesPath.PROTECTED.ONBOARDING.ROLE_NEW, Component: RoleEditor, handle: handle("Create Role", true) },
+  { path: routesPath.PROTECTED.ONBOARDING.ROLE_EDIT, Component: RoleEditor, handle: handle("Edit Role", true) },
+  { path: routesPath.PROTECTED.ONBOARDING.ROLE_DETAIL, Component: RoleView, handle: handle("Role", true) },
   {
     path: routesPath.PROTECTED.ONBOARDING.IMPORT,
     Component: OnboardingImport,

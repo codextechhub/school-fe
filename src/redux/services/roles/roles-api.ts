@@ -24,7 +24,7 @@ import type {
  *
  * Unlike the profile and staff surfaces, these endpoints DO carry the school in
  * the path. That is the platform's existing shape, not a choice made here, and
- * it is not a hole: the view refuses any slug that is not the one the session
+     * it is not a hole: the view refuses any slug that is not the one the session
  * asserts, with a 404 rather than a 403 so slugs cannot be probed. The slug is
  * read from the same store the base query reads it from, so the path and the
  * ?tenant= assertion can never disagree.
@@ -49,7 +49,7 @@ export const rolesApi = baseApi.injectEndpoints({
      * The roles list is paginated with at most 100 rows a page and has no
      * search, so a single request silently drops later roles once a school
      * outgrows one page. This walks every page at the largest size instead,
-     * and leaves the single-page query above as the Roles screen uses it.
+     * while callers that need pagination can use the single-page query above.
      */
     getFieldAccessRoles: builder.query<SchoolRole[], void>({
       queryFn: (_arg, _api, _extra, baseQuery) =>
@@ -65,7 +65,7 @@ export const rolesApi = baseApi.injectEndpoints({
       providesTags: ["Roles"],
     }),
 
-    /** One role, with every permission it holds. Backs the preview drawer. */
+    /** One role, with every permission and branch it holds. */
     getSchoolRole: builder.query<Envelope<SchoolRoleDetail>, string>({
       query: (key) => ({ url: `${scope()}/roles/${key}/`, method: "GET" }),
       extraOptions: { silent: true },
@@ -77,7 +77,7 @@ export const rolesApi = baseApi.injectEndpoints({
      *
      * Not the global registry: that one is CodeX's and carries keys no school
      * may ever hold. This is the short list, filtered by the same scope column
-     * the save is checked against, so the drawer cannot offer a box that
+     * the save is checked against, so the editor cannot offer a box that
      * ticking would fail.
      */
     getAccessCatalogue: builder.query<
@@ -210,14 +210,22 @@ export const rolesApi = baseApi.injectEndpoints({
       ],
     }),
 
+    deleteSchoolRole: builder.mutation<void, string>({
+      query: (key) => ({
+        url: `${scope()}/roles/${encodeURIComponent(key)}/`,
+        method: "DELETE",
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Roles", "Onboarding"],
+    }),
+
     /**
-     * The people holding one role.
+     * The people holding one role on a single API page.
      *
      * Answers the question the roles table raises and could not settle: it
      * reports "4 people" and, until this, there was no way to find out which
      * four. Filtered server-side by role key rather than fetched whole and
-     * filtered here, because a school's assignment list grows with its staff
-     * and this drawer wants one role's worth.
+     * filtered here, because a school's assignment list grows with its staff.
      */
     getRoleHolders: builder.query<
       PaginatedEnvelope<RoleHolder>,
@@ -232,19 +240,31 @@ export const rolesApi = baseApi.injectEndpoints({
       providesTags: (_r, _e, { role }) => [{ type: "Roles", id: `holders-${role}` }],
     }),
 
+    getAllRoleHolders: builder.query<RoleHolder[], { role: string }>({
+      queryFn: ({ role }, _api, _extra, baseQuery) =>
+        fetchAllPages<RoleHolder, FetchBaseQueryError>(async (page) => {
+          const { data, error } = await baseQuery({
+            url: `${scope()}/role-assignments/`,
+            method: "GET",
+            params: { role, assignment_status: "ACTIVE", page, page_size: 100 },
+          });
+          return error ? { error } : { data: data as PaginatedEnvelope<RoleHolder> };
+        }),
+      extraOptions: { silent: true },
+      providesTags: (_r, _e, { role }) => [{ type: "Roles", id: `holders-${role}` }],
+    }),
+
     /**
-     * Give one person a role, at one branch or across the school.
+     * Give one person a role with the role's configured branch reach.
      *
      * **`user` is the ACCOUNT's id, not the staff record's.** They are two
      * different numbers on the same person, and sending the wrong one either
      * refuses with "no such user" or, worse, lands on somebody else. Staff rows
      * carry `user_id` for exactly this.
      *
-     * `branch` null is a whole-school grant, which is a choice a school makes
-     * rather than a field it forgot: it reaches every branch, including ones
-     * opened later. A branch id pins it, and the same role may be pinned at two
-     * branches for one person - the schema was split in two to allow that, and
-     * both write paths were fixed to stop refusing it.
+     * `branch` null inherits the role's reach. That is school-wide when the
+     * role has no selected branches, or exactly its selected branches when it
+     * does. A branch id pins a legacy single-branch grant.
      */
     assignRole: builder.mutation<
       Envelope<RoleHolder>,
@@ -318,8 +338,10 @@ export const {
   useDeleteUserFieldAccessOverrideMutation,
   useCreateSchoolRoleMutation,
   useUpdateSchoolRoleMutation,
+  useDeleteSchoolRoleMutation,
   useSetSchoolRoleStatusMutation,
   useGetRoleHoldersQuery,
+  useGetAllRoleHoldersQuery,
   useAssignRoleMutation,
   useRevokeRoleAssignmentMutation,
   useCreateRoleChangeRequestMutation,

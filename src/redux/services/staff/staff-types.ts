@@ -128,6 +128,8 @@ export interface StaffListRow {
   /** Every distinct role name they hold, de-duplicated and sorted. */
   roles: string[];
   branch_id: number | null;
+  /** Every equal branch posting, empty for school-wide. */
+  posting_branch_ids: number[];
   /**
    * `null` at a single-branch school, where the dimension recedes entirely
    * rather than repeating one value on every row. `"School-wide"` for somebody
@@ -250,6 +252,7 @@ export interface StaffCounts {
 export interface StaffRoleOption {
   value: string;
   label: string;
+  branch_ids: number[];
 }
 
 /**
@@ -454,6 +457,7 @@ export interface StaffGrant {
   role_key: string;
   school_wide: boolean;
   branch_id: number | null;
+  branch_ids: number[];
   branch_name: string;
   granted_at: string;
   granted_by: StaffActor | null;
@@ -537,8 +541,8 @@ export interface StaffRoster {
 
 export interface StaffBulkPosting {
   staff_ids: number[];
-  /** A branch id, or null for across the whole school. */
-  branch: string | null;
+  /** Empty is an explicit school-wide posting. */
+  branch_ids: number[];
   reason?: string;
 }
 
