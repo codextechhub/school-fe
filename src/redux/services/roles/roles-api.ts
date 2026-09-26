@@ -3,6 +3,7 @@ import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import { getTenantSlug } from "@/utils/tenant-context";
 import { fetchAllPages } from "@/utils/fetch-all-pages";
+import type { StaffPendingGrant } from "../staff/staff-types";
 import type {
   CatalogueModule,
   FieldAccessKind,
@@ -32,6 +33,13 @@ import type {
  * not to dismantle it.
  */
 const scope = () => `/rbac/tenants/${getTenantSlug()}`;
+
+/** True when an assignment answer is a request waiting for approval, not a grant. */
+export function isPendingGrant(
+  row: RoleHolder | StaffPendingGrant,
+): row is StaffPendingGrant {
+  return "status" in row && row.status === "PENDING";
+}
 
 export const rolesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -265,9 +273,13 @@ export const rolesApi = baseApi.injectEndpoints({
      * `branch` null inherits the role's reach. That is school-wide when the
      * role has no selected branches, or exactly its selected branches when it
      * does. A branch id pins a legacy single-branch grant.
+     *
+     * A role carrying restricted permissions the caller does not hold is not
+     * granted: the server answers 202 with the request it raised for approval
+     * (`status: "PENDING"`) instead of the grant.
      */
     assignRole: builder.mutation<
-      Envelope<RoleHolder>,
+      Envelope<RoleHolder | StaffPendingGrant>,
       { user: number; role: number; branch?: number | null }
     >({
       query: (body) => ({

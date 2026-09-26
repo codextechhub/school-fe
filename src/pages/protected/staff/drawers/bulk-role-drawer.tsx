@@ -23,6 +23,10 @@ import { useReaderReach } from "./reader-reach";
  * had it" sends somebody back through a list of forty to work out which two,
  * so the server returns both lists by name and the toast reads them out.
  *
+ * **A restricted role the reader does not hold waits for approval**, one
+ * request per person, exactly as it does from a profile. Those people are
+ * named too, and hold nothing new until it is approved.
+ *
  * The role list is the one the staff endpoint offers, so it is already narrowed
  * for a school that has not gone live - the same list the Add form uses, from
  * the same call.
@@ -64,14 +68,21 @@ export function BulkRoleDrawer({
         role,
         branch: configuredReach ? null : reach || (soleBranch ? String(soleBranch.id) : null),
       }).unwrap();
-      const { granted, already_held } = result.data;
+      const { granted, already_held, pending_approval = [] } = result.data;
 
-      toast.success(
-        `${chosen.label} granted to ${granted.length} ${granted.length === 1 ? "person" : "people"}.`,
-      );
+      if (granted.length) {
+        toast.success(
+          `${chosen.label} granted to ${granted.length} ${granted.length === 1 ? "person" : "people"}.`,
+        );
+      }
+      if (pending_approval.length) {
+        toast.info(
+          `${chosen.label} for ${pending_approval.map((p) => p.name).join(", ")} is waiting for approval. It takes effect once approved in Approvals.`,
+        );
+      }
       if (already_held.length) {
         toast.info(
-          `${already_held.map((p) => p.name).join(", ")} already held it, so nothing changed for ${already_held.length === 1 ? "them" : "them"}.`,
+          `${already_held.map((p) => p.name).join(", ")} already held it, so nothing changed for them.`,
         );
       }
       onDone();

@@ -1,12 +1,14 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
-import { Info, ShieldCheck } from "lucide-react";
+import { Hourglass, Info, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { apiErrorMessage, fieldErrorsFor } from "@/utils/api-error";
 import {
+  isPendingGrant,
   useAssignRoleMutation,
   useGetSchoolRolesQuery,
   useRevokeRoleAssignmentMutation,
@@ -16,6 +18,7 @@ import {
   useGetStaffRolesQuery,
 } from "@/redux/services/staff/staff-api";
 import type { StaffDetail } from "@/redux/services/staff/staff-types";
+import { routesPath } from "@/routes/routesPath";
 
 import {
   DrawerShell,
@@ -34,6 +37,13 @@ import { useReaderReach } from "./reader-reach";
  * Teacher grants, one pinned to each branch, and the database was split in two
  * to allow it. So this adds a grant rather than replacing one, and the list
  * above the form is every grant they hold rather than "their role".
+ *
+ * **A restricted role the reader does not hold waits for approval.** Granting
+ * Finance Admin without holding its restricted keys raises a request on the
+ * approval ladder instead of a grant, so it is listed under "Waiting for
+ * approval" and confers nothing until approved. A school's only administrator
+ * approves their own from Approvals. A second request for the same role and
+ * reach is not offered while one waits.
  *
  * **Revoking keeps the row.** It moves to the withdrawn list on their Access
  * tab with who did it and why, because "what could this person do before" is
@@ -78,6 +88,7 @@ export function RoleDrawer({
 
   const offered = useMemo(() => listData?.role_options ?? [], [listData]);
   const grants = held.data?.data.roles ?? [];
+  const pending = held.data?.data.pending ?? [];
 
   // The catalogue carries the numeric id the assignment endpoint wants; the
   // offered list carries the key the school may use. Joined here so the picker
@@ -109,20 +120,33 @@ export function RoleDrawer({
       grant.role_key === roleKey &&
       (configuredReach ? grant.branch_id === null : effectiveReach ? String(grant.branch_id) === effectiveReach : grant.school_wide),
   );
+  const waiting = pending.some(
+    (request) =>
+      request.role_key === roleKey &&
+      (effectiveReach && !configuredReach
+        ? String(request.branch_id) === effectiveReach
+        : request.branch_id === null),
+  );
 
   async function grant() {
     if (!chosen) return;
     setErrors({});
     try {
-      await assign({
+      const result = await assign({
         // The ACCOUNT's id. The staff record's is a different number.
         user: person.user_id,
         role: chosen.id,
         branch: configuredReach ? null : reach ? Number(reach) : soleBranch?.id ?? null,
       }).unwrap();
-      toast.success(
-        `${chosen.label} granted${configuredReach ? " at all its selected branches" : reach ? "" : " across the whole school"}.`,
-      );
+      if (isPendingGrant(result.data)) {
+        toast.info(
+          `${chosen.label} is waiting for approval. It takes effect once approved in Approvals.`,
+        );
+      } else {
+        toast.success(
+          `${chosen.label} granted${configuredReach ? " at all its selected branches" : reach ? "" : " across the whole school"}.`,
+        );
+      }
       setRoleKey("");
       setReach("");
     } catch (error) {
@@ -163,6 +187,7 @@ export function RoleDrawer({
         manageable &&
         Boolean(chosen) &&
         !duplicate &&
+        !waiting &&
         (wholeSchool || configuredReach || Boolean(reach || soleBranch))
       }
       saving={granting}
@@ -257,6 +282,49 @@ export function RoleDrawer({
           )}
         </section>
 
+        {pending.length > 0 && (
+          <section>
+            <h3 className="mb-2.5 text-sm font-semibold text-black-01">
+              Waiting for approval
+            </h3>
+            <ul className="grid gap-2.5">
+              {pending.map((request) => (
+                <li
+                  key={request.id}
+                  className="rounded-lg border border-dashed border-white-02 px-3.5 py-2.5"
+                >
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    <Hourglass
+                      className="size-4 shrink-0 text-amber-600"
+                      aria-hidden
+                    />
+                    <span className="text-sm font-medium text-black-01">
+                      {request.role_name}
+                    </span>
+                    <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] text-gray-01">
+                      {request.branch_name}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-05">
+                    Asked for {formatDate(request.submitted_at)} by{" "}
+                    {request.requested_by_name}
+                    {request.replaces_role_name
+                      ? `, to replace ${request.replaces_role_name}`
+                      : ""}
+                    . Nothing changes until it is approved.
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <Link
+              to={routesPath.PROTECTED.WORKFLOW.APPROVALS}
+              className="mt-2 inline-block text-xs font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Open Approvals
+            </Link>
+          </section>
+        )}
+
         {!manageable ? (
           <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
             <Info className="mt-px size-3.5 shrink-0 text-primary" />
@@ -312,6 +380,13 @@ export function RoleDrawer({
               {chosen && configuredReach && (
                 <p className="rounded-lg bg-pry-01/50 px-3.5 py-2.5 text-xs text-primary">
                   This role grants all its selected branches automatically.
+                </p>
+              )}
+
+              {waiting && (
+                <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                  {chosen?.label} is already waiting for approval for{" "}
+                  {person.full_name} with that reach.
                 </p>
               )}
 

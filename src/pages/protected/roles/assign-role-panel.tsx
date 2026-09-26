@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAssignRoleMutation } from "@/redux/services/roles/roles-api";
+import {
+  isPendingGrant,
+  useAssignRoleMutation,
+} from "@/redux/services/roles/roles-api";
 import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import { writeErrorMessage } from "@/utils/api-error";
 
@@ -76,8 +79,14 @@ export function AssignRolePanel({
 
   const give = async (userId: number, name: string) => {
     try {
-      await assign({ user: userId, role: roleId, branch: null }).unwrap();
-      toast.success(`${name} now holds ${roleName}.`);
+      const result = await assign({ user: userId, role: roleId, branch: null }).unwrap();
+      if (isPendingGrant(result.data)) {
+        toast.info(
+          `${roleName} for ${name} is waiting for approval. It takes effect once approved in Approvals.`,
+        );
+      } else {
+        toast.success(`${name} now holds ${roleName}.`);
+      }
       onAssigned();
     } catch (error) {
       toast.error(

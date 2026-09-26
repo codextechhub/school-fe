@@ -69,6 +69,10 @@ function SectionNote({ children }: { children: React.ReactNode }) {
  * answer meaning they reach the school-wide rows and nothing else. The server
  * says which in `reach.note`, and it is rendered rather than reworded.
  *
+ * **A grant waiting for approval is listed apart from the roles held.** A role
+ * carrying restricted permissions its granter does not hold is requested, not
+ * written, and confers nothing until approved, so it must not read as held.
+ *
  * **Revoked grants are history and are never hidden.** "What could this person
  * do before" is the question asked after something has gone wrong.
  *
@@ -128,6 +132,41 @@ export function AccessTab({
           </Empty>
         )}
       </section>
+
+      {(roles.pending ?? []).length > 0 && (
+        <section>
+          <h3 className="mb-1 text-sm font-semibold text-black-01">
+            Waiting for approval
+          </h3>
+          <SectionNote>
+            Nothing changes until these are approved in Approvals.
+          </SectionNote>
+          <ul className="grid gap-2.5">
+            {(roles.pending ?? []).map((request) => (
+              <li
+                key={request.id}
+                className="rounded-lg border border-dashed border-white-02 px-3.5 py-2.5"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-black-01">
+                    {request.role_name}
+                  </span>
+                  <span className="rounded-full bg-gray-04 px-2 py-0.5 text-[11px] text-gray-01">
+                    {request.branch_name}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-gray-05">
+                  Asked for {formatDate(request.submitted_at)} by{" "}
+                  {request.requested_by_name}
+                  {request.replaces_role_name
+                    ? `, to replace ${request.replaces_role_name}`
+                    : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section>
         <h3 className="mb-1 text-sm font-semibold text-black-01">

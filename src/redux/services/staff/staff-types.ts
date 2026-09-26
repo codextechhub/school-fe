@@ -507,6 +507,28 @@ export interface StaffRevokedGrant extends StaffGrant {
 }
 
 /**
+ * A grant waiting on the approval ladder.
+ *
+ * A role carrying restricted permissions its granter does not hold is
+ * requested rather than written, and confers nothing until approved. The
+ * requester may approve their own when nobody else can.
+ */
+export interface StaffPendingGrant {
+  id: number;
+  status: "PENDING";
+  user_id: number;
+  role_key: string;
+  role_name: string;
+  branch_id: number | null;
+  branch_name: string;
+  replaces_id: number | null;
+  replaces_role_name: string | null;
+  reason_note: string;
+  requested_by_name: string;
+  submitted_at: string;
+}
+
+/**
  * A person's grants and what they reach.
  *
  * Reach is derived from branch-pinned grants and never stored on the person, so
@@ -520,6 +542,8 @@ export interface StaffRevokedGrant extends StaffGrant {
  */
 export interface StaffRoles {
   roles: StaffGrant[];
+  /** Waiting for approval; listed apart because they confer nothing yet. Absent from a server older than the grant ladder. */
+  pending?: StaffPendingGrant[];
   revoked: StaffRevokedGrant[];
   reach: {
     school_wide: boolean;
@@ -616,6 +640,8 @@ export interface StaffBulkRoleResult {
   reach: string;
   granted: StaffActor[];
   already_held: StaffActor[];
+  /** A restricted role the granter does not hold waits, one request each. Absent from a server older than the grant ladder. */
+  pending_approval?: StaffActor[];
 }
 
 // ── Teaching ───────────────────────────────────────────────────────────────
