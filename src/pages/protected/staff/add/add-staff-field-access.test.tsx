@@ -15,10 +15,25 @@ import { CREATING, FIELD_RESOURCE } from "@/lib/field-resources";
  * the new teacher's address, and it is sent, since the invitation has nowhere
  * else to go. On Mr. Bello's existing record the address stays out of sight.
  *
+ * Lagoon View is live, so the form asks for no role: Mr. Bello starts as
+ * Teacher and nothing about a role is sent. Before Bright Star goes live its
+ * admin is still asked to pick School Admin or Branch Admin.
+ *
  * The API hooks return fixed data and `usePermissions` returns the map under
- * test, so the form's own Field Access rules are what these exercise.
+ * test, so the form's own rules are what these exercise.
  */
 let fieldAccess: FieldAccessMap = {};
+const LIVE = {
+  data: [],
+  role_options: [{ value: "school.bursar", label: "Bursar" }],
+  starting_role: { value: "teacher", label: "Teacher" },
+};
+const ONBOARDING = {
+  data: [],
+  role_options: [{ value: "school_admin", label: "School Admin" }],
+  starting_role: null,
+};
+let listData: typeof LIVE | typeof ONBOARDING = LIVE;
 const create = vi.fn();
 
 vi.mock("@/hooks/use-permissions", () => ({
@@ -41,10 +56,7 @@ vi.mock("@/redux/services/academics/academics-api", () => ({
   useGetSubjectsQuery: () => ({ data: { data: [] } }),
 }));
 vi.mock("@/redux/services/staff/staff-api", () => ({
-  useGetStaffListQuery: () => ({
-    data: { data: [], role_options: [{ value: "school.bursar", label: "Bursar" }] },
-    isLoading: false,
-  }),
+  useGetStaffListQuery: () => ({ data: listData, isLoading: false }),
   useCreateStaffMutation: () => [create, { isLoading: false }],
   useUpdateStaffMutation: () => [vi.fn()],
   useResendStaffInvitationMutation: () => [vi.fn(), { isLoading: false }],
@@ -64,6 +76,12 @@ function inputLabelled(container: HTMLElement, text: string): HTMLInputElement |
   );
   const id = label?.getAttribute("for");
   return id ? (container.querySelector(`#${CSS.escape(id)}`) as HTMLInputElement | null) : null;
+}
+
+function submitButton(container: HTMLElement): HTMLButtonElement {
+  return Array.from(container.querySelectorAll("button")).find(
+    (b) => b.textContent === "Create and invite",
+  ) as HTMLButtonElement;
 }
 
 function type(input: HTMLInputElement | HTMLSelectElement, value: string) {
@@ -88,6 +106,7 @@ describe("AddStaff and an email open on create", () => {
     await act(async () => root.unmount());
     container.remove();
     fieldAccess = {};
+    listData = LIVE;
   });
 
   async function render() {
@@ -112,15 +131,51 @@ describe("AddStaff and an email open on create", () => {
       type(inputLabelled(container, "First name") as HTMLInputElement, "Musa");
       type(inputLabelled(container, "Last name") as HTMLInputElement, "Bello");
       type(email as HTMLInputElement, "musa.bello@lagoonview.edu.ng");
-      type(container.querySelector("select[aria-label='Role']") as HTMLSelectElement, "school.bursar");
     });
-    const submit = Array.from(container.querySelectorAll("button")).find(
-      (b) => b.textContent === "Create and invite",
-    ) as HTMLButtonElement;
-    await act(async () => submit.click());
+    await act(async () => submitButton(container).click());
 
     expect(create).toHaveBeenCalledOnce();
     expect(create.mock.calls[0][0]).toMatchObject({ email: "musa.bello@lagoonview.edu.ng" });
+  });
+
+  it("asks for no role at a live school and sends none", async () => {
+    await render();
+
+    expect(container.querySelector("select[aria-label='Role']")).toBeNull();
+    expect(container.textContent).toContain("They start as Teacher");
+
+    await act(async () => {
+      type(inputLabelled(container, "First name") as HTMLInputElement, "Musa");
+      type(inputLabelled(container, "Last name") as HTMLInputElement, "Bello");
+      type(inputLabelled(container, "Email address") as HTMLInputElement, "musa.bello@lagoonview.edu.ng");
+    });
+    await act(async () => submitButton(container).click());
+
+    expect(create).toHaveBeenCalledOnce();
+    expect(create.mock.calls[0][0]).not.toHaveProperty("role");
+    expect(create.mock.calls[0][0]).not.toHaveProperty("role_branch");
+  });
+
+  it("asks an onboarding school to pick an administrator role", async () => {
+    listData = ONBOARDING;
+    await render();
+
+    const role = container.querySelector("select[aria-label='Role']") as HTMLSelectElement;
+    expect(role).not.toBeNull();
+    expect(container.textContent).not.toContain("They start as");
+
+    await act(async () => {
+      type(inputLabelled(container, "First name") as HTMLInputElement, "Ngozi");
+      type(inputLabelled(container, "Last name") as HTMLInputElement, "Umeh");
+      type(inputLabelled(container, "Email address") as HTMLInputElement, "ngozi@brightstar.edu.ng");
+    });
+    await act(async () => submitButton(container).click());
+    expect(create).not.toHaveBeenCalled();
+
+    await act(async () => type(role, "school_admin"));
+    await act(async () => submitButton(container).click());
+    expect(create).toHaveBeenCalledOnce();
+    expect(create.mock.calls[0][0]).toMatchObject({ role: "school_admin" });
   });
 
   it("leaves the email out when it is hidden and not open on create", async () => {

@@ -67,16 +67,19 @@ function roleTeaches(label: string, key: string): boolean {
  * immediately afterwards, and a failure there is reported as what it is - the
  * person was created, their picture was not - rather than as a failed create.
  *
- * **A role is required. There is no invite-now-decide-later.** Somebody created
- * without one has an account that signs in and reaches nothing, and no screen
- * would explain why.
+ * **At a live school the form does not ask for a role.** Everybody starts on
+ * the school's Teacher role (`starting_role`), reaching as far as their
+ * posting, and whoever manages roles adds, removes or widens grants afterwards.
+ * Adding staff and deciding what they may reach are different permissions held
+ * by different people, so the add path makes no access decision. The server
+ * grants the starting role itself and refuses any other, so leaving the picker
+ * off the form describes the rule rather than being it.
  *
- * **Before go-live the role list narrows to the two administrator roles.** Not
- * as a courtesy: onboarding has one administrator in it and nobody reviews what
- * they grant, so a bursar invited as Payout Approver during setup would hold
- * that grant the moment the school went live with no second pair of eyes on it.
- * The server refuses any other role on the POST as well, so the narrowed list
- * describes the rule rather than being it.
+ * **While onboarding, the form asks for School Admin or Branch Admin.** That is
+ * how a school's first administrators arrive, and the server narrows the list
+ * to those two because onboarding has one administrator and nobody reviews
+ * what they grant: a bursar invited as Payout Approver during setup would hold
+ * that grant the moment the school went live.
  *
  * **Personal details follow Field Access (`school.teachers`) as a record being
  * created.** Gender, date of birth, phone and email are offered, greyed or left
@@ -88,9 +91,9 @@ function roleTeaches(label: string, key: string): boolean {
 export default function AddStaff() {
   const navigate = useNavigate();
 
-  // The list endpoint carries the roles this school may hand out right now,
-  // already narrowed for a pending school. Read from here rather than from the
-  // roles catalogue, which is a surface this reader may not hold.
+  // The list carries the starting role and, while onboarding, the admin roles
+  // to pick from. Read from here rather than from the roles catalogue, which is
+  // a surface this reader may not hold.
   const { data: listData, isLoading: loadingRoles } = useGetStaffListQuery({
     page: 1,
   });
@@ -104,6 +107,9 @@ export default function AddStaff() {
   const [update] = useUpdateStaffMutation();
 
   const roles = useMemo(() => listData?.role_options ?? [], [listData]);
+  const startingRole = listData?.starting_role ?? null;
+  // Only an onboarding school chooses; undefined while loading asks nothing.
+  const choosesRole = listData?.starting_role === null;
   const branches = branchData?.data ?? [];
   const subjects = useMemo(() => subjectData?.data ?? [], [subjectData]);
   const classes = useMemo(() => classData?.data ?? [], [classData]);
@@ -155,7 +161,9 @@ export default function AddStaff() {
     });
   };
 
-  const chosenRole = roles.find((r) => r.value === form.role);
+  const chosenRole = choosesRole
+    ? roles.find((r) => r.value === form.role)
+    : startingRole;
   const teaches = Boolean(
     chosenRole && roleTeaches(chosenRole.label, chosenRole.value),
   );
@@ -176,7 +184,9 @@ export default function AddStaff() {
         found.email = "That does not look like an email address.";
       }
     }
-    if (!form.role) found.role = "Pick the role this person will hold.";
+    if (choosesRole && !form.role) {
+      found.role = "Pick the role this person will hold.";
+    }
     setErrors(found);
     return Object.keys(found).length === 0;
   }
@@ -198,8 +208,10 @@ export default function AddStaff() {
         employment_type: (form.employment_type || "") as EmploymentType | "",
         hire_date: form.hire_date || null,
         branch: form.branch || null,
-        role: form.role,
-        role_branch: roleReach === SCHOOL_WIDE ? null : roleReach,
+        ...(choosesRole && {
+          role: form.role,
+          role_branch: roleReach === SCHOOL_WIDE ? null : roleReach,
+        }),
         // Blank rows are dropped rather than sent: an empty row is somebody
         // pressing Add and changing their mind, not a qualification.
         qualifications: quals.filter((q) => q.qualification.trim()),
@@ -446,55 +458,57 @@ export default function AddStaff() {
           </div>
         </Section>
 
-        <Section step={3} title="Role">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Role" required error={errors.role}>
-              <NativeSelect
-                aria-label="Role"
-                value={form.role}
-                onChange={(e) => set("role")(e.target.value)}
-                className="h-9"
-                disabled={loadingRoles}
-              >
-                <option value="">Select a role</option>
-                {roles.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-            {branches.length > 1 && (
-              <Field
-                label="This role reaches"
-                error={errors.role_branch}
-                hint="Which records the role opens, not where they work. Set to match their posting; widen it only for somebody who genuinely works across branches."
-              >
+        {choosesRole && (
+          <Section step={3} title="Role">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Role" required error={errors.role}>
                 <NativeSelect
-                  aria-label="This role reaches"
-                  value={roleReach}
-                  onChange={(e) => set("role_branch")(e.target.value)}
+                  aria-label="Role"
+                  value={form.role}
+                  onChange={(e) => set("role")(e.target.value)}
                   className="h-9"
+                  disabled={loadingRoles}
                 >
-                  <option value={SCHOOL_WIDE}>Across the whole school</option>
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
+                  <option value="">Select a role</option>
+                  {roles.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
                     </option>
                   ))}
                 </NativeSelect>
               </Field>
-            )}
-          </div>
-          <p className="mt-3 flex items-start gap-2 text-xs text-gray-05">
-            <Info className="mt-px size-3.5 shrink-0 text-gray-05" />
-            What a role can do is defined in access control, not here.
-          </p>
-        </Section>
+              {branches.length > 1 && (
+                <Field
+                  label="This role reaches"
+                  error={errors.role_branch}
+                  hint="Which records the role opens, not where they work. Set to match their posting; widen it only for somebody who genuinely works across branches."
+                >
+                  <NativeSelect
+                    aria-label="This role reaches"
+                    value={roleReach}
+                    onChange={(e) => set("role_branch")(e.target.value)}
+                    className="h-9"
+                  >
+                    <option value={SCHOOL_WIDE}>Across the whole school</option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+              )}
+            </div>
+            <p className="mt-3 flex items-start gap-2 text-xs text-gray-05">
+              <Info className="mt-px size-3.5 shrink-0 text-gray-05" />
+              What a role can do is defined in access control, not here.
+            </p>
+          </Section>
+        )}
 
         {canAssignTeaching && (
           <Section
-            step={4}
+            step={choosesRole ? 4 : 3}
             title="Teaching duties"
             note="Optional. Every subject you pick is assigned in every class you pick, and they can be changed later."
           >
@@ -551,7 +565,7 @@ export default function AddStaff() {
         )}
 
         <Section
-          step={canAssignTeaching ? 5 : 4}
+          step={3 + Number(choosesRole) + Number(canAssignTeaching)}
           title="Qualifications"
           note="Typed rows, as your school records them. Nothing here checks a qualification, so nothing claims one was checked."
         >
@@ -563,6 +577,12 @@ export default function AddStaff() {
         <p className="text-sm font-semibold text-black-01">
           What happens when you save
         </p>
+        {startingRole && (
+          <p className="mt-1.5 text-[13px] text-gray-01">
+            They start as {startingRole.label}, reaching as far as their
+            posting. Roles are added or removed from Roles & Permissions.
+          </p>
+        )}
         <p className="mt-1.5 text-[13px] text-gray-01">
           The record is created with employment status Invited and the account
           waiting for activation. An invitation goes out by email and in-app,

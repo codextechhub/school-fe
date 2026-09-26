@@ -271,6 +271,13 @@ export interface StaffListResponse {
   data: StaffListRow[];
   counts: StaffCounts;
   role_options: StaffRoleOption[];
+  /**
+   * The role a new member of staff is given without anybody choosing it, or
+   * `null` while the school is onboarding, where the Add form asks for one of
+   * the two administrator roles instead. The server grants it itself and
+   * refuses any other role on the create.
+   */
+  starting_role: { value: string; label: string } | null;
   /** False at a one-branch school, where every branch control disappears. */
   multi_branch: boolean;
 }
@@ -330,9 +337,15 @@ export interface StaffCreate {
   email: string;
   phone?: string;
   gender?: string;
-  /** A role KEY from `role_options`. There is no invite-now-decide-later. */
-  role: string;
-  /** A branch id for a branch-pinned grant, or omitted for school-wide. */
+  /**
+   * Onboarding only: a role KEY from `role_options`. A live school sends none
+   * and the server grants `starting_role`, refusing any other.
+   */
+  role?: string;
+  /**
+   * Onboarding only: a branch id for a branch-pinned grant, `null` for
+   * school-wide, omitted to follow the posting. A live school sends none.
+   */
   role_branch?: string | null;
   staff_number?: string;
   job_title?: string;
