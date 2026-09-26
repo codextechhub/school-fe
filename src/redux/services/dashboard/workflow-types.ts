@@ -147,6 +147,8 @@ export interface WorkflowTemplate {
   tenant: string | number | null;
   branch: string | number | null;
   document_type: string;
+  /** What people call this document type ("Customer refund"). Absent from an older server. */
+  document_type_label?: string;
   code: string;
   name: string;
   description: string;
@@ -333,6 +335,10 @@ export interface WorkflowAuditLog {
 export interface WorkflowInstance {
   id: string;
   document_type: string;
+  /** What people call this document type ("Customer refund"). Absent from an older server. */
+  document_type_label?: string;
+  /** The title its handler gave this document at submission; blank when none. */
+  document_title?: string;
   document_object_id: string;
   template_code: string;
   status: WorkflowInstanceStatus;
@@ -389,6 +395,8 @@ export interface PendingApprovalsResponse {
 
 export interface TeamLoadRow {
   document_type: string;
+  /** What people call this document type ("Customer refund"). Absent from an older server. */
+  document_type_label?: string;
   stage_code: string;
   stage_label: string | null;
   active_count: number;
@@ -403,6 +411,8 @@ export interface ApprovalDelegation {
   starts_at: string;
   ends_at: string;
   document_type: string;
+  /** Blank for a delegation covering every type. Absent from an older server. */
+  document_type_label?: string;
   exclusive: boolean;
   reason: string;
   created_at: string;
@@ -756,6 +766,8 @@ export interface DynamicRoleUse {
   template_id: string;
   template_name: string;
   document_type: string;
+  /** What people call this document type ("Customer refund"). Absent from an older server. */
+  document_type_label?: string;
   stage_code: string;
   stage_label: string;
 }
