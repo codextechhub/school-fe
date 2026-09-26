@@ -25,15 +25,26 @@ export interface RolePermissionRow {
   granted: boolean;
 }
 
+/** A restricted permission waiting on approval, and the request carrying it. */
+export interface PendingAddition {
+  permission_key: string;
+  request_id: string;
+}
+
 /** A role with everything it holds. */
 export interface SchoolRoleDetail extends SchoolRole {
   /** A role with any past assignment keeps its audit trail and cannot be deleted. */
   has_assignment_history: boolean;
-  /** Whether the reader holds this role. A restricted addition to your own role
-   *  goes through approval; to anybody else's it saves, so the button has to
-   *  know before anything is pressed. The server computes it because a person
+  /** Whether the reader holds this role, so a screen that changes it knows to
+   *  refresh the reader's own access. The server computes it because a person
    *  may hold several roles and the token carries one. */
   held_by_me: boolean;
+  /**
+   * Restricted permissions asked for on this role and still waiting on the
+   * approval ladder. A save never grants a restricted permission the role does
+   * not already hold: it grants the rest and raises a request for these.
+   */
+  pending_additions: PendingAddition[];
   description: string;
   role_permissions: RolePermissionRow[];
 }
@@ -161,79 +172,6 @@ export interface RoleUpdate {
    *  the audit entry for the change. Omitting it fails the save with a field
    *  error on `reason`. */
   reason?: string;
-}
-
-
-/** One permission a request wants added or taken away. */
-export interface RoleChangeDeltaItem {
-  id: number;
-  operation: "ADD" | "REMOVE";
-  permission: {
-    key: string;
-    description: string;
-    sensitivity_level: string;
-    is_restricted: boolean;
-  };
-}
-
-/**
- * Where a request has got to in its approval ladder.
- *
- * `status` on the request says PENDING or APPROVED; this says who it is waiting
- * on. A screen that can only show "waiting" cannot tell the reader whether they
- * are the person being waited for, and at a school with two administrators that
- * is the entire question.
- *
- * Null for a request raised before role changes were routed through the
- * approval engine. Those have no ladder to act on and cannot be decided.
- */
-export interface RoleChangeApproval {
-  instance_id: string;
-  /** The engine's own status: IN_PROGRESS, APPROVED, REJECTED, and so on. */
-  status: string;
-  /** The stage the ladder is waiting on, empty once it is finished. */
-  stage_label: string;
-  /**
-   * Whether the reader is on this stage's approver list.
-   *
-   * Read from the frozen snapshot the server will check when the button is
-   * pressed, so a button that shows is a button that works.
-   */
-  can_act: boolean;
-  /** Whether the reader is the person who raised it. */
-  self_raised: boolean;
-}
-
-/**
- * A request to change what a role reaches, waiting on a decision.
- *
- * Restricted permissions cannot be granted by editing a role directly: the
- * server refuses and asks for one of these instead. So this is not an optional
- * workflow a school can ignore - it is the only route to every permission that
- * actually spends or bills money.
- *
- * Each one runs an approval ladder from the moment it is raised. The statuses
- * here summarise it and `approval` carries the detail.
- */
-export interface RoleChangeRequest {
-  id: number;
-  target_role: number;
-  status: "PENDING" | "APPROVED" | "DENIED" | "APPLY_FAILED";
-  justification: string;
-  requested_by: number | null;
-  reviewer: number | null;
-  reviewer_notes: string;
-  submitted_at: string;
-  decided_at: string | null;
-  delta_items: RoleChangeDeltaItem[];
-  approval: RoleChangeApproval | null;
-}
-
-/** What raising a request needs. */
-export interface NewRoleChangeRequest {
-  target_role: number;
-  justification: string;
-  delta_items: { permission_key: string; operation: "ADD" | "REMOVE" }[];
 }
 
 

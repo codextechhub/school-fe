@@ -8,9 +8,7 @@ import type {
   FieldAccessKind,
   FieldAccessMode,
   NewRole,
-  NewRoleChangeRequest,
   RoleHolder,
-  RoleChangeRequest,
   RoleUpdate,
   RoleFieldAccessChange,
   RoleFieldAccessResponse,
@@ -166,13 +164,6 @@ export const rolesApi = baseApi.injectEndpoints({
     }),
 
     /**
-     * Change a role: its name, what it is for, and what it reaches.
-     *
-     * `permission_keys` is a REPLACEMENT, not an addition: the server drops
-     * every grant the list does not name. The drawer therefore has to send the
-     * full ticked set, never a delta.
-     */
-    /**
      * Take a role out of use, or bring it back.
      *
      * Not a delete. A role somebody holds is somebody's access, and archiving
@@ -196,6 +187,15 @@ export const rolesApi = baseApi.injectEndpoints({
       ],
     }),
 
+    /**
+     * Change a role: its name, what it is for, and what it reaches.
+     *
+     * `permission_keys` is a REPLACEMENT, not an addition: the server drops
+     * every grant the list does not name, so the editor sends the full ticked
+     * set, never a delta. A restricted permission the role does not already
+     * hold is not granted by the save; the response lists it under
+     * `pending_additions` until the approval ladder decides it.
+     */
     updateSchoolRole: builder.mutation<Envelope<SchoolRoleDetail>, RoleUpdate>({
       query: ({ key, ...body }) => ({
         url: `${scope()}/roles/${key}/`,
@@ -301,28 +301,6 @@ export const rolesApi = baseApi.injectEndpoints({
       invalidatesTags: ["Roles", "SchoolStaff"],
     }),
 
-    /**
-     * Raise a request to change what a role reaches.
-     *
-     * Not an optional workflow. Every permission that bills a family or moves
-     * money is marked restricted, and the server refuses to grant one by
-     * editing a role: it asks for a request instead. Raising one starts an
-     * approval ladder, and the request is then read and decided in the workflow
-     * approvals inbox alongside every other document awaiting a decision -
-     * which is why this app raises them and never lists them.
-     */
-    createRoleChangeRequest: builder.mutation<
-      Envelope<RoleChangeRequest>,
-      NewRoleChangeRequest
-    >({
-      query: (body) => ({
-        url: `${scope()}/role-change-requests/`,
-        method: "POST",
-        body,
-      }),
-      extraOptions: { silent: true },
-    }),
-
   }),
 });
 
@@ -344,5 +322,4 @@ export const {
   useGetAllRoleHoldersQuery,
   useAssignRoleMutation,
   useRevokeRoleAssignmentMutation,
-  useCreateRoleChangeRequestMutation,
 } = rolesApi;

@@ -92,6 +92,11 @@ export default function RoleView() {
     () => detail ? grantedGroups(detail, catalogue.data?.data ?? []) : [],
     [detail, catalogue.data],
   );
+  const pendingLabels = useMemo(() => {
+    const labels = new Map((catalogue.data?.data ?? []).flatMap((module) => module.resources)
+      .flatMap((resource) => resource.permissions).map((permission) => [permission.key, permission.label]));
+    return (detail?.pending_additions ?? []).map((entry) => labels.get(entry.permission_key) ?? entry.permission_key);
+  }, [detail, catalogue.data]);
   const branchIds = detail?.branch_ids ?? (detail?.branch ? [detail.branch] : []);
   const branchNames = branchIds.map((id) =>
     branches.data?.find((entry) => entry.id === id)?.name ?? `Branch ${id}`,
@@ -196,6 +201,12 @@ export default function RoleView() {
               <div><h2 className="text-lg font-semibold text-black-01">Permissions this role holds</h2><p className="mt-1 text-sm text-gray-01">Only granted permissions are shown, grouped by work.</p></div>
               <Badge variant="inactive">{detail.permissions_count} granted</Badge>
             </div>
+            {pendingLabels.length > 0 && (
+              <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+                <p className="flex items-center gap-2 font-medium"><Lock className="size-4 shrink-0" /> Waiting for approval</p>
+                <p className="mt-1 text-xs">{pendingLabels.join(", ")}. {pendingLabels.length === 1 ? "This restricted permission takes" : "These restricted permissions take"} effect once the request is approved under Approvals.</p>
+              </div>
+            )}
             <div className="relative mt-5 max-w-xl">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
               <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search granted permissions" aria-label="Search granted permissions" className="pl-9" />

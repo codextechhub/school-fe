@@ -16,12 +16,12 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import { useGetAllMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
-  useCreateRoleChangeRequestMutation,
   useCreateSchoolRoleMutation,
   useGetAccessCatalogueQuery,
   useGetSchoolRoleQuery,
   useUpdateSchoolRoleMutation,
 } from "@/redux/services/roles/roles-api";
+import type { PendingAddition } from "@/redux/services/roles/roles-types";
 import { fieldErrors, writeErrorMessage } from "@/utils/api-error";
 import { roleBasePath, roleDetailPath } from "./role-paths";
 
@@ -38,12 +38,24 @@ interface Draft {
 const sameIds = (left: number[], right: number[]) =>
   left.length === right.length && left.every((id) => right.includes(id));
 
+/** The toast's second sentence when a save sent permissions for approval. */
+const sentForApproval = (pending: PendingAddition[]) =>
+  pending.length === 0 ? "" : pending.length === 1
+    ? " 1 restricted permission was sent for approval. Find it under Approvals."
+    : ` ${pending.length} restricted permissions were sent for approval. Find them under Approvals.`;
+
 /**
  * Full-page role writer shared by onboarding and the permanent role directory.
  *
  * A permission save replaces the entire granted set, so it sends all checked
  * keys. Branch ids have the same replacement meaning; an empty list is an
  * explicit school-wide choice. The reason travels with either access change.
+ *
+ * A restricted permission the role does not already hold is never granted by
+ * the save, whoever holds the role. The server saves everything else and
+ * raises one approval request for the restricted ones, using the reason as its
+ * justification, so the editor says before saving which boxes will wait and
+ * lists the ones already waiting from an earlier save.
  */
 export default function RoleEditor() {
   const { key = "" } = useParams();
@@ -59,7 +71,6 @@ export default function RoleEditor() {
   const branches = useGetAllMyBranchesQuery(undefined, { skip: !mayWrite });
   const [createRole, createState] = useCreateSchoolRoleMutation();
   const [updateRole, updateState] = useUpdateSchoolRoleMutation();
-  const [raiseRequest, requestState] = useCreateRoleChangeRequestMutation();
   const [edits, setEdits] = useState<Draft | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -100,15 +111,14 @@ export default function RoleEditor() {
   const nameChanged = draft.name.trim() !== (detail?.name ?? "").trim();
   const descriptionChanged = draft.description.trim() !== (detail?.description ?? "").trim();
   const dirty = creating || nameChanged || descriptionChanged || branchChanged || permissionChanged;
-  const restricted = new Set(
-    (catalogue.data?.data ?? []).flatMap((module) => module.resources)
-      .flatMap((resource) => resource.permissions)
-      .filter((permission) => permission.is_restricted)
-      .map((permission) => permission.key),
-  );
-  const restrictedAdditions = [...draft.ticked].filter((id) => restricted.has(id) && !baseline.has(id));
-  const needsApproval = Boolean(detail?.held_by_me) && restrictedAdditions.length > 0;
-  const saving = createState.isLoading || updateState.isLoading || requestState.isLoading;
+  const cataloguePermissions = (catalogue.data?.data ?? []).flatMap((module) => module.resources)
+    .flatMap((resource) => resource.permissions);
+  const labels = new Map(cataloguePermissions.map((permission) => [permission.key, permission.label]));
+  const restricted = new Set(cataloguePermissions.filter((permission) => permission.is_restricted).map((permission) => permission.key));
+  const waiting = new Set((detail?.pending_additions ?? []).map((entry) => entry.permission_key));
+  const restrictedAdditions = [...draft.ticked].filter((id) => restricted.has(id) && !baseline.has(id) && !waiting.has(id));
+  const labelList = (keys: Iterable<string>) => [...keys].map((id) => labels.get(id) ?? id).join(", ");
+  const saving = createState.isLoading || updateState.isLoading;
   const canChooseBranches = (branches.data?.length ?? 0) > 0;
 
   const save = async () => {
@@ -123,11 +133,6 @@ export default function RoleEditor() {
     if ((creating || permissionChanged || branchChanged) && !draft.reason.trim()) {
       return setErrors({ reason: "Say why this access is needed or changing." });
     }
-    if (needsApproval && (nameChanged || descriptionChanged || branchChanged ||
-      [...draft.ticked].some((id) => !restrictedAdditions.includes(id) && !baseline.has(id)) ||
-      [...baseline].some((id) => !draft.ticked.has(id)))) {
-      return setErrors({ form: "Save the other edits separately. This approval request covers only the restricted permissions." });
-    }
     try {
       if (creating) {
         const result = await createRole({
@@ -137,18 +142,10 @@ export default function RoleEditor() {
           branch_ids: selectedIds,
           reason: draft.reason.trim(),
         }).unwrap();
-        toast.success(`${name} created.`);
+        toast.success(`${name} created.${sentForApproval(result.data.pending_additions)}`);
         navigate(roleDetailPath(base, result.data.key));
-      } else if (needsApproval && detail) {
-        await raiseRequest({
-          target_role: detail.id,
-          justification: draft.reason.trim(),
-          delta_items: restrictedAdditions.map((permission_key) => ({ permission_key, operation: "ADD" as const })),
-        }).unwrap();
-        toast.success(`Sent for approval. Find the request under Approvals.`);
-        navigate(roleDetailPath(base, key));
       } else {
-        await updateRole({
+        const result = await updateRole({
           key,
           ...(nameChanged ? { name } : {}),
           ...(descriptionChanged ? { description: draft.description.trim() } : {}),
@@ -156,7 +153,7 @@ export default function RoleEditor() {
           ...(permissionChanged ? { permission_keys: [...draft.ticked] } : {}),
           ...((permissionChanged || branchChanged) ? { reason: draft.reason.trim() } : {}),
         }).unwrap();
-        toast.success(`${name} updated.`);
+        toast.success(`${name} updated.${sentForApproval(result.data.pending_additions.filter((entry) => restrictedAdditions.includes(entry.permission_key)))}`);
         navigate(roleDetailPath(base, key));
       }
     } catch (error) {
@@ -202,7 +199,8 @@ export default function RoleEditor() {
             {(creating || permissionChanged || branchChanged) && (
               <label className="grid gap-2 text-sm font-medium text-black-01">Why is this role needed or changing?<Input value={draft.reason} onChange={(event) => patch({ reason: event.target.value })} aria-invalid={Boolean(errors.reason)} placeholder="e.g. Ada covers fees in Ikeja and Yaba" />{errors.reason && <span role="alert" className="text-xs text-error">{errors.reason}</span>}</label>
             )}
-            {needsApproval && <p className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"><Lock className="size-4 shrink-0" /> You hold this role. Its new restricted permissions need another person's approval.</p>}
+            {restrictedAdditions.length > 0 && <p className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"><Lock className="size-4 shrink-0" /> <span>{labelList(restrictedAdditions)} {restrictedAdditions.length === 1 ? "is a restricted permission" : "are restricted permissions"}. The role saves now and sends {restrictedAdditions.length === 1 ? "it" : "them"} for approval; {restrictedAdditions.length === 1 ? "it takes" : "they take"} effect once approved.</span></p>}
+            {waiting.size > 0 && <p className="flex gap-2 rounded-lg border border-border bg-gray-04 p-3 text-xs text-gray-01"><Lock className="size-4 shrink-0" /> <span>Waiting for approval: {labelList(waiting)}.</span></p>}
           </div>
         </section>
 
@@ -212,7 +210,7 @@ export default function RoleEditor() {
           {errors.permission_keys && <p role="alert" className="mt-3 text-xs text-error">{errors.permission_keys}</p>}
         </section>
       </div>
-      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-5"><Button variant="outline" onClick={() => navigate(creating ? base : roleDetailPath(base, key))}>Cancel</Button><Button onClick={() => void save()} loading={saving} disabled={!dirty || branches.isLoading || branches.isError || (creating && (catalogue.isLoading || catalogue.isError))}>{creating ? "Create role" : needsApproval ? "Raise for approval" : "Save changes"}</Button></div>
+      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-5"><Button variant="outline" onClick={() => navigate(creating ? base : roleDetailPath(base, key))}>Cancel</Button><Button onClick={() => void save()} loading={saving} disabled={!dirty || branches.isLoading || branches.isError || (creating && (catalogue.isLoading || catalogue.isError))}>{creating ? "Create role" : "Save changes"}</Button></div>
     </PageShell>
   );
 }
