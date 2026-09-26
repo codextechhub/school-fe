@@ -176,7 +176,7 @@ function Stat({ label, value }: { label: string; value: number | null }) {
       <p className="text-xs text-gray-05">{label}</p>
       <p className="text-lg font-semibold text-black-01 tabular-nums">
         {value == null ? (
-          <span className="text-gray-04" title="Not available yet">
+          <span className="text-gray-05" title="Not available yet">
             &ndash;
           </span>
         ) : (

@@ -27,7 +27,7 @@ export default function KpiCard({ label, value, foot, tone = "default", help, de
       <h5 className="font-mont text-sm font-medium text-gray-01 inline-flex items-center gap-1.5">
         {label}
         {help && (
-          <span title={help} className="cursor-help text-gray-03">
+          <span title={help} className="cursor-help text-gray-05">
             <HelpCircle className="size-3.5" />
           </span>
         )}

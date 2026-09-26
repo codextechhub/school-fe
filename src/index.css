@@ -124,6 +124,8 @@
   --color-black-01: #212121;
   --color-gray-01: #555654;
   --color-gray-02: #B8BAB7;
+  /* Surface tints for cards, chips and tracks - never a text or icon colour,
+     where they vanish on white. src/lib/surface-tints.test.ts holds this. */
   --color-gray-03: #F7F7F7;
   --color-gray-04: #F9F9F8;
   /* The grey almost all small text is written in, at 1,600-odd uses across the

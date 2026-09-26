@@ -131,7 +131,7 @@ function Row({
         className={[
           "min-w-0 text-[13px] break-words",
           mono ? "font-mono" : "",
-          shown ? "text-black-01" : "text-gray-04",
+          shown ? "text-black-01" : "text-gray-05",
         ].join(" ")}
       >
         {shown || "Not on file"}

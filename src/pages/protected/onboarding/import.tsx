@@ -448,7 +448,7 @@ export default function OnboardingImport() {
                   "size-5.5 rounded-full grid place-content-center shrink-0 mt-px",
                   entry.done
                     ? "bg-green-01/10 text-green-01"
-                    : "bg-gray-03 text-gray-04",
+                    : "bg-gray-03 text-gray-02",
                 ].join(" ")}
               >
                 <Check className="size-3" />
