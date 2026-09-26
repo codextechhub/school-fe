@@ -1,18 +1,29 @@
 import * as Yup from "yup";
 
+/**
+ * An account named by an email address or by the school's own staff ID, typed
+ * into one box. The server tells them apart by the `@`, so the only shape
+ * checked here is that an address with an `@` is a whole address. Sign-in and
+ * forgot-password share it, so the two boxes accept the same things.
+ */
+const identifierField = Yup.string()
+  .trim()
+  .required("Enter your email or staff ID")
+  .test(
+    "email-if-address",
+    "Invalid email address",
+    (value) => !value?.includes("@") || Yup.string().email().isValidSync(value),
+  );
+
 export const loginSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
+  identifier: identifierField,
   password: Yup.string()
     .min(8, "Password must be at least 8 characters")
     .required("Password is required"),
 });
 
 export const forgotPasswordSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
+  identifier: identifierField,
 });
 
 // The server's policy, stated once. vs_user/password_policy.py is the authority:

@@ -6,6 +6,7 @@ import { AssignDutiesDrawer } from "./assign-duties-drawer";
 import { BulkRoleDrawer } from "./bulk-role-drawer";
 import { ClassTeacherDrawer } from "./class-teacher-drawer";
 import { EditDrawer } from "./edit-drawer";
+import { EmailDrawer } from "./email-drawer";
 import { LeaveDrawer } from "./leave-drawer";
 import { PostingDrawer } from "./posting-drawer";
 import { RoleDrawer } from "./role-drawer";
@@ -21,6 +22,7 @@ import { StatusDrawer } from "./status-drawer";
 export type StaffDrawerRequest =
   | { kind: "status"; staffId: number }
   | { kind: "edit"; staffId: number }
+  | { kind: "email"; staffId: number }
   | { kind: "role"; staffId: number }
   | { kind: "leave"; staffId: number; personName: string; isSelf: boolean }
   | { kind: "posting"; staffIds: number[]; personName?: string }
@@ -78,7 +80,7 @@ export function StaffDrawers({
   const [previewRole, setPreviewRole] = useState<string | null>(null);
 
   const needsRecord =
-    request?.kind === "edit" || request?.kind === "role";
+    request?.kind === "edit" || request?.kind === "email" || request?.kind === "role";
   const { data } = useGetStaffMemberQuery(
     request && "staffId" in request ? request.staffId : 0,
     { skip: !needsRecord },
@@ -155,8 +157,17 @@ export function StaffDrawers({
   if (!person) return null;
   if (request.kind === "edit") {
     return (
-      <EditDrawer key={`edit-${person.id}`} person={person} onClose={onClose} onChangePostings={() => onRequest({ kind: "posting", staffIds: [person.id], personName: person.full_name })} />
+      <EditDrawer
+        key={`edit-${person.id}`}
+        person={person}
+        onClose={onClose}
+        onChangePostings={() => onRequest({ kind: "posting", staffIds: [person.id], personName: person.full_name })}
+        onChangeEmail={() => onRequest({ kind: "email", staffId: person.id })}
+      />
     );
+  }
+  if (request.kind === "email") {
+    return <EmailDrawer key={`email-${person.id}`} person={person} onClose={onClose} />;
   }
   return (
     <>

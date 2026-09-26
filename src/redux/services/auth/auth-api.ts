@@ -47,7 +47,9 @@ export interface MeResponse {
 
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    login: builder.mutation<LoginResponse, { email: string; password: string }>({
+    // `identifier` is an email address or the school's staff ID; the server
+    // tells them apart and only ever matches a staff ID inside this school.
+    login: builder.mutation<LoginResponse, { identifier: string; password: string }>({
       // The tenant is added here, not at the call site: one email address can
       // now be an account at several schools with no connection between them,
       // so "find the user by email" is only unambiguous once the sign-in names
@@ -134,7 +136,9 @@ export const authApi = baseApi.injectEndpoints({
         }
       },
     }),
-    forgotPassword: builder.mutation<{ message: string }, { email: string }>({
+    // `identifier` is an email address or staff ID, as at sign-in. The link
+    // always goes to the email on the account, never to what was typed.
+    forgotPassword: builder.mutation<{ message: string }, { identifier: string }>({
       // Scoped to this school for the same reason as login, and with a sharper
       // consequence: a reset asked for here must never rewrite the password of
       // an account that shares the address at a different school.

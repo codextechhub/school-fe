@@ -565,6 +565,9 @@ export function HistoryTab({ entries }: { entries: StaffHistoryEntry[] }) {
           {entry.kind === "employment" && entry.reason && (
             <p className="mt-0.5 text-xs text-gray-01">{entry.reason}</p>
           )}
+          {entry.kind === "account" && entry.note && (
+            <p className="mt-0.5 text-xs text-gray-01">{entry.note}</p>
+          )}
           <p className="mt-0.5 text-xs text-gray-05">
             {formatDateTime(entry.at)}
             {entry.kind === "employment"

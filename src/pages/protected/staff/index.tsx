@@ -29,6 +29,7 @@ import { CountsHeader } from "./counts-header";
 import { RecentImports } from "./recent-imports";
 import { FiltersPopover } from "./filters-popover";
 import { StaffDrawers, type StaffDrawerRequest } from "./drawers";
+import { useCanChangeStaffEmail } from "./can-change-email";
 import { getStaffDirectoryHealth } from "./profile-completeness";
 import { PersonAvatar } from "../students/person-avatar";
 
@@ -44,6 +45,7 @@ export default function StaffDirectory() {
   const { branch, applies: multiBranch, label: branchLabel } = useBranchLens();
   const narrowed = branch !== "all" && branch != null;
   const { hasPermission } = usePermissions();
+  const canChangeEmail = useCanChangeStaffEmail();
 
   const [search, setSearch] = useState("");
   // The search box names email only to a viewer who may read it.
@@ -334,6 +336,15 @@ export default function StaffDirectory() {
                   label: "Edit record",
                   onActionClick: (row: { _id: number }) =>
                     setDrawer({ kind: "edit" as const, staffId: row._id }),
+                },
+              ]
+            : []),
+          ...(row._manage && canChangeEmail
+            ? [
+                {
+                  label: "Change email address",
+                  onActionClick: (row: { _id: number }) =>
+                    setDrawer({ kind: "email" as const, staffId: row._id }),
                 },
               ]
             : []),

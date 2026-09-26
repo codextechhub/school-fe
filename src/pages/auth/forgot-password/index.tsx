@@ -17,17 +17,18 @@ import { currentSchoolSlug } from "@/utils/school-host";
 export default function ForgotPassword() {
   const [schoolSlug] = useState(() => currentSchoolSlug());
   const [submitted, setSubmitted] = useState(false);
-  const [sentEmail, setSentEmail] = useState("");
+  const [sentTo, setSentTo] = useState("");
   const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
 
   const formik = useFormik({
-    initialValues: { email: "" },
+    initialValues: { identifier: "" },
     validationSchema: forgotPasswordSchema,
     onSubmit: (values) => {
-      forgotPassword({ email: values.email })
+      const identifier = values.identifier.trim();
+      forgotPassword({ identifier })
         .unwrap()
         .then(() => {
-          setSentEmail(values.email);
+          setSentTo(identifier);
           setSubmitted(true);
         })
         .catch((err) => {
@@ -64,18 +65,21 @@ export default function ForgotPassword() {
                 Forgot Password
               </h4>
               <p className="text-sm font-medium text-gray-01 font-mont">
-                Let's help you recover your account
+                Enter your email or staff ID and we will email you a reset link
               </p>
             </div>
 
             <div className="mt-4 mb-9">
               <CustomInput
-                label="Email"
-                id="email"
-                placeholder="Enter your email"
+                label="Email or staff ID"
+                id="identifier"
+                autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                placeholder="you@example.com or STF/0012"
                 className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
-                {...formik.getFieldProps("email")}
-                error={formik.touched.email ? formik.errors.email : ""}
+                {...formik.getFieldProps("identifier")}
+                error={formik.touched.identifier ? formik.errors.identifier : ""}
               />
             </div>
 
@@ -106,9 +110,20 @@ export default function ForgotPassword() {
               <h4 className="font-semibold text-2xl text-black-01">
                 Check your Email!
               </h4>
+              {/* A staff ID never reveals the address it belongs to. */}
               <p className="text-sm font-medium text-gray-01 font-mont max-w-61.25 mx-auto">
-                We've sent a password reset link to{" "}
-                <span className="text-black-01 font-semibold">{sentEmail}</span>
+                {sentTo.includes("@") ? (
+                  <>
+                    We've sent a password reset link to{" "}
+                    <span className="text-black-01 font-semibold">{sentTo}</span>
+                  </>
+                ) : (
+                  <>
+                    If <span className="text-black-01 font-semibold">{sentTo}</span>{" "}
+                    is your staff ID, we've sent a reset link to the email
+                    address on your account.
+                  </>
+                )}
               </p>
             </div>
 

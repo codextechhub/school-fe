@@ -217,15 +217,19 @@ export const staffApi = baseApi.injectEndpoints({
       invalidatesTags: ["SchoolStaff", "StaffHistory"],
     }),
 
-    /** Correct the sign-in address. A mistyped invitation is why this exists. */
+    /**
+     * Change the sign-in address. Takes effect at once: an activated account is
+     * signed out everywhere, and a pending one has its invitation reissued to
+     * the new address. `note` is optional and shows on the person's history.
+     */
     changeStaffEmail: builder.mutation<
       Envelope<StaffDetail>,
-      { id: number; email: string }
+      { id: number; email: string; note?: string }
     >({
-      query: ({ id, email }) => ({
+      query: ({ id, email, note }) => ({
         url: `/i/me/staff/${id}/account/email/`,
         method: "PATCH",
-        body: { email },
+        body: note ? { email, note } : { email },
       }),
       extraOptions: { silent: true },
       invalidatesTags: ["SchoolStaff", "StaffHistory"],

@@ -5,6 +5,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useUpdateStaffMutation } from "@/redux/services/staff/staff-api";
 import type {
@@ -18,6 +19,7 @@ import {
   Field,
   inputClass,
 } from "../../students/drawers/drawer-shell";
+import { useCanChangeStaffEmail } from "../can-change-email";
 
 type FieldKey = keyof StaffUpdate;
 
@@ -39,12 +41,17 @@ const TYPES: { value: EmploymentType; label: string }[] = [
  * two controls pointing at nothing. The endpoint exists, so this is the drawer
  * they were drawn for.
  *
- * **Three things a school might expect here are deliberately absent.** The
+ * **Two things a school might expect here are deliberately absent.** The
  * employment status moves only through the lifecycle drawer, which is the only
- * place that also does the right thing to the account. The sign-in address is
- * an account fact on a different key. And there is no reach control: which
- * branches somebody's access extends to comes from their role grants, so a
- * field here that looked like it widened them would not.
+ * place that also does the right thing to the account. And there is no reach
+ * control: which branches somebody's access extends to comes from their role
+ * grants, so a field here that looked like it widened them would not.
+ *
+ * **The email is shown and never edited here.** It is the sign-in address, an
+ * account fact on a different key, and changing it signs somebody out or
+ * reissues their invitation. That happens in its own drawer with a confirm
+ * step (`EmailDrawer`), which the greyed field links to when the viewer may
+ * use it.
  *
  * **The posting box appears only to a viewer who works in several branches.**
  * The server leaves the posting out for anybody else, and a branch
@@ -56,7 +63,7 @@ const TYPES: { value: EmploymentType; label: string }[] = [
  * initial state, and a copy taken at mount is a copy that goes stale the moment
  * anything else writes to the same person.
  *
- * **Gender, date of birth and phone follow Field Access (`school.teachers`).**
+ * **Email, gender, date of birth and phone follow Field Access (`school.teachers`).**
  * One the viewer may not read is absent from the record and not on the form;
  * one the record lists in `_read_only_fields` is greyed and never sent.
  */
@@ -64,12 +71,15 @@ export function EditDrawer({
   person,
   onClose,
   onChangePostings,
+  onChangeEmail,
 }: {
   person: StaffDetail;
   onClose: () => void;
   onChangePostings: () => void;
+  onChangeEmail: () => void;
 }) {
   const [update, { isLoading: saving }] = useUpdateStaffMutation();
+  const canChangeEmail = useCanChangeStaffEmail(person);
 
   const [draft, setDraft] = useState<Partial<StaffUpdate>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -153,7 +163,7 @@ export function EditDrawer({
       open
       onClose={onClose}
       title="Edit record"
-      subtitle="Employment status and the sign-in address are changed elsewhere."
+      subtitle="Employment status and the sign-in email are changed with their own actions."
       saveLabel="Save changes"
       onSave={() => void save()}
       canSave={canSave}
@@ -186,6 +196,34 @@ export function EditDrawer({
               className={inputClass}
             />
           </Field>
+        </AccessField>
+        <AccessField access={access} name="email">
+          <Field label="Email">
+            <input
+              type="email"
+              value={person.email ?? person.account.email ?? ""}
+              disabled
+              readOnly
+              className={cn(inputClass, "cursor-not-allowed bg-gray-03 text-gray-01")}
+            />
+          </Field>
+          <p className="mt-1 text-xs text-gray-05">
+            {canChangeEmail ? (
+              <>
+                To change it, use{" "}
+                <button
+                  type="button"
+                  onClick={onChangeEmail}
+                  className="font-medium text-primary underline-offset-2 hover:underline"
+                >
+                  Change email address
+                </button>
+                .
+              </>
+            ) : (
+              "Changed with Change email address, by someone who can update accounts."
+            )}
+          </p>
         </AccessField>
         <AccessField access={access} name="gender">
           <Field label="Gender" error={errors.gender}>

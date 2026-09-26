@@ -30,12 +30,12 @@ export default function Login() {
   const formik = useFormik({
     initialValues: {
       password: "",
-      email: "",
+      identifier: "",
     },
     validationSchema: loginSchema,
     onSubmit: (values) => {
       setApiError("");
-      login(values)
+      login({ ...values, identifier: values.identifier.trim() })
         .unwrap()
         .then((res) => {
           // Identity check: this portal is for school accounts only. The login
@@ -97,30 +97,34 @@ export default function Login() {
       )}
       <div className="text-center space-y-1.5">
         <h4 className="font-semibold text-2xl text-black-01">
-          Login to your Account
+          Sign in to your school
         </h4>
         <p className="text-sm font-medium text-gray-01 font-mont">
-          One sign-in. Your school, your role, your workspace.
+          Staff can use their email address or staff ID.
         </p>
       </div>
 
       <form onSubmit={formik.handleSubmit} className="mt-4 space-y-4">
         <CustomInput
-          label="Email"
-          id="email"
-          placeholder="Enter your email"
+          label="Email or staff ID"
+          id="identifier"
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="you@example.com or STF/0012"
           className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
-          {...formik.getFieldProps("email")}
+          {...formik.getFieldProps("identifier")}
           onChange={(e) => {
             setApiError("");
             formik.handleChange(e);
           }}
-          error={formik.touched.email ? formik.errors.email : ""}
+          error={formik.touched.identifier ? formik.errors.identifier : ""}
         />
         <CustomInput
           label="Password"
           id="password"
           type="password"
+          autoComplete="current-password"
           placeholder="Enter your password"
           className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
           {...formik.getFieldProps("password")}
@@ -152,7 +156,7 @@ export default function Login() {
           type="submit"
           className="w-full h-11"
         >
-          Login
+          Sign in
         </Button>
       </form>
     </div>

@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Check,
   Clock3,
+  AtSign,
   FileText,
   KeyRound,
   Mail,
@@ -62,6 +63,7 @@ import {
   TeachingTab,
 } from "./tab-panels";
 import { StaffDrawers, type StaffDrawerRequest } from "../drawers";
+import { useCanChangeStaffEmail } from "../can-change-email";
 import {
   getStaffProfileCompleteness,
   type StaffProfileGap,
@@ -115,6 +117,7 @@ export default function StaffProfile() {
   const [resend, { isLoading: resending }] = useResendStaffInvitationMutation();
   const [accountAction, { isLoading: actingOnAccount }] =
     useStaffAccountActionMutation();
+  const canChangeEmail = useCanChangeStaffEmail(person);
 
   if (isError && asAt) {
     return (
@@ -287,6 +290,19 @@ export default function StaffProfile() {
                     Change status
                   </Button>
                 </PermissionGate>
+                {canChangeEmail && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={!manageable}
+                    onClick={() =>
+                      setDrawer({ kind: "email", staffId: person.id })
+                    }
+                  >
+                    <AtSign className="size-4" />
+                    Change email address
+                  </Button>
+                )}
                 {person.account.status === "LOCKED" && (
                   <PermissionGate permission={P.REACTIVATE_ADMINISTRATOR} disabled={!manageable}>
                     <Button

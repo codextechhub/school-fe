@@ -53,7 +53,7 @@ describe("a sign-in names the school it is addressed to", () => {
 
     const store = makeStore();
     await store.dispatch(
-      authApi.endpoints.login.initiate({ email: "ada@bright-star.test", password: "pw" }),
+      authApi.endpoints.login.initiate({ identifier: "ada@bright-star.test", password: "pw" }),
     );
 
     const request = fetchMock.mock.calls[0][0] as Request;
@@ -62,7 +62,7 @@ describe("a sign-in names the school it is addressed to", () => {
     // take: there is no token yet to check one against.
     expect(request.url).not.toContain("tenant=");
     expect(await new Request(request).json()).toEqual({
-      email: "ada@bright-star.test",
+      identifier: "ada@bright-star.test",
       password: "pw",
       tenant: "bright-star",
     });
@@ -74,11 +74,11 @@ describe("a sign-in names the school it is addressed to", () => {
 
     const store = makeStore();
     await store.dispatch(
-      authApi.endpoints.forgotPassword.initiate({ email: "ada@bright-star.test" }),
+      authApi.endpoints.forgotPassword.initiate({ identifier: "ada@bright-star.test" }),
     );
 
     expect(await new Request(fetchMock.mock.calls[0][0] as Request).json()).toEqual({
-      email: "ada@bright-star.test",
+      identifier: "ada@bright-star.test",
       tenant: "bright-star",
     });
   });
@@ -90,7 +90,7 @@ describe("a sign-in names the school it is addressed to", () => {
 
     const store = makeStore();
     await store.dispatch(
-      authApi.endpoints.login.initiate({ email: "ada@bright-star.test", password: "pw" }),
+      authApi.endpoints.login.initiate({ identifier: "ada@bright-star.test", password: "pw" }),
     );
 
     // Never the string "xvs". The form is not offered at this address either,
@@ -111,7 +111,7 @@ describe("the school portal refuses a platform account", () => {
 
     const store = makeStore();
     await store.dispatch(
-      authApi.endpoints.login.initiate({ email: "staff@codexng.com", password: "pw" }),
+      authApi.endpoints.login.initiate({ identifier: "staff@codexng.com", password: "pw" }),
     );
 
     expect(getAccessToken()).toBe("");
@@ -124,7 +124,7 @@ describe("the school portal refuses a platform account", () => {
 
     const store = makeStore();
     await store.dispatch(
-      authApi.endpoints.login.initiate({ email: "ada@bright-star.test", password: "pw" }),
+      authApi.endpoints.login.initiate({ identifier: "ada@bright-star.test", password: "pw" }),
     );
 
     expect(getAccessToken()).toBe("access-token");

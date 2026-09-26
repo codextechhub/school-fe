@@ -481,6 +481,8 @@ export type StaffHistoryEntry =
       at: string;
       event: string;
       label: string;
+      /** The administrator's note on an email change; empty otherwise. */
+      note?: string;
       actor: StaffActor | null;
     };
 
