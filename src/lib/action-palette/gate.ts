@@ -4,12 +4,14 @@
  * This takes the user's raw permission keys as a plain array rather than
  * calling usePermissions(): the engine must stay framework-free so it can be
  * unit tested without a Redux store, and the caller already has the keys.
- * The four gate kinds line up one-for-one with the four methods on
- * src/hooks/use-permissions.ts (hasPermission / hasAnyPermission /
- * hasAllPermissions / hasModuleAccess), so a screen and a palette action gated
- * the same way agree by construction.
+ * The gate kinds line up with the methods on src/hooks/use-permissions.ts
+ * (hasPermission / hasAnyPermission / hasAllPermissions / hasModuleAccess), so
+ * a screen and a palette action gated the same way agree by construction. The
+ * `console` kind asks the console's own menu, through the same
+ * `consoleOffersScreens` the sidebar uses for its door.
  */
 
+import { consoleOffersScreens } from "@/components/finance-ui/console-nav";
 import { resolvePermissionKey, type PermissionCode } from "@/permissions";
 import type { ActionDef, ActionGate } from "./types";
 
@@ -49,6 +51,13 @@ function passesGateWithSet(
   if ("all" in gate) return gate.all.every((code) => holds(held, code));
   if ("module" in gate) {
     return permissions.some((key) => gate.module.some((prefix) => key.startsWith(prefix)));
+  }
+  if ("console" in gate) {
+    return consoleOffersScreens(gate.console, {
+      hasAnyPermission: (...codes: PermissionCode[]) => codes.some((code) => holds(held, code)),
+      hasModuleAccess: (...prefixes: string[]) =>
+        permissions.some((key) => prefixes.some((prefix) => key.startsWith(prefix))),
+    });
   }
   return false;
 }

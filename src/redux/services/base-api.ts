@@ -12,7 +12,7 @@ import {
   updatePermissions,
   updateTenant,
 } from "../features/auth/auth-slice";
-import type { ActiveImpersonation, FieldAccessPayload, TenantInfo } from "../features/auth/auth-types";
+import type { ActiveImpersonation, BranchReach, FieldAccessPayload, TenantInfo } from "../features/auth/auth-types";
 import { getTenantSlug } from "@/utils/tenant-context";
 import { toast } from "sonner";
 import { userFacingMessage } from "@/utils/user-facing-message";
@@ -113,6 +113,7 @@ const fetchFreshMe = async (
 ): Promise<{
   permissions: string[] | null;
   fieldAccess: FieldAccessPayload | null;
+  branchReach: BranchReach | null;
   tenant: TenantInfo | null;
 }> => {
   try {
@@ -128,15 +129,16 @@ const fetchFreshMe = async (
           : {}),
       },
     });
-    if (!response.ok) return { permissions: null, fieldAccess: null, tenant: null };
+    if (!response.ok) return { permissions: null, fieldAccess: null, branchReach: null, tenant: null };
     const data = await response.json();
     return {
       permissions: data?.data?.permissions ?? null,
       fieldAccess: data?.data?.field_access ?? null,
+      branchReach: data?.data?.branch_reach ?? null,
       tenant: data?.data?.tenant ?? null,
     };
   } catch {
-    return { permissions: null, fieldAccess: null, tenant: null };
+    return { permissions: null, fieldAccess: null, branchReach: null, tenant: null };
   }
 };
 
@@ -217,6 +219,18 @@ const isAuthRoute = (args: string | FetchArgs): boolean => {
   return AUTH_URLS.some((u) => url.includes(u));
 };
 
+/**
+ * The app's response interceptor. Of its rules, one concerns permission
+ * refusals: only a refused action raises the permission toast.
+ *
+ * Screens load more than their own list: a report asks for the fiscal periods,
+ * cost centres and dimensions behind its filters, a drawer asks for related
+ * records. When one of those reads is refused, a red "You do not have
+ * permission" toast tells the reader they tried something they never tried,
+ * and a screen that works reads as broken. The query's own error state is
+ * where a refused read belongs; a refused save, post or send still toasts,
+ * because the reader asked for it.
+ */
 export const baseQueryInterceptor: BaseQueryFn<
   string | FetchArgs,
   unknown,
@@ -322,6 +336,7 @@ export const baseQueryInterceptor: BaseQueryFn<
         api.dispatch(updatePermissions({
           permissions: fresh.permissions,
           field_access: fresh.fieldAccess ?? {},
+          branch_reach: fresh.branchReach,
         }));
       }
       if (fresh.tenant) api.dispatch(updateTenant(fresh.tenant));
@@ -366,6 +381,9 @@ export const baseQueryInterceptor: BaseQueryFn<
     }
     // A refused field write is answered on the form, beside each field it names.
     if (res?.data?.error?.code === FIELD_WRITE_DENIED) return result;
+    // A refused read is the screen's to answer, not a toast: see the doc block
+    // on baseQueryInterceptor.
+    if (api.type === "query") return result;
     if (!isAuthRoute(args)) {
       const msg =
         extractFirstDetailError(res?.data?.error?.detail) ||

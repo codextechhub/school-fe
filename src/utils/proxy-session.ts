@@ -83,6 +83,7 @@ const applyIdentity = async (
       tenant: me.data.tenant ?? null,
       permissions: me.data.permissions ?? [],
       field_access: me.data.field_access ?? {},
+      branch_reach: me.data.branch_reach ?? null,
     }));
   });
   dispatch(baseApi.util.resetApiState());
@@ -131,6 +132,7 @@ export const startProxySession = async (
         tenant: actor.tenant,
         permissions: [],
         field_access: {},
+        branch_reach: null,
       },
     });
     toast.success(`You are now viewing as ${target.full_name}.`);

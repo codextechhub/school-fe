@@ -15,6 +15,7 @@ export const overviewRoutes = [
   {
     path: routesPath.PROTECTED.OVERVIEW.INDEX,
     Component: Dashboard,
-    handle: { title: "Dashboard" } satisfies DashboardHandle,
+    // The school pulse counts one branch's roll for one year, so both pills.
+    handle: { title: "Dashboard", lenses: "both" } satisfies DashboardHandle,
   },
 ] as RouteObject[];

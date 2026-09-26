@@ -99,8 +99,7 @@ export function EventDrawer({
 }) {
   const {
     applies: multiBranch,
-    isTied,
-    branch: tiedBranch,
+    pinnedBranch,
     branches,
     label: tiedLabel,
   } = useBranchLens();
@@ -116,12 +115,12 @@ export function EventDrawer({
   };
 
   const tiedLock =
-    isTied && tiedBranch !== "all"
+    pinnedBranch != null
       ? {
-          id: tiedBranch as number,
+          id: pinnedBranch,
           name: tiedLabel,
           reason:
-            "Your account is tied to this branch, so anything you create belongs to it.",
+            "You work in this branch only, so anything you create belongs to it.",
         }
       : null;
   const effectiveBranch = tiedLock ? tiedLock.id : draft.branch;

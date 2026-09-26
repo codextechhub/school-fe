@@ -113,16 +113,14 @@ export type DashboardHandle = {
    */
   onboarding?: boolean;
   /**
-   * This screen reads a lens, so show the read-only notice when the year is
-   * archived.
-   *
-   * Note this does NOT control the pills. They live in the sidebar's LensRail
-   * and are governed by `lenses` below - which is the flag that finally makes
-   * the rule in the next comment true.
+   * This screen reads the branch and session lenses: it shows the read-only
+   * notice when the year is archived, and the sidebar's LensRail offers both
+   * pills here unless `lenses` below narrows them.
    */
   lens?: boolean;
   /**
-   * WHICH lenses this screen reads. Defaults to both.
+   * WHICH lenses this screen reads. Defaults to both on a `lens: true`
+   * screen and to none anywhere else.
    *
    * A lens belongs to the screens that actually read it. A session pill over
    * the student roster would be a control that changes nothing, and a branch
@@ -130,8 +128,8 @@ export type DashboardHandle = {
    * narrowed the page.
    *
    * Set `"branch"` on a screen with no session dimension, `"session"` on one
-   * with no branch dimension. Omit it and both pills render, which is what
-   * every screen written before this flag existed expects.
+   * with no branch dimension, `"none"` on a `lens: true` screen that reads
+   * neither.
    */
   lenses?: LensChoice;
   /**

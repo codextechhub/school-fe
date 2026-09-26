@@ -3,6 +3,7 @@ import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 import {
   type ActiveImpersonation,
   type Auth,
+  type BranchReach,
   type FieldAccessPayload,
   type AuthContextSnapshot,
   type SchoolInfo,
@@ -18,6 +19,7 @@ interface AuthPayload {
   school?: SchoolInfo | null;
   tenant?: TenantInfo | null;
   field_access?: FieldAccessPayload;
+  branch_reach?: BranchReach;
 }
 
 /**
@@ -34,6 +36,7 @@ const initialState: Auth = {
    tenant: null,
    impersonation: null,
    field_access: EMPTY_FIELD_ACCESS,
+   branch_reach: null,
 };
 
 /**
@@ -82,6 +85,18 @@ const sameFieldAccess = (
     );
   });
 };
+
+/** Whether two branch reaches name the same branches; the backend sorts the ids. */
+const sameBranchReach = (
+  a: BranchReach | null | undefined,
+  b: BranchReach | null,
+): boolean =>
+  (a ?? null) === b ||
+  (!!a &&
+    !!b &&
+    a.whole_tenant === b.whole_tenant &&
+    a.branch_ids.length === b.branch_ids.length &&
+    a.branch_ids.every((id, i) => id === b.branch_ids[i]));
 
 /**
  * Every field the app reads off the tenant belongs in this comparison. It used
@@ -140,6 +155,7 @@ const authSlice = createSlice({
       state.school = action.payload.school ?? null;
       state.tenant = action.payload.tenant ?? null;
       state.field_access = action.payload.field_access ?? EMPTY_FIELD_ACCESS;
+      state.branch_reach = action.payload.branch_reach ?? null;
     },
     updateAuthUser: (state, action: PayloadAction<Partial<User>>) => {
       state.user = { ...(state.user as User), ...action.payload };
@@ -150,12 +166,20 @@ const authSlice = createSlice({
     /** Refreshes what the user may do, keeping the two halves in step. */
     updatePermissions: (
       state,
-      action: PayloadAction<{ permissions: string[]; field_access?: FieldAccessPayload }>,
+      action: PayloadAction<{
+        permissions: string[];
+        field_access?: FieldAccessPayload;
+        branch_reach?: BranchReach | null;
+      }>,
     ) => {
       const { permissions } = action.payload;
       const fieldAccess = action.payload.field_access ?? EMPTY_FIELD_ACCESS;
       if (!samePermissions(state.permissions, permissions)) state.permissions = permissions;
       if (!sameFieldAccess(state.field_access, fieldAccess)) state.field_access = fieldAccess;
+      const reach = action.payload.branch_reach;
+      if (reach !== undefined && !sameBranchReach(state.branch_reach, reach)) {
+        state.branch_reach = reach;
+      }
     },
     /**
      * Refresh the cached school identity.
@@ -194,6 +218,9 @@ const authSlice = createSlice({
       if (!sameFieldAccess(state.field_access, fieldAccess)) {
         state.field_access = fieldAccess;
       }
+      // An actor snapshot persisted before reach existed carries none either.
+      const reach = action.payload.branch_reach ?? null;
+      if (!sameBranchReach(state.branch_reach, reach)) state.branch_reach = reach;
     },
     setImpersonation: (state, action: PayloadAction<ActiveImpersonation | null>) => {
       state.impersonation = action.payload;
@@ -239,6 +266,8 @@ export const selectPermissions = (state: RootStateType) =>
  */
 export const selectFieldAccess = (state: RootStateType): FieldAccessPayload =>
   state.auth.field_access ?? EMPTY_FIELD_ACCESS;
+export const selectBranchReach = (state: RootStateType): BranchReach | null =>
+  state.auth.branch_reach ?? null;
 export const selectSchool = (state: RootStateType) => state.auth.school ?? null;
 export const selectTenant = (state: RootStateType) => state.auth.tenant ?? null;
 /**

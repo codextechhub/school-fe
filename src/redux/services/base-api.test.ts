@@ -20,13 +20,13 @@ import { routesPath } from "@/routes/routesPath";
 const { navigate, toastError } = mocks;
 
 /** Minimal stand-in for the `api` object fetchBaseQuery is handed. */
-const apiStub = () => ({
+const apiStub = (type: "query" | "mutation" = "query") => ({
   signal: new AbortController().signal,
   dispatch: vi.fn(),
   getState: () => ({ auth: { tenant: { slug: "brightfield" } } }),
   extra: undefined,
-  endpoint: "getStudents",
-  type: "query" as const,
+  endpoint: type === "query" ? "getStudents" : "updateStudent",
+  type,
   forced: false,
   abort: vi.fn(),
 });
@@ -99,7 +99,7 @@ describe("TENANT_NOT_LIVE handling", () => {
       error: { code: "PERMISSION_DENIED", detail: {} },
     });
 
-    await baseQueryInterceptor("/students/", apiStub(), {});
+    await baseQueryInterceptor("/students/", apiStub("mutation"), {});
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(navigate).not.toHaveBeenCalled();
@@ -113,11 +113,34 @@ describe("TENANT_NOT_LIVE handling", () => {
       error: { code: "PERMISSION_DENIED", detail: {} },
     });
 
-    await baseQueryInterceptor("/roles/", apiStub(), {});
+    await baseQueryInterceptor("/roles/", apiStub("mutation"), {});
 
     expect(toastError).toHaveBeenCalledWith(
       "'Create invoice' is restricted and cannot be placed in a permission group.",
     );
+  });
+});
+
+/**
+ * A refused read is left to the screen that asked. Chukwuemeka, a bursar,
+ * opens Cost & Dimension Analysis; the report loads, but the dimension list
+ * behind one filter is refused. He must not be told he was refused something
+ * he never asked for.
+ */
+describe("a refused read", () => {
+  it("stays quiet and leaves the error to the query", async () => {
+    respondWith(403, {
+      success: false,
+      message: "You do not have permission to perform this action.",
+      error: { code: "PERMISSION_DENIED", detail: {} },
+    });
+
+    const result = await baseQueryInterceptor("/finance/dimensions/", apiStub("query"), {});
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(result.error?.status).toBe(403);
+    expect(toastError).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
   });
 });
 

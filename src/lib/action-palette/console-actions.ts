@@ -35,7 +35,7 @@
  *     "Goods Receipts", and half of them type "suppliers" for Vendors.
  */
 
-import { P } from "@/permissions";
+import { P, type PermissionCode } from "@/permissions";
 import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
 import type { ActionDef, ActionGate, ActionSection } from "./types";
 
@@ -45,16 +45,6 @@ export interface ConsoleSource {
   section: ActionSection;
   /** The console's own name, used to tell two "Dashboard"s apart. */
   name: string;
-  /**
-   * Backend key prefix gating the console as a whole, for the handful of items
-   * that declare no prefixes of their own (the dashboards, and Approvals).
-   *
-   * `null` would be wrong for those: the sidebar only draws the door to an area
-   * when the reader holds SOME key inside it (`hasModuleAccess("finance.")` in
-   * app-sidebar.tsx), and a palette that ignored that would offer a finance
-   * dashboard to a class teacher who holds not one finance key.
-   */
-  modulePrefix: string;
 }
 
 /**
@@ -133,7 +123,7 @@ export const EXTRA_ALIASES: Record<string, string[]> = {
  *   - the LABEL. "Add Receipts & Allocation" is not a thing anybody does;
  *     "Record a payment" is, and it is the phrase on the button.
  *   - the GATE. Reading invoices and raising one are different keys, and the
- *     view action's gate is the read prefix. Offering "Raise an invoice" to
+ *     view action's gate is the read key. Offering "Raise an invoice" to
  *     somebody who may only read them puts a form in front of a person the
  *     product decided should not have it. Each gate below is the same
  *     expression that wraps that screen's own Add button - including the two
@@ -368,7 +358,7 @@ export const consoleActionId = (url: string): string =>
 interface FlatItem {
   title: string;
   url: string;
-  prefixes?: string[];
+  permissions?: PermissionCode[];
   group: string;
   source: ConsoleSource;
 }
@@ -390,7 +380,7 @@ function flatten(sources: ConsoleSource[]): FlatItem[] {
         out.push({
           title: item.title,
           url: item.url,
-          prefixes: item.prefixes,
+          permissions: item.permissions,
           group: group.label ?? source.name,
           source,
         });
@@ -435,9 +425,11 @@ export function consoleActions(sources: ConsoleSource[]): ActionDef[] {
       section: item.source.section,
       group: item.group,
       kind: "view",
-      gate: {
-        module: item.prefixes?.length ? item.prefixes : [item.source.modulePrefix],
-      },
+      // The screen's own gate where it has one. A screen with none (the
+      // dashboards, Approvals) is offered when the console is.
+      gate: item.permissions?.length
+        ? { any: item.permissions }
+        : { console: item.source.nav },
       run: { to: item.url },
     } satisfies ActionDef;
   });

@@ -5,6 +5,7 @@
  * beside this file in registry.ts.
  */
 
+import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
 import type { PermissionCode } from "@/permissions";
 
 /**
@@ -53,7 +54,9 @@ export type ActionSection =
  * - any:    holds at least one of these capabilities
  * - all:    holds every one of these capabilities
  * - module: holds ANY backend key under one of these prefixes (e.g. "school.")
- *           - the one place raw keys are used, matching the sidebar.
+ * - console: that console's menu holds a screen the reader can open, the same
+ *           rule that decides whether the sidebar draws its door. Used by the
+ *           screens that carry no permission of their own (the dashboards).
  */
 export type ActionGate =
   | null
@@ -61,7 +64,8 @@ export type ActionGate =
   | { any: PermissionCode[] }
   | { required: PermissionCode[]; any: PermissionCode[] }
   | { all: PermissionCode[] }
-  | { module: string[] };
+  | { module: string[] }
+  | { console: ConsoleNavGroup[] };
 
 /**
  * What running an action does. Most navigate; a couple invoke a header command

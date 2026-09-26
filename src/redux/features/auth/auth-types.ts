@@ -11,6 +11,20 @@ export type FieldAccessPayload = Record<string, {
   open_on_create?: string[]
 }>
 
+/**
+ * The branches the effective user may work in, as the login response and
+ * `/user/auth/me/` send it. `whole_tenant` true means nothing narrows them;
+ * otherwise `branch_ids` is exactly their reach, and may be empty.
+ *
+ * This is the reader's reach, not the school's branch list: a school with two
+ * branches can have a bursar who works in only one of them, and a branch
+ * picker must be built from this, or it offers a choice the server refuses.
+ */
+export interface BranchReach {
+  whole_tenant: boolean
+  branch_ids: number[]
+}
+
 export interface Auth {
   session_id?: number
   user?: User | null
@@ -23,6 +37,8 @@ export interface Auth {
    * `permissions`: the proxied target while proxying, the actor otherwise.
    */
   field_access?: FieldAccessPayload
+  /** The effective user's branch reach; null until a login or `/me` sends it. */
+  branch_reach?: BranchReach | null
   school?: SchoolInfo | null
   tenant?: TenantInfo | null
   /** Set only while this admin is proxying another user in their own school. */
@@ -65,6 +81,8 @@ export interface AuthContextSnapshot {
   permissions: string[]
   /** Required, so a writer can never swap identities and keep the old map. */
   field_access: FieldAccessPayload
+  /** Required for the same reason: reach belongs to the identity, not the tab. */
+  branch_reach: BranchReach | null
 }
 
 // The caller's asserted tenant, from the login / me payload. Every tenant-owned

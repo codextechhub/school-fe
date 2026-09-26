@@ -105,7 +105,7 @@ describe("Field Access map", () => {
     const state = stateWith({ field_access: {} });
     const next = authSliceReducer(
       state,
-      setAuthContext({ user: null, school: null, tenant: null, permissions: [], field_access: map }),
+      setAuthContext({ user: null, school: null, tenant: null, permissions: [], field_access: map, branch_reach: null }),
     );
 
     expect(next.field_access).toEqual(map);
@@ -308,6 +308,7 @@ describe("setAuthContext", () => {
         tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
         permissions: ["school.dashboard.view"],
         field_access: {},
+        branch_reach: null,
       }),
     );
 
@@ -328,6 +329,7 @@ describe("setAuthContext", () => {
         tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
         permissions: ["academics.classes.view"],
         field_access: {},
+        branch_reach: null,
       }),
     );
 
@@ -348,6 +350,7 @@ describe("setAuthContext", () => {
         tenant: null,
         permissions: [],
         field_access: {},
+        branch_reach: null,
       }),
     );
 
@@ -376,6 +379,7 @@ describe("selectActorPermissions", () => {
       tenant: { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" },
       permissions: ["school.impersonation.start", "school.impersonation.end"],
       field_access: {},
+      branch_reach: null,
     },
   };
 

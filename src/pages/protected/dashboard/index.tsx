@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useCapabilities } from "@/hooks/use-capabilities";
+import { useConsoleDoors } from "@/hooks/use-console-doors";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { useAppSelector } from "@/redux/store";
@@ -188,8 +189,9 @@ function ProgressRing({ percent }: { percent: number }) {
 
 export default function Dashboard() {
   const user = useAppSelector(selectUser);
-  const { hasPermission, hasModuleAccess } = usePermissions();
+  const { hasPermission } = usePermissions();
   const { hasCapability } = useCapabilities();
+  const consoleDoors = useConsoleDoors();
   const { lens, sessionName } = useAcademicsLens();
   const studentLens = useStudentsLens();
 
@@ -420,7 +422,7 @@ export default function Dashboard() {
       to: R.FINANCE.INDEX,
       icon: Wallet,
       tone: "bg-[#EAF7F2] text-green-02",
-      show: hasModuleAccess("finance.") && hasCapability("finance"),
+      show: consoleDoors.finance,
     },
     {
       label: "Procurement",
@@ -428,7 +430,7 @@ export default function Dashboard() {
       to: R.PROCUREMENT.INDEX,
       icon: ShoppingCart,
       tone: "bg-[#FFF4DF] text-amber-01",
-      show: hasModuleAccess("procurement.") && hasCapability("procurement"),
+      show: consoleDoors.procurement,
     },
   ].filter((module) => module.show);
 

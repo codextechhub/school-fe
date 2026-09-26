@@ -120,8 +120,7 @@ export function EntityDrawer({
 }) {
   const {
     applies: multiBranch,
-    isTied,
-    branch: tiedBranch,
+    pinnedBranch,
     branches,
     label: tiedLabel,
   } = useBranchLens();
@@ -185,12 +184,12 @@ export function EntityDrawer({
   // Two ways scope stops being a choice, both ending in a sentence rather
   // than a control. The parent wins over the account.
   const tiedLock =
-    isTied && tiedBranch !== "all"
+    pinnedBranch != null
       ? {
-          id: tiedBranch as number,
+          id: pinnedBranch,
           name: tiedLabel,
           reason:
-            "Your account is tied to this branch, so anything you create belongs to it.",
+            "You work in this branch only, so anything you create belongs to it.",
         }
       : null;
   const lock = lockedTo ?? tiedLock;

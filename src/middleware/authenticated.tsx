@@ -135,6 +135,7 @@ export default function Authenticated() {
       tenant: authContextResponse.data.tenant ?? null,
       permissions: authContextResponse.data.permissions,
       field_access: authContextResponse.data.field_access ?? {},
+      branch_reach: authContextResponse.data.branch_reach ?? null,
     };
     dispatch(setImpersonation({
       id: restorableImpersonation.id,
@@ -152,6 +153,7 @@ export default function Authenticated() {
       },
       permissions: [],
       field_access: {},
+      branch_reach: null,
     }));
     void refetchContext();
   }, [authContextResponse, dispatch, impersonation, refetchContext, restorableImpersonation]);

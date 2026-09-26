@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { filterActionsForPermissions } from "./gate";
 import {
   schoolFinanceNav,
   schoolProcurementNav,
@@ -65,12 +66,21 @@ describe("actions derived from a console nav", () => {
     }
   });
 
-  it("gates every action on a backend key prefix", () => {
+  it("hides every action from a reader who holds no key", () => {
     // A console action with no gate would offer the finance dashboard to a
     // class teacher who holds not one finance key.
-    for (const action of VIEWS) {
-      expect(action.gate, action.id).toHaveProperty("module");
-    }
+    expect(filterActionsForPermissions(VIEWS, []).map((action) => action.id)).toEqual([]);
+  });
+
+  it("offers a dashboard only with a screen that opens beside it", () => {
+    // Somebody who may raise an invoice but not list them has no screen in
+    // Finance, so the dashboard is not offered either.
+    const shown = (keys: string[]) =>
+      filterActionsForPermissions(VIEWS, keys).map((action) => action.id);
+    expect(shown(["finance.invoice.create"])).not.toContain("finance");
+    expect(shown(["finance.invoice.view"])).toEqual(
+      expect.arrayContaining(["finance", "finance-receivables-invoices"]),
+    );
   });
 
   it("writes no alias for a screen the consoles do not offer", () => {
@@ -108,14 +118,15 @@ describe("the create actions", () => {
     }
   });
 
-  it("gates on a create key, never on the screen's read prefix", () => {
+  it("gates on a create key, never on the screen's read key", () => {
     // The failure this stops: "Raise an invoice" offered to a bursar who may
-    // only read invoices, because the view action's gate was reused. A module
-    // prefix gate is what the VIEW actions carry, so seeing one here means
-    // exactly that mistake.
+    // only read invoices, because the view action's gate was reused.
     for (const action of CREATES) {
-      expect(action.gate, action.id).not.toHaveProperty("module");
+      const to = "to" in action.run ? action.run.to.split("?")[0] : "";
+      const view = VIEWS.find((v) => "to" in v.run && v.run.to === to);
       expect(action.gate, action.id).not.toBeNull();
+      expect(action.gate, action.id).not.toHaveProperty("console");
+      if (view) expect(action.gate, action.id).not.toEqual(view.gate);
     }
   });
 
@@ -154,8 +165,8 @@ describe("titles that appear in both consoles", () => {
     { label: "Admin", items: [{ title: "Reports", url: "/b/reports" }] },
   ];
   const built = consoleActions([
-    { nav: NAV, section: "Finance", name: "Alpha", modulePrefix: "alpha." },
-    { nav: OTHER, section: "Procurement", name: "Beta", modulePrefix: "beta." },
+    { nav: NAV, section: "Finance", name: "Alpha" },
+    { nav: OTHER, section: "Procurement", name: "Beta" },
   ]);
   const labelOf = (url: string) =>
     built.find((action) => "to" in action.run && action.run.to === url)?.label;
@@ -181,7 +192,7 @@ describe("titles that appear in both consoles", () => {
     expect(built.find((a) => a.id === "a")?.group).toBe("Alpha");
   });
 
-  it("falls back to the console's own prefix when an item declares none", () => {
-    expect(built.find((a) => a.id === "a")?.gate).toEqual({ module: ["alpha."] });
+  it("offers an ungated screen when its console is offered", () => {
+    expect(built.find((a) => a.id === "a")?.gate).toEqual({ console: NAV });
   });
 });

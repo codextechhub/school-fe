@@ -11,7 +11,10 @@ import { cn } from "@/lib/utils";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useSessionLens } from "@/hooks/use-session-lens";
 
-/** Which lenses a route reads. Omit for both, which is what most screens want. */
+/**
+ * Which lenses a route reads. Absent, a route marked `lens: true` reads both and
+ * any other route reads neither.
+ */
 export type LensChoice = "both" | "branch" | "session" | "none";
 
 /**
@@ -20,10 +23,10 @@ export type LensChoice = "both" | "branch" | "session" | "none";
  * Same merge order DashboardLayout uses for its own handle, so a nested screen
  * can narrow its parent's lenses without the parent knowing about it.
  */
-function useLensHandle(): { lenses?: LensChoice } {
+function useLensHandle(): { lenses?: LensChoice; lens?: boolean } {
   const matches = useMatches();
-  return matches.reduce<{ lenses?: LensChoice }>(
-    (acc, m) => ({ ...acc, ...((m.handle as { lenses?: LensChoice } | undefined) ?? {}) }),
+  return matches.reduce<{ lenses?: LensChoice; lens?: boolean }>(
+    (acc, m) => ({ ...acc, ...((m.handle as { lenses?: LensChoice; lens?: boolean } | undefined) ?? {}) }),
     {},
   );
 }
@@ -40,14 +43,11 @@ function useLensHandle(): { lenses?: LensChoice } {
  *
  * The menus open UPWARD for the same reason - there is nothing below them.
  *
- * Both RECEDE rather than grey out, and the rule is the same for each: a picker
- * with one option is not a choice. One branch, no branch pill. One session, no
- * session pill. The screens still know which year they are in; they just do not
- * ask a question with a single answer.
- *
- * Both RECEDE rather than grey out. A single-branch school gets no branch pill;
- * a school with no year yet gets no session pill. A control with one option, or
- * with none, is a question the reader cannot answer and should not be asked.
+ * A lens appears only when it is a question the reader can answer, and only on
+ * a screen it changes. One option is not a choice, so there is no branch pill
+ * for a reader who works in one branch (however many the school runs) and no
+ * session pill for a school with one year or none. And a screen that does not
+ * read a lens does not get its pill: see `LensChoice`.
  */
 
 const pill =
@@ -58,27 +58,13 @@ const pill =
   "group-data-[collapsible=icon]:px-0";
 
 export function BranchPill({ collapsed }: { collapsed: boolean }) {
-  const { applies, isTied, branch, label, branches, setBranch } = useBranchLens();
+  const { canChoose, branch, label, allLabel, choices, setBranch } = useBranchLens();
 
-  if (!applies) return null;
-
-  // Tied to one branch: state it, do not offer it. The server would refuse a
-  // wider read anyway, so a menu here would be a control that does nothing.
-  if (isTied) {
-    return (
-      <span
-        className={cn(pill, "cursor-default hover:bg-white")}
-        title={`Your account is tied to ${label}`}
-      >
-        <Building2 className="size-4 shrink-0 text-gray-06" />
-        {!collapsed && <span className="min-w-0 flex-1 truncate text-left">{label}</span>}
-      </span>
-    );
-  }
+  if (!canChoose) return null;
 
   const options: { key: string; value: number | "all"; label: string }[] = [
-    { key: "all", value: "all", label: "All branches" },
-    ...branches.map((b) => ({ key: String(b.id), value: b.id, label: b.name })),
+    { key: "all", value: "all", label: allLabel },
+    ...choices.map((b) => ({ key: String(b.id), value: b.id, label: b.name })),
   ];
 
   return (
@@ -172,33 +158,28 @@ export function SessionPill({ collapsed }: { collapsed: boolean }) {
 /**
  * The lenses, pinned under the nav.
  *
- * Renders nothing at all when neither applies - a single-branch school running
- * one year gets no bar and no border, rather than an empty tray.
+ * Renders nothing at all when neither pill is a real question on this screen,
+ * rather than an empty tray.
  */
 export function LensRail({ collapsed }: { collapsed: boolean }) {
   const branch = useBranchLens();
   const session = useSessionLens();
 
   // Which lenses the screen underneath actually reads. A lens belongs to the
-  // screens that read it: dashboard-layout says so in DashboardHandle, and this
-  // is where that becomes true rather than aspirational. Before it did, the
-  // rail rendered both pills on every page from the sidebar, and the handle
-  // gated only the read-only notice in the header.
+  // screens that read it, and a pill over a screen that ignores it is a
+  // control that changes nothing while looking as though it narrowed the page:
+  // a session pill over the student roster relabels the header and changes not
+  // one row (see section 2.0 of docs/students-design-phases.md), and a branch
+  // pill over Roles or Support filters nothing at all.
   //
-  // The case that forced it is the one that comment names by name - a session
-  // pill over the student roster. Student Management has no session dimension
-  // to move: a student's status, branch, guardians and documents are all
-  // current-state, and only the class placement is recorded per year. Turning
-  // the pill there would relabel the header and change not one of the 84 rows
-  // beneath it, with nothing on screen admitting it. See section 2.0 of
-  // docs/students-design-phases.md.
-  //
-  // Default is BOTH, so every existing route keeps exactly what it had.
-  const { lenses = "both" } = useLensHandle();
+  // So nothing is shown by default. A route marked `lens: true` reads both;
+  // `lenses` narrows that to one, or to none.
+  const handle = useLensHandle();
+  const lenses: LensChoice = handle.lenses ?? (handle.lens ? "both" : "none");
   const wantsBranch = lenses === "both" || lenses === "branch";
   const wantsSession = lenses === "both" || lenses === "session";
 
-  const showBranch = wantsBranch && branch.applies;
+  const showBranch = wantsBranch && branch.canChoose;
   const showSession = wantsSession && session.applies;
   if (!showBranch && !showSession) return null;
 

@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useCapabilities } from "@/hooks/use-capabilities";
+import { useConsoleDoors } from "@/hooks/use-console-doors";
 import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
@@ -128,12 +129,13 @@ export function AppSidebar({
     new URLSearchParams(search).get("applicant") === "1";
 
   const {
-    hasPermission, hasAnyPermission, hasAllPermissions, hasModuleAccess,
+    hasPermission, hasAnyPermission, hasAllPermissions,
   } = usePermissions();
   // What the school bought, which is a separate question from what this reader
   // may do. Unknown reads as allowed, so the nav never arrives empty while the
   // answer is in flight - see the hook.
   const { hasCapability } = useCapabilities();
+  const consoleDoors = useConsoleDoors();
 
   const school = useAppSelector(selectSchool);
   const user = useAppSelector(selectUser);
@@ -778,15 +780,9 @@ export function AppSidebar({
     // change of context is visible before the click rather than after it.
     business: [
       // Finance. The screens come from @xvs/finance, and the area builds its
-      // own sub-navigation once you are inside it - this is only the door.
-      //
-      // Gated on holding ANY finance permission, not on one code. The package's
-      // 145 codes gate individual ACTIONS (create an invoice, post a journal);
-      // there is no "may use finance" code to point at, and picking one action
-      // would hide the area from somebody who legitimately holds a different
-      // part of it. hasModuleAccess reads the backend keys directly, which is
-      // what the area's own sub-navigation already does with its prefixes.
-      ...(hasModuleAccess("finance.") && hasCapability("finance")
+      // own sub-navigation once you are inside it - this is only the door,
+      // and it opens only onto a screen the reader can use (useConsoleDoors).
+      ...(consoleDoors.finance
         ? [{
             title: "Finance",
             url: routesPath.PROTECTED.FINANCE.INDEX,
@@ -797,7 +793,7 @@ export function AppSidebar({
           }]
         : []),
       // Procurement, gated the same way and for the same reason.
-      ...(hasModuleAccess("procurement.") && hasCapability("procurement")
+      ...(consoleDoors.procurement
         ? [{
             title: "Procurement",
             url: routesPath.PROTECTED.PROCUREMENT.INDEX,

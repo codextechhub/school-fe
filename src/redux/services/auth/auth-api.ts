@@ -1,5 +1,6 @@
 import { resetAuth, setAuthContext, setAuthUser } from "@/redux/features/auth/auth-slice";
 import type {
+  BranchReach,
   FieldAccessPayload,
   ProxyTargetIdentity,
   SchoolInfo,
@@ -34,6 +35,8 @@ export interface MeResponse {
     permissions: string[];
     /** Which fields this user may not read or change; absent means none. */
     field_access?: FieldAccessPayload;
+    /** The branches this user may work in. */
+    branch_reach?: BranchReach;
     active_impersonation?: {
       id: number;
       tenant_slug: string;
@@ -185,6 +188,7 @@ export const authApi = baseApi.injectEndpoints({
             tenant: data.data.tenant ?? null,
             permissions: data.data.permissions ?? [],
             field_access: data.data.field_access ?? {},
+            branch_reach: data.data.branch_reach ?? null,
           }));
         } catch {
           // /me failed (e.g. transient 5xx) - keep the persisted permissions;

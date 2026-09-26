@@ -50,7 +50,7 @@ export function GenerateArmsDrawer({
   const [generate, { isLoading }] = useGenerateArmsMutation();
   const {
     applies: multiBranch,
-    isTied,
+    pinnedBranch,
     branch: lensBranch,
     branches,
   } = useBranchLens();
@@ -81,7 +81,7 @@ export function GenerateArmsDrawer({
    */
   function defaultBranch(forLevel: Level | null): number | null {
     if (forLevel?.branch != null) return forLevel.branch;
-    if (isTied && lensBranch !== "all") return lensBranch as number;
+    if (pinnedBranch != null) return pinnedBranch;
     if (lensBranch !== "all") return lensBranch as number;
     return branches[0]?.id ?? null;
   }
@@ -204,7 +204,7 @@ export function GenerateArmsDrawer({
               <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
                 Runs at *
               </label>
-              {levelLocks || isTied ? (
+              {levelLocks || pinnedBranch != null ? (
                 <div className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5">
                   <p className="text-sm text-black-01">
                     {branches.find((b) => b.id === effectiveBranch)?.name ??
@@ -213,7 +213,7 @@ export function GenerateArmsDrawer({
                   <p className="mt-0.5 text-xs text-gray-05 text-pretty">
                     {levelLocks
                       ? `${level?.name} belongs to this branch, so its classes do too.`
-                      : "Your account is tied to this branch, so anything you create belongs to it."}
+                      : "You work in this branch only, so anything you create belongs to it."}
                   </p>
                 </div>
               ) : (

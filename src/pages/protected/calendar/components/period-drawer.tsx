@@ -81,8 +81,7 @@ export function PeriodDrawer({
 }) {
   const {
     applies: multiBranch,
-    isTied,
-    branch: tiedBranch,
+    pinnedBranch,
     branches,
     label: tiedLabel,
   } = useBranchLens();
@@ -98,8 +97,8 @@ export function PeriodDrawer({
   };
 
   const tiedLock =
-    isTied && tiedBranch !== "all"
-      ? { id: tiedBranch as number, name: tiedLabel }
+    pinnedBranch != null
+      ? { id: pinnedBranch, name: tiedLabel }
       : null;
   const effectiveBranch = tiedLock ? tiedLock.id : draft.branch;
 
@@ -321,7 +320,7 @@ export function PeriodDrawer({
                 <div className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5">
                   <p className="text-sm text-black-01">{tiedLock.name}</p>
                   <p className="mt-0.5 text-xs text-gray-05 text-pretty">
-                    Your account is tied to this branch, so anything you create
+                    You work in this branch only, so anything you create
                     belongs to it.
                   </p>
                 </div>
