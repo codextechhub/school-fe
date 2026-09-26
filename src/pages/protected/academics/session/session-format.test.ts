@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  dayAfter,
+  dayLabel,
   scopeOf,
   statusOf,
   teachingWeeks,
+  termProblem,
   termState,
+  termWindows,
   weeksBetween,
 } from "./session-format";
 import type { AcademicSession } from "@/redux/services/academics/academics-types";
@@ -89,5 +93,110 @@ describe("teaching weeks", () => {
         { start_date: "", end_date: "" },
       ]),
     ).toBe(26);
+  });
+});
+
+describe("termWindows", () => {
+  const year = { start: "2026-09-07", end: "2027-07-16" };
+  const term = (name: string, start_date = "", end_date = "") => ({
+    name,
+    start_date,
+    end_date,
+  });
+
+  it("opens the first term from the session start", () => {
+    const [first] = termWindows([term("First Term")], year);
+    expect(first).toMatchObject({
+      waitingOn: null,
+      startMin: "2026-09-07",
+      max: "2027-07-16",
+    });
+  });
+
+  it("keeps later terms shut until the term before has an end date", () => {
+    const windows = termWindows(
+      [term("First Term", "2026-09-07"), term("Second Term"), term("Third Term")],
+      year,
+    );
+    expect(windows[1].waitingOn).toBe("First Term");
+    expect(windows[1].startMin).toBeUndefined();
+    expect(windows[2].waitingOn).toBe("Second Term");
+  });
+
+  it("opens the next term from the day after the previous one ends", () => {
+    const windows = termWindows(
+      [
+        term("First Term", "2026-09-07", "2026-12-18"),
+        term("Second Term"),
+        term("Third Term"),
+      ],
+      year,
+    );
+    expect(windows[1]).toMatchObject({
+      waitingOn: null,
+      startMin: "2026-12-19",
+      follows: { name: "First Term", end: "2026-12-18" },
+    });
+    expect(windows[2].waitingOn).toBe("Second Term");
+  });
+
+  it("applies the same chain to two semesters", () => {
+    const windows = termWindows(
+      [term("First Semester", "2026-09-07", "2027-01-29"), term("Second Semester")],
+      year,
+    );
+    expect(windows[1].startMin).toBe("2027-01-30");
+  });
+
+  it("opens a term's end from the day after its own start", () => {
+    const [first] = termWindows([term("First Term", "2026-09-07")], year);
+    expect(first.endMin).toBe("2026-09-08");
+  });
+
+  it("names an unnamed term by its position", () => {
+    const windows = termWindows([term(""), term("Second Term")], year);
+    expect(windows[1].waitingOn).toBe("Term 1");
+  });
+});
+
+describe("termProblem", () => {
+  const year = { start: "2026-09-07", end: "2027-07-16" };
+
+  it("flags a term that starts on or before the previous one ends", () => {
+    const terms = [
+      { name: "First Term", start_date: "2026-09-07", end_date: "2026-12-18" },
+      { name: "Second Term", start_date: "2026-12-18", end_date: "2027-04-02" },
+    ];
+    expect(termProblem(terms, 1, year)).toBe(
+      "Second Term starts before First Term ends.",
+    );
+  });
+
+  it("flags a term that ends on the day it starts", () => {
+    const terms = [
+      { name: "First Term", start_date: "2026-09-07", end_date: "2026-09-07" },
+    ];
+    expect(termProblem(terms, 0, year)).toBe(
+      "First Term ends on or before it starts.",
+    );
+  });
+
+  it("accepts terms that follow one another", () => {
+    const terms = [
+      { name: "First Term", start_date: "2026-09-07", end_date: "2026-12-18" },
+      { name: "Second Term", start_date: "2027-01-05", end_date: "2027-04-02" },
+    ];
+    expect(termProblem(terms, 1, year)).toBe("");
+  });
+});
+
+describe("dayAfter and dayLabel", () => {
+  it("rolls over the end of a month and a year", () => {
+    expect(dayAfter("2026-12-31")).toBe("2027-01-01");
+    expect(dayAfter("2027-02-28")).toBe("2027-03-01");
+  });
+
+  it("prints a calendar day without shifting it", () => {
+    expect(dayLabel("2026-12-18")).toBe("18 Dec 2026");
   });
 });

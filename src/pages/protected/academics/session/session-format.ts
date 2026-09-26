@@ -87,3 +87,106 @@ export const TERM_LABEL: Record<TermState, string> = {
 export function rangeOf(start: string, end: string, fmt: (d: string) => string) {
   return `${fmt(start)} - ${fmt(end)}`;
 }
+
+/** The calendar day after an ISO date, still as an ISO date. */
+export function dayAfter(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
+}
+
+interface TermDraft {
+  name: string;
+  start_date: string;
+  end_date: string;
+}
+
+export interface TermWindow {
+  /** The term that has to be given an end date before this one opens. */
+  waitingOn: string | null;
+  /** The term this one follows, with the day it ends, once that is known. */
+  follows: { name: string; end: string } | null;
+  startMin?: string;
+  endMin?: string;
+  max?: string;
+}
+
+const termLabel = (term: TermDraft, index: number) =>
+  term.name.trim() || `Term ${index + 1}`;
+
+/**
+ * The days each term's calendar may offer, in the order the terms are listed.
+ *
+ * Terms run one after another. A term's dates stay shut until the term before
+ * it has an end date, and then open from the day after that end, so the
+ * calendar cannot offer a day the server refuses as an overlap. Its end opens
+ * from the day after its own start, because the server also refuses a term
+ * that ends on the day it starts. Every day stays inside the session.
+ *
+ * The same rule serves three terms and two semesters: it reads the rows it is
+ * given and never assumes a count.
+ */
+export function termWindows(
+  terms: TermDraft[],
+  session: { start: string; end: string },
+): TermWindow[] {
+  return terms.map((term, i) => {
+    const previous = i > 0 ? terms[i - 1] : null;
+    if (previous && !previous.end_date) {
+      return { waitingOn: termLabel(previous, i - 1), follows: null };
+    }
+    const afterPrevious = previous ? dayAfter(previous.end_date) : "";
+    const startMin =
+      [afterPrevious, session.start].filter(Boolean).sort().pop() || undefined;
+    return {
+      waitingOn: null,
+      follows: previous
+        ? { name: termLabel(previous, i - 1), end: previous.end_date }
+        : null,
+      startMin,
+      endMin: term.start_date ? dayAfter(term.start_date) : startMin,
+      max: session.end || undefined,
+    };
+  });
+}
+
+/**
+ * What is wrong with one term's dates, as the sentence shown under it.
+ *
+ * Mirrors the server's rules so a refusal is seen before Save. The overlap
+ * check still earns its place with the calendar bounded: shortening the term
+ * before, after this one is filled in, leaves this one starting too early.
+ */
+export function termProblem(
+  terms: TermDraft[],
+  index: number,
+  session: { start: string; end: string },
+): string {
+  const term = terms[index];
+  const label = termLabel(term, index);
+  const previous = index > 0 ? terms[index - 1] : null;
+  if (term.start_date && term.end_date && term.end_date <= term.start_date) {
+    return `${label} ends on or before it starts.`;
+  }
+  if (
+    session.start &&
+    session.end &&
+    ((term.start_date && term.start_date < session.start) ||
+      (term.end_date && term.end_date > session.end))
+  ) {
+    return `${label} falls outside the session dates.`;
+  }
+  if (previous?.end_date && term.start_date && term.start_date <= previous.end_date) {
+    return `${label} starts before ${termLabel(previous, index - 1)} ends.`;
+  }
+  return "";
+}
+
+/** "12 Dec 2026", read as a calendar day rather than a UTC instant. */
+export function dayLabel(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(y, m - 1, d));
+}

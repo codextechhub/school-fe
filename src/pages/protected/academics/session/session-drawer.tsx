@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { parseApiError } from "@/utils/api-error";
+import { dayLabel, termProblem, termWindows } from "./session-format";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import { useGetSchoolProfileQuery } from "@/redux/services/school/school-api";
 import {
@@ -180,15 +181,11 @@ export function SessionDrawer({
     }));
 
   // Per-row, because the message belongs under the term that is wrong.
-  const termErrors = draft.terms.map((t) => {
-    if (!t.start_date || !t.end_date || !draft.start || !draft.end) return "";
-    if (t.end_date < t.start_date)
-      return `${t.name || "This term"} ends before it starts.`;
-    if (t.start_date < draft.start || t.end_date > draft.end) {
-      return `${t.name || "This term"} falls outside the session dates.`;
-    }
-    return "";
-  });
+  const sessionDates = { start: draft.start, end: draft.end };
+  const termErrors = draft.terms.map((_, i) =>
+    termProblem(draft.terms, i, sessionDates),
+  );
+  const windows = termWindows(draft.terms, sessionDates);
 
   const datesBackwards =
     !!draft.start && !!draft.end && draft.end <= draft.start;
@@ -439,13 +436,14 @@ export function SessionDrawer({
                     </button>
                   </div>
                   <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    {/* Bounded by the session, so the calendar cannot offer a
-                        day the form is about to reject. */}
+                    {/* Bounded by the session and the term before, so the
+                        calendar cannot offer a day the form would reject. */}
                     <DatePickerInput
                       aria-label={`${term.name || `Term ${i + 1}`} start date`}
                       value={term.start_date}
-                      min={draft.start || undefined}
-                      max={draft.end || undefined}
+                      disabled={!!windows[i].waitingOn}
+                      min={windows[i].startMin}
+                      max={windows[i].max}
                       onChange={(e) =>
                         setTerm(i, { start_date: e.target.value })
                       }
@@ -457,8 +455,9 @@ export function SessionDrawer({
                     <DatePickerInput
                       aria-label={`${term.name || `Term ${i + 1}`} end date`}
                       value={term.end_date}
-                      min={term.start_date || draft.start || undefined}
-                      max={draft.end || undefined}
+                      disabled={!!windows[i].waitingOn}
+                      min={windows[i].endMin}
+                      max={windows[i].max}
                       onChange={(e) => setTerm(i, { end_date: e.target.value })}
                       className={cn(
                         "h-9.5",
@@ -466,6 +465,19 @@ export function SessionDrawer({
                       )}
                     />
                   </div>
+                  {windows[i].waitingOn ? (
+                    <p className="mt-1.5 text-xs text-gray-05 text-pretty">
+                      Set the end date of {windows[i].waitingOn} first.
+                    </p>
+                  ) : (
+                    windows[i].follows &&
+                    !termErrors[i] && (
+                      <p className="mt-1.5 text-xs text-gray-05 text-pretty">
+                        Starts after {windows[i].follows.name} ends on{" "}
+                        {dayLabel(windows[i].follows.end)}.
+                      </p>
+                    )
+                  )}
                   {termErrors[i] && (
                     <p className="mt-1.5 text-xs text-error-text text-pretty">
                       {termErrors[i]}
