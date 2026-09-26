@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Info } from "lucide-react";
 
 import { NativeSelect } from "@/components/ui/native-select";
-import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
+import { apiErrorMessage, fieldErrorsFor } from "@/utils/api-error";
 import {
   useGetStaffListQuery,
   useGrantStaffRoleInBulkMutation,
@@ -77,7 +77,7 @@ export function BulkRoleDrawer({
       onDone();
       onClose();
     } catch (error) {
-      const perField = fieldErrors(error);
+      const perField = fieldErrorsFor(error, ["role", "branch"]);
       if (Object.keys(perField).length) {
         setErrors(perField);
         return;

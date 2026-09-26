@@ -4,7 +4,7 @@ import { AlertTriangle, Info, Network } from "lucide-react";
 
 import { BranchReachPicker } from "@/components/custom/branch-reach-picker";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
+import { apiErrorMessage, fieldErrorsFor } from "@/utils/api-error";
 import {
   useGetStaffMemberQuery,
   useGetStaffRolesQuery,
@@ -93,7 +93,7 @@ export function PostingDrawer({
       onDone();
       onClose();
     } catch (error) {
-      const perField = fieldErrors(error);
+      const perField = fieldErrorsFor(error, ["branch_ids", "reason"]);
       if (Object.keys(perField).length) {
         setErrors(perField);
         return;

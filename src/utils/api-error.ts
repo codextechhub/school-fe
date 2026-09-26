@@ -126,14 +126,44 @@ export function writeErrorMessage(error: unknown, fallback: string): string {
   return apiDetailMessage(error, fallback);
 }
 
+/**
+ * Keys DRF puts in `detail` that name no input.
+ *
+ * `detail` wraps every refusal raised as an exception rather than by a
+ * serializer (a 403, a 404, a throttle), and `non_field_errors` holds a
+ * serializer's whole-object objection. Read as fields, both land under a key
+ * no form renders, and the form shows nothing at all.
+ */
+const NOT_A_FIELD = new Set(["detail", "non_field_errors"]);
+
 export function fieldErrors(error: unknown): Record<string, string> {
   const { detail } = parseApiError(error);
   const out: Record<string, string> = {};
   for (const [field, value] of Object.entries(detail)) {
+    if (NOT_A_FIELD.has(field)) continue;
     const text = Array.isArray(value)
       ? value.map(asString).filter(Boolean).join(" ")
       : asString(value);
     if (text) out[field] = userFacingMessage(text);
   }
+  return out;
+}
+
+/**
+ * The field errors a form can put under one of its own inputs, and nothing
+ * else.
+ *
+ * A form that stores every field error and returns shows nothing when the
+ * server objects to a field it has no input for - `user` or `tenant` on a
+ * drawer that only asks for a role. Passing the inputs it renders keeps those
+ * out, so an empty result means "say it in a toast instead".
+ */
+export function fieldErrorsFor(
+  error: unknown,
+  fields: readonly string[],
+): Record<string, string> {
+  const all = fieldErrors(error);
+  const out: Record<string, string> = {};
+  for (const field of fields) if (all[field]) out[field] = all[field];
   return out;
 }

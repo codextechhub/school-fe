@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { AlertTriangle, Info } from "lucide-react";
 
 import { NativeSelect } from "@/components/ui/native-select";
-import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { apiErrorMessage, fieldErrorsFor } from "@/utils/api-error";
 import {
   useChangeStaffStatusMutation,
   useGetStaffStatusOptionsQuery,
@@ -100,7 +101,7 @@ export function StatusDrawer({
       toast.success(chosen.account_effect);
       onClose();
     } catch (error) {
-      const perField = fieldErrors(error);
+      const perField = fieldErrorsFor(error, ["to_status", "effective_date", "last_working_day", "reason", "note"]);
       if (Object.keys(perField).length) {
         setErrors(perField);
         return;
@@ -180,8 +181,8 @@ export function StatusDrawer({
               )}
 
               <Field label="Effective date" required error={errors.effective_date}>
-                <input
-                  type="date"
+                <DatePickerInput
+                  required
                   value={effective}
                   onChange={(e) => setEffective(e.target.value)}
                   className={inputClass}
@@ -195,8 +196,8 @@ export function StatusDrawer({
                   error={errors.last_working_day}
                   hint="Their account stays open until an administrator closes it. Nothing closes it on this date."
                 >
-                  <input
-                    type="date"
+                  <DatePickerInput
+                    required
                     value={lastDay}
                     onChange={(e) => setLastDay(e.target.value)}
                     className={inputClass}

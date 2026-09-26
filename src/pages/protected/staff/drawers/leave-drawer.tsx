@@ -3,7 +3,8 @@ import { toast } from "sonner";
 import { Info } from "lucide-react";
 
 import { NativeSelect } from "@/components/ui/native-select";
-import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { apiErrorMessage, fieldErrorsFor } from "@/utils/api-error";
 import { useFileStaffLeaveMutation } from "@/redux/services/staff/staff-api";
 import type { LeaveType } from "@/redux/services/staff/staff-types";
 
@@ -88,7 +89,7 @@ export function LeaveDrawer({
       }
       onClose();
     } catch (error) {
-      const perField = fieldErrors(error);
+      const perField = fieldErrorsFor(error, ["leave_type", "start_date", "end_date", "note"]);
       if (Object.keys(perField).length) {
         setErrors(perField);
         return;
@@ -132,8 +133,8 @@ export function LeaveDrawer({
         </Field>
 
         <Field label="First day" required error={errors.start_date}>
-          <input
-            type="date"
+          <DatePickerInput
+            required
             value={start}
             onChange={(e) => setStart(e.target.value)}
             className={inputClass}
@@ -148,8 +149,10 @@ export function LeaveDrawer({
             (orderWrong ? "The last day cannot be before the first." : undefined)
           }
         >
-          <input
-            type="date"
+          {/* Bounded by the first day, so the calendar cannot offer an earlier one. */}
+          <DatePickerInput
+            required
+            min={start || undefined}
             value={end}
             onChange={(e) => setEnd(e.target.value)}
             className={inputClass}

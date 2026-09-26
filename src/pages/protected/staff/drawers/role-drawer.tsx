@@ -5,7 +5,7 @@ import { Info, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
-import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
+import { apiErrorMessage, fieldErrorsFor } from "@/utils/api-error";
 import {
   useAssignRoleMutation,
   useGetSchoolRolesQuery,
@@ -112,6 +112,7 @@ export function RoleDrawer({
 
   async function grant() {
     if (!chosen) return;
+    setErrors({});
     try {
       await assign({
         // The ACCOUNT's id. The staff record's is a different number.
@@ -125,7 +126,7 @@ export function RoleDrawer({
       setRoleKey("");
       setReach("");
     } catch (error) {
-      const perField = fieldErrors(error);
+      const perField = fieldErrorsFor(error, ["role", "branch"]);
       if (Object.keys(perField).length) {
         setErrors(perField);
         return;
