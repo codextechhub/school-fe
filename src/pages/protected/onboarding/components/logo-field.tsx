@@ -8,7 +8,7 @@ import {
   useRemoveSchoolLogoMutation,
   useUploadSchoolLogoMutation,
 } from "@/redux/services/school/school-api";
-import { apiErrorMessage } from "@/utils/api-error";
+import { writeErrorMessage } from "@/utils/api-error";
 
 /** Mirrors core.uploads.LOGO_EXTENSIONS / MAX_LOGO_BYTES on the server. */
 const ACCEPTED = ["image/png", "image/jpeg", "image/webp"];
@@ -56,7 +56,7 @@ export function LogoField({
       toast.success("Logo updated.");
     } catch (error) {
       setLocalError(
-        apiErrorMessage(error, "We could not upload that logo. Try again."),
+        writeErrorMessage(error, "We could not upload that logo. Try again."),
       );
     } finally {
       // Clear the input, or picking the same file twice fires no change event.
@@ -71,7 +71,7 @@ export function LogoField({
       toast.success("Logo removed.");
     } catch (error) {
       setLocalError(
-        apiErrorMessage(error, "We could not remove that logo. Try again."),
+        writeErrorMessage(error, "We could not remove that logo. Try again."),
       );
     }
   };

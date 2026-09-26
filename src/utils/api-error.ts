@@ -70,27 +70,16 @@ export function apiErrorMessage(error: unknown, fallback: string): string {
 }
 
 /**
- * DRF's per-field validation errors, flattened to one sentence per field.
- *
- * A 400 from a serializer arrives as `detail: { email: ["…"], role: ["…"] }`.
- * Every form in the app needs the same thing from it - the message that belongs
- * under each input - and reading it by hand at each call site is how a form ends
- * up showing "that address already has an account" as a page-level toast with
- * no indication of which field to change.
- */
-/**
  * The most specific sentence the server gave, for a screen with no field to
  * put it under.
  *
- * Some refusals carry their reason in `message` ("SSS1 B belongs to the Annex,
- * and this student is at the Main Branch."). Others - anything raised by a
- * serializer - leave `message` as the generic "An error occurred. Check the
- * error details for more information." and put the real sentence in
- * `detail.<field>`. A caller that reads only `message` shows the generic line
- * and hides the one that says what to do: "This school has more than one
- * branch, so say which one."
+ * The server builds `message` from a serializer's field errors, but when
+ * several fields fail it prefixes each with its field name ("branch: …;
+ * class: …"). Reading the first field detail instead gives the one plain
+ * sentence that says what to do: "This school has more than one branch, so
+ * say which one."
  *
- * So: a field detail wins, then a real message, then the fallback.
+ * So: a field detail wins, then the server's message, then the fallback.
  */
 export function apiDetailMessage(error: unknown, fallback: string): string {
   const first = Object.values(fieldErrors(error))[0];
@@ -136,6 +125,15 @@ export function writeErrorMessage(error: unknown, fallback: string): string {
  */
 const NOT_A_FIELD = new Set(["detail", "non_field_errors"]);
 
+/**
+ * DRF's per-field validation errors, flattened to one sentence per field.
+ *
+ * A 400 from a serializer arrives as `detail: { email: ["…"], role: ["…"] }`.
+ * Every form in the app needs the same thing from it - the message that belongs
+ * under each input - and reading it by hand at each call site is how a form ends
+ * up showing "that address already has an account" as a page-level toast with
+ * no indication of which field to change.
+ */
 export function fieldErrors(error: unknown): Record<string, string> {
   const { detail } = parseApiError(error);
   const out: Record<string, string> = {};
