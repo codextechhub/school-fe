@@ -195,17 +195,18 @@ export default function GuardianDetail() {
                     </Button>
                   </PermissionGate>
                 </LiveOnly>
-                <div className="ml-auto">
-                  <AsAtControl
-                    historyStarts={guardian.history_starts}
-                    value={asAt}
-                    onChange={setAsAt}
-                  />
-                </div>
               </div>
             </div>
 
-            <CompletenessCard completeness={completeness} />
+            {/* The date control sits on the completeness card, one panel beside the person. */}
+            <div className="grid min-w-0 content-start gap-3">
+              <AsAtControl
+                historyStarts={guardian.history_starts}
+                value={asAt}
+                onChange={setAsAt}
+              />
+              <CompletenessCard completeness={completeness} />
+            </div>
           </div>
         )}
       </Panel>

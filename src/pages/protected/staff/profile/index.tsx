@@ -331,18 +331,19 @@ export default function StaffProfile() {
                     only a school-wide administrator can change this record.
                   </p>
                 )}
-                <div className="ml-auto">
-                  <AsAtControl
-                    historyStarts={person.history_starts}
-                    value={asAt}
-                    onChange={setAsAt}
-                  />
-                </div>
               </div>
               <Lifecycle lifecycle={person.lifecycle} />
             </div>
 
-            <CompletenessCard completeness={completeness} readOnly={!manageable} />
+            {/* The date control sits on the completeness card, one panel beside the person. */}
+            <div className="grid min-w-0 content-start gap-3">
+              <AsAtControl
+                historyStarts={person.history_starts}
+                value={asAt}
+                onChange={setAsAt}
+              />
+              <CompletenessCard completeness={completeness} readOnly={!manageable} />
+            </div>
           </div>
         )}
       </Surface>
