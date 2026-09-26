@@ -197,6 +197,12 @@ export default defineConfig({
     port: 5174,
     strictPort: true,
     fs: { allow: [__dirname, packageRoot] },
+    // Watch the shared package too. Vite ignores node_modules, and @xvs/finance
+    // is served as source through the aliases above, so without this a pin
+    // moved while the server runs keeps the old package files in the page beside
+    // app code that imports the new names ("Importing binding name ... is not
+    // found").
+    watch: { ignored: ["!**/node_modules/@xvs/finance/**"] },
     // The API is served from this origin in development.
     //
     // Not a convenience. The app runs at <slug>.localhost:5174 and the API at
