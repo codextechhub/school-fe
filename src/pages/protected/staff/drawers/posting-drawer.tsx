@@ -5,7 +5,6 @@ import { AlertTriangle, Info, Network } from "lucide-react";
 import { BranchReachPicker } from "@/components/custom/branch-reach-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
-import { useGetAllMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
   useGetStaffMemberQuery,
   useGetStaffRolesQuery,
@@ -17,6 +16,7 @@ import {
   Field,
   inputClass,
 } from "../../students/drawers/drawer-shell";
+import { useReaderReach } from "./reader-reach";
 
 /**
  * Move where somebody is based.
@@ -32,6 +32,12 @@ import {
  * branch still teaches the classes they were given there, and the server names
  * them back; the warning is repeated as a toast because it is the one thing
  * about this move that surprises people.
+ *
+ * **Only the reader's own branches are offered.** A branch administrator
+ * covering Ikeja and Lekki picks between those two and is never offered
+ * School-wide, which would put the person on every branch's roster. Only a
+ * whole-school reader sees every branch and the School-wide choice. The server
+ * refuses anything else whatever this drawer draws.
  */
 export function PostingDrawer({
   staffIds,
@@ -45,7 +51,7 @@ export function PostingDrawer({
   onDone: () => void;
   onClose: () => void;
 }) {
-  const { data: branchData } = useGetAllMyBranchesQuery();
+  const { wholeSchool, branches, isLoading: branchesLoading } = useReaderReach();
   const person = useGetStaffMemberQuery(staffIds[0] ?? 0, { skip: staffIds.length !== 1 });
   const [move, { isLoading: saving }] = useMoveStaffPostingMutation();
   const roles = useGetStaffRolesQuery(staffIds[0] ?? 0, {
@@ -56,9 +62,14 @@ export function PostingDrawer({
   const [reason, setReason] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const branches = branchData ?? [];
   const currentIds = person.data?.data.posting_branch_ids ?? [];
-  const mode = choice?.mode ?? (staffIds.length === 1 ? (currentIds.length ? "selected" : "school") : null);
+  const mode =
+    choice?.mode ??
+    (!wholeSchool
+      ? "selected"
+      : staffIds.length === 1
+        ? currentIds.length ? "selected" : "school"
+        : null);
   const ids = choice?.ids ?? currentIds;
   const selectedIds = mode === "school" ? [] : ids;
   const target = selectedIds.length
@@ -105,20 +116,26 @@ export function PostingDrawer({
       subtitle="Where they are based. Not which branches their roles reach."
       saveLabel="Move posting"
       onSave={() => void save()}
-      canSave={staffIds.length > 0 && !person.isLoading && !person.isError && Boolean(branchData?.length) && mode !== null && (mode === "school" || selectedIds.length > 0)}
+      canSave={staffIds.length > 0 && !person.isLoading && !person.isError && !branchesLoading && branches.length > 0 && mode !== null && (mode === "school" || selectedIds.length > 0)}
       saving={saving}
     >
       <div className="grid gap-4">
         <Field
           label="Posted to"
           error={errors.branch_ids}
-          hint="Selected branches are equal postings. School-wide also includes branches opened later."
+          hint={
+            wholeSchool
+              ? "Selected branches are equal postings. School-wide also includes branches opened later."
+              : "Selected branches are equal postings. You can post people only to your own branches."
+          }
         >
           <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-              <button type="button" aria-pressed={mode === "school"} onClick={() => setChoice({ mode: "school", ids: [] })} className={`rounded-lg border p-3 text-left text-sm ${mode === "school" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}>School-wide</button>
-              <button type="button" aria-pressed={mode === "selected"} onClick={() => setChoice({ mode: "selected", ids })} className={`rounded-lg border p-3 text-left text-sm ${mode === "selected" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}>Selected branches</button>
-            </div>
+            {wholeSchool && (
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <button type="button" aria-pressed={mode === "school"} onClick={() => setChoice({ mode: "school", ids: [] })} className={`rounded-lg border p-3 text-left text-sm ${mode === "school" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}>School-wide</button>
+                <button type="button" aria-pressed={mode === "selected"} onClick={() => setChoice({ mode: "selected", ids })} className={`rounded-lg border p-3 text-left text-sm ${mode === "selected" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}>Selected branches</button>
+              </div>
+            )}
             {mode === "selected" && <BranchReachPicker branches={branches} selected={ids} onChange={(next) => setChoice({ mode: "selected", ids: next })} />}
           </div>
         </Field>

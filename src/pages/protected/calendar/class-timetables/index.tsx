@@ -49,6 +49,7 @@ import { DuplicateDrawer } from "../components/duplicate-drawer";
 import { ExportButton } from "@/components/custom/export-button";
 import { ClassPicker } from "./class-picker";
 import { PageShell } from "@/components/layout/page-shell";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * A weekly grid per class. Click an empty cell to fill it.
@@ -125,9 +126,11 @@ export default function ClassTimetables() {
   const [runDuplicate, { isLoading: duplicating }] =
     useDuplicateTimetableMutation();
 
-  const canEdit = hasPermission(P.MODIFY_TIMETABLE_ENTRY) && !readOnlyYear;
-  const canManage = hasPermission(P.DELETE_TIMETABLE) && !readOnlyYear;
-  const canPublish = hasPermission(P.PUBLISH_TIMETABLE) && !readOnlyYear;
+  // A school-wide class's grid is read-only to a branch administrator.
+  const mine = canManageRow(currentRow);
+  const canEdit = hasPermission(P.MODIFY_TIMETABLE_ENTRY) && !readOnlyYear && mine;
+  const canManage = hasPermission(P.DELETE_TIMETABLE) && !readOnlyYear && mine;
+  const canPublish = hasPermission(P.PUBLISH_TIMETABLE) && !readOnlyYear && mine;
 
   const warnings = grid?.warnings ?? [];
   const published = grid?.status === "PUBLISHED";

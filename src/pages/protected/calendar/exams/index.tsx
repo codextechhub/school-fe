@@ -66,6 +66,7 @@ import {
   type PaperFilters,
 } from "./paper-filters";
 import { PageShell } from "@/components/layout/page-shell";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * Papers placed inside a dated exam period on the calendar.
@@ -104,6 +105,11 @@ export default function ExamScheduling() {
   const exam = exams.find((e) => e.id === current) ?? null;
 
   const { data: classData } = useGetClassesQuery(lens);
+  // A paper belongs to its class, so only classes the viewer may change are offered.
+  const paperClasses = useMemo(
+    () => (classData?.data ?? []).filter((klass) => canManageRow(klass)),
+    [classData],
+  );
   const { data: subjectData } = useGetSubjectsQuery(lens);
   const { data: roomData } = useGetRoomsQuery({
     branch: lens.branch,
@@ -282,7 +288,7 @@ export default function ExamScheduling() {
             <Button
               className="text-sm"
               onClick={runPublish}
-              disabled={!canPublish || publishing || published}
+              disabled={!canPublish || !canManageRow(exam) || publishing || published}
             >
               <Send className="size-4" />
               {published ? "Published" : "Publish"}
@@ -440,9 +446,12 @@ export default function ExamScheduling() {
                   slots={shown}
                   clashing={clashing}
                   canCreate={!!canCreate && !published}
-                  onOpen={(slot) =>
-                    setPaper({ values: paperValuesFrom(slot), slot })
-                  }
+                  onOpen={(slot) => {
+                    // A paper opens for editing only where the viewer may change it.
+                    if (canEdit && !published && canManageRow(slot)) {
+                      setPaper({ values: paperValuesFrom(slot), slot });
+                    }
+                  }}
                   onAdd={(date, sitting) =>
                     setPaper({
                       values: {
@@ -480,13 +489,13 @@ export default function ExamScheduling() {
                   <RowActions
                     label={`Actions for ${slot.class_name} ${slot.subject_name}`}
                     actions={[
-                      canEdit && !published && {
+                      canEdit && !published && canManageRow(slot) && {
                         label: "Edit",
                         icon: Pencil,
                         onSelect: () =>
                           setPaper({ values: paperValuesFrom(slot), slot }),
                       },
-                      canDelete && !published && {
+                      canDelete && !published && canManageRow(slot) && {
                         label: "Remove paper",
                         icon: Trash2,
                         destructive: true,
@@ -510,7 +519,7 @@ export default function ExamScheduling() {
                 ),
               }))}
               onRowClick={(slot: ExamSlot) => {
-                if (slot && canEdit && !published) {
+                if (slot && canEdit && !published && canManageRow(slot)) {
                   setPaper({ values: paperValuesFrom(slot), slot });
                 }
               }}
@@ -531,7 +540,7 @@ export default function ExamScheduling() {
         periodRange={range}
         minDate={exam.start_date}
         maxDate={exam.end_date}
-        classes={classData?.data ?? []}
+        classes={paperClasses}
         subjects={subjectData?.data ?? []}
         rooms={roomData?.data ?? []}
         teachers={teacherData?.data ?? []}

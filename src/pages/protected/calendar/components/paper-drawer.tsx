@@ -32,6 +32,7 @@ import type {
   SchoolClass,
   Subject,
 } from "@/redux/services/academics/academics-types";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 
 /**
  * One paper: which class sits which subject, when, where, supervised by whom.
@@ -101,6 +102,8 @@ export function PaperDrawer({
     values: PaperValues,
   ) => Promise<{ refusal: string | null; warnings: ClashWarning[] }>;
 }) {
+  // Rooms are only named with their branch for a reader who works across branches.
+  const { multiBranch } = useAcademicsLens();
   const [values, setValues] = useState<PaperValues>(initial);
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
     null,
@@ -320,7 +323,7 @@ export function PaperDrawer({
                 }
                 options={rooms.map((r) => ({
                   value: String(r.id),
-                  label: r.branch_name ? `${r.name} · ${r.branch_name}` : r.name,
+                  label: multiBranch && r.branch_name ? `${r.name} · ${r.branch_name}` : r.name,
                 }))}
               />
             </Field>

@@ -57,6 +57,7 @@ import {
   toIso,
 } from "../components/dates";
 import { monthWindow } from "./month-window";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * The same events as the list, read as a shape instead of as rows.
@@ -126,7 +127,8 @@ export default function TermView() {
   /** Opening an event: the form for a reader who may edit, the detail if not. */
   const openEvent = (event: CalendarEvent) => {
     setDayOpen(null);
-    if (canEdit) setEditing(event);
+    // A school-wide event is read-only to a branch administrator.
+    if (canEdit && canManageRow(event)) setEditing(event);
     else setViewing(event);
   };
 
@@ -532,7 +534,7 @@ export default function TermView() {
         multiBranch={multiBranch}
         onClose={() => setViewing(null)}
         onEdit={
-          canEdit
+          canEdit && canManageRow(viewing)
             ? () => {
                 setEditing(viewing);
                 setViewing(null);

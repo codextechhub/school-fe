@@ -44,6 +44,7 @@ import {
   Users,
 } from "lucide-react";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useCapabilities } from "@/hooks/use-capabilities";
 import { useConsoleDoors } from "@/hooks/use-console-doors";
 import { P, type PermissionCode } from "@/permissions";
@@ -142,9 +143,9 @@ export function AppSidebar({
   // Student badges use the same branch and year as their destination screens.
   const {
     lens: studentLens,
-    multiBranch,
     isLoading: studentLensLoading,
   } = useStudentsLens();
+  const { canChoose: canChooseBranch } = useBranchLens();
 
   /**
    * Student counts are closed before go-live and behind the same permission as
@@ -477,10 +478,10 @@ export function AppSidebar({
             badge: waiting.teachingGaps,
           },
         ]),
-    // Absent at a one-branch school rather than disabled. A posting answers
-    // which branch somebody is based at, and a school with one branch has no
-    // question to put behind the door. The server answers 404 there too.
-    ...(multiBranch
+    // Absent for a reader who works in one branch, including everybody at a
+    // one-branch school: where people are based is not their question to ask,
+    // and the server answers the roster 404 for them.
+    ...(canChooseBranch
       ? [
           {
             title: "Posting & reach",

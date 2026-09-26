@@ -47,6 +47,7 @@ export function FiltersPopover({
   onClear,
   roles,
   employmentStatuses,
+  showPosting,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -57,6 +58,12 @@ export function FiltersPopover({
   roles: StaffRoleOption[];
   /** Only the statuses somebody is actually in, so the list has no dead options. */
   employmentStatuses: { value: EmploymentStatus; label: string }[];
+  /**
+   * Whether postings exist for this viewer at all. False at a one-branch
+   * school and for a viewer who works in one branch, where the server ignores
+   * the filter and offering it would be a control that does nothing.
+   */
+  showPosting: boolean;
 }) {
   const facets =
     (value.role !== "all" ? 1 : 0) +
@@ -146,35 +153,37 @@ export function FiltersPopover({
             </p>
           </Facet>
 
-          <div className="border-t border-white-02 pt-3.5">
-            <button
-              type="button"
-              onClick={() =>
-                onChange({ schoolWideOnly: !value.schoolWideOnly })
-              }
-              className="flex items-start gap-2.5 text-left"
-            >
-              <span
-                aria-hidden
-                className={cn(
-                  "mt-px grid size-4.75 shrink-0 place-content-center rounded-[5px] border-[1.5px] text-white",
-                  value.schoolWideOnly
-                    ? "border-primary bg-primary"
-                    : "border-gray-02 bg-white",
-                )}
+          {showPosting && (
+            <div className="border-t border-white-02 pt-3.5">
+              <button
+                type="button"
+                onClick={() =>
+                  onChange({ schoolWideOnly: !value.schoolWideOnly })
+                }
+                className="flex items-start gap-2.5 text-left"
               >
-                {value.schoolWideOnly && <Check className="size-3" />}
-              </span>
-              <span>
-                <span className="block text-[13.5px] text-black-01">
-                  Posted school-wide only
+                <span
+                  aria-hidden
+                  className={cn(
+                    "mt-px grid size-4.75 shrink-0 place-content-center rounded-[5px] border-[1.5px] text-white",
+                    value.schoolWideOnly
+                      ? "border-primary bg-primary"
+                      : "border-gray-02 bg-white",
+                  )}
+                >
+                  {value.schoolWideOnly && <Check className="size-3" />}
                 </span>
-                <span className="block text-xs text-gray-05">
-                  People with no single base, such as a registrar.
+                <span>
+                  <span className="block text-[13.5px] text-black-01">
+                    Posted school-wide only
+                  </span>
+                  <span className="block text-xs text-gray-05">
+                    People with no single base, such as a registrar.
+                  </span>
                 </span>
-              </span>
-            </button>
-          </div>
+              </button>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2.5 border-t border-white-02 pt-3.5">
             <button

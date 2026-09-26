@@ -32,6 +32,12 @@ export interface Scoped {
   branch_name?: string | null;
   /** "School-wide", or the branch's name. */
   scope_label?: string;
+  /**
+   * False when the viewer may read this row but not change it: a branch
+   * administrator looking at a row shared across the school. Absent reads as
+   * changeable.
+   */
+  can_manage?: boolean;
 }
 
 /** A teacher or an invigilator, as every screen here renders one. */
@@ -237,6 +243,12 @@ export type RoomType =
 
 export interface Room {
   id: number;
+  /**
+   * False when the viewer may read this row but not change it: a branch
+   * administrator looking at a row shared across the school. Absent reads as
+   * changeable.
+   */
+  can_manage?: boolean;
   name: string;
   code: string;
   room_type: RoomType;
@@ -364,6 +376,12 @@ export interface ClassTimetableRow extends Scoped, TimetableStatus {
 
 export interface TimetableSlot {
   id: number;
+  /**
+   * False when the viewer may read this row but not change it: a branch
+   * administrator looking at a row shared across the school. Absent reads as
+   * changeable.
+   */
+  can_manage?: boolean;
   school_class: number;
   class_name: string;
   day_of_week: DayOfWeek;
@@ -509,6 +527,12 @@ export type Sitting = "MORNING" | "AFTERNOON";
 
 export interface ExamSlot {
   id: number;
+  /**
+   * False when the viewer may read this row but not change it: a branch
+   * administrator looking at a row shared across the school. Absent reads as
+   * changeable.
+   */
+  can_manage?: boolean;
   school_class: number;
   class_name: string;
   subject: number;
@@ -533,6 +557,12 @@ export interface ExamSlot {
  */
 export interface Exam {
   id: number;
+  /**
+   * False when the viewer may read this row but not change it: a branch
+   * administrator looking at a row shared across the school. Absent reads as
+   * changeable.
+   */
+  can_manage?: boolean;
   name: string;
   calendar_event: number;
   event_name: string;

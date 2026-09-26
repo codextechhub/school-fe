@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import { useBulkCreateLevelsMutation } from "@/redux/services/academics/academics-api";
 import type { Program } from "@/redux/services/academics/academics-types";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 
 /**
  * A run of levels, typed one per line.
@@ -39,6 +40,7 @@ export function BulkLevelsDrawer({
   program: Program | null;
   onClose: () => void;
 }) {
+  const { multiBranch } = useAcademicsLens();
   const [text, setText] = useState("");
   const [create, { isLoading }] = useBulkCreateLevelsMutation();
 
@@ -110,7 +112,7 @@ export function BulkLevelsDrawer({
           <p className="mb-3 text-[13px] text-gray-06">
             Adding to{" "}
             <span className="font-medium text-black-01">{program?.name}</span>
-            {program?.scope_label && (
+            {multiBranch && program?.scope_label && (
               <span className="text-gray-05"> · {program.scope_label}</span>
             )}
           </p>

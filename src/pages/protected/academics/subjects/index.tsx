@@ -55,6 +55,7 @@ import { ScopeCell } from "../components/scope-cell";
 import { OfferedAt } from "./offered-at";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * What is taught, and the levels it is offered at.
@@ -296,8 +297,8 @@ export default function Subjects() {
               subject={subject}
               sessionName={sessionName}
               multiBranch={multiBranch}
-              canEdit={canEdit && subject.is_active}
-              canManage={subject.is_active ? canArchive : canRestore}
+              canEdit={canEdit && subject.is_active && canManageRow(subject)}
+              canManage={(subject.is_active ? canArchive : canRestore) && canManageRow(subject)}
               onEdit={() => open(subject)}
               onDelete={() => setConfirm(subject)}
             />
@@ -325,7 +326,7 @@ export default function Subjects() {
             Status: s.is_active ? "Active" : "Archived",
           }))}
           onRowClick={(subject: Subject) => {
-            if (subject && canEdit && subject.is_active) open(subject);
+            if (subject && canEdit && subject.is_active && canManageRow(subject)) open(subject);
           }}
           currentPage={pagination?.currentPage ?? 1}
           totalPage={pagination?.totalPages ?? 1}

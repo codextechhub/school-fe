@@ -14,6 +14,7 @@ import type { CalendarEvent } from "@/redux/services/calendar/calendar-types";
 import { eventVariant } from "./event-kind";
 import { audienceLine } from "./audience";
 import { formatDate, formatRange } from "./dates";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * What is on one day, when there is something on it.
@@ -127,7 +128,7 @@ export function DayEventsDialog({
                     {who && <span>{who}</span>}
                   </span>
                 </button>
-                {onDelete && (
+                {onDelete && canManageRow(event) && (
                   // A sibling of the row rather than a child of it: a button
                   // inside a button is invalid, and the press has to be the
                   // X's alone or removing an event would also open it.

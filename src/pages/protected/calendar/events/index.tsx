@@ -36,6 +36,7 @@ import { EventFilters } from "./event-filters";
 import { BLANK_FACETS, type EventFacets } from "./event-facets";
 import { EventList } from "./event-list";
 import { useActionParam } from "@/hooks/use-action-param";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * Holidays, breaks, exam periods and school events, each dated inside a term.
@@ -305,7 +306,7 @@ export default function CalendarEvents() {
         open={!!viewing}
         multiBranch={multiBranch}
         onClose={() => setViewing(null)}
-        onEdit={canEdit ? () => openForm(viewing) : undefined}
+        onEdit={canEdit && canManageRow(viewing) ? () => openForm(viewing) : undefined}
       />
 
       <PromptModal

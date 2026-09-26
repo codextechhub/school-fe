@@ -59,6 +59,9 @@ import {
 } from "./session-format";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
+import { canManageRow } from "@/lib/can-manage";
+import { useReaderReach } from "@/hooks/use-reader-reach";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 
 /**
  * The school years this school has defined.
@@ -77,6 +80,8 @@ import { useActionParam } from "@/hooks/use-action-param";
 export default function AcademicSessions() {
   const navigate = useNavigate();
   const { branch } = useBranchLens();
+  // Where a year applies is only said to a reader who works across branches.
+  const { multiBranch } = useAcademicsLens();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -269,7 +274,11 @@ export default function AcademicSessions() {
         </div>
       ) : (
         <CustomTable
-          tableHeaderList={["Session", "Starts", "Ends", "Terms", "Scope", "Status"]}
+          tableHeaderList={[
+            "Session", "Starts", "Ends", "Terms",
+            ...(multiBranch ? ["Scope"] : []),
+            "Status",
+          ]}
           // Display fields only, in header order. The raw sessions go through
           // `defaultBodyList`, which is what onRowClick receives.
           defaultBodyList={sessions}
@@ -278,7 +287,7 @@ export default function AcademicSessions() {
             Starts: formatMonthYearShort(s.start_date),
             Ends: formatMonthYearShort(s.end_date),
             Terms: String(s.term_count),
-            Scope: scopeOf(s),
+            ...(multiBranch ? { Scope: scopeOf(s) } : {}),
             Status: statusOf(s.status).label,
           }))}
           onRowClick={(row: AcademicSession) =>
@@ -475,10 +484,20 @@ function SessionCard({
 }) {
   const isActive = session.status === "ACTIVE";
   const archived = session.status === "ARCHIVED";
+  // A year shared beyond the viewer's branches is theirs to read, not change.
+  const mine = canManageRow(session);
+  const { wholeSchool } = useReaderReach();
+  const { multiBranch } = useAcademicsLens();
   const weeks = teachingWeeks(session.terms);
   // An archived year is read-only on the server, so its Edit is not offered
   // rather than offered and refused.
-  const showMenu = ((canEdit || canSeed) && !archived) || canActivate || canArchive;
+  const editable = canEdit && mine;
+  // Copying a year in copies shared structure, which only a whole-school
+  // administrator may create.
+  const seedable = canSeed && mine && wholeSchool;
+  const activatable = canActivate && mine;
+  const archivable = canArchive && mine;
+  const showMenu = ((editable || seedable) && !archived) || activatable || archivable;
 
   return (
     <ClickableCard
@@ -515,25 +534,25 @@ function SessionCard({
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                {canEdit && !archived && (
+                {editable && !archived && (
                   <DropdownMenuItem onClick={onEdit}>
                     <Pencil className="size-4" />
                     Edit session
                   </DropdownMenuItem>
                 )}
-                {canActivate && !isActive && (
+                {activatable && !isActive && (
                   <DropdownMenuItem onClick={onActivate}>
                     <CircleCheck className="size-4" />
                     Set as active
                   </DropdownMenuItem>
                 )}
-                {canSeed && !archived && (
+                {seedable && !archived && (
                   <DropdownMenuItem onClick={onSeed}>
                     <CopyPlus className="size-4" />
                     Copy structure in
                   </DropdownMenuItem>
                 )}
-                {canArchive && !archived && (
+                {archivable && !archived && (
                   <DropdownMenuItem variant="destructive" onClick={onArchive}>
                     <Archive className="size-4" />
                     Archive
@@ -588,7 +607,7 @@ function SessionCard({
 
       <div className="mt-4 flex min-w-0 items-center justify-between gap-3 border-t border-white-02 pt-3">
         <div className="min-w-0 text-xs text-gray-05">
-          <p className="truncate">{scopeOf(session)}</p>
+          {multiBranch && <p className="truncate">{scopeOf(session)}</p>}
           <p className="mt-0.5 font-medium text-gray-01">
             {weeks} teaching {weeks === 1 ? "week" : "weeks"}
           </p>

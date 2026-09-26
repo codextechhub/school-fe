@@ -60,6 +60,7 @@ import { ScopeCell } from "../components/scope-cell";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
 import { cn } from "@/lib/utils";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * Faculty groupings that programmes and subjects hang off.
@@ -128,9 +129,9 @@ export default function Departments() {
             key={dept.id}
             dept={dept}
             multiBranch={multiBranch}
-            canEdit={canEdit}
-            canArchive={canArchive}
-            canRestore={canRestore}
+            canEdit={canEdit && canManageRow(dept)}
+            canArchive={canArchive && canManageRow(dept)}
+            canRestore={canRestore && canManageRow(dept)}
             onOpen={() => setViewing(dept)}
             onEdit={() => openEdit(dept)}
             onArchive={() => setConfirm({ kind: "archive", department: dept })}
@@ -384,9 +385,9 @@ export default function Departments() {
         department={viewing}
         open={!!viewing}
         multiBranch={multiBranch}
-        canEdit={canEdit}
-        canArchive={canArchive}
-        canRestore={canRestore}
+        canEdit={canEdit && canManageRow(viewing)}
+        canArchive={canArchive && canManageRow(viewing)}
+        canRestore={canRestore && canManageRow(viewing)}
         onClose={() => setViewing(null)}
         onEdit={() => viewing && openEdit(viewing)}
         onArchive={() => {

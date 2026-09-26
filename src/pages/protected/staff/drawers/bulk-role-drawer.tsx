@@ -4,13 +4,13 @@ import { Info } from "lucide-react";
 
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
-import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
   useGetStaffListQuery,
   useGrantStaffRoleInBulkMutation,
 } from "@/redux/services/staff/staff-api";
 
 import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
+import { useReaderReach } from "./reader-reach";
 
 /**
  * One role, one reach, several people.
@@ -26,6 +26,11 @@ import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
  * The role list is the one the staff endpoint offers, so it is already narrowed
  * for a school that has not gone live - the same list the Add form uses, from
  * the same call.
+ *
+ * **A branch administrator grants only inside their own branches.** Roles
+ * whose configured reach lies outside them are not offered, "Across the whole
+ * school" is not offered, and a reader covering one branch grants at that
+ * branch without being asked.
  */
 export function BulkRoleDrawer({
   staffIds,
@@ -38,15 +43,16 @@ export function BulkRoleDrawer({
   onClose: () => void;
 }) {
   const { data: listData } = useGetStaffListQuery({ page: 1 });
-  const { data: branchData } = useGetMyBranchesQuery();
+  const { wholeSchool, branches, soleBranch, covers } = useReaderReach();
   const [grant, { isLoading: saving }] = useGrantStaffRoleInBulkMutation();
 
   const [role, setRole] = useState("");
   const [reach, setReach] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const roles = listData?.role_options ?? [];
-  const branches = branchData?.data ?? [];
+  const roles = (listData?.role_options ?? []).filter(
+    (option) => !option.branch_ids.length || covers(option.branch_ids),
+  );
   const chosen = roles.find((r) => r.value === role);
   const configuredReach = Boolean(chosen?.branch_ids.length);
 
@@ -56,7 +62,7 @@ export function BulkRoleDrawer({
       const result = await grant({
         staff_ids: staffIds,
         role,
-        branch: configuredReach ? null : reach || null,
+        branch: configuredReach ? null : reach || (soleBranch ? String(soleBranch.id) : null),
       }).unwrap();
       const { granted, already_held } = result.data;
 
@@ -90,7 +96,7 @@ export function BulkRoleDrawer({
       subtitle="Added to what they already hold, never in place of it."
       saveLabel="Grant role"
       onSave={() => void save()}
-      canSave={Boolean(chosen)}
+      canSave={Boolean(chosen) && (wholeSchool || configuredReach || Boolean(reach || soleBranch))}
       saving={saving}
     >
       <div className="grid gap-4">
@@ -122,7 +128,9 @@ export function BulkRoleDrawer({
               onChange={(e) => setReach(e.target.value)}
               className="h-9"
             >
-              <option value="">Across the whole school</option>
+              <option value="">
+                {wholeSchool ? "Across the whole school" : "Choose a branch"}
+              </option>
               {branches.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}

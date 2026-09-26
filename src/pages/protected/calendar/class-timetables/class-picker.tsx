@@ -2,6 +2,7 @@ import { GraduationCap } from "lucide-react";
 
 import type { ClassTimetableRow } from "@/redux/services/calendar/calendar-types";
 import { RowPicker } from "../components/row-picker";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 
 /**
  * Which class's week is on screen.
@@ -20,6 +21,7 @@ export function ClassPicker({
   current: number | null;
   onPick: (id: number) => void;
 }) {
+  const { multiBranch } = useAcademicsLens();
   return (
     <RowPicker
       label="Timetable for"
@@ -33,7 +35,7 @@ export function ClassPicker({
         [
           `${c.lesson_count} lesson${c.lesson_count === 1 ? "" : "s"}`,
           c.status_label,
-          c.scope_label,
+          multiBranch && c.scope_label,
         ]
           .filter(Boolean)
           .join(" · ")

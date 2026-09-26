@@ -34,8 +34,18 @@ export function useAcademicsLens() {
       session: sessionLens.current?.id,
     },
     branch: branchLens.branch,
-    /** False at a single-branch school - render no branch control. */
-    multiBranch: branchLens.applies,
+    /**
+     * Whether this reader works across branches, so rows say where they apply.
+     *
+     * False at a one-branch school, and false for a reader who works in one
+     * branch: their rows are all theirs or school-wide, and which of the two a
+     * row is changes nothing they can do there (`can_manage` already says what
+     * they may change). Screens drop the Scope column, the "School-wide" and
+     * branch chips and the branch filter for them. Create drawers do not read
+     * this: they ask `useBranchLens` whether the school runs several branches,
+     * because a new row still has to be filed under one.
+     */
+    multiBranch: branchLens.canChoose,
     session: sessionLens.current?.id,
     /** The whole row, for the screens that pass a year somewhere. */
     currentSession: sessionLens.current ?? null,

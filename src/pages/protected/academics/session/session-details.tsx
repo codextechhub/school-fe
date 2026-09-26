@@ -30,6 +30,8 @@ import {
   weeksBetween,
 } from "./session-format";
 import { PageShell } from "@/components/layout/page-shell";
+import { canManageRow } from "@/lib/can-manage";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 
 /**
  * One school year and the ordered terms inside it.
@@ -40,6 +42,7 @@ import { PageShell } from "@/components/layout/page-shell";
  */
 export default function SessionDetails() {
   const { id } = useParams();
+  const { multiBranch } = useAcademicsLens();
   const [editing, setEditing] = useState(false);
 
   const sessionId = Number(id);
@@ -96,15 +99,17 @@ export default function SessionDetails() {
               {formatMonthYearShort(session.start_date)} -{" "}
               {formatMonthYearShort(session.end_date)}
             </span>
-            <span className="inline-flex min-w-0 items-center gap-1.5">
-              <Globe2 className="size-3.5 shrink-0" />
-              <span className="truncate">Applies to {scopeOf(session)}</span>
-            </span>
+            {multiBranch && (
+              <span className="inline-flex min-w-0 items-center gap-1.5">
+                <Globe2 className="size-3.5 shrink-0" />
+                <span className="truncate">Applies to {scopeOf(session)}</span>
+              </span>
+            )}
           </div>
         </div>
 
         {!archived && (
-          <PermissionGate permission={P.MODIFY_SESSION}>
+          <PermissionGate permission={P.MODIFY_SESSION} disabled={!canManageRow(session)}>
             <Button
               variant="outline"
               className="shrink-0 border-primary text-primary"

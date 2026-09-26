@@ -133,13 +133,19 @@ export interface StaffListRow {
   /** Every equal branch posting, empty for school-wide. */
   posting_branch_ids: number[];
   /**
-   * `null` at a single-branch school, where the dimension recedes entirely
-   * rather than repeating one value on every row. `"School-wide"` for somebody
-   * with no single base.
+   * `null` where the viewer works in one branch, including everybody at a
+   * one-branch school: the dimension recedes entirely rather than repeating one
+   * value on every row. `"School-wide"` for somebody with no single base.
    */
   branch_name: string | null;
-  /** `null` at a single-branch school, for the same reason. */
+  /** `null` where the viewer works in one branch, for the same reason. */
   posted_school_wide: boolean | null;
+  /**
+   * False when the viewer may read this person but not change them: a branch
+   * administrator looking at somebody school-wide or also posted to a branch
+   * they do not cover. Absent reads as changeable.
+   */
+  can_manage?: boolean;
   /** A count of assignments. There is no target to compare it against. */
   teaching_load: number;
   /**

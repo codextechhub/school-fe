@@ -17,6 +17,7 @@ import type {
 } from "@/redux/services/calendar/calendar-types";
 import { RowActions } from "../components/row-actions";
 import { durationOf, formatClock } from "./bell-schedule-time";
+import { canManageRow } from "@/lib/can-manage";
 
 export type BellDay = DayOfWeek | "all";
 
@@ -156,7 +157,8 @@ export function SchoolDayPanel({
                 </>
               );
 
-              return canEdit ? (
+              // A school-wide period is read-only to a branch administrator.
+              return canEdit && canManageRow(period) ? (
                 <button
                   key={period.id}
                   type="button"
@@ -242,8 +244,8 @@ export function PeriodDirectory({
             key={period.id}
             period={period}
             multiBranch={multiBranch}
-            canEdit={canEdit}
-            canDelete={canDelete}
+            canEdit={canEdit && canManageRow(period)}
+            canDelete={canDelete && canManageRow(period)}
             onEdit={() => onEdit(period)}
             onDelete={() => onDelete(period)}
           />
@@ -270,8 +272,8 @@ export function PeriodDirectory({
                   key={period.id}
                   period={period}
                   multiBranch={multiBranch}
-                  canEdit={canEdit}
-                  canDelete={canDelete}
+                  canEdit={canEdit && canManageRow(period)}
+                  canDelete={canDelete && canManageRow(period)}
                   onEdit={() => onEdit(period)}
                   onDelete={() => onDelete(period)}
                 />

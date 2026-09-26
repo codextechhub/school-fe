@@ -24,6 +24,7 @@ import { problemsOf, useFormProblems } from "./form-problems";
 import { ClashPreview } from "./clash-preview";
 import { useClashPreview } from "./use-clash-preview";
 import { ProblemSummary } from "./problem-summary";
+import { useAcademicsLens } from "@/hooks/use-academics-lens";
 
 /**
  * One cell of one class's week.
@@ -91,6 +92,8 @@ export function LessonDrawer({
   /** Asks the server what this draft would clash with. Writes nothing. */
   onPreview: (values: LessonValues) => Promise<{ warnings: ClashWarning[] }>;
 }) {
+  // Rooms are only named with their branch for a reader who works across branches.
+  const { multiBranch } = useAcademicsLens();
   const [values, setValues] = useState<LessonValues>({
     subject: null,
     teacher: null,
@@ -232,7 +235,7 @@ export function LessonDrawer({
                 }
                 options={rooms.map((r) => ({
                   value: String(r.id),
-                  label: r.branch_name ? `${r.name} · ${r.branch_name}` : r.name,
+                  label: multiBranch && r.branch_name ? `${r.name} · ${r.branch_name}` : r.name,
                 }))}
               />
             </Field>

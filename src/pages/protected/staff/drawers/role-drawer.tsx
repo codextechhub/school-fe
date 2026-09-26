@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
-import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
   useAssignRoleMutation,
   useGetSchoolRolesQuery,
@@ -24,6 +23,8 @@ import {
   inputClass,
 } from "../../students/drawers/drawer-shell";
 import { formatDate } from "../../students/format";
+import { canManage } from "../can-manage";
+import { useReaderReach } from "./reader-reach";
 
 /**
  * What one person may do, and the two ways to change it.
@@ -42,6 +43,11 @@ import { formatDate } from "../../students/format";
  * is the server's rule rather than this drawer's: onboarding has one
  * administrator in it and nobody reviews what they grant. The narrowed list is
  * read from the staff endpoint, which already applies it.
+ *
+ * **A branch administrator grants and revokes only inside their own
+ * branches.** Roles reaching elsewhere and "Across the whole school" are not
+ * offered, a reader covering one branch grants at it without being asked, and
+ * a grant reaching past their branches shows no Revoke.
  */
 export function RoleDrawer({
   person,
@@ -59,7 +65,7 @@ export function RoleDrawer({
   // pending school. The catalogue above is every role it has, which is a
   // different list before go-live.
   const { data: listData } = useGetStaffListQuery({ page: 1 });
-  const { data: branchData } = useGetMyBranchesQuery();
+  const { wholeSchool, branches, soleBranch, covers } = useReaderReach();
 
   const [assign, { isLoading: granting }] = useAssignRoleMutation();
   const [revoke, { isLoading: revoking }] = useRevokeRoleAssignmentMutation();
@@ -70,7 +76,6 @@ export function RoleDrawer({
   const [reason, setReason] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const branches = branchData?.data ?? [];
   const offered = useMemo(() => listData?.role_options ?? [], [listData]);
   const grants = held.data?.data.roles ?? [];
 
@@ -88,18 +93,21 @@ export function RoleDrawer({
         branchIds: option.branch_ids,
       }))
       .filter((option): option is typeof option & { id: number } =>
-        Boolean(option.id),
+        Boolean(option.id) && (!option.branchIds.length || covers(option.branchIds)),
       );
-  }, [catalogue.data, offered]);
+  }, [catalogue.data, offered, covers]);
 
   const chosen = roles.find((role) => role.value === roleKey);
+  const manageable = canManage(person);
   const configuredReach = Boolean(chosen?.branchIds.length);
   // Named rather than silently refused: the server would answer a duplicate,
   // and "they already hold that here" is a sentence somebody can act on.
+  // A reader covering one branch grants at it without choosing.
+  const effectiveReach = reach || (soleBranch ? String(soleBranch.id) : "");
   const duplicate = grants.some(
     (grant) =>
       grant.role_key === roleKey &&
-      (configuredReach ? grant.branch_id === null : reach ? String(grant.branch_id) === reach : grant.school_wide),
+      (configuredReach ? grant.branch_id === null : effectiveReach ? String(grant.branch_id) === effectiveReach : grant.school_wide),
   );
 
   async function grant() {
@@ -109,7 +117,7 @@ export function RoleDrawer({
         // The ACCOUNT's id. The staff record's is a different number.
         user: person.user_id,
         role: chosen.id,
-        branch: configuredReach ? null : reach ? Number(reach) : null,
+        branch: configuredReach ? null : reach ? Number(reach) : soleBranch?.id ?? null,
       }).unwrap();
       toast.success(
         `${chosen.label} granted${configuredReach ? " at all its selected branches" : reach ? "" : " across the whole school"}.`,
@@ -150,7 +158,12 @@ export function RoleDrawer({
       subtitle={`What ${person.full_name} may do, and which branches it reaches.`}
       saveLabel="Grant role"
       onSave={() => void grant()}
-      canSave={Boolean(chosen) && !duplicate}
+      canSave={
+        manageable &&
+        Boolean(chosen) &&
+        !duplicate &&
+        (wholeSchool || configuredReach || Boolean(reach || soleBranch))
+      }
       saving={granting}
     >
       <div className="grid gap-5">
@@ -185,13 +198,15 @@ export function RoleDrawer({
                     >
                       {row.branch_name}
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setRevokingId(row.id)}
-                      className="ml-auto text-xs text-error-text underline-offset-2 hover:underline"
-                    >
-                      Withdraw
-                    </button>
+                    {manageable && covers(row.branch_ids) && (
+                      <button
+                        type="button"
+                        onClick={() => setRevokingId(row.id)}
+                        className="ml-auto text-xs text-error-text underline-offset-2 hover:underline"
+                      >
+                        Withdraw
+                      </button>
+                    )}
                   </div>
                   <p className="mt-1 text-xs text-gray-05">
                     Granted {formatDate(row.granted_at)}
@@ -241,84 +256,94 @@ export function RoleDrawer({
           )}
         </section>
 
-        <section className="border-t border-white-02 pt-4">
-          <h3 className="mb-3 text-sm font-semibold text-black-01">
-            Add a role
-          </h3>
-          <div className="grid gap-4">
-            <Field label="Role" required error={errors.role}>
-              <NativeSelect
-                aria-label="Role"
-                value={roleKey}
-                onChange={(e) => setRoleKey(e.target.value)}
-                className="h-9"
-              >
-                <option value="">Select a role</option>
-                {roles.map((role) => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-
-            {branches.length > 1 && !configuredReach && (
-              <Field
-                label="This role reaches"
-                error={errors.branch}
-                hint="One branch, or the whole school. Somebody can hold the same role at two branches, and their reach is then both."
-              >
+        {!manageable ? (
+          <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
+            <Info className="mt-px size-3.5 shrink-0 text-primary" />
+            {person.full_name} works across more than your branch, so only a
+            school-wide administrator can change their roles.
+          </p>
+        ) : (
+          <section className="border-t border-white-02 pt-4">
+            <h3 className="mb-3 text-sm font-semibold text-black-01">
+              Add a role
+            </h3>
+            <div className="grid gap-4">
+              <Field label="Role" required error={errors.role}>
                 <NativeSelect
-                  aria-label="This role reaches"
-                  value={reach}
-                  onChange={(e) => setReach(e.target.value)}
+                  aria-label="Role"
+                  value={roleKey}
+                  onChange={(e) => setRoleKey(e.target.value)}
                   className="h-9"
                 >
-                  <option value="">Across the whole school</option>
-                  {branches.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
+                  <option value="">Select a role</option>
+                  {roles.map((role) => (
+                    <option key={role.value} value={role.value}>
+                      {role.label}
                     </option>
                   ))}
                 </NativeSelect>
               </Field>
-            )}
 
-            {chosen && configuredReach && (
-              <p className="rounded-lg bg-pry-01/50 px-3.5 py-2.5 text-xs text-primary">
-                This role grants all its selected branches automatically.
-              </p>
-            )}
+              {branches.length > 1 && !configuredReach && (
+                <Field
+                  label="This role reaches"
+                  error={errors.branch}
+                  hint="One branch, or the whole school. Somebody can hold the same role at two branches, and their reach is then both."
+                >
+                  <NativeSelect
+                    aria-label="This role reaches"
+                    value={reach}
+                    onChange={(e) => setReach(e.target.value)}
+                    className="h-9"
+                  >
+                    <option value="">
+                      {wholeSchool ? "Across the whole school" : "Choose a branch"}
+                    </option>
+                    {branches.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+              )}
 
-            {duplicate && (
-              <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
-                {person.full_name} already holds {chosen?.label} with that
-                reach.
-              </p>
-            )}
+              {chosen && configuredReach && (
+                <p className="rounded-lg bg-pry-01/50 px-3.5 py-2.5 text-xs text-primary">
+                  This role grants all its selected branches automatically.
+                </p>
+              )}
 
-            {chosen && (
-              <button
-                type="button"
-                onClick={() => onPreviewRole(chosen.value)}
-                className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-left text-xs text-gray-01 hover:bg-white-02"
-              >
-                <Info className="mt-px size-3.5 shrink-0 text-primary" />
-                <span>
-                  What a role can do is defined in access control, not here.
-                  <span className="ml-1 font-medium text-primary underline-offset-2 hover:underline">
-                    See everything {chosen.label} reaches
+              {duplicate && (
+                <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                  {person.full_name} already holds {chosen?.label} with that
+                  reach.
+                </p>
+              )}
+
+              {chosen && (
+                <button
+                  type="button"
+                  onClick={() => onPreviewRole(chosen.value)}
+                  className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-left text-xs text-gray-01 hover:bg-white-02"
+                >
+                  <Info className="mt-px size-3.5 shrink-0 text-primary" />
+                  <span>
+                    What a role can do is defined in access control, not here.
+                    <span className="ml-1 font-medium text-primary underline-offset-2 hover:underline">
+                      See everything {chosen.label} reaches
+                    </span>
                   </span>
-                </span>
-              </button>
-            )}
+                </button>
+              )}
 
-            <p className="text-xs text-gray-05">
-              The platform-wide super administrator is not a school role and is
-              not offered here.
-            </p>
-          </div>
-        </section>
+              <p className="text-xs text-gray-05">
+                The platform-wide super administrator is not a school role and is
+                not offered here.
+              </p>
+            </div>
+          </section>
+        )}
       </div>
     </DrawerShell>
   );

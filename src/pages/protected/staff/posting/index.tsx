@@ -21,12 +21,13 @@ import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { PersonAvatar } from "@/pages/protected/students/person-avatar";
-import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
+import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useGetStaffRosterQuery } from "@/redux/services/staff/staff-api";
 import type { StaffListRow } from "@/redux/services/staff/staff-types";
 import { routesPath } from "@/routes/routesPath";
 
 import { EmploymentBadge } from "../badges";
+import { canManage } from "../can-manage";
 import { StaffDrawers, type StaffDrawerRequest } from "../drawers";
 import { leaveNote } from "../leave-note";
 import {
@@ -50,9 +51,12 @@ import {
  */
 export default function StaffPosting() {
   const navigate = useNavigate();
-  const { data: branchData, isLoading: loadingBranches } =
-    useGetMyBranchesQuery();
-  const branches = useMemo(() => branchData?.data ?? [], [branchData]);
+  // Only the branches this reader works in: the roster refuses any other.
+  const {
+    choices: branches,
+    applies: schoolHasBranches,
+    isLoading: loadingBranches,
+  } = useBranchLens();
 
   const [chosen, setChosen] = useState<string | null>(null);
   const [view, setView] = useState<PostingView>("posted");
@@ -87,7 +91,7 @@ export default function StaffPosting() {
   }
 
   function openRow(person: StaffListRow) {
-    if (view === "posted") {
+    if (view === "posted" && canManage(person)) {
       setDrawer({
         kind: "posting",
         staffIds: [person.id],
@@ -122,8 +126,12 @@ export default function StaffPosting() {
       <PageShell>
         <OutlinedNotice
           icon={Building2}
-          title="This school has one branch"
-          body="Postings answer which branch somebody is based at, so there is nothing to decide here until a second branch opens."
+          title={schoolHasBranches ? "You work in one branch" : "This school has one branch"}
+          body={
+            schoolHasBranches
+              ? "Everybody you manage is based at your branch, so there is nothing to decide here. A school-wide administrator moves people between branches."
+              : "Postings answer which branch somebody is based at, so there is nothing to decide here until a second branch opens."
+          }
           actionLabel="Back to the directory"
           onAction={() => navigate(routesPath.PROTECTED.STAFF.INDEX)}
         />
@@ -338,7 +346,7 @@ function RosterPanel({
               person={row.person}
               view={view}
               viaRoles={row.viaRoles}
-              selectable={view === "posted" && row.person.on_roll}
+              selectable={view === "posted" && row.person.on_roll && canManage(row.person)}
               picked={picked.includes(row.person.id)}
               onToggle={() => onToggle(row.person.id)}
               onOpen={() => onOpen(row.person)}

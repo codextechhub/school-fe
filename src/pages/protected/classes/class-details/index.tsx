@@ -44,6 +44,7 @@ import type { Pagination } from "@/redux/services/onboarding/onboarding-types";
 import { routesPath } from "@/routes/routesPath";
 import { parseApiError } from "@/utils/api-error";
 import { ClassDrawer } from "../class-drawer";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * A live class record with its teacher, capacity, subjects, and roster preview.
@@ -88,10 +89,12 @@ export default function ClassDetails() {
   const students = useMemo(() => rosterData?.data ?? [], [rosterData]);
   const [update, { isLoading: updating }] = useUpdateClassMutation();
 
+  // A school-wide class is read-only to a branch administrator, staffing included.
+  const mine = canManageRow(klass);
   const canEdit =
-    hasPermission(P.MODIFY_CLASS) && !readOnlyYear && klass?.is_active !== false;
+    hasPermission(P.MODIFY_CLASS) && !readOnlyYear && klass?.is_active !== false && mine;
   const canAssignTeacher =
-    hasPermission(P.ASSIGN_TEACHING) && !readOnlyYear;
+    hasPermission(P.ASSIGN_TEACHING) && !readOnlyYear && mine;
 
   async function saveClass(body: ClassWrite) {
     if (!klass) return;

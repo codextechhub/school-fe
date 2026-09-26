@@ -53,6 +53,7 @@ import { GenerateArmsDrawer } from "./generate-arms-drawer";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
 import { routesPath } from "@/routes/routesPath";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * The classes pupils sit in, including their arms and assigned class teachers.
@@ -299,8 +300,8 @@ export default function Classes() {
               key={klass.id}
               klass={klass}
               multiBranch={multiBranch}
-              canEdit={canEdit && klass.is_active}
-              canManage={klass.is_active ? canArchive : canRestore}
+              canEdit={canEdit && klass.is_active && canManageRow(klass)}
+              canManage={(klass.is_active ? canArchive : canRestore) && canManageRow(klass)}
               onOpen={() =>
                 navigate(
                   routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASS_DETAILS_ID(

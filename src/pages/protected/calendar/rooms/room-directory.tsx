@@ -16,6 +16,7 @@ import { Pager } from "@/pages/protected/students/pager";
 import type { Room } from "@/redux/services/calendar/calendar-types";
 import { RowActions } from "../components/row-actions";
 import { roomIcon } from "../components/room-kind";
+import { canManageRow } from "@/lib/can-manage";
 
 export function RoomDirectory({
   rooms,
@@ -51,8 +52,8 @@ export function RoomDirectory({
               <RoomCard
                 room={room}
                 multiBranch={multiBranch}
-                canEdit={canEdit}
-                canDelete={canDelete}
+                canEdit={canEdit && canManageRow(room)}
+                canDelete={canDelete && canManageRow(room)}
                 onEdit={() => onEdit(room)}
                 onToggle={() => onToggle(room)}
                 onDelete={() => onDelete(room)}
@@ -102,15 +103,15 @@ export function RoomDirectory({
         Action: (
           <RoomActions
             room={room}
-            canEdit={canEdit}
-            canDelete={canDelete}
+            canEdit={canEdit && canManageRow(room)}
+            canDelete={canDelete && canManageRow(room)}
             onEdit={() => onEdit(room)}
             onToggle={() => onToggle(room)}
             onDelete={() => onDelete(room)}
           />
         ),
       }))}
-      onRowClick={(room: Room) => room && canEdit && onEdit(room)}
+      onRowClick={(room: Room) => room && canEdit && canManageRow(room) && onEdit(room)}
       currentPage={page}
       totalPage={totalPages}
       onPageChange={(next) => onPageChange(Number(next) || 1)}

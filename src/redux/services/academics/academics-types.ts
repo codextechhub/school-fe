@@ -20,6 +20,12 @@ export interface Scoped {
   branch_name?: string | null;
   /** "School-wide", or the branch's name. */
   scope_label?: string;
+  /**
+   * False when the viewer may read this row but not change it: a branch
+   * administrator looking at a row shared across the school. Absent reads as
+   * changeable.
+   */
+  can_manage?: boolean;
 }
 
 export type SessionStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
@@ -38,6 +44,12 @@ export type TermState = "completed" | "ongoing" | "pending";
 
 export interface AcademicSession {
   id: number;
+  /**
+   * False when the viewer may read this row but not change it: a branch
+   * administrator looking at a row shared across the school. Absent reads as
+   * changeable.
+   */
+  can_manage?: boolean;
   name: string;
   start_date: string;
   end_date: string;

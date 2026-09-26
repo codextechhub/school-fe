@@ -6,6 +6,7 @@ import { RollForwardDialog } from "@/pages/protected/academics/session/roll-forw
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
+import { useReaderReach } from "@/hooks/use-reader-reach";
 
 /**
  * The empty list, and the one question it has to answer: empty because of the
@@ -43,6 +44,7 @@ export function EmptyYear({
   const { sessionName, sessionStatus, multiSession, currentSession } =
     useAcademicsLens();
   const { hasPermission } = usePermissions();
+  const { wholeSchool } = useReaderReach();
   const [seedOpen, setSeedOpen] = useState(false);
 
   if (filtered) {
@@ -59,8 +61,13 @@ export function EmptyYear({
 
   // An archived year is read-only on the server, so copying INTO it would be
   // refused - the notice states the year and stops there.
+  // Copying a year copies shared structure, which only a whole-school
+  // administrator may create.
   const canSeed =
-    multiSession && sessionStatus !== "ARCHIVED" && hasPermission(P.CREATE_STRUCTURE);
+    multiSession &&
+    sessionStatus !== "ARCHIVED" &&
+    wholeSchool &&
+    hasPermission(P.CREATE_STRUCTURE);
 
   if (!multiSession || !sessionName) {
     return <OutlinedNotice icon={icon} title={`No ${thing} yet`} body={body} />;

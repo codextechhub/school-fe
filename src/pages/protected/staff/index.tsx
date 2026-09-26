@@ -23,6 +23,7 @@ import type {
 } from "@/redux/services/staff/staff-types";
 
 import { AccountBadge, EmploymentBadge } from "./badges";
+import { canManage } from "./can-manage";
 import { leaveNote } from "./leave-note";
 import { CountsHeader } from "./counts-header";
 import { RecentImports } from "./recent-imports";
@@ -222,6 +223,7 @@ export default function StaffDirectory() {
             onClear={clearAll}
             roles={roles}
             employmentStatuses={counts?.by_employment_status ?? []}
+            showPosting={showBranch}
           />
 
           <div className="ml-auto">
@@ -269,7 +271,7 @@ export default function StaffDirectory() {
           <span className="text-[13px] font-medium text-black-01">
             {picked.length} selected
           </span>
-          {multiBranch && (
+          {showBranch && (
             <PermissionGate permission={P.MODIFY_TEACHER}>
               <Button
                 variant="outline"
@@ -319,13 +321,14 @@ export default function StaffDirectory() {
         // Gated on the key the SERVER checks, so a reader who cannot do the
         // thing is not offered it, fills in a drawer and is refused at Save.
         // Assign role and Manage assignments arrive with their own drawers.
-        dropDownList={[
+        dropDownList={(row: { _manage: boolean }) => [
           {
             label: "View profile",
             onActionClick: (row: { _id: number }) =>
               navigate(routesPath.PROTECTED.STAFF.PROFILE_ID(row._id)),
           },
-          ...(hasPermission(P.MODIFY_TEACHER)
+          // A record the viewer may read but not change offers reading only.
+          ...(row._manage && hasPermission(P.MODIFY_TEACHER)
             ? [
                 {
                   label: "Edit record",
@@ -334,7 +337,7 @@ export default function StaffDirectory() {
                 },
               ]
             : []),
-          ...(hasPermission(P.ASSIGN_ROLE)
+          ...(row._manage && hasPermission(P.ASSIGN_ROLE)
             ? [
                 {
                   label: "Roles and access",
@@ -343,7 +346,7 @@ export default function StaffDirectory() {
                 },
               ]
             : []),
-          ...(hasPermission(P.TRANSITION_TEACHER)
+          ...(row._manage && hasPermission(P.TRANSITION_TEACHER)
             ? [
                 {
                   label: "Change status",
@@ -357,9 +360,10 @@ export default function StaffDirectory() {
           // Carried so the row menu can find the person back; CustomTable hands
           // the DISPLAY row to onActionClick, not the source record.
           _id: person.id,
+          _manage: canManage(person),
           // Stops the row's own navigation: the click is a selection, not a
           // request to open somebody's record.
-          "": (
+          "": canManage(person) ? (
             <span onClick={(event) => event.stopPropagation()}>
               <button
                 type="button"
@@ -383,6 +387,13 @@ export default function StaffDirectory() {
                 {picked.includes(person.id) && <Check className="size-3" />}
               </button>
             </span>
+          ) : (
+            // Not selectable: every bulk action here is a change.
+            <span
+              aria-hidden
+              title="Only a school-wide administrator can change this person."
+              className="block size-4.75 rounded-[5px] border-[1.5px] border-white-02 bg-gray-04"
+            />
           ),
           "Staff member": (
             <span className="flex min-w-0 items-center gap-2.5">

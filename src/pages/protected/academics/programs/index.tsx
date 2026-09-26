@@ -72,6 +72,7 @@ import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * Programmes, and the levels inside them.
@@ -701,7 +702,11 @@ function ProgramRow({
   onEditLevel: (level: Level) => void;
   onArchiveLevel: (level: Level) => void;
 }) {
-  const canManage = program.is_active ? canArchive : canRestore;
+  // The programme's own actions follow the programme; each level follows its
+  // own row, so Ikeja's level inside a school-wide programme stays Ikeja's.
+  const mine = canManageRow(program);
+  const canManage = (program.is_active ? canArchive : canRestore) && mine;
+  const canEditProgram = canEdit && mine;
   const levels = program.levels ?? [];
   const activeLevels = levels.filter((level) => level.is_active);
   const unwired = activeLevels.filter((level) => level.promotion === "unset").length;
@@ -779,7 +784,7 @@ function ProgramRow({
             </span>
           </div>
 
-          {(canEdit || canManage || canAddLevel) && (
+          {(canEditProgram || canManage || canAddLevel) && (
             <CardActions className="shrink-0">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -792,7 +797,7 @@ function ProgramRow({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  {canEdit && (
+                  {canEditProgram && (
                     <DropdownMenuItem onClick={onEdit}>
                       <Pencil className="size-4" />
                       Edit
@@ -940,8 +945,12 @@ function ProgramRow({
                   level={level}
                   index={index}
                   multiBranch={multiBranch}
-                  canEdit={canEdit && canChangeLevels}
-                  canManage={(level.is_active ? canArchive : canRestore) && canChangeLevels}
+                  canEdit={canEdit && canChangeLevels && canManageRow(level)}
+                  canManage={
+                    (level.is_active ? canArchive : canRestore) &&
+                    canChangeLevels &&
+                    canManageRow(level)
+                  }
                   onEdit={() => onEditLevel(level)}
                   onArchive={() => onArchiveLevel(level)}
                 />

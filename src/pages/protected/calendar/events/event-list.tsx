@@ -15,6 +15,7 @@ import { audienceLine } from "../components/audience";
 import { formatRange } from "../components/dates";
 import { eventVariant } from "../components/event-kind";
 import { RowActions } from "../components/row-actions";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * A date-led directory of calendar events.
@@ -115,12 +116,12 @@ export function EventList({
                         icon: Eye,
                         onSelect: () => onOpen(event),
                       },
-                      canEdit && {
+                      canEdit && canManageRow(event) && {
                         label: "Edit",
                         icon: Pencil,
                         onSelect: () => onEdit(event),
                       },
-                      canDelete && {
+                      canDelete && canManageRow(event) && {
                         label: "Delete",
                         icon: Trash2,
                         destructive: true,
