@@ -13,6 +13,7 @@ import type {
   StageApproverOverridePayload,
   StageApproverOverridesResponse,
   ApproverPreviewResult,
+  DelegationDocumentType,
   DelegationWritePayload,
   DynamicRole,
   DynamicRoleFields,
@@ -410,6 +411,11 @@ export const workflowApi = baseApi.injectEndpoints({
       providesTags: ["WorkflowDelegations"],
     }),
 
+    // What a delegation can be narrowed to, by name. Changes only with a release.
+    getDelegationDocumentTypes: builder.query<DelegationDocumentType[], void>({
+      query: () => ({ url: `/workflow/delegations/document-types/`, method: "GET" }),
+    }),
+
     createDelegation: builder.mutation<ApprovalDelegation, DelegationWritePayload>({
       query: (body) => ({ url: `/workflow/delegations/`, method: "POST", body }),
       invalidatesTags: ["WorkflowDelegations"],
@@ -478,6 +484,7 @@ export const {
   useGetReturnedSubmissionsBellQuery,
   useGetTeamLoadQuery,
   useGetDelegationsQuery,
+  useGetDelegationDocumentTypesQuery,
   useCreateDelegationMutation,
   useUpdateDelegationMutation,
   useDeleteDelegationMutation,

@@ -404,6 +404,12 @@ export interface TeamLoadRow {
 
 // ── Delegations ────────────────────────────────────────────────────────────────
 
+/** A document type a delegation can cover, as the server names it. */
+export interface DelegationDocumentType {
+  value: string;
+  label: string;
+}
+
 export interface ApprovalDelegation {
   id: string;
   delegator: string;
