@@ -26,6 +26,10 @@ import { PersonAvatar } from "./person-avatar";
  * The picker offers images only. The bytes are rendered in an `<img>` on every
  * list, and a refusal after the upload is a worse way to learn that than a
  * dialog that never shows the PDF.
+ *
+ * `editable` false leaves the face without the control: a record read as at
+ * an earlier day, or a photograph the viewer's Field Access lets them see but
+ * not change.
  */
 export function PhotoPicker({
   name,
@@ -34,6 +38,7 @@ export function PhotoPicker({
   saving,
   size = "size-18",
   textClassName = "text-2xl",
+  editable = true,
 }: {
   name: string;
   /** "" when none is held, which is the ordinary case. */
@@ -44,6 +49,7 @@ export function PhotoPicker({
   /** The circle's size class. The profile is 18, a guardian one step down. */
   size?: string;
   textClassName?: string;
+  editable?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
 
@@ -65,7 +71,7 @@ export function PhotoPicker({
         className={size}
         textClassName={textClassName}
       />
-      <PermissionGate permission={P.MODIFY_STUDENT}>
+      <PermissionGate permission={P.MODIFY_STUDENT} disabled={!editable}>
         <input
           ref={input}
           type="file"

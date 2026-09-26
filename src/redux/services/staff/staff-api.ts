@@ -1,3 +1,5 @@
+import { recordQuery, type RecordArg } from "@/lib/as-at";
+
 import { baseApi } from "../base-api";
 import type { Envelope } from "../onboarding/onboarding-types";
 import type {
@@ -78,8 +80,8 @@ export const staffApi = baseApi.injectEndpoints({
       providesTags: ["SchoolStaff"],
     }),
 
-    getStaffMember: builder.query<Envelope<StaffDetail>, number>({
-      query: (id) => ({ url: `/i/me/staff/${id}/`, method: "GET" }),
+    getStaffMember: builder.query<Envelope<StaffDetail>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/i/me/staff/${id}/`, arg),
       providesTags: ["SchoolStaff"],
     }),
 
@@ -187,9 +189,9 @@ export const staffApi = baseApi.injectEndpoints({
 
     getStaffHistory: builder.query<
       Envelope<{ entries: StaffHistoryEntry[] }>,
-      number
+      RecordArg
     >({
-      query: (id) => ({ url: `/i/me/staff/${id}/history/`, method: "GET" }),
+      query: (arg) => recordQuery((id) => `/i/me/staff/${id}/history/`, arg),
       providesTags: ["StaffHistory"],
     }),
 
@@ -237,18 +239,15 @@ export const staffApi = baseApi.injectEndpoints({
      * Revoked grants are history and are never deleted: "what could this person
      * do before" is the question asked after something has gone wrong.
      */
-    getStaffRoles: builder.query<Envelope<StaffRoles>, number>({
-      query: (id) => ({ url: `/i/me/staff/${id}/roles/`, method: "GET" }),
+    getStaffRoles: builder.query<Envelope<StaffRoles>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/i/me/staff/${id}/roles/`, arg),
       providesTags: ["SchoolStaff", "Roles"],
     }),
 
     // ── Qualifications and documents ───────────────────────────────────────
 
-    getStaffQualifications: builder.query<Envelope<StaffQualification[]>, number>({
-      query: (id) => ({
-        url: `/i/me/staff/${id}/qualifications/`,
-        method: "GET",
-      }),
+    getStaffQualifications: builder.query<Envelope<StaffQualification[]>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/i/me/staff/${id}/qualifications/`, arg),
       providesTags: ["StaffRecords"],
     }),
 
@@ -286,8 +285,8 @@ export const staffApi = baseApi.injectEndpoints({
       invalidatesTags: ["StaffRecords", "SchoolStaff"],
     }),
 
-    getStaffDocuments: builder.query<Envelope<StaffDocument[]>, number>({
-      query: (id) => ({ url: `/i/me/staff/${id}/documents/`, method: "GET" }),
+    getStaffDocuments: builder.query<Envelope<StaffDocument[]>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/i/me/staff/${id}/documents/`, arg),
       providesTags: ["StaffRecords"],
     }),
 
@@ -325,8 +324,8 @@ export const staffApi = baseApi.injectEndpoints({
      * A person always reads their own without holding `school.leave.view`.
      * Closed before go-live.
      */
-    getStaffLeave: builder.query<Envelope<StaffLeave>, number>({
-      query: (id) => ({ url: `/i/me/staff/${id}/leave/`, method: "GET" }),
+    getStaffLeave: builder.query<Envelope<StaffLeave>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/i/me/staff/${id}/leave/`, arg),
       providesTags: ["StaffLeave"],
     }),
 
@@ -384,12 +383,15 @@ export const staffApi = baseApi.injectEndpoints({
      */
     getStaffTeaching: builder.query<
       Envelope<StaffTeaching>,
-      { id: number; session?: number }
+      { id: number; session?: number; asAt?: string }
     >({
-      query: ({ id, session }) => ({
+      query: ({ id, session, asAt }) => ({
         url: `/i/me/staff/${id}/teaching/`,
         method: "GET",
-        params: session ? { session } : undefined,
+        params: {
+          ...(session ? { session } : {}),
+          ...(asAt ? { as_at: asAt } : {}),
+        },
       }),
       providesTags: ["StaffTeaching"],
     }),

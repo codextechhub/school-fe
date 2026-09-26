@@ -12,6 +12,8 @@ const guardian: GuardianDetail = {
   occupation: "Civil Engineer",
   address: "14 Palm Avenue, Ikeja",
   has_account: true,
+  name_needs_review: false,
+  history_starts: null,
   photo_url: "",
   wards: [],
 };

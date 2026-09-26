@@ -46,6 +46,10 @@ const TYPES: { value: EmploymentType; label: string }[] = [
  * branches somebody's access extends to comes from their role grants, so a
  * field here that looked like it widened them would not.
  *
+ * **The posting box appears only to a viewer who works in several branches.**
+ * The server leaves the posting out for anybody else, and a branch
+ * administrator's people are all at their branch or shared across the school.
+ *
  * **Only what changed is sent.** A PATCH of every field rewrites values nobody
  * touched, and the draft is an overlay over the record rather than a copy of
  * it - which is also why there is no effect seeding a form: the record IS the
@@ -71,16 +75,10 @@ export function EditDrawer({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const access = useFieldAccess(FIELD_RESOURCE.STAFF, person);
 
-  // The record carries a full name rather than its two halves, so the split is
-  // made here: the first word is the first name and the rest is the last, which
-  // is right for the overwhelming majority and correctable by whoever is
-  // looking at the form.
-  const [firstFromRecord, ...restOfName] = person.full_name.split(" ");
-
   const fromRecord: Record<FieldKey, string> = useMemo(
     () => ({
-      first_name: firstFromRecord ?? "",
-      last_name: restOfName.join(" "),
+      first_name: person.first_name ?? "",
+      last_name: person.last_name ?? "",
       middle_name: person.middle_name ?? "",
       date_of_birth: person.date_of_birth ?? "",
       phone: person.phone ?? "",
@@ -91,7 +89,6 @@ export function EditDrawer({
       hire_date: person.hire_date ?? "",
       branch: person.branch_id ? String(person.branch_id) : "",
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [person],
   );
 
@@ -112,10 +109,11 @@ export function EditDrawer({
     (key) => !access.isReadOnly(key) && String(draft[key] ?? "") !== fromRecord[key],
   );
 
-  const canSave =
-    changed.length > 0 &&
-    value("first_name").trim().length > 0 &&
-    value("last_name").trim().length > 0;
+  // A name part the viewer may not change is not theirs to leave blank, so only
+  // an editable one is required.
+  const nameFilled = (key: "first_name" | "last_name") =>
+    access.isReadOnly(key) || value(key).trim().length > 0;
+  const canSave = changed.length > 0 && nameFilled("first_name") && nameFilled("last_name");
 
   async function save() {
     const body: Partial<StaffUpdate> = {};
@@ -162,27 +160,33 @@ export function EditDrawer({
       saving={saving}
     >
       <div className="grid gap-4">
-        <Field label="First name" required error={errors.first_name}>
-          <input
-            value={value("first_name")}
-            onChange={(e) => set("first_name")(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Middle name" error={errors.middle_name}>
-          <input
-            value={value("middle_name")}
-            onChange={(e) => set("middle_name")(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Last name" required error={errors.last_name}>
-          <input
-            value={value("last_name")}
-            onChange={(e) => set("last_name")(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
+        <AccessField access={access} name="first_name">
+          <Field label="First name" required error={errors.first_name}>
+            <input
+              value={value("first_name")}
+              onChange={(e) => set("first_name")(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </AccessField>
+        <AccessField access={access} name="middle_name">
+          <Field label="Middle name" error={errors.middle_name}>
+            <input
+              value={value("middle_name")}
+              onChange={(e) => set("middle_name")(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </AccessField>
+        <AccessField access={access} name="last_name">
+          <Field label="Last name" required error={errors.last_name}>
+            <input
+              value={value("last_name")}
+              onChange={(e) => set("last_name")(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </AccessField>
         <AccessField access={access} name="gender">
           <Field label="Gender" error={errors.gender}>
             <NativeSelect
@@ -217,59 +221,72 @@ export function EditDrawer({
           </Field>
         </AccessField>
 
-        <Field
-          label="Staff ID"
-          error={errors.staff_number}
-          hint="The school's own format. Nothing checks its shape, only that nobody else here has it."
-        >
-          <input
-            value={value("staff_number")}
-            onChange={(e) => set("staff_number")(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Job title" error={errors.job_title}>
-          <input
-            value={value("job_title")}
-            onChange={(e) => set("job_title")(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-        <Field label="Employment type" error={errors.employment_type}>
-          <NativeSelect
-            aria-label="Employment type"
-            value={value("employment_type")}
-            onChange={(e) => set("employment_type")(e.target.value)}
-            className="h-9"
+        <AccessField access={access} name="staff_number">
+          <Field
+            label="Staff ID"
+            error={errors.staff_number}
+            hint="The school's own format. Nothing checks its shape, only that nobody else here has it."
           >
-            <option value="">Not recorded</option>
-            {TYPES.map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
-        <Field
-          label="Hire date"
-          error={errors.hire_date}
-          hint="Length of service is worked out from this, and is left blank without it."
-        >
-          <input
-            type="date"
-            value={value("hire_date")}
-            onChange={(e) => set("hire_date")(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
+            <input
+              value={value("staff_number")}
+              onChange={(e) => set("staff_number")(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </AccessField>
+        <AccessField access={access} name="job_title">
+          <Field label="Job title" error={errors.job_title}>
+            <input
+              value={value("job_title")}
+              onChange={(e) => set("job_title")(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </AccessField>
+        <AccessField access={access} name="employment_type">
+          <Field label="Employment type" error={errors.employment_type}>
+            <NativeSelect
+              aria-label="Employment type"
+              value={value("employment_type")}
+              onChange={(e) => set("employment_type")(e.target.value)}
+              className="h-9"
+            >
+              <option value="">Not recorded</option>
+              {TYPES.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+        </AccessField>
+        <AccessField access={access} name="hire_date">
+          <Field
+            label="Hire date"
+            error={errors.hire_date}
+            hint="Length of service is worked out from this, and is left blank without it."
+          >
+            <input
+              type="date"
+              value={value("hire_date")}
+              onChange={(e) => set("hire_date")(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+        </AccessField>
 
-        <div className="rounded-lg border border-border p-3">
-          <p className="text-sm font-medium text-black-01">Posted to</p>
-          <p className="mt-1 text-sm text-gray-01">{person.branch_name || "School-wide"}</p>
-          <Button variant="outline" size="sm" className="mt-3" onClick={onChangePostings}>
-            Change postings
-          </Button>
-        </div>
+        {/* Null when the viewer works in one branch: postings are not theirs. */}
+        {person.posted_school_wide != null && (
+          <div className="rounded-lg border border-border p-3">
+            <p className="text-sm font-medium text-black-01">Posted to</p>
+            <p className="mt-1 text-sm text-gray-01">
+              {person.posted_school_wide ? "School-wide" : person.branch_name}
+            </p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={onChangePostings}>
+              Change postings
+            </Button>
+          </div>
+        )}
       </div>
     </DrawerShell>
   );

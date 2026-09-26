@@ -9,9 +9,11 @@ import type { GuardianDetail } from "@/redux/services/students/students-types";
 
 import { DrawerShell, Field, errorInputClass, inputClass } from "../drawers/drawer-shell";
 
-/** The five fields a guardian owns, as opposed to their link to a student. */
+/** The fields a guardian owns, as opposed to their link to a student. */
 const FIELDS = [
-  { key: "full_name", label: "Full name", required: true },
+  { key: "first_name", label: "First name", required: true },
+  { key: "middle_name", label: "Middle name" },
+  { key: "last_name", label: "Last name", required: true },
   { key: "phone", label: "Phone", hint: "A number the school can reach." },
   { key: "email", label: "Email", hint: "Also the address any parent account is issued to." },
   { key: "occupation", label: "Occupation" },
@@ -20,17 +22,12 @@ const FIELDS = [
 
 type FieldKey = (typeof FIELDS)[number]["key"];
 
+const NAME_KEYS: FieldKey[] = ["first_name", "middle_name", "last_name"];
+
 /**
  * Correct a guardian's own details.
  *
- * **This is the screen that did not exist.** A guardian's name, phone, email,
- * occupation and address could be written once, at creation, and never
- * corrected - there was no route for it anywhere. A number mistyped while
- * enrolling a child was permanent, and the only way round it was a second
- * record for the same parent, which splits the household and breaks the sibling
- * link the Guardians screen exists to show.
- *
- * Relationship and primary contact are NOT here. Those belong to a link, one
+ * Relationship and primary contact are not here. Those belong to a link, one
  * per student, so a guardian standing for three children has three of them and
  * editing "the" relationship on this panel would be a question with three
  * answers. They stay on the student's own Guardians tab.
@@ -38,9 +35,14 @@ type FieldKey = (typeof FIELDS)[number]["key"];
  * Only what changed is sent, so an unchanged save is not an audit entry saying
  * somebody edited a record they did not.
  *
- * The contact fields follow Field Access (`school.guardians`): one the viewer
- * may not read is absent from the record and not on the form, one they may
- * read but not change is greyed and never sent.
+ * The name is corrected in its parts. A guardian whose name was split by the
+ * platform from one line (`name_needs_review`) opens with that line shown and
+ * the parts to check; saving sends the parts even when nobody changed them,
+ * because saving is what confirms the split.
+ *
+ * Every field follows Field Access (`school.guardians`): one the viewer may not
+ * read is absent from the record and not on the form, one they may read but
+ * not change is greyed and never sent.
  */
 export function EditGuardianDrawer({
   guardian,
@@ -52,7 +54,9 @@ export function EditGuardianDrawer({
   onClose: () => void;
 }) {
   const [draft, setDraft] = useState<Record<FieldKey, string>>({
-    full_name: guardian.full_name,
+    first_name: guardian.first_name ?? "",
+    middle_name: guardian.middle_name ?? "",
+    last_name: guardian.last_name ?? "",
     phone: guardian.phone ?? "",
     email: guardian.email ?? "",
     occupation: guardian.occupation ?? "",
@@ -62,23 +66,29 @@ export function EditGuardianDrawer({
   const [update, { isLoading }] = useUpdateGuardianMutation();
   const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS, guardian);
   const fields = FIELDS.filter((f) => !access.isHidden(f.key));
+  const writable = (key: FieldKey) => !access.isHidden(key) && !access.isReadOnly(key);
 
   const changed = fields.filter(
-    (f) =>
-      !access.isReadOnly(f.key) &&
-      draft[f.key].trim() !== (guardian[f.key] ?? "").trim(),
+    (f) => writable(f.key) && draft[f.key].trim() !== (guardian[f.key] ?? "").trim(),
   );
-  const nameBlank = !draft.full_name.trim();
+  const confirming =
+    guardian.name_needs_review && NAME_KEYS.some((key) => writable(key));
+  const blank = (key: "first_name" | "last_name") =>
+    writable(key) && !draft[key].trim();
+  const nameBlank = blank("first_name") || blank("last_name");
+  const sendable = confirming
+    ? [...new Set([...changed.map((f) => f.key), ...NAME_KEYS.filter(writable)])]
+    : changed.map((f) => f.key);
 
   async function save() {
-    if (!changed.length || nameBlank) return;
+    if (!sendable.length || nameBlank) return;
     setErrors({});
     try {
-      await update({
+      const response = await update({
         id: guardian.id,
-        ...Object.fromEntries(changed.map((f) => [f.key, draft[f.key].trim()])),
+        ...Object.fromEntries(sendable.map((key) => [key, draft[key].trim()])),
       }).unwrap();
-      toast.success(`${draft.full_name.trim()} updated.`);
+      toast.success(response.message ?? "Guardian updated.");
       onClose();
     } catch (error) {
       // A field-keyed refusal belongs under its field: the one that actually
@@ -90,18 +100,37 @@ export function EditGuardianDrawer({
     }
   }
 
+  const summary =
+    changed.length === 0
+      ? confirming
+        ? "Saving confirms the name as shown."
+        : "Nothing changed yet."
+      : `${changed.length} ${changed.length === 1 ? "field" : "fields"} will change: ${changed
+          .map((f) => f.label.toLowerCase())
+          .join(", ")}.`;
+
   return (
     <DrawerShell
       open={open}
       onClose={onClose}
-      title="Edit guardian"
+      title={confirming ? "Check guardian's name" : "Edit guardian"}
       subtitle={`${guardian.full_name}'s own details. Their relationship to each student stays on that student.`}
-      saveLabel="Save changes"
+      saveLabel={confirming && changed.length === 0 ? "Confirm name" : "Save changes"}
       onSave={save}
-      canSave={changed.length > 0 && !nameBlank}
+      canSave={sendable.length > 0 && !nameBlank}
       saving={isLoading}
     >
       <div className="grid gap-4">
+        {confirming && (
+          <div
+            role="note"
+            className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900"
+          >
+            This name was entered on one line as{" "}
+            <span className="font-semibold">“{guardian.full_name}”</span> and split
+            automatically. Check which part is the first, middle and last name, then save.
+          </div>
+        )}
         {fields.map((f) => (
           <AccessField key={f.key} access={access} name={f.key}>
             <Field
@@ -109,8 +138,8 @@ export function EditGuardianDrawer({
               required={"required" in f ? f.required : undefined}
               error={
                 errors[f.key] ??
-                (f.key === "full_name" && nameBlank
-                  ? "A guardian needs a name."
+                ((f.key === "first_name" || f.key === "last_name") && blank(f.key)
+                  ? `A guardian needs a ${f.label.toLowerCase()}.`
                   : undefined)
               }
               hint={"hint" in f ? f.hint : undefined}
@@ -121,7 +150,8 @@ export function EditGuardianDrawer({
                   setDraft((d) => ({ ...d, [f.key]: e.target.value }))
                 }
                 className={
-                  errors[f.key] || (f.key === "full_name" && nameBlank)
+                  errors[f.key] ||
+                  ((f.key === "first_name" || f.key === "last_name") && blank(f.key))
                     ? errorInputClass
                     : inputClass
                 }
@@ -130,14 +160,8 @@ export function EditGuardianDrawer({
           </AccessField>
         ))}
 
-        {/* Says what will move, so Save is not a leap. The same line the edit
-            drawer for a student carries. */}
         <p className="text-xs text-gray-05" aria-live="polite">
-          {changed.length === 0
-            ? "Nothing changed yet."
-            : `${changed.length} ${changed.length === 1 ? "field" : "fields"} will change: ${changed
-                .map((f) => f.label.toLowerCase())
-                .join(", ")}.`}
+          {summary}
         </p>
       </div>
     </DrawerShell>

@@ -48,6 +48,11 @@ vi.mock("@/hooks/use-permissions", () => ({
 vi.mock("@/components/layout/page-shell", () => ({
   PageShell: ({ children }: { children: ReactNode }) => <main>{children}</main>,
 }));
+vi.mock("../drawers/reader-reach", () => ({
+  useReaderReach: () => ({
+    wholeSchool: true, branches: [], soleBranch: null, isLoading: false, covers: () => true,
+  }),
+}));
 vi.mock("@/redux/services/branches/branches-api", () => ({
   useGetMyBranchesQuery: () => ({ data: { data: [] } }),
 }));

@@ -2,6 +2,7 @@ import { CalendarPlus, FileText, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import PermissionGate from "@/components/custom/permission-gate";
+import { LiveOnly } from "@/components/custom/as-at-control";
 import FieldAccessOverrides from "@/components/custom/field-access-overrides";
 import { P } from "@/permissions";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -104,11 +105,13 @@ export function AccessTab({
       <section>
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-black-01">Roles held</h3>
-          <PermissionGate permission={P.ASSIGN_ROLE}>
-            <Button size="sm" variant="outline" onClick={openRoles}>
-              Grant or withdraw
-            </Button>
-          </PermissionGate>
+          <LiveOnly>
+            <PermissionGate permission={P.ASSIGN_ROLE}>
+              <Button size="sm" variant="outline" onClick={openRoles}>
+                Grant or withdraw
+              </Button>
+            </PermissionGate>
+          </LiveOnly>
         </div>
         <SectionNote>
           What a role can do is defined in access control, not here.
@@ -210,7 +213,10 @@ export function AccessTab({
         </section>
       )}
 
-      <FieldAccessOverrides userId={userId} userName={userName} />
+      {/* Live exceptions and their controls; a past view does not keep them. */}
+      <LiveOnly>
+        <FieldAccessOverrides userId={userId} userName={userName} />
+      </LiveOnly>
     </div>
   );
 }
@@ -364,6 +370,7 @@ export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
                 <span className="block text-xs text-gray-05">
                   {row.document_type_label} · added {formatDate(row.created_at)}
                   {row.uploaded_by ? ` by ${row.uploaded_by.name}` : ""}
+                  {row.file_retired ? " · replaced or removed since" : ""}
                 </span>
               </span>
             </li>

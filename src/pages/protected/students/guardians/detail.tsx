@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 
 import PermissionGate from "@/components/custom/permission-gate";
+import { AsAtBanner, AsAtControl, LiveOnly } from "@/components/custom/as-at-control";
+import { AsAtContext, useAsAt, useAsAtParam } from "@/lib/as-at";
 import { useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
@@ -39,7 +41,7 @@ import { EmptyRing } from "../empty-ring";
 import { PhotoPicker } from "../photo-picker";
 import { StudentStatusBadge } from "../status-badge";
 import { EditGuardianDrawer } from "./edit-guardian-drawer";
-import { SiblingsPill } from "./person-card";
+import { CheckNamePill, SiblingsPill } from "./person-card";
 import {
   getGuardianProfileCompleteness,
   type GuardianProfileGap,
@@ -58,9 +60,16 @@ function relationshipLabel(code: string) {
  * Guardian-owned contact details remain separate from relationship and
  * primary-contact facts, which belong to each individual student link.
  *
- * Phone, email, occupation and address follow Field Access
- * (`school.guardians`): one the viewer may not read is absent from the record
- * and drawn nowhere on this page, header, details and checklist alike.
+ * The name, phone, email, occupation, address and photograph follow Field
+ * Access (`school.guardians`): one the viewer may not read is absent from the
+ * record and drawn nowhere on this page, header, details and checklist alike.
+ *
+ * A name the platform split from one line and nobody has confirmed carries a
+ * "Check name" flag, and the edit drawer opens on the confirmation.
+ *
+ * The "As at" control reads the guardian and their wards as they stood at the
+ * end of an earlier day (`?as_at=`, see `lib/as-at.ts`), with nothing on the
+ * page that changes the record.
  */
 export default function GuardianDetail() {
   const navigate = useNavigate();
@@ -69,10 +78,13 @@ export default function GuardianDetail() {
   const [linking, setLinking] = useState(false);
   const [editing, setEditing] = useState(false);
   const [studentView, setStudentView] = useState<"list" | "grid">("list");
+  const [asAt, setAsAt] = useAsAtParam();
 
-  const { data, isLoading, isError, refetch } = useGetGuardianQuery(guardianId, {
-    skip: !Number.isFinite(guardianId),
-  });
+  // `currentData`, so another day's answer is never shown under this one.
+  const { currentData: data, isLoading, isError, refetch } = useGetGuardianQuery(
+    { id: guardianId, asAt },
+    { skip: !Number.isFinite(guardianId) },
+  );
   const guardian = data?.data;
   const completeness = useMemo(
     () => (guardian ? getGuardianProfileCompleteness(guardian) : undefined),
@@ -81,6 +93,20 @@ export default function GuardianDetail() {
   const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS, guardian);
   const shows = (name: "phone" | "email" | "occupation" | "address") =>
     !access.isHidden(name);
+
+  if (isError && asAt) {
+    return (
+      <PageShell>
+        <OutlinedNotice
+          icon={UserRound}
+          title="This record has no history for that day"
+          body="Its history starts later than the day you picked. Go back to today and pick a day the calendar offers."
+          actionLabel="Back to today"
+          onAction={() => setAsAt(undefined)}
+        />
+      </PageShell>
+    );
+  }
 
   if (isError) {
     return (
@@ -103,7 +129,9 @@ export default function GuardianDetail() {
   ).length;
 
   return (
+    <AsAtContext.Provider value={asAt}>
     <PageShell className="content-start gap-5" grid>
+      {asAt && <AsAtBanner asAt={asAt} onReturn={() => setAsAt(undefined)} />}
       <Panel
         as="section"
         className="overflow-hidden rounded-xl px-4 py-5 sm:px-6"
@@ -125,6 +153,7 @@ export default function GuardianDetail() {
                       {guardian.full_name}
                     </h1>
                     {wards.length > 1 && <SiblingsPill />}
+                    {guardian.name_needs_review && <CheckNamePill />}
                   </div>
                   <p className="mt-1.5 text-[13px] text-gray-05">
                     Guardian of {wards.length}{" "}
@@ -151,20 +180,29 @@ export default function GuardianDetail() {
                 </div>
               </div>
 
-              <PermissionGate permission={P.MODIFY_STUDENT}>
-                <div className="mt-4 flex flex-wrap gap-2.5">
-                  <Button size="sm" onClick={() => setEditing(true)}>
-                    Edit details
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setLinking(true)}
-                  >
-                    Link another child
-                  </Button>
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <LiveOnly>
+                  <PermissionGate permission={P.MODIFY_STUDENT}>
+                    <Button size="sm" onClick={() => setEditing(true)}>
+                      {guardian.name_needs_review ? "Check name" : "Edit details"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setLinking(true)}
+                    >
+                      Link another child
+                    </Button>
+                  </PermissionGate>
+                </LiveOnly>
+                <div className="ml-auto">
+                  <AsAtControl
+                    historyStarts={guardian.history_starts}
+                    value={asAt}
+                    onChange={setAsAt}
+                  />
                 </div>
-              </PermissionGate>
+              </div>
             </div>
 
             <CompletenessCard completeness={completeness} />
@@ -178,7 +216,7 @@ export default function GuardianDetail() {
             <ProfilePanel title="Personal and contact" icon={UserRound}>
               <DetailGrid
                 rows={[
-                  { label: "Full name", value: guardian.full_name },
+                  { label: "Full name", value: guardian.full_name || "Hidden" },
                   ...(
                     [
                       ["phone", "Phone"],
@@ -327,6 +365,7 @@ export default function GuardianDetail() {
         />
       )}
     </PageShell>
+    </AsAtContext.Provider>
   );
 }
 
@@ -335,6 +374,7 @@ function CompletenessCard({
 }: {
   completeness?: ReturnType<typeof getGuardianProfileCompleteness>;
 }) {
+  const asAt = useAsAt();
   if (!completeness) return <Skeleton className="h-24 w-full rounded-xl" />;
   const gapCount = completeness.gaps.length;
 
@@ -356,7 +396,7 @@ function CompletenessCard({
             : "This record is complete"}
         </p>
         {gapCount > 0 && (
-          <PermissionGate permission={P.MODIFY_STUDENT}>
+          <PermissionGate permission={P.MODIFY_STUDENT} disabled={Boolean(asAt)}>
             <Button
               size="sm"
               className="mt-2 h-8 w-full"
@@ -415,6 +455,7 @@ function MissingInformation({
   completeness?: ReturnType<typeof getGuardianProfileCompleteness>;
   onGap: (gap: GuardianProfileGap) => void;
 }) {
+  const asAt = useAsAt();
   if (!completeness) return <Skeleton className="h-44 w-full rounded-xl" />;
   const gaps = completeness.gaps;
 
@@ -461,6 +502,7 @@ function MissingInformation({
             <li key={gap.key}>
               <PermissionGate
                 permission={P.MODIFY_STUDENT}
+                disabled={Boolean(asAt)}
                 fallback={
                   <span className="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs text-black-01">
                     <span className="size-1.5 rounded-full bg-amber-500" />
@@ -694,12 +736,14 @@ function SummaryList({ rows }: { rows: string[] }) {
 /** A guardian's photograph and its upload control. */
 function GuardianPhoto({ guardian }: { guardian: GuardianRecord }) {
   const [upload, { isLoading }] = useUploadGuardianPhotoMutation();
+  const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS, guardian);
 
   return (
     <PhotoPicker
       name={guardian.full_name}
-      photoUrl={guardian.photo_url}
+      photoUrl={guardian.photo_url ?? ""}
       saving={isLoading}
+      editable={!guardian.as_at && !access.isReadOnly("photo_url")}
       size="size-16"
       textClassName="text-[21px]"
       onPick={(file) => upload({ id: guardian.id, file }).unwrap()}

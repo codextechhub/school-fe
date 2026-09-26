@@ -30,6 +30,14 @@ import { ChoiceButtons } from "./choice-buttons";
 import { StepRail } from "./step-rail";
 import { GuardianRows, type GuardianDraft } from "./guardian-rows";
 
+/** A new guardian's name as one line, from the parts typed so far. */
+function draftName(g: GuardianDraft): string {
+  return [g.first_name, g.middle_name, g.last_name]
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -324,7 +332,9 @@ export default function EnrolStudent() {
     }
 
     const filled = guardians.filter((g) =>
-      g.kind === "existing" ? Boolean(g.guardianId) : g.full_name.trim() && g.phone.trim(),
+      g.kind === "existing"
+        ? Boolean(g.guardianId)
+        : g.first_name.trim() && g.last_name.trim() && g.phone.trim(),
     );
     if (filled.length === 0) {
       out.guardians = "Link at least one guardian.";
@@ -427,7 +437,7 @@ export default function EnrolStudent() {
       confirm_duplicate: false,
       guardians: guardians
         .filter((g) =>
-          g.kind === "existing" ? Boolean(g.guardianId) : g.full_name.trim(),
+          g.kind === "existing" ? Boolean(g.guardianId) : draftName(g),
         )
         .map((g) =>
           g.kind === "existing"
@@ -437,7 +447,9 @@ export default function EnrolStudent() {
                 is_primary: g.is_primary,
               }
             : guardianAccess.writableOnly({
-                full_name: g.full_name.trim(),
+                first_name: g.first_name.trim(),
+                ...(g.middle_name.trim() ? { middle_name: g.middle_name.trim() } : {}),
+                last_name: g.last_name.trim(),
                 phone: g.phone.trim(),
                 ...(g.email.trim() ? { email: g.email.trim() } : {}),
                 relationship: g.relationship,
@@ -590,81 +602,97 @@ export default function EnrolStudent() {
       {step === "student" && (
       <Section title="The student">
         <div className="grid gap-3.5 sm:grid-cols-2">
-          <Field label="First name" error={err("first_name")} required>
-            <input
-              value={form.first_name}
-              onChange={(e) => set("first_name", e.target.value)}
-              onBlur={() => touch("first_name")}
-              className={err("first_name") ? errorInputClass : inputClass}
-            />
-          </Field>
-          <Field label="Middle name (optional)">
-            <input
-              value={form.middle_name}
-              onChange={(e) => set("middle_name", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Last name" error={err("last_name")} required>
-            <input
-              value={form.last_name}
-              onChange={(e) => set("last_name", e.target.value)}
-              onBlur={() => touch("last_name")}
-              className={err("last_name") ? errorInputClass : inputClass}
-            />
-          </Field>
-          <Field
-            label="Date of birth"
-            required
-            error={err("date_of_birth")}
-            hint={
-              !problems.date_of_birth && form.date_of_birth
-                ? `${Number(today().slice(0, 4)) - Number(form.date_of_birth.slice(0, 4))} years old`
-                : undefined
-            }
-          >
-            <DatePickerInput
-              value={form.date_of_birth}
-              onChange={(e) => set("date_of_birth", e.target.value)}
-              onBlur={() => touch("date_of_birth")}
-              className={err("date_of_birth") ? errorInputClass : inputClass}
-            />
-          </Field>
-          <Field label="Gender" error={err("gender")} required>
-            <ChoiceButtons
-              ariaLabel="Gender"
-              value={form.gender}
-              onChange={(next) => {
-                set("gender", next);
-                touch("gender");
-              }}
-              options={[
-                { value: "FEMALE", label: "Female" },
-                { value: "MALE", label: "Male" },
-              ]}
-            />
-          </Field>
-          <Field label="Nationality">
-            <input
-              value={form.nationality}
-              onChange={(e) => set("nationality", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="State of origin">
-            <input
-              value={form.state_of_origin}
-              onChange={(e) => set("state_of_origin", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Previous school (optional)">
-            <input
-              value={form.previous_school}
-              onChange={(e) => set("previous_school", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
+          <AccessField access={access} name="first_name" creating>
+            <Field label="First name" error={err("first_name")} required>
+              <input
+                value={form.first_name}
+                onChange={(e) => set("first_name", e.target.value)}
+                onBlur={() => touch("first_name")}
+                className={err("first_name") ? errorInputClass : inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="middle_name" creating>
+            <Field label="Middle name (optional)">
+              <input
+                value={form.middle_name}
+                onChange={(e) => set("middle_name", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="last_name" creating>
+            <Field label="Last name" error={err("last_name")} required>
+              <input
+                value={form.last_name}
+                onChange={(e) => set("last_name", e.target.value)}
+                onBlur={() => touch("last_name")}
+                className={err("last_name") ? errorInputClass : inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="date_of_birth" creating>
+            <Field
+              label="Date of birth"
+              required
+              error={err("date_of_birth")}
+              hint={
+                !problems.date_of_birth && form.date_of_birth
+                  ? `${Number(today().slice(0, 4)) - Number(form.date_of_birth.slice(0, 4))} years old`
+                  : undefined
+              }
+            >
+              <DatePickerInput
+                value={form.date_of_birth}
+                onChange={(e) => set("date_of_birth", e.target.value)}
+                onBlur={() => touch("date_of_birth")}
+                className={err("date_of_birth") ? errorInputClass : inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="gender" creating>
+            <Field label="Gender" error={err("gender")} required>
+              <ChoiceButtons
+                ariaLabel="Gender"
+                value={form.gender}
+                onChange={(next) => {
+                  set("gender", next);
+                  touch("gender");
+                }}
+                options={[
+                  { value: "FEMALE", label: "Female" },
+                  { value: "MALE", label: "Male" },
+                ]}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="nationality" creating>
+            <Field label="Nationality">
+              <input
+                value={form.nationality}
+                onChange={(e) => set("nationality", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="state_of_origin" creating>
+            <Field label="State of origin">
+              <input
+                value={form.state_of_origin}
+                onChange={(e) => set("state_of_origin", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="previous_school" creating>
+            <Field label="Previous school (optional)">
+              <input
+                value={form.previous_school}
+                onChange={(e) => set("previous_school", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
         </div>
       </Section>
       )}
@@ -783,33 +811,35 @@ export default function EnrolStudent() {
             </>
           )}
 
-          <Field
-            label={
-              policy?.required ? "Admission number" : "Admission number (optional)"
-            }
-            error={err("student_number")}
-            hint={
-              !numberOwned && policy?.suggestion
-                ? `Suggested: the next number after ${policy.suggestion.replace(
-                    /(\d+)$/,
-                    (d) => String(Number(d) - 1).padStart(d.length, "0"),
-                  )}. Change it if your school numbers differently.`
-                : policy?.hint ||
-                  (policy?.required
-                    ? undefined
-                    : "This school has not set a format. Leave it blank to issue one later.")
-            }
-          >
-            <input
-              value={admissionNumber}
-              onChange={(e) => {
-                setNumberOwned(true);
-                set("student_number", e.target.value);
-                touch("student_number");
-              }}
-              className={err("student_number") ? errorInputClass : inputClass}
-            />
-          </Field>
+          <AccessField access={access} name="student_number" creating>
+            <Field
+              label={
+                policy?.required ? "Admission number" : "Admission number (optional)"
+              }
+              error={err("student_number")}
+              hint={
+                !numberOwned && policy?.suggestion
+                  ? `Suggested: the next number after ${policy.suggestion.replace(
+                      /(\d+)$/,
+                      (d) => String(Number(d) - 1).padStart(d.length, "0"),
+                    )}. Change it if your school numbers differently.`
+                  : policy?.hint ||
+                    (policy?.required
+                      ? undefined
+                      : "This school has not set a format. Leave it blank to issue one later.")
+              }
+            >
+              <input
+                value={admissionNumber}
+                onChange={(e) => {
+                  setNumberOwned(true);
+                  set("student_number", e.target.value);
+                  touch("student_number");
+                }}
+                className={err("student_number") ? errorInputClass : inputClass}
+              />
+            </Field>
+          </AccessField>
         </div>
 
         {chosenClass && !asApplicant && (
@@ -833,28 +863,34 @@ export default function EnrolStudent() {
       {step === "details" && (<>
       <Section title="Contact">
         <div className="grid gap-3.5 sm:grid-cols-2">
-          <Field label="Home address">
-            <input
-              value={form.address}
-              onChange={(e) => set("address", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Student phone (optional)">
-            <input
-              value={form.phone}
-              onChange={(e) => set("phone", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Student email (optional)">
-            <input
-              type="email"
-              value={form.email}
-              onChange={(e) => set("email", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
+          <AccessField access={access} name="address" creating>
+            <Field label="Home address">
+              <input
+                value={form.address}
+                onChange={(e) => set("address", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="phone" creating>
+            <Field label="Student phone (optional)">
+              <input
+                value={form.phone}
+                onChange={(e) => set("phone", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="email" creating>
+            <Field label="Student email (optional)">
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => set("email", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
         </div>
       </Section>
 
@@ -877,20 +913,24 @@ export default function EnrolStudent() {
               </Field>
             </AccessField>
           ))}
-          <Field label="Emergency contact">
-            <input
-              value={form.emergency_contact_name}
-              onChange={(e) => set("emergency_contact_name", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
-          <Field label="Emergency phone">
-            <input
-              value={form.emergency_contact_phone}
-              onChange={(e) => set("emergency_contact_phone", e.target.value)}
-              className={inputClass}
-            />
-          </Field>
+          <AccessField access={access} name="emergency_contact_name" creating>
+            <Field label="Emergency contact">
+              <input
+                value={form.emergency_contact_name}
+                onChange={(e) => set("emergency_contact_name", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
+          <AccessField access={access} name="emergency_contact_phone" creating>
+            <Field label="Emergency phone">
+              <input
+                value={form.emergency_contact_phone}
+                onChange={(e) => set("emergency_contact_phone", e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          </AccessField>
         </div>
       </Section>
       </>)}
@@ -1027,7 +1067,7 @@ function Review({
   onJump: (step: StepKey) => void;
 }) {
   const named = guardians.filter((g) =>
-    g.kind === "existing" ? Boolean(g.guardianId) : g.full_name.trim(),
+    g.kind === "existing" ? Boolean(g.guardianId) : draftName(g),
   );
   const primary = named.find((g) => g.is_primary);
   const fullName = [form.first_name, form.middle_name, form.last_name]
@@ -1092,7 +1132,7 @@ function Review({
             {named.map((g, i) => (
               <li key={i} className="flex flex-wrap items-baseline gap-x-2 text-sm">
                 <span className="text-black-01">
-                  {g.kind === "existing" ? g.guardianName : g.full_name}
+                  {g.kind === "existing" ? g.guardianName : draftName(g)}
                 </span>
                 <span className="text-xs text-gray-05">
                   {RELATIONSHIPS.find((r) => r.value === g.relationship)?.label ??
@@ -1113,7 +1153,7 @@ function Review({
         {primary && (
           <p className="mt-2 text-xs text-gray-05">
             The school will call{" "}
-            {primary.kind === "existing" ? primary.guardianName : primary.full_name}{" "}
+            {primary.kind === "existing" ? primary.guardianName : draftName(primary)}{" "}
             first.
           </p>
         )}

@@ -69,6 +69,7 @@ const detail: StaffDetail = {
     leave_requests: 2,
   },
   created_by: { id: 3, name: "School Administrator" },
+  history_starts: null,
 };
 
 describe("staff profile completeness", () => {

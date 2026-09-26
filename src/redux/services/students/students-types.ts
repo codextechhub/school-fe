@@ -1,3 +1,5 @@
+import type { AsAtMeta } from "@/lib/as-at";
+
 /**
  * Shapes returned by /v1/students/ and /v1/guardians/.
  *
@@ -81,30 +83,36 @@ export interface AllowedTransition {
   needs_destination: boolean;
 }
 
+/**
+ * One student's record.
+ *
+ * Every optional personal field is a Field Access field of `school.students`:
+ * absent, never empty, when the viewer may not read it, so "" still means
+ * "nothing recorded". `full_name` is rebuilt from the name parts the viewer may
+ * read. Read as at an earlier day, the record carries `as_at`.
+ */
 export interface StudentDetail extends StudentScoped {
   id: number;
-  student_number: string;
-  first_name: string;
-  middle_name: string;
-  last_name: string;
+  student_number?: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
   full_name: string;
-  date_of_birth: string;
+  date_of_birth?: string;
   /** Computed by the server, so two screens cannot disagree about a birthday. */
   age: number | null;
-  gender: Gender | "";
-  nationality: string;
-  state_of_origin: string;
-  address: string;
-  phone: string;
-  email: string;
-  previous_school: string;
-  // Field Access fields (`school.students`): absent, never empty, when the
-  // viewer may not read them, so "" still means "nothing recorded".
+  gender?: Gender | "";
+  nationality?: string;
+  state_of_origin?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  previous_school?: string;
   blood_group?: string;
   allergies?: string;
   conditions?: string;
-  emergency_contact_name: string;
-  emergency_contact_phone: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
   status: StudentStatus;
   status_label: string;
   enrolment_date?: string | null;
@@ -116,10 +124,14 @@ export interface StudentDetail extends StudentScoped {
   applied_for: number | null;
   applied_for_name: string;
   applied_on: string | null;
-  photo_url: string;
+  photo_url?: string;
   allowed_transitions: AllowedTransition[];
   created_at: string;
   updated_at: string;
+  /** The first day this record can be read as at; null before it is first recorded. */
+  history_starts: string | null;
+  /** Present only on a record read as at an earlier day. */
+  as_at?: AsAtMeta;
 }
 
 export interface StudentSummary {
@@ -160,6 +172,11 @@ export interface StudentSummary {
 export interface GuardianSummary {
   id: number;
   full_name: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  /** The name was split from one line and nobody has confirmed the parts yet. */
+  name_needs_review: boolean;
   phone?: string;
   email?: string;
   occupation?: string;
@@ -167,7 +184,7 @@ export interface GuardianSummary {
   /** Whether the guardian has a login of their own. */
   has_account: boolean;
   /** "" when the school holds none, which is the ordinary case. */
-  photo_url: string;
+  photo_url?: string;
 }
 
 /** One guardian as they relate to ONE student. */
@@ -220,6 +237,8 @@ export interface StudentDocumentRow {
   id: number | null;
   /** "" when nothing is attached. */
   url: string;
+  /** Held on the day a past view reads, and replaced or removed since. */
+  file_retired?: boolean;
 }
 
 export type HistoryKind = "status" | "class" | "guardian" | "document" | "edit";
@@ -264,6 +283,10 @@ export interface GuardianSearchHit {
 export interface GuardianRow {
   id: number;
   full_name: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
+  name_needs_review: boolean;
   phone?: string;
   email?: string;
   ward_count: number;
@@ -271,10 +294,12 @@ export interface GuardianRow {
   /** More than one child at this school, so the row stands for a household. */
   is_sibling_household: boolean;
   /** "" when the school holds none, which is the ordinary case. */
-  photo_url: string;
+  photo_url?: string;
 }
 
 export interface GuardianDetail extends GuardianSummary {
+  history_starts: string | null;
+  as_at?: AsAtMeta;
   wards: {
     id: number;
     name: string;
@@ -477,10 +502,12 @@ export interface BulkResultRow {
   message: string;
 }
 
-/** One guardian on an enrolment: either an existing id, or a new name+phone. */
+/** One guardian on an enrolment: either an existing id, or a new name and phone. */
 export interface GuardianOnEnrolment {
   guardian_id?: number;
-  full_name?: string;
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
   phone?: string;
   email?: string;
   relationship: string;

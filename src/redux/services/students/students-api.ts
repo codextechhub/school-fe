@@ -1,3 +1,5 @@
+import { recordQuery, type RecordArg } from "@/lib/as-at";
+
 import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import type {
@@ -111,29 +113,29 @@ export const studentsApi = baseApi.injectEndpoints({
       providesTags: ["Students"],
     }),
 
-    getStudent: builder.query<Envelope<StudentDetail>, number>({
-      query: (id) => ({ url: `/students/${id}/`, method: "GET" }),
+    getStudent: builder.query<Envelope<StudentDetail>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/students/${id}/`, arg),
       providesTags: ["Students"],
     }),
 
-    getStudentGuardians: builder.query<Envelope<StudentGuardianLink[]>, number>({
-      query: (id) => ({ url: `/students/${id}/guardians/`, method: "GET" }),
+    getStudentGuardians: builder.query<Envelope<StudentGuardianLink[]>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/students/${id}/guardians/`, arg),
       providesTags: ["Students", "Guardians"],
     }),
 
     /** Read from Academic Structure for the level of the student's class. */
-    getStudentSubjects: builder.query<Envelope<StudentSubject[]>, number>({
-      query: (id) => ({ url: `/students/${id}/subjects/`, method: "GET" }),
+    getStudentSubjects: builder.query<Envelope<StudentSubject[]>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/students/${id}/subjects/`, arg),
       providesTags: ["Students"],
     }),
 
-    getStudentClassHistory: builder.query<PaginatedEnvelope<ClassHistoryRow>, number>({
-      query: (id) => ({ url: `/students/${id}/class-history/`, method: "GET" }),
+    getStudentClassHistory: builder.query<PaginatedEnvelope<ClassHistoryRow>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/students/${id}/class-history/`, arg),
       providesTags: ["Students"],
     }),
 
-    getStudentDocuments: builder.query<Envelope<StudentDocumentRow[]>, number>({
-      query: (id) => ({ url: `/students/${id}/documents/`, method: "GET" }),
+    getStudentDocuments: builder.query<Envelope<StudentDocumentRow[]>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/students/${id}/documents/`, arg),
       providesTags: ["Students"],
     }),
 
@@ -185,14 +187,21 @@ export const studentsApi = baseApi.injectEndpoints({
      * The History tab: the module's status log and the platform's audit trail
      * merged into one stream, newest first.
      */
-    getStudentHistory: builder.query<PaginatedEnvelope<HistoryEntry>, number>({
-      query: (id) => ({ url: `/students/${id}/history/`, method: "GET" }),
+    getStudentHistory: builder.query<PaginatedEnvelope<HistoryEntry>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/students/${id}/history/`, arg),
       providesTags: ["Students"],
     }),
 
     getGuardians: builder.query<
       PaginatedEnvelope<GuardianRow>,
-      { search?: string; page?: number; branch?: number; session?: number } | void
+      {
+        search?: string;
+        page?: number;
+        branch?: number;
+        session?: number;
+        /** Only guardians whose name awaits confirmation. */
+        name_review?: true;
+      } | void
     >({
       query: (args) => ({
         url: `/guardians/`,
@@ -215,7 +224,9 @@ export const studentsApi = baseApi.injectEndpoints({
     updateGuardian: builder.mutation<
       Envelope<GuardianSummary>,
       { id: number } & Partial<{
-        full_name: string;
+        first_name: string;
+        middle_name: string;
+        last_name: string;
         phone: string;
         email: string;
         occupation: string;
@@ -260,8 +271,8 @@ export const studentsApi = baseApi.injectEndpoints({
       invalidatesTags: ["Guardians", "Students"],
     }),
 
-    getGuardian: builder.query<Envelope<GuardianDetail>, number>({
-      query: (id) => ({ url: `/guardians/${id}/`, method: "GET" }),
+    getGuardian: builder.query<Envelope<GuardianDetail>, RecordArg>({
+      query: (arg) => recordQuery((id) => `/guardians/${id}/`, arg),
       providesTags: ["Guardians"],
     }),
 
@@ -387,7 +398,9 @@ export const studentsApi = baseApi.injectEndpoints({
       {
         id: number;
         guardian_id?: number;
-        full_name?: string;
+        first_name?: string;
+        middle_name?: string;
+        last_name?: string;
         phone?: string;
         email?: string;
         relationship: string;

@@ -30,7 +30,7 @@ export const STUDENT_MEDICAL_FIELDS = ["blood_group", "allergies", "conditions"]
 export const CREATING: ReadOnlyOptions = { creating: true };
 
 /** The guardian fields every route that adds a guardian requires. */
-const GUARDIAN_REQUIRED_ON_CREATE = ["phone"] as const;
+const GUARDIAN_REQUIRED_ON_CREATE = ["first_name", "last_name", "phone"] as const;
 
 /**
  * Whether the signed-in user may add a new guardian, rather than only link one

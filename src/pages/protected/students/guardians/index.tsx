@@ -12,9 +12,11 @@ import { useStudentsLens } from "@/hooks/use-students-lens";
 import { useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
 
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
+
 import { EmptyRing } from "../empty-ring";
 import { Pager } from "../pager";
-import { FooterLead, PersonCard, SiblingsPill } from "./person-card";
+import { CheckNamePill, FooterLead, PersonCard, SiblingsPill } from "./person-card";
 
 /**
  * The people the school calls and the students linked under each one.
@@ -26,11 +28,16 @@ import { FooterLead, PersonCard, SiblingsPill } from "./person-card";
  * the contact details the viewer may read, and says "Contact missing" only
  * when a detail they may read is genuinely empty, never for one withheld from
  * them. The search box names only the details the viewer can see.
+ *
+ * "Names to check" narrows the list to guardians whose name the platform split
+ * from one line and nobody has confirmed yet; each carries a CHECK NAME pill,
+ * and its page opens the confirmation.
  */
 export default function Guardians() {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [show, setShow] = useState<"all" | "review">("all");
 
   const { lens, narrowed, label } = useStudentsLens();
   const { data, isLoading, isFetching, isError, refetch } =
@@ -38,6 +45,7 @@ export default function Guardians() {
       ...lens,
       search: search.trim() || undefined,
       page,
+      ...(show === "review" ? { name_review: true as const } : {}),
     });
 
   const rows = useMemo(() => data?.data ?? [], [data]);
@@ -123,6 +131,18 @@ export default function Guardians() {
             className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
           />
         </div>
+        <SegmentedToggle
+          ariaLabel="Which guardians to show"
+          value={show}
+          onChange={(next) => {
+            setShow(next);
+            setPage(1);
+          }}
+          options={[
+            { value: "all", label: "All guardians" },
+            { value: "review", label: "Names to check" },
+          ]}
+        />
         {pagination && !isLoading && (
           <p className="shrink-0 text-xs text-gray-05" aria-live="polite">
             {pagination.totalItems}{" "}
@@ -139,7 +159,11 @@ export default function Guardians() {
         </div>
       ) : rows.length === 0 ? (
         <EmptyRing>
-          {search.trim() ? "No guardian matches that" : "No guardians yet"}
+          {search.trim()
+            ? "No guardian matches that"
+            : show === "review"
+              ? "Every guardian's name is confirmed"
+              : "No guardians yet"}
         </EmptyRing>
       ) : (
         <>
@@ -157,7 +181,14 @@ export default function Guardians() {
                   sub={contacts[0] ?? (missing ? "Contact missing" : undefined)}
                   secondary={contacts[1]}
                   subTone={missing ? "warn" : "default"}
-                  chip={g.is_sibling_household ? <SiblingsPill /> : undefined}
+                  chip={
+                    g.name_needs_review || g.is_sibling_household ? (
+                      <span className="flex shrink-0 flex-col items-end gap-1">
+                        {g.name_needs_review && <CheckNamePill />}
+                        {g.is_sibling_household && <SiblingsPill />}
+                      </span>
+                    ) : undefined
+                  }
                   footerLead={
                     <FooterLead>
                       {g.ward_count} {g.ward_count === 1 ? "student" : "students"}

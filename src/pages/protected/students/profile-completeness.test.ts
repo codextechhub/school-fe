@@ -49,6 +49,7 @@ const detail: StudentDetail = {
   applied_for: null,
   applied_for_name: "",
   allowed_transitions: [],
+  history_starts: null,
   created_at: "2024-09-09T08:00:00Z",
   updated_at: "2026-09-09T14:30:00Z",
 };
@@ -63,6 +64,7 @@ const guardian = {
     occupation: "Engineer",
     address: "18 Allen Avenue, Ikeja",
     has_account: true,
+    name_needs_review: false,
     photo_url: "",
   },
   relationship: "MOTHER",

@@ -43,6 +43,9 @@ import { guardianMatchLine } from "../format";
  * even to a user who may not read or change it on an existing guardian. "Add a
  * new one" is offered whenever the user may give every field a new guardian
  * requires ({@link canCreateGuardian}); otherwise the drawer is search only.
+ *
+ * A new guardian's name is entered in parts, so the record is created
+ * confirmed rather than split from one line and flagged for review.
  */
 export function LinkGuardianDrawer({
   student,
@@ -58,7 +61,9 @@ export function LinkGuardianDrawer({
   const [picked, setPicked] = useState<number | null>(null);
   const [relationship, setRelationship] = useState("");
   const [primary, setPrimary] = useState(false);
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
@@ -82,7 +87,10 @@ export function LinkGuardianDrawer({
   const valid =
     mode === "search"
       ? picked != null && !alreadyLinked.has(picked) && Boolean(relationship)
-      : name.trim().length > 0 && phone.trim().length > 0 && Boolean(relationship);
+      : firstName.trim().length > 0 &&
+        lastName.trim().length > 0 &&
+        phone.trim().length > 0 &&
+        Boolean(relationship);
 
   function reset() {
     setMode("search");
@@ -90,7 +98,9 @@ export function LinkGuardianDrawer({
     setPicked(null);
     setRelationship("");
     setPrimary(false);
-    setName("");
+    setFirstName("");
+    setMiddleName("");
+    setLastName("");
     setPhone("");
     setEmail("");
   }
@@ -106,7 +116,9 @@ export function LinkGuardianDrawer({
           ? { guardian_id: picked as number }
           : access.writableOnly(
               {
-                full_name: name.trim(),
+                first_name: firstName.trim(),
+                ...(middleName.trim() ? { middle_name: middleName.trim() } : {}),
+                last_name: lastName.trim(),
                 phone: phone.trim(),
                 ...(email.trim() ? { email: email.trim() } : {}),
               },
@@ -214,13 +226,35 @@ export function LinkGuardianDrawer({
           </>
         ) : (
           <>
-            <Field label="Full name">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <AccessField access={access} name="first_name" creating>
+                <Field label="First name">
+                  <input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+              </AccessField>
+              <AccessField access={access} name="last_name" creating>
+                <Field label="Last name">
+                  <input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className={inputClass}
+                  />
+                </Field>
+              </AccessField>
+            </div>
+            <AccessField access={access} name="middle_name" creating>
+              <Field label="Middle name (optional)">
+                <input
+                  value={middleName}
+                  onChange={(e) => setMiddleName(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
             <AccessField access={access} name="phone" creating>
               <Field
                 label="Phone"

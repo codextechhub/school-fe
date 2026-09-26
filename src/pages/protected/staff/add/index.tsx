@@ -12,7 +12,6 @@ import { routesPath } from "@/routes/routesPath";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
 import { CREATING, FIELD_RESOURCE } from "@/lib/field-resources";
-import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
   useGetClassesQuery,
   useGetSubjectsQuery,
@@ -29,6 +28,7 @@ import type {
 } from "@/redux/services/staff/staff-types";
 
 import { Field, inputClass } from "../../students/drawers/drawer-shell";
+import { useReaderReach } from "../drawers/reader-reach";
 import { ChipToggle, PhotoField, QualificationRows, Section } from "./sections";
 import { InvitationSent } from "./invitation-sent";
 
@@ -97,7 +97,8 @@ export default function AddStaff() {
   const { data: listData, isLoading: loadingRoles } = useGetStaffListQuery({
     page: 1,
   });
-  const { data: branchData } = useGetMyBranchesQuery();
+  // Only the reader's own branches; a one-branch reader is filed under theirs.
+  const { branches, wholeSchool } = useReaderReach();
   const { data: subjectData } = useGetSubjectsQuery();
   const { data: classData } = useGetClassesQuery();
 
@@ -110,7 +111,6 @@ export default function AddStaff() {
   const startingRole = listData?.starting_role ?? null;
   // Only an onboarding school chooses; undefined while loading asks nothing.
   const choosesRole = listData?.starting_role === null;
-  const branches = branchData?.data ?? [];
   const subjects = useMemo(() => subjectData?.data ?? [], [subjectData]);
   const classes = useMemo(() => classData?.data ?? [], [classData]);
 
@@ -305,27 +305,33 @@ export default function AddStaff() {
       <Surface as="section" className="grid gap-6 px-6 py-5.5">
         <Section step={1} title="Bio">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="First name" required error={errors.first_name}>
-              <input
-                value={form.first_name}
-                onChange={(e) => set("first_name")(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Last name" required error={errors.last_name}>
-              <input
-                value={form.last_name}
-                onChange={(e) => set("last_name")(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Middle name" error={errors.middle_name}>
-              <input
-                value={form.middle_name}
-                onChange={(e) => set("middle_name")(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
+            <AccessField access={access} name="first_name" creating>
+              <Field label="First name" required error={errors.first_name}>
+                <input
+                  value={form.first_name}
+                  onChange={(e) => set("first_name")(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
+            <AccessField access={access} name="last_name" creating>
+              <Field label="Last name" required error={errors.last_name}>
+                <input
+                  value={form.last_name}
+                  onChange={(e) => set("last_name")(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
+            <AccessField access={access} name="middle_name" creating>
+              <Field label="Middle name" error={errors.middle_name}>
+                <input
+                  value={form.middle_name}
+                  onChange={(e) => set("middle_name")(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
             <AccessField access={access} name="gender" creating>
               <Field label="Gender" error={errors.gender}>
                 <NativeSelect
@@ -388,57 +394,69 @@ export default function AddStaff() {
 
         <Section step={2} title="Employment">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field
-              label="Staff ID"
-              error={errors.staff_number}
-              hint="Your school's own format. Nothing checks its shape, only that nobody here already has it."
-            >
-              <input
-                value={form.staff_number}
-                onChange={(e) => set("staff_number")(e.target.value)}
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Job title" error={errors.job_title}>
-              <input
-                value={form.job_title}
-                onChange={(e) => set("job_title")(e.target.value)}
-                placeholder="Teacher, Bursar, Registrar…"
-                className={inputClass}
-              />
-            </Field>
-            <Field label="Employment type" error={errors.employment_type}>
-              <NativeSelect
-                aria-label="Employment type"
-                value={form.employment_type}
-                onChange={(e) => set("employment_type")(e.target.value)}
-                className="h-9"
+            <AccessField access={access} name="staff_number" creating>
+              <Field
+                label="Staff ID"
+                error={errors.staff_number}
+                hint="Your school's own format. Nothing checks its shape, only that nobody here already has it."
               >
-                <option value="">Not recorded</option>
-                {TYPES.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
-            <Field
-              label="Hire date"
-              error={errors.hire_date}
-              hint="Length of service is worked out from this."
-            >
-              <DatePickerInput
-                aria-label="Hire date"
-                className="h-9"
-                value={form.hire_date}
-                onChange={(e) => set("hire_date")(e.target.value)}
-              />
-            </Field>
+                <input
+                  value={form.staff_number}
+                  onChange={(e) => set("staff_number")(e.target.value)}
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
+            <AccessField access={access} name="job_title" creating>
+              <Field label="Job title" error={errors.job_title}>
+                <input
+                  value={form.job_title}
+                  onChange={(e) => set("job_title")(e.target.value)}
+                  placeholder="Teacher, Bursar, Registrar…"
+                  className={inputClass}
+                />
+              </Field>
+            </AccessField>
+            <AccessField access={access} name="employment_type" creating>
+              <Field label="Employment type" error={errors.employment_type}>
+                <NativeSelect
+                  aria-label="Employment type"
+                  value={form.employment_type}
+                  onChange={(e) => set("employment_type")(e.target.value)}
+                  className="h-9"
+                >
+                  <option value="">Not recorded</option>
+                  {TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
+            </AccessField>
+            <AccessField access={access} name="hire_date" creating>
+              <Field
+                label="Hire date"
+                error={errors.hire_date}
+                hint="Length of service is worked out from this."
+              >
+                <DatePickerInput
+                  aria-label="Hire date"
+                  className="h-9"
+                  value={form.hire_date}
+                  onChange={(e) => set("hire_date")(e.target.value)}
+                />
+              </Field>
+            </AccessField>
             {branches.length > 1 && (
               <Field
                 label="Posted to"
                 error={errors.branch}
-                hint="Where they are based. One branch, or across the whole school."
+                hint={
+                  wholeSchool
+                    ? "Where they are based. One branch, or across the whole school."
+                    : "Where they are based. You can post people only to your own branches."
+                }
               >
                 <NativeSelect
                   aria-label="Posted to"
@@ -446,7 +464,9 @@ export default function AddStaff() {
                   onChange={(e) => set("branch")(e.target.value)}
                   className="h-9"
                 >
-                  <option value="">Across the whole school</option>
+                  <option value="" disabled={!wholeSchool}>
+                    {wholeSchool ? "Across the whole school" : "Choose a branch"}
+                  </option>
                   {branches.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
@@ -489,7 +509,9 @@ export default function AddStaff() {
                     onChange={(e) => set("role_branch")(e.target.value)}
                     className="h-9"
                   >
-                    <option value={SCHOOL_WIDE}>Across the whole school</option>
+                    {wholeSchool && (
+                      <option value={SCHOOL_WIDE}>Across the whole school</option>
+                    )}
                     {branches.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name}

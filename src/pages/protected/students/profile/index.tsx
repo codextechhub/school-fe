@@ -50,6 +50,8 @@ import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { Panel as Surface } from "@/components/custom/surface";
+import { AsAtBanner, AsAtControl, LiveOnly } from "@/components/custom/as-at-control";
+import { AsAtContext, useAsAt, useAsAtParam } from "@/lib/as-at";
 
 import { PhotoPicker } from "../photo-picker";
 import { StudentStatusBadge } from "../status-badge";
@@ -79,8 +81,14 @@ type TabKey = (typeof TABS)[number]["key"];
  *
  * Guardian and document summaries load with the record because they determine
  * whether it is complete. Class history, subjects, and full history remain
- * scoped to the views that display them. Sensitive health fields are rendered
- * only when the detail endpoint exposes them to the current viewer.
+ * scoped to the views that display them. Every personal field follows Field
+ * Access: one the viewer may not read is absent from the record and is not
+ * drawn, which is a different sentence from "Not recorded".
+ *
+ * The "As at" control reads the whole page as it stood at the end of an earlier
+ * day (`?as_at=` in the address, see `lib/as-at.ts`). Every tab asks the API
+ * for that day, and nothing that changes the record is offered, because the
+ * past cannot be edited.
  */
 export default function StudentProfile() {
   const { id } = useParams();
@@ -93,17 +101,21 @@ export default function StudentProfile() {
   const { pastYear } = useStudentsLens();
   const tab = (params.get("tab") as TabKey) ?? "overview";
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
+  const [asAt, setAsAt] = useAsAtParam();
+  const record = { id: studentId, asAt };
 
-  const { data, isLoading, isError, refetch } = useGetStudentQuery(studentId, {
+  // `currentData`, not `data`: while another day loads, `data` still holds the
+  // previous day's answer, and showing it under the new date would misreport.
+  const { currentData: data, isLoading, isError, refetch } = useGetStudentQuery(record, {
     skip: !Number.isFinite(studentId),
   });
   const student = data?.data;
-  const { data: guardiansData, isLoading: guardiansLoading } =
-    useGetStudentGuardiansQuery(studentId, {
+  const { currentData: guardiansData, isFetching: guardiansLoading } =
+    useGetStudentGuardiansQuery(record, {
       skip: !Number.isFinite(studentId),
     });
-  const { data: documentsData, isLoading: documentsLoading } =
-    useGetStudentDocumentsQuery(studentId, {
+  const { currentData: documentsData, isFetching: documentsLoading } =
+    useGetStudentDocumentsQuery(record, {
       skip: !Number.isFinite(studentId),
     });
   const guardians = guardiansData?.data;
@@ -133,6 +145,20 @@ export default function StudentProfile() {
     });
   }
 
+  if (isError && asAt) {
+    return (
+      <PageShell>
+        <OutlinedNotice
+          icon={Clock3}
+          title="This record has no history for that day"
+          body="Its history starts later than the day you picked. Go back to today and pick a day the calendar offers."
+          actionLabel="Back to today"
+          onAction={() => setAsAt(undefined)}
+        />
+      </PageShell>
+    );
+  }
+
   if (isError) {
     return (
       <PageShell>
@@ -148,7 +174,9 @@ export default function StudentProfile() {
   }
 
   return (
+    <AsAtContext.Provider value={asAt}>
     <PageShell className="content-start gap-5" grid>
+      {asAt && <AsAtBanner asAt={asAt} onReturn={() => setAsAt(undefined)} />}
       <Surface as="section" className="overflow-hidden rounded-xl px-4 py-5 sm:px-6">
         {isLoading || !student ? (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_15rem]">
@@ -217,7 +245,8 @@ export default function StudentProfile() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <LiveOnly>
                 <PermissionGate permission={P.MODIFY_STUDENT}>
                   <Button
                     size="sm"
@@ -261,6 +290,14 @@ export default function StudentProfile() {
                     Link guardian
                   </Button>
                 </PermissionGate>
+                </LiveOnly>
+                <div className="ml-auto">
+                  <AsAtControl
+                    historyStarts={student.history_starts}
+                    value={asAt}
+                    onChange={setAsAt}
+                  />
+                </div>
               </div>
 
               <Lifecycle status={student.status} />
@@ -309,6 +346,7 @@ export default function StudentProfile() {
 
       <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />
     </PageShell>
+    </AsAtContext.Provider>
   );
 }
 
@@ -332,8 +370,9 @@ function Overview({
   onOpenTab: (tab: TabKey) => void;
 }) {
   const navigate = useNavigate();
-  const { data: subjectsData, isLoading: subjectsLoading } =
-    useGetStudentSubjectsQuery(student?.id ?? 0, { skip: !student });
+  const asAt = useAsAt();
+  const { currentData: subjectsData, isFetching: subjectsLoading } =
+    useGetStudentSubjectsQuery({ id: student?.id ?? 0, asAt }, { skip: !student });
   const access = useFieldAccess(FIELD_RESOURCE.STUDENTS, student);
   const primaryGuardian =
     guardians?.find((link) => link.is_primary) ?? guardians?.[0];
@@ -344,23 +383,29 @@ function Overview({
 
   if (loading || !student) return <PanelSkeleton />;
 
+  /** The row, unless the viewer may not read the field it shows. */
+  const shown = (field: string, row: Row): Row[] =>
+    access.isHidden(field) ? [] : [row];
+
   const personal: Row[] = [
-    { label: "Full name", value: student.full_name },
-    {
+    { label: "Full name", value: student.full_name || "Hidden" },
+    ...shown("date_of_birth", {
       label: "Date of birth",
       value: student.date_of_birth
         ? `${formatDate(student.date_of_birth)}${student.age != null ? ` · ${student.age} years old` : ""}`
         : "-",
-    },
-    { label: "Gender", value: titleCaseCode(student.gender) || "-" },
-    { label: "Nationality", value: student.nationality || "-" },
-    { label: "State of origin", value: student.state_of_origin || "-" },
-    { label: "Home address", value: student.address || "Not recorded" },
-    { label: "Student phone", value: student.phone || "Not recorded" },
-    { label: "Student email", value: student.email || "Not recorded" },
+    }),
+    ...shown("gender", { label: "Gender", value: titleCaseCode(student.gender ?? "") || "-" }),
+    ...shown("nationality", { label: "Nationality", value: student.nationality || "-" }),
+    ...shown("state_of_origin", { label: "State of origin", value: student.state_of_origin || "-" }),
+    ...shown("address", { label: "Home address", value: student.address || "Not recorded" }),
+    ...shown("phone", { label: "Student phone", value: student.phone || "Not recorded" }),
+    ...shown("email", { label: "Student email", value: student.email || "Not recorded" }),
   ];
   const school: Row[] = [
-    { label: "Admission number", value: student.student_number || "Not issued" },
+    ...shown("student_number", {
+      label: "Admission number", value: student.student_number || "Not issued",
+    }),
     ...(access.isHidden("enrolment_date")
       ? []
       : [{ label: "Admission date", value: formatDate(student.enrolment_date ?? null) }]),
@@ -370,10 +415,10 @@ function Overview({
     ...(student.branch_name
       ? [{ label: "Branch", value: student.branch_name }]
       : []),
-    {
+    ...shown("previous_school", {
       label: "Previous school",
       value: student.previous_school || "Not recorded",
-    },
+    }),
   ];
   const requiredDocuments = documents?.filter((document) => document.required);
   const attachedRequired = requiredDocuments?.filter(
@@ -567,6 +612,7 @@ function CompletenessCard({
             : "This record is complete"}
         </p>
         {gapCount > 0 && (
+          <LiveOnly>
           <PermissionGate permission={P.MODIFY_STUDENT}>
             <Button
               size="sm"
@@ -580,6 +626,7 @@ function CompletenessCard({
               Complete profile
             </Button>
           </PermissionGate>
+          </LiveOnly>
         )}
       </div>
     </div>
@@ -656,6 +703,7 @@ function MissingInformation({
   completeness?: ProfileCompleteness;
   onGap: (gap: ProfileGap) => void;
 }) {
+  const asAt = useAsAt();
   if (!completeness) return <Skeleton className="h-48 w-full rounded-xl" />;
 
   const gaps = completeness.gaps.slice(0, 4);
@@ -704,6 +752,7 @@ function MissingInformation({
               <li key={gap.key}>
                 <PermissionGate
                   permission={P.MODIFY_STUDENT}
+                  disabled={Boolean(asAt)}
                   fallback={
                     <span className="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs text-black-01">
                       <span className="size-1.5 rounded-full bg-amber-500" />
@@ -755,14 +804,35 @@ function useMedicalRows(student: StudentDetail): Row[] {
 }
 
 /**
+ * The emergency contact rows this viewer may read, under the given labels.
+ */
+function useEmergencyRows(
+  student: StudentDetail,
+  labels: { name: string; phone: string },
+): Row[] {
+  const access = useFieldAccess(FIELD_RESOURCE.STUDENTS, student);
+  return [
+    ...(access.isHidden("emergency_contact_name")
+      ? []
+      : [{ label: labels.name, value: student.emergency_contact_name || "Not recorded" }]),
+    ...(access.isHidden("emergency_contact_phone")
+      ? []
+      : [{ label: labels.phone, value: student.emergency_contact_phone || "Not recorded" }]),
+  ];
+}
+
+/**
  * The health side panel on the overview.
  *
- * Emergency contact details are open to everybody who may open the record; the
- * medical rows follow Field Access, and the "Sensitive" marker belongs to them,
- * so it goes when none of them is shown.
+ * The medical and emergency rows both follow Field Access. The "Sensitive"
+ * marker belongs to the medical rows, so it goes when none of them is shown.
  */
 function HealthSnapshot({ student }: { student: StudentDetail }) {
   const medical = useMedicalRows(student);
+  const emergency = useEmergencyRows(student, {
+    name: "Emergency contact",
+    phone: "Emergency phone",
+  });
 
   return (
     <Panel
@@ -777,19 +847,7 @@ function HealthSnapshot({ student }: { student: StudentDetail }) {
         ) : undefined
       }
     >
-      <Rows
-        rows={[
-          ...medical,
-          {
-            label: "Emergency contact",
-            value: student.emergency_contact_name || "Not recorded",
-          },
-          {
-            label: "Emergency phone",
-            value: student.emergency_contact_phone || "Not recorded",
-          },
-        ]}
-      />
+      <Rows rows={[...medical, ...emergency]} />
     </Panel>
   );
 }
@@ -922,10 +980,11 @@ function AcademicTab({
   studentId: number;
   student?: StudentDetail;
 }) {
-  const { data: subjectsData, isLoading: subjectsLoading } =
-    useGetStudentSubjectsQuery(studentId);
-  const { data: trailData, isLoading: trailLoading } =
-    useGetStudentClassHistoryQuery(studentId);
+  const asAt = useAsAt();
+  const { currentData: subjectsData, isFetching: subjectsLoading } =
+    useGetStudentSubjectsQuery({ id: studentId, asAt });
+  const { currentData: trailData, isFetching: trailLoading } =
+    useGetStudentClassHistoryQuery({ id: studentId, asAt });
 
   const subjects = subjectsData?.data ?? [];
   const trail = trailData?.data ?? [];
@@ -1026,6 +1085,7 @@ function MedicalTab({
  */
 function MedicalPanels({ student }: { student: StudentDetail }) {
   const medical = useMedicalRows(student);
+  const emergency = useEmergencyRows(student, { name: "Name", phone: "Phone" });
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -1034,14 +1094,11 @@ function MedicalPanels({ student }: { student: StudentDetail }) {
           <Rows rows={medical} />
         </Panel>
       )}
-      <Panel title="Emergency contact">
-        <Rows
-          rows={[
-            { label: "Name", value: student.emergency_contact_name || "Not recorded" },
-            { label: "Phone", value: student.emergency_contact_phone || "Not recorded" },
-          ]}
-        />
-      </Panel>
+      {emergency.length > 0 && (
+        <Panel title="Emergency contact">
+          <Rows rows={emergency} />
+        </Panel>
+      )}
     </div>
   );
 }
@@ -1061,18 +1118,28 @@ function MedicalPanels({ student }: { student: StudentDetail }) {
  */
 function StudentPhoto({ student }: { student: StudentDetail }) {
   const [upload, { isLoading }] = useUploadStudentDocumentMutation();
+  const access = useFieldAccess(FIELD_RESOURCE.STUDENTS, student);
+  const past = Boolean(student.as_at);
 
   return (
-    <PhotoPicker
-      name={student.full_name}
-      photoUrl={student.photo_url}
-      saving={isLoading}
-      onPick={(file) =>
-        upload({
-          id: student.id, documentType: "PASSPORT_PHOTO", file,
-        }).unwrap()
-      }
-    />
+    <div className="grid justify-items-center gap-1">
+      <PhotoPicker
+        name={student.full_name}
+        photoUrl={student.photo_url ?? ""}
+        saving={isLoading}
+        editable={!past && !access.isReadOnly("photo_url")}
+        onPick={(file) =>
+          upload({
+            id: student.id, documentType: "PASSPORT_PHOTO", file,
+          }).unwrap()
+        }
+      />
+      {student.as_at?.photo_retired && (
+        <p className="max-w-24 text-center text-[11px] leading-tight text-gray-05">
+          Photo since replaced
+        </p>
+      )}
+    </div>
   );
 }
 
@@ -1220,19 +1287,22 @@ function DocumentRow({
             !doc.attached && doc.required ? "text-amber-700" : "text-gray-05",
           )}
         >
-          {doc.attached
-            ? doc.required
-              ? "Required · on file"
-              : "On file"
-            : doc.required
-              ? "Required · not on file"
-              : "Optional · not on file"}
+          {doc.file_retired
+            ? "On file that day · replaced or removed since"
+            : doc.attached
+              ? doc.required
+                ? "Required · on file"
+                : "On file"
+              : doc.required
+                ? "Required · not on file"
+                : "Optional · not on file"}
         </p>
       </div>
 
       <div className="flex shrink-0 flex-wrap items-center gap-3">
-        {doc.attached && <ViewDocument url={doc.url} label={doc.label} />}
+        {doc.attached && doc.url && <ViewDocument url={doc.url} label={doc.label} />}
 
+        <LiveOnly>
         <PermissionGate permission={P.MODIFY_STUDENT}>
           <input
             ref={input}
@@ -1282,6 +1352,7 @@ function DocumentRow({
             busy={removing}
           />
         </PermissionGate>
+        </LiveOnly>
       </div>
     </li>
   );
@@ -1298,7 +1369,8 @@ const DOT: Record<string, string> = {
 };
 
 function HistoryTab({ studentId }: { studentId: number }) {
-  const { data, isLoading } = useGetStudentHistoryQuery(studentId);
+  const asAt = useAsAt();
+  const { currentData: data, isFetching: isLoading } = useGetStudentHistoryQuery({ id: studentId, asAt });
   const entries = data?.data ?? [];
 
   if (isLoading) return <PanelSkeleton />;

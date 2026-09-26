@@ -22,6 +22,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import PermissionGate from "@/components/custom/permission-gate";
+import { AsAtBanner, AsAtControl, LiveOnly } from "@/components/custom/as-at-control";
+import { AsAtContext, useAsAt, useAsAtParam } from "@/lib/as-at";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -44,6 +46,7 @@ import {
 import type { StaffDetail } from "@/redux/services/staff/staff-types";
 
 import { AccountBadge, EmploymentBadge } from "../badges";
+import { canManage } from "../can-manage";
 import { leaveNote } from "../leave-note";
 import { PersonAvatar } from "../../students/person-avatar";
 import { formatDate } from "../../students/format";
@@ -79,7 +82,13 @@ const TABS = [
  *
  * Employment and account state remain separate, and the overview highlights
  * only missing fields the current API can save. Detail collections continue to
- * load only when their tab is opened.
+ * load only when their tab is opened. Every personal and employment field
+ * follows Field Access (`school.teachers`): one the viewer may not read is not
+ * listed.
+ *
+ * The "As at" control reads the record and every tab as they stood at the end
+ * of an earlier day (`?as_at=`, see `lib/as-at.ts`), with nothing on the page
+ * that changes the record.
  */
 export default function StaffProfile() {
   const { id } = useParams();
@@ -88,9 +97,11 @@ export default function StaffProfile() {
   const navigate = useNavigate();
   const tab = params.get("tab") ?? "overview";
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
+  const [asAt, setAsAt] = useAsAtParam();
 
-  const { data, isLoading, isError, refetch } = useGetStaffMemberQuery(
-    staffId,
+  // `currentData`, so another day's answer is never shown under this one.
+  const { currentData: data, isLoading, isError, refetch } = useGetStaffMemberQuery(
+    { id: staffId, asAt },
     {
       skip: !Number.isFinite(staffId),
     },
@@ -104,6 +115,20 @@ export default function StaffProfile() {
   const [resend, { isLoading: resending }] = useResendStaffInvitationMutation();
   const [accountAction, { isLoading: actingOnAccount }] =
     useStaffAccountActionMutation();
+
+  if (isError && asAt) {
+    return (
+      <PageShell>
+        <OutlinedNotice
+          icon={UserRound}
+          title="This record has no history for that day"
+          body="Its history starts later than the day you picked. Go back to today and pick a day the calendar offers."
+          actionLabel="Back to today"
+          onAction={() => setAsAt(undefined)}
+        />
+      </PageShell>
+    );
+  }
 
   if (isError) {
     return (
@@ -148,8 +173,13 @@ export default function StaffProfile() {
     }
   }
 
+  // Readable is not changeable: a branch administrator reads school-wide staff.
+  const manageable = person ? canManage(person) : false;
+
   return (
+    <AsAtContext.Provider value={asAt}>
     <PageShell className="content-start gap-5" grid>
+      {asAt && <AsAtBanner asAt={asAt} onReturn={() => setAsAt(undefined)} />}
       <Surface
         as="section"
         className="overflow-hidden rounded-xl px-4 py-5 sm:px-6"
@@ -234,8 +264,9 @@ export default function StaffProfile() {
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2.5">
-                <PermissionGate permission={P.MODIFY_TEACHER}>
+              <div className="mt-4 flex flex-wrap items-center gap-2.5">
+                <LiveOnly>
+                <PermissionGate permission={P.MODIFY_TEACHER} disabled={!manageable}>
                   <Button
                     size="sm"
                     onClick={() =>
@@ -245,7 +276,7 @@ export default function StaffProfile() {
                     Edit staff
                   </Button>
                 </PermissionGate>
-                <PermissionGate permission={P.TRANSITION_TEACHER}>
+                <PermissionGate permission={P.TRANSITION_TEACHER} disabled={!manageable}>
                   <Button
                     size="sm"
                     variant="outline"
@@ -257,7 +288,7 @@ export default function StaffProfile() {
                   </Button>
                 </PermissionGate>
                 {person.account.status === "LOCKED" && (
-                  <PermissionGate permission={P.REACTIVATE_ADMINISTRATOR}>
+                  <PermissionGate permission={P.REACTIVATE_ADMINISTRATOR} disabled={!manageable}>
                     <Button
                       size="sm"
                       variant="outline"
@@ -270,7 +301,7 @@ export default function StaffProfile() {
                   </PermissionGate>
                 )}
                 {person.can_resend && (
-                  <PermissionGate permission={P.INVITE_TEACHER}>
+                  <PermissionGate permission={P.INVITE_TEACHER} disabled={!manageable}>
                     <Button
                       size="sm"
                       variant="outline"
@@ -282,7 +313,7 @@ export default function StaffProfile() {
                     </Button>
                   </PermissionGate>
                 )}
-                <PermissionGate permission={P.ASSIGN_ROLE}>
+                <PermissionGate permission={P.ASSIGN_ROLE} disabled={!manageable}>
                   <Button
                     size="sm"
                     variant="outline"
@@ -293,11 +324,25 @@ export default function StaffProfile() {
                     Manage roles
                   </Button>
                 </PermissionGate>
+                </LiveOnly>
+                {!manageable && (
+                  <p className="text-xs text-gray-05">
+                    {person.full_name} works across more than your branch, so
+                    only a school-wide administrator can change this record.
+                  </p>
+                )}
+                <div className="ml-auto">
+                  <AsAtControl
+                    historyStarts={person.history_starts}
+                    value={asAt}
+                    onChange={setAsAt}
+                  />
+                </div>
               </div>
               <Lifecycle lifecycle={person.lifecycle} />
             </div>
 
-            <CompletenessCard completeness={completeness} />
+            <CompletenessCard completeness={completeness} readOnly={!manageable} />
           </div>
         )}
       </Surface>
@@ -327,6 +372,7 @@ export default function StaffProfile() {
 
       <StaffDrawers request={drawer} onClose={() => setDrawer(null)} onRequest={setDrawer} />
     </PageShell>
+    </AsAtContext.Provider>
   );
 }
 
@@ -352,6 +398,7 @@ function TabBody({
   onOpenDrawer: (request: StaffDrawerRequest) => void;
 }) {
   const { hasPermission } = usePermissions();
+  const asAt = useAsAt();
   const signedInUserId = useAppSelector(selectUser)?.id;
   // Whose record this is. `user_id` is the ACCOUNT, which is what the signed-in
   // user carries; the staff id is a different number and comparing the two
@@ -359,31 +406,32 @@ function TabBody({
   const isSelf = signedInUserId != null && signedInUserId === person.user_id;
   // Applying for your own needs the apply key, which every member of staff
   // holds; filing somebody else's needs update, which is a different job.
-  const mayFileLeave = isSelf
-    ? hasPermission(P.APPLY_FOR_LEAVE)
-    : hasPermission(P.UPDATE_LEAVE);
+  const mayFileLeave =
+    !asAt &&
+    (isSelf
+      ? hasPermission(P.APPLY_FOR_LEAVE)
+      : canManage(person) && hasPermission(P.UPDATE_LEAVE));
 
-  const roles = useGetStaffRolesQuery(person.id, { skip: tab !== "access" });
-  const teaching = useGetStaffTeachingQuery(
-    { id: person.id },
-    { skip: tab !== "teaching" },
-  );
-  const quals = useGetStaffQualificationsQuery(person.id, {
+  // `currentData` on every tab, so a day's answer is never drawn under another.
+  const record = { id: person.id, asAt };
+  const roles = useGetStaffRolesQuery(record, { skip: tab !== "access" });
+  const teaching = useGetStaffTeachingQuery(record, { skip: tab !== "teaching" });
+  const quals = useGetStaffQualificationsQuery(record, {
     skip: tab !== "qualifications",
   });
-  const docs = useGetStaffDocumentsQuery(person.id, {
+  const docs = useGetStaffDocumentsQuery(record, {
     skip: tab !== "documents",
   });
-  const leave = useGetStaffLeaveQuery(person.id, { skip: tab !== "leave" });
-  const history = useGetStaffHistoryQuery(person.id, {
+  const leave = useGetStaffLeaveQuery(record, { skip: tab !== "leave" });
+  const history = useGetStaffHistoryQuery(record, {
     skip: tab !== "history",
   });
 
   if (tab === "access") {
-    if (roles.isLoading || !roles.data) return <TabSkeleton />;
+    if (!roles.currentData) return <TabSkeleton />;
     return (
       <AccessTab
-        roles={roles.data.data}
+        roles={roles.currentData.data}
         staffId={person.id}
         userId={person.user_id}
         userName={person.full_name}
@@ -402,16 +450,16 @@ function TabBody({
         </Empty>
       );
     }
-    if (teaching.isLoading || !teaching.data) return <TabSkeleton />;
-    return <TeachingTab teaching={teaching.data.data} />;
+    if (!teaching.currentData) return <TabSkeleton />;
+    return <TeachingTab teaching={teaching.currentData.data} />;
   }
   if (tab === "qualifications") {
-    if (quals.isLoading || !quals.data) return <TabSkeleton />;
-    return <QualificationsTab rows={quals.data.data} />;
+    if (!quals.currentData) return <TabSkeleton />;
+    return <QualificationsTab rows={quals.currentData.data} />;
   }
   if (tab === "documents") {
-    if (docs.isLoading || !docs.data) return <TabSkeleton />;
-    return <DocumentsTab rows={docs.data.data} />;
+    if (!docs.currentData) return <TabSkeleton />;
+    return <DocumentsTab rows={docs.currentData.data} />;
   }
   if (tab === "leave") {
     if (leave.isError) {
@@ -422,10 +470,10 @@ function TabBody({
         </Empty>
       );
     }
-    if (leave.isLoading || !leave.data) return <TabSkeleton />;
+    if (!leave.currentData) return <TabSkeleton />;
     return (
       <LeaveTab
-        leave={leave.data.data}
+        leave={leave.currentData.data}
         onFile={
           mayFileLeave
             ? () =>
@@ -442,8 +490,8 @@ function TabBody({
     );
   }
   if (tab === "history") {
-    if (history.isLoading || !history.data) return <TabSkeleton />;
-    return <HistoryTab entries={history.data.data.entries} />;
+    if (!history.currentData) return <TabSkeleton />;
+    return <HistoryTab entries={history.currentData.data.entries} />;
   }
   return <Empty>Choose a staff tab to view its details.</Empty>;
 }
@@ -466,30 +514,34 @@ function OverviewTab({
   onOpenDrawer: (request: StaffDrawerRequest) => void;
   onOpenTab: (tab: string) => void;
 }) {
-  // Personal details follow Field Access: one the viewer may not read is not listed.
+  // Personal and employment details follow Field Access: one the viewer may not
+  // read is not listed.
   const access = useFieldAccess(FIELD_RESOURCE.STAFF, person);
+  const asAt = useAsAt();
   const personal = [
-    { label: "Full name", value: person.full_name },
-    { label: "Middle name", value: person.middle_name || "-" },
+    { label: "Full name", value: person.full_name || "Hidden" },
+    { name: "middle_name", label: "Middle name", value: person.middle_name || "-" },
     { name: "gender", label: "Gender", value: titleCase(person.gender) || "-" },
     { name: "date_of_birth", label: "Date of birth", value: formatDate(person.date_of_birth ?? null) },
     { name: "email", label: "Email", value: person.email || "Not recorded" },
     { name: "phone", label: "Phone", value: person.phone || "Not recorded" },
   ].filter((row) => !row.name || !access.isHidden(row.name));
   const employment = [
-    { label: "Staff ID", value: person.staff_number || "Not issued" },
-    { label: "Job title", value: person.job_title || "Not recorded" },
+    { name: "staff_number", label: "Staff ID", value: person.staff_number || "Not issued" },
+    { name: "job_title", label: "Job title", value: person.job_title || "Not recorded" },
     {
+      name: "employment_type",
       label: "Employment type",
       value: titleCase(person.employment_type) || "Not recorded",
     },
-    { label: "Hire date", value: formatDate(person.hire_date) },
-    {
-      label: "Posting",
-      value: person.posted_school_wide
-        ? "School-wide"
-        : person.branch_name || "This school",
-    },
+    { name: "hire_date", label: "Hire date", value: formatDate(person.hire_date) },
+    // Null when the viewer works in one branch: postings are not theirs.
+    ...(person.posted_school_wide == null
+      ? []
+      : [{
+          label: "Posting",
+          value: person.posted_school_wide ? "School-wide" : person.branch_name ?? "",
+        }]),
     {
       label: "Roles",
       value: person.roles.length ? person.roles.join(", ") : "No role assigned",
@@ -510,7 +562,7 @@ function OverviewTab({
     ...(person.exit_date
       ? [{ label: "Last working day", value: formatDate(person.exit_date) }]
       : []),
-  ];
+  ].filter((row) => !("name" in row) || !row.name || !access.isHidden(row.name));
 
   return (
     <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(18rem,0.9fr)]">
@@ -564,13 +616,14 @@ function OverviewTab({
         <MissingInformation
           completeness={completeness}
           onGap={() => onOpenDrawer({ kind: "edit", staffId: person.id })}
+          readOnly={!canManage(person)}
         />
 
         <ProfilePanel
           title="Access and reach"
           icon={ShieldCheck}
           action={
-            <PermissionGate permission={P.ASSIGN_ROLE}>
+            <PermissionGate permission={P.ASSIGN_ROLE} disabled={Boolean(asAt) || !canManage(person)}>
               <button
                 type="button"
                 onClick={() =>
@@ -592,12 +645,12 @@ function OverviewTab({
                   ? person.roles.join(", ")
                   : "No role assigned",
               },
-              {
-                label: "Reach",
-                value: person.posted_school_wide
-                  ? "School-wide"
-                  : person.branch_name || "This school",
-              },
+              ...(person.posted_school_wide == null
+                ? []
+                : [{
+                    label: "Reach",
+                    value: person.posted_school_wide ? "School-wide" : person.branch_name ?? "",
+                  }]),
             ]}
           />
         </ProfilePanel>
@@ -624,8 +677,10 @@ function OverviewTab({
             )}
           >
             {person.on_leave_today
-              ? leaveNote(person) || "On approved leave today"
-              : "Available today"}
+              ? leaveNote(person) || (asAt ? "On approved leave that day" : "On approved leave today")
+              : asAt
+                ? "Available that day"
+                : "Available today"}
           </p>
           <p className="mt-1 text-xs text-gray-05">
             {person.counts.leave_requests}{" "}
@@ -663,9 +718,13 @@ function OverviewTab({
 
 function CompletenessCard({
   completeness,
+  readOnly = false,
 }: {
   completeness?: ReturnType<typeof getStaffProfileCompleteness>;
+  /** The viewer may read this record but not change it. */
+  readOnly?: boolean;
 }) {
+  const asAt = useAsAt();
   if (!completeness) return <Skeleton className="h-24 w-full rounded-xl" />;
   const gapCount = completeness.gaps.length;
 
@@ -716,7 +775,7 @@ function CompletenessCard({
             : "This record is complete"}
         </p>
         {gapCount > 0 && (
-          <PermissionGate permission={P.MODIFY_TEACHER}>
+          <PermissionGate permission={P.MODIFY_TEACHER} disabled={Boolean(asAt) || readOnly}>
             <Button
               size="sm"
               className="mt-2 h-8 w-full"
@@ -738,10 +797,14 @@ function CompletenessCard({
 function MissingInformation({
   completeness,
   onGap,
+  readOnly = false,
 }: {
   completeness?: ReturnType<typeof getStaffProfileCompleteness>;
   onGap: (gap: StaffProfileGap) => void;
+  /** The viewer may read this record but not change it. */
+  readOnly?: boolean;
 }) {
+  const asAt = useAsAt();
   if (!completeness) return <Skeleton className="h-44 w-full rounded-xl" />;
   const gaps = completeness.gaps.slice(0, 5);
 
@@ -786,6 +849,7 @@ function MissingInformation({
           {gaps.map((gap) => (
             <li key={gap.key}>
               <PermissionGate
+                disabled={Boolean(asAt) || readOnly}
                 permission={P.MODIFY_TEACHER}
                 fallback={
                   <span className="flex items-center gap-2 rounded-lg bg-white/70 px-3 py-2 text-xs text-black-01">

@@ -113,13 +113,20 @@ export function EditDrawer({
     return current == null ? "" : String(current);
   };
 
+  // Only a field the viewer may change can be wrong: one hidden from them or
+  // greyed is not theirs to fill, and requiring it would block every save.
   const problems = useMemo(() => {
     const out: Partial<Record<FieldKey, string>> = {};
-    if (!value("first_name").trim()) out.first_name = "A first name is required.";
-    if (!value("last_name").trim()) out.last_name = "A last name is required.";
-    const dob = dobProblem(value("date_of_birth"));
+    const editable = (key: FieldKey) => !access.isReadOnly(key);
+    if (editable("first_name") && !value("first_name").trim()) {
+      out.first_name = "A first name is required.";
+    }
+    if (editable("last_name") && !value("last_name").trim()) {
+      out.last_name = "A last name is required.";
+    }
+    const dob = editable("date_of_birth") ? dobProblem(value("date_of_birth")) : "";
     if (dob) out.date_of_birth = dob;
-    if (!value("gender")) out.gender = "Pick a gender.";
+    if (editable("gender") && !value("gender")) out.gender = "Pick a gender.";
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draft, student]);

@@ -76,7 +76,10 @@ const PHONE_HIDDEN_AND_CLOSED = guardians({ hidden: ["phone"], read_only: [], op
 
 const NEW_ROW: GuardianDraft = {
   kind: "new",
-  full_name: "Adaeze Okeke",
+  full_name: "",
+  first_name: "Adaeze",
+  middle_name: "",
+  last_name: "Okeke",
   phone: "",
   email: "",
   relationship: "",
@@ -174,7 +177,8 @@ describe("adding a new guardian with a phone open on create", () => {
       await act(async () => addNew.click());
 
       await act(async () => {
-        type(inputLabelled("Full name") as HTMLInputElement, "Adaeze Okeke");
+        type(inputLabelled("First name") as HTMLInputElement, "Adaeze");
+        type(inputLabelled("Last name") as HTMLInputElement, "Okeke");
         type(inputLabelled("Phone") as HTMLInputElement, "0803 555 0101");
         type(inputLabelled("Relationship") as HTMLSelectElement, "MOTHER");
       });
@@ -183,7 +187,8 @@ describe("adding a new guardian with a phone open on create", () => {
       expect(link).toHaveBeenCalledOnce();
       expect(link.mock.calls[0][0]).toMatchObject({
         id: 41,
-        full_name: "Adaeze Okeke",
+        first_name: "Adaeze",
+        last_name: "Okeke",
         phone: "0803 555 0101",
         relationship: "MOTHER",
       });

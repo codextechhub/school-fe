@@ -1,3 +1,4 @@
+import type { AsAtMeta } from "@/lib/as-at";
 import type { Envelope, Pagination } from "../onboarding/onboarding-types";
 
 /**
@@ -90,10 +91,11 @@ export interface StaffListRow {
   /** The account, not the staff record. Payroll rows point at this. */
   user_id: number;
   full_name: string;
-  /** A Field Access field (`school.teachers`): absent when the viewer may not read it. */
+  // Field Access fields (`school.teachers`): absent when the viewer may not
+  // read them. `full_name` is rebuilt from the name parts the viewer may read.
   email?: string;
-  staff_number: string;
-  job_title: string;
+  staff_number?: string;
+  job_title?: string;
   /**
    * Still employed. False once somebody has resigned or been terminated.
    *
@@ -122,7 +124,7 @@ export interface StaffListRow {
    */
   display_employment_status: EmploymentStatus;
   display_employment_status_label: string;
-  employment_type: EmploymentType | "";
+  employment_type?: EmploymentType | "";
   account_status: AccountStatus;
   account_flag: StaffAccountFlag | null;
   /** Every distinct role name they hold, de-duplicated and sorted. */
@@ -190,17 +192,25 @@ export interface StaffTenure {
 }
 
 /** One person's record. */
+/**
+ * One person's record.
+ *
+ * Every optional personal and employment field is a Field Access field of
+ * `school.teachers`, absent when the viewer may not read it. Read as at an
+ * earlier day, the record carries `as_at`.
+ */
 export interface StaffDetail extends StaffListRow {
   account: StaffAccountState;
-  middle_name: string;
-  // Field Access fields (`school.teachers`): absent when the viewer may not read them.
+  first_name?: string;
+  middle_name?: string;
+  last_name?: string;
   date_of_birth?: string | null;
   phone?: string;
   gender?: string;
   /** Fields present in this record that the viewer may not change. */
   _read_only_fields?: string[];
-  photo_url: string | null;
-  exit_date: string | null;
+  photo_url?: string | null;
+  exit_date?: string | null;
   tenure: StaffTenure | null;
   lifecycle: StaffLifecycle;
   counts: {
@@ -210,6 +220,10 @@ export interface StaffDetail extends StaffListRow {
     leave_requests: number;
   };
   created_by: StaffActor | null;
+  /** The first day this record can be read as at; null before it is first recorded. */
+  history_starts: string | null;
+  /** Present only on a record read as at an earlier day. */
+  as_at?: AsAtMeta;
 }
 
 // ── The directory page ─────────────────────────────────────────────────────
@@ -320,6 +334,8 @@ export interface StaffDocument {
   document_type_label: string;
   title: string;
   file_url: string | null;
+  /** Held on the day a past view reads, and replaced or removed since. */
+  file_retired?: boolean;
   uploaded_by: StaffActor | null;
   created_at: string;
 }

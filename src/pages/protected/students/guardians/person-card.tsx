@@ -32,6 +32,18 @@ export function SiblingsPill() {
 }
 
 /**
+ * The pill on a guardian whose name was split from one line by the platform
+ * and has not been confirmed by a person yet.
+ */
+export function CheckNamePill() {
+  return (
+    <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold tracking-[0.05em] text-amber-800">
+      CHECK NAME
+    </span>
+  );
+}
+
+/**
  * One person as a card: a guardian in the directory, or a ward on a guardian.
  *
  * **A card rather than a table row**, and for these two screens that is the

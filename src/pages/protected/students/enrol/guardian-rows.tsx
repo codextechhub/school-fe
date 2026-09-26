@@ -11,13 +11,22 @@ import { RELATIONSHIPS } from "@/redux/services/students/students-types";
 import { Field, inputClass } from "../drawers/drawer-shell";
 import { guardianMatchLine } from "../format";
 
-/** A row on the form: either a guardian already at the school, or a new one. */
+/**
+ * A row on the form: either a guardian already at the school, or a new one.
+ *
+ * `full_name` is the search text for an existing guardian. A new guardian's
+ * name is entered in parts, so the record is created confirmed rather than
+ * split from one line and flagged for review.
+ */
 export interface GuardianDraft {
   kind: "existing" | "new";
   guardianId?: number;
   guardianName?: string;
   guardianMeta?: string;
   full_name: string;
+  first_name: string;
+  middle_name: string;
+  last_name: string;
   phone: string;
   email: string;
   relationship: string;
@@ -90,6 +99,9 @@ export function GuardianRows({
                 {
                   kind: "existing",
                   full_name: "",
+                  first_name: "",
+                  middle_name: "",
+                  last_name: "",
                   phone: "",
                   email: "",
                   relationship: "",
@@ -111,6 +123,9 @@ export function GuardianRows({
                   {
                     kind: "new",
                     full_name: "",
+                    first_name: "",
+                    middle_name: "",
+                    last_name: "",
                     phone: "",
                     email: "",
                     relationship: "",
@@ -155,13 +170,33 @@ export function GuardianRows({
                 />
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <Field label="Full name">
-                    <input
-                      value={row.full_name}
-                      onChange={(e) => patch(index, { full_name: e.target.value })}
-                      className={inputClass}
-                    />
-                  </Field>
+                  <AccessField access={access} name="first_name" creating>
+                    <Field label="First name">
+                      <input
+                        value={row.first_name}
+                        onChange={(e) => patch(index, { first_name: e.target.value })}
+                        className={inputClass}
+                      />
+                    </Field>
+                  </AccessField>
+                  <AccessField access={access} name="middle_name" creating>
+                    <Field label="Middle name (optional)">
+                      <input
+                        value={row.middle_name}
+                        onChange={(e) => patch(index, { middle_name: e.target.value })}
+                        className={inputClass}
+                      />
+                    </Field>
+                  </AccessField>
+                  <AccessField access={access} name="last_name" creating>
+                    <Field label="Last name">
+                      <input
+                        value={row.last_name}
+                        onChange={(e) => patch(index, { last_name: e.target.value })}
+                        className={inputClass}
+                      />
+                    </Field>
+                  </AccessField>
                   <AccessField access={access} name="phone" creating>
                     <Field
                       label="Phone"

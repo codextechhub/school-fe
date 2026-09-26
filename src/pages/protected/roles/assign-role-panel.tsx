@@ -70,7 +70,7 @@ export function AssignRolePanel({
           !needle ||
           row.full_name.toLowerCase().includes(needle) ||
           (row.email ?? "").toLowerCase().includes(needle) ||
-          row.job_title.toLowerCase().includes(needle),
+          (row.job_title ?? "").toLowerCase().includes(needle),
       );
   }, [staff.data, search]);
 
