@@ -213,10 +213,7 @@ export function AccessTab({
         </section>
       )}
 
-      {/* Live exceptions and their controls; a past view does not keep them. */}
-      <LiveOnly>
-        <FieldAccessOverrides userId={userId} userName={userName} />
-      </LiveOnly>
+      <FieldAccessOverrides userId={userId} userName={userName} />
     </div>
   );
 }

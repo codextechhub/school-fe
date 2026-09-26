@@ -126,7 +126,8 @@ export interface UserFieldAccessOverride {
   reason: string;
   expires_at: string | null;
   is_expired: boolean;
-  role_state: { read: boolean; write: boolean };
+  /** What the roles alone say about the field; null on a past view. */
+  role_state: { read: boolean; write: boolean } | null;
   created_by_id: string | null;
   created_by_name: string | null;
   created_at: string;

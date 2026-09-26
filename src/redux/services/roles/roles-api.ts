@@ -121,12 +121,12 @@ export const rolesApi = baseApi.injectEndpoints({
 
     getUserFieldAccessOverrides: builder.query<
       PaginatedEnvelope<UserFieldAccessOverride>,
-      { userId: number; access?: FieldAccessKind; mode?: FieldAccessMode }
+      { userId: number; access?: FieldAccessKind; mode?: FieldAccessMode; asAt?: string }
     >({
-      query: ({ userId, ...params }) => ({
+      query: ({ userId, asAt, ...params }) => ({
         url: `${scope()}/users/${userId}/field-access-overrides/`,
         method: "GET",
-        params,
+        params: asAt ? { ...params, as_at: asAt } : params,
       }),
       extraOptions: { silent: true },
       providesTags: (_result, _error, { userId }) => [{ type: "UserFieldAccessOverrides", id: userId }],
