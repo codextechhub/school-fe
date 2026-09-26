@@ -131,7 +131,13 @@ const CATALOGUE: CatalogueModule[] = [
   },
 ];
 
-const ROLES = { data: [{ key: "bursar", name: "Bursar" }] };
+const ROLES = {
+  data: [
+    { key: "bursar", name: "Bursar" },
+    { key: "form-teacher", name: "Form Teacher" },
+  ],
+  isLoading: false,
+};
 const CATALOGUE_QUERY = { data: { data: CATALOGUE }, isLoading: false };
 const FIELDS_QUERY = { data: { data: { fields: FIELDS } }, isLoading: false, refetch: vi.fn() };
 const ROLE_QUERY = { data: undefined };
@@ -231,5 +237,25 @@ describe("Field Access page", () => {
     await choose("field-access-resource", "contact");
 
     expect(saveLabel()).toBe("Save 1 changes");
+  });
+
+  it("picks the role from the searchable box and drops drafts only on a different role", async () => {
+    expect(select("field-access-role").value).toBe("bursar");
+    expect([...select("field-access-role").options].map((option) => option.textContent)).toEqual([
+      "Choose a role",
+      "Bursar",
+      "Form Teacher",
+    ]);
+
+    await choose("field-access-module", "staff");
+    await choose("field-access-resource", "bank_details");
+    await act(async () => container.querySelector<HTMLButtonElement>('[role="switch"]')!.click());
+
+    await choose("field-access-role", "bursar");
+    expect(saveLabel()).toBe("Save 1 changes");
+
+    await choose("field-access-role", "form-teacher");
+    expect(select("field-access-role").value).toBe("form-teacher");
+    expect(saveLabel()).toBe("Save changes");
   });
 });

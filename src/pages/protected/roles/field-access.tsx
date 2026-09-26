@@ -10,11 +10,11 @@ import {
 } from "@/components/custom/catalogue-scope-select";
 import { modulesWithFields } from "@/components/custom/field-access-overrides";
 import PageAccessDenied from "@/components/custom/page-access-denied";
+import { SearchSelect } from "@/components/custom/search-select";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
@@ -42,7 +42,8 @@ const valueFor = (field: RoleFieldAccessEntry, draft?: DraftState) =>
 /**
  * Role field policy editor.
  *
- * The role opens on the first one listed. Its fields are narrowed with the
+ * The role opens on the first one listed and is picked from a searchable
+ * choice box that cannot be cleared, so a role is always in view. Its fields are narrowed with the
  * Module and Resource choice boxes, which offer only resources that carry
  * fields and start empty: until both are chosen the list is a prompt and the
  * field search is disabled. Changing the module clears the resource and the
@@ -66,6 +67,10 @@ export default function FieldAccess() {
   const roleKey = roleRows.some((role) => role.key === selectedRole)
     ? selectedRole
     : roleRows[0]?.key ?? "";
+  const roleOptions = useMemo(
+    () => (roles.data ?? []).map((entry) => ({ value: entry.key, label: entry.name })),
+    [roles.data],
+  );
   const role = useGetSchoolRoleQuery(roleKey, { skip: !roleKey });
   const fields = useGetRoleFieldAccessQuery({ key: roleKey }, { skip: !roleKey });
   const [save, saving] = useUpdateRoleFieldAccessMutation();
@@ -157,12 +162,20 @@ export default function FieldAccess() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 rounded-md border border-white-02 bg-white p-4 sm:grid-cols-3">
-        <label className="grid gap-1.5 text-sm text-black-01">
-          Role
-          <NativeSelect value={roleKey} onChange={(event) => { setSelectedRole(event.target.value); setDrafts({}); }}>
-            {roleRows.map((entry) => <option key={entry.key} value={entry.key}>{entry.name}</option>)}
-          </NativeSelect>
-        </label>
+        <SearchSelect
+          id="field-access-role"
+          label="Role"
+          placeholder="Choose a role"
+          options={roleOptions}
+          loading={roles.isLoading}
+          clearable={false}
+          value={roleKey}
+          onChange={(event) => {
+            if (!event.target.value || event.target.value === roleKey) return;
+            setSelectedRole(event.target.value);
+            setDrafts({});
+          }}
+        />
         <CatalogueScopeSelect
           idPrefix="field-access"
           className="sm:col-span-2"
