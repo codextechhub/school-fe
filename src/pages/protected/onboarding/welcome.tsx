@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router";
-import xvsLogo from "@/assets/svg/full-logo.svg";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SchoolMark } from "@/components/school-mark";
 import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
@@ -20,6 +20,11 @@ import { ReadinessChip } from "./components/onboarding-chips";
  * conditional - a school without branches has one step fewer - so a number here
  * would be a promise the control room might not keep. "A short checklist" is
  * true for every school, and the control room counts it for the one reading it.
+ *
+ * The mark above the card is the school's own logo once one is uploaded, and
+ * the plain XVS shield until then. It carries no wordmark: this is the school's
+ * first screen, so it shows either the school or the product, never the name of
+ * the company behind it.
  */
 export default function OnboardingWelcome() {
   const navigate = useNavigate();
@@ -41,15 +46,12 @@ export default function OnboardingWelcome() {
   return (
     <main className="min-h-dvh bg-white-05 flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-140 flex flex-col gap-4">
-        <img
-          src={xvsLogo}
-          alt="XVS"
-          className="h-8 w-auto self-start"
-          onError={(event) => {
-            // The bundled mark is the fallback; a missing file must not leave a
-            // broken-image icon at the top of the first screen anyone sees.
-            event.currentTarget.style.display = "none";
-          }}
+        <SchoolMark
+          logo={logoUrl}
+          alt={logoUrl ? schoolName : "XVS"}
+          size={40}
+          animate={false}
+          className="self-start"
         />
 
         <div className="bg-white rounded-md border border-white-02 px-6 py-8 sm:px-9">

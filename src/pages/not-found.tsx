@@ -2,21 +2,31 @@ import { Button } from "@/components/ui/button";
 import { routesPath } from "@/routes/routesPath";
 import { ArrowLeft, Home, Search } from "lucide-react";
 import { Link, useNavigate } from "react-router";
-import logo from "@/assets/svg/full-logo.svg";
+import { SchoolMark } from "@/components/school-mark";
+import { currentSchoolSlug } from "@/utils/school-host";
+import { schoolLogoUrl } from "@/utils/school-brand";
 import { SUPPORT_MAIL } from "@/utils/static";
 
+/**
+ * The catch-all page for an address the app does not route.
+ *
+ * The header mark is the logo of the school the address names, and the XVS
+ * shield where that school has none or the address names no school. It is
+ * resolved from the address rather than the session because this route sits
+ * outside the signed-in shell, so a session may not be loaded here.
+ */
 export default function NotFound() {
   const navigate = useNavigate();
+  const logoUrl = schoolLogoUrl(currentSchoolSlug());
   return (
     <div className="min-h-screen w-full bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-200 py-3 px-6 flex items-center">
         <div className="flex items-center gap-2">
-          <img
-            src={logo}
-            alt="svg logo"
-            width={60}
-            height={60}
-            className="size-fit"
+          <SchoolMark
+            logo={logoUrl || null}
+            alt={logoUrl ? "School logo" : "XVS"}
+            size={36}
+            animate={false}
           />
         </div>
 
