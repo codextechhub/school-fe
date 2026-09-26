@@ -32,6 +32,19 @@ export default defineConfig([
           ignoreRestSiblings: true,
         },
       ],
+      // The browser's own date box looks different in every browser and shows
+      // dates in the reader's system format, so a raw one sits on a form beside
+      // the house calendar as a stranger. `Input` and `CustomInput` route
+      // `type="date"` to the picker themselves; only a bare `<input>` escapes.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "JSXOpeningElement[name.name='input'] > JSXAttribute[name.name='type'][value.value=/^(date|datetime-local|month|week)$/]",
+          message:
+            'Use DatePickerInput (@/components/ui/date-picker-input) or <Input type="date">, not the browser\'s native date box.',
+        },
+      ],
     },
   },
   {

@@ -2,6 +2,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { NativeSelect } from "@/components/ui/native-select";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { toIsoDate } from "@/components/ui/date-picker-input.utils";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
@@ -241,8 +243,8 @@ export function EditDrawer({
         </AccessField>
         <AccessField access={access} name="date_of_birth">
           <Field label="Date of birth" error={errors.date_of_birth}>
-            <input
-              type="date"
+            <DatePickerInput
+              max={toIsoDate(new Date())}
               value={value("date_of_birth")}
               onChange={(e) => set("date_of_birth")(e.target.value)}
               className={inputClass}
@@ -304,8 +306,7 @@ export function EditDrawer({
             error={errors.hire_date}
             hint="Length of service is worked out from this, and is left blank without it."
           >
-            <input
-              type="date"
+            <DatePickerInput
               value={value("hire_date")}
               onChange={(e) => set("hire_date")(e.target.value)}
               className={inputClass}

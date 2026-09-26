@@ -82,6 +82,7 @@ function DatePickerInput({
   windowLabel,
   "aria-label": ariaLabel,
   "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
   ...props
 }: DatePickerInputProps) {
   const controlled = value !== undefined;
@@ -173,6 +174,7 @@ function DatePickerInput({
           disabled={disabled || readOnly}
           aria-label={ariaLabel}
           aria-invalid={ariaInvalid}
+          aria-describedby={ariaDescribedBy}
           aria-required={required}
           className={cn(
             "h-10.5 w-full min-w-0 justify-between rounded-md border-input bg-white px-3 py-1 text-left text-sm font-normal text-gray-01 shadow-none hover:bg-white hover:text-gray-01 focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50",
@@ -181,7 +183,7 @@ function DatePickerInput({
           )}
         >
           <span className="truncate">{selected ? displayDate(selected) : (placeholder ?? "Select date")}</span>
-          <CalendarDays className="size-4 shrink-0 text-gray-04" aria-hidden="true" />
+          <CalendarDays className="size-4 shrink-0 text-gray-05" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto overflow-hidden rounded-xl p-0" align="start">

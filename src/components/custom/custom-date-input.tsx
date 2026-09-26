@@ -1,13 +1,6 @@
-"use client";
 import { cn } from "@/lib/utils";
-import { CalendarDays } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { toIsoDate } from "@/components/ui/date-picker-input.utils";
 
 interface CustomDateInputProps {
   label: string;
@@ -23,20 +16,30 @@ interface CustomDateInputProps {
   /**
    * Earliest date the calendar will accept, inclusive.
    *
-   * Optional and unset by default, so every existing caller keeps the full
-   * calendar. It exists for the fields where a past date is not a choice a user
-   * can mean - asking to go live last Tuesday, for one - and the check belongs
-   * on the picker rather than in each screen's validation, which only ever
-   * catches it after the fact.
+   * Unset by default, so the full calendar is offered. It exists for the fields
+   * where a past date is not a choice a user can mean - asking to go live last
+   * Tuesday, for one - and the check belongs on the picker rather than in each
+   * screen's validation, which only ever catches it after the fact.
    */
   minDate?: Date;
 }
 
+/**
+ * A labelled date field with its error line.
+ *
+ * The calendar itself is `DatePickerInput`, the one date picker in the app, so
+ * a date looks and behaves the same here as on every other form. This adds only
+ * the label, the required asterisk and the error text, for callers that work
+ * with the value as a plain `yyyy-mm-dd` string rather than a change event.
+ * An optional field gets the picker's Clear button, which is how a date that
+ * was set can be taken off again.
+ */
 export const CustomDateInput = ({
   label,
   id,
   error,
   isRequired,
+  containerClass,
   value,
   onValueChange,
   className,
@@ -44,15 +47,10 @@ export const CustomDateInput = ({
   disabled,
   minDate,
 }: CustomDateInputProps) => {
-  const formatDateToLocalString = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+  const errorId = `${id}-error`;
 
   return (
-    <div className="grid w-full items-center gap-1">
+    <div className={cn("grid w-full items-center gap-1", containerClass)}>
       <label
         htmlFor={id}
         className={cn(
@@ -62,41 +60,23 @@ export const CustomDateInput = ({
       >
         {label}
       </label>
-      <div className="relative">
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              id="date"
-              disabled={disabled}
-              className={cn(
-                "w-full h-10.5 border-none justify-between font-normal text-gray-02 hover:bg-white bg-white hover:text-gray-02 group shadow-none rounded-md text-sm",
-                value && "text-black-01",
-                className,
-              )}
-            >
-              {value
-                ? new Date(value).toLocaleDateString()
-                : (placeholder ?? "Select date")}
-              <CalendarDays className="group-hover:text-primary" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={value ? new Date(value) : undefined}
-              captionLayout="dropdown"
-              disabled={minDate ? { before: minDate } : undefined}
-              onSelect={(date) => {
-                if (date && onValueChange) {
-                  onValueChange(formatDateToLocalString(date));
-                }
-              }}
-            />
-          </PopoverContent>
-        </Popover>
-      </div>
-      {error && <p className="text-xs font-medium text-error-text">{error}</p>}
+      <DatePickerInput
+        id={id}
+        value={value ?? ""}
+        onChange={(e) => onValueChange?.(e.target.value)}
+        min={minDate ? toIsoDate(minDate) : undefined}
+        required={isRequired}
+        disabled={disabled}
+        placeholder={placeholder}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={cn("aria-invalid:border-destructive", className)}
+      />
+      {error && (
+        <p id={errorId} className="text-xs font-medium text-error-text">
+          {error}
+        </p>
+      )}
     </div>
   );
 };

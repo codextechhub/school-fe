@@ -1,8 +1,22 @@
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { DatePickerInput } from "@/components/ui/date-picker-input";
 
+/**
+ * The app's text input.
+ *
+ * `type="date"` renders the house calendar (`DatePickerInput`) rather than the
+ * browser's own date box, which looks and behaves differently in every browser
+ * and shows dates in the reader's operating-system format. The shared finance
+ * screens rely on this: they write `<Input type="date">` and expect the house
+ * calendar, as console-fe's `Input` gives them.
+ */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
+  if (type === "date") {
+    return <DatePickerInput className={className} {...props} />;
+  }
+
   return (
     <input
       type={type}
