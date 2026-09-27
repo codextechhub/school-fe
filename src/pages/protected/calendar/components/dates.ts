@@ -9,12 +9,27 @@
  * function below splits the string instead of letting Date parse it.
  */
 
+import { WEEK_STARTS_ON } from "@/lib/week";
+
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
 
 const SHORT = MONTHS.map((m) => m.slice(0, 3));
+
+const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+/** Weekday names in grid order, starting on {@link WEEK_STARTS_ON}. */
+export const GRID_WEEKDAYS = [
+  ...WEEKDAY_NAMES.slice(WEEK_STARTS_ON),
+  ...WEEKDAY_NAMES.slice(0, WEEK_STARTS_ON),
+];
+
+/** How many cells come before `date` in its grid week. */
+export function leadingDays(date: Date): number {
+  return (date.getDay() - WEEK_STARTS_ON + 7) % 7;
+}
 
 /** `YYYY-MM-DD` to its three numbers, with no timezone anywhere near it. */
 export function parts(iso: string): [year: number, month: number, day: number] {

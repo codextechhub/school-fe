@@ -31,6 +31,8 @@ import type {
 import { eventVariant } from "../components/event-kind";
 import {
   formatRange,
+  GRID_WEEKDAYS,
+  leadingDays,
   localDate,
   monthLabel,
   parts,
@@ -41,7 +43,7 @@ import {
 const C = routesPath.PROTECTED.ACADEMIC_CALENDAR;
 const T = routesPath.PROTECTED.TIMETABLES;
 const S = routesPath.PROTECTED.ACADEMIC_STRUCTURE;
-const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+const WEEKDAYS = GRID_WEEKDAYS.map((day) => day.slice(0, 2));
 
 type ReadyOverview = CalendarOverview & { session: CalendarSession };
 
@@ -285,7 +287,7 @@ function MiniMonth({ anchor, monthOffset, events, onMove }: {
   const visible = new Date(base.getFullYear(), base.getMonth() + monthOffset, 1);
   const year = visible.getFullYear();
   const month = visible.getMonth() + 1;
-  const leading = (visible.getDay() + 6) % 7;
+  const leading = leadingDays(visible);
   const daysInMonth = new Date(year, month, 0).getDate();
   const cellCount = Math.ceil((leading + daysInMonth) / 7) * 7;
 

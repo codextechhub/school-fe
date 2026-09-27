@@ -51,6 +51,7 @@ import {
   daysBetween,
   formatDate,
   formatRange,
+  GRID_WEEKDAYS,
   localDate,
   monthLabel,
   parts,
@@ -303,7 +304,7 @@ export default function TermView() {
         <div className="mt-4 min-w-0">
           <div className="min-w-0">
             <div className="grid grid-cols-7 gap-1.5">
-              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+              {GRID_WEEKDAYS.map((d) => (
                 <p
                   key={d}
                   className="pb-1 text-center text-[11px] font-medium uppercase tracking-wide text-gray-05"
