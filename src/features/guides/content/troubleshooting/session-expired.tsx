@@ -23,7 +23,7 @@ export default function SessionExpiredArticle() {
         <GuideSteps>
           <GuideStep title="Select Go to Login">When the countdown runs out, <strong>Session Expired</strong> appears. Select <strong>Go to Login</strong>.</GuideStep>
           <GuideStep title="Read the note on the sign-in page">A line above the form says why you were signed out, for example that your session expired due to inactivity.</GuideStep>
-          <GuideStep title="Sign in again">You may be returned to the page you were on. Otherwise you land on the Dashboard; use the sidebar or search box to go back.</GuideStep>
+          <GuideStep title="Sign in again">You are returned to the page you were on. While your school is still being set up, only an onboarding page is returned to; from anywhere else you start at the beginning of onboarding.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="danger" title="Unsaved work is not kept">Anything typed into a form that was not saved before sign-out is gone. Enter it again after you sign back in.</GuideCallout>
       </GuideSection>

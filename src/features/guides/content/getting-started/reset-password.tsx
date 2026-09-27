@@ -24,7 +24,7 @@ export default function ResetPasswordArticle() {
       <GuideSection id="set-a-new-password" title="Set a new password">
         <GuideSteps>
           <GuideStep title="Open the link in the email">The page shows <em>Verifying your reset link…</em>, then <strong>Set a New Password</strong> with your Name and Email filled in.</GuideStep>
-          <GuideStep title="Enter New Password and Confirm Password">Use at least 12 characters with an uppercase letter, a lowercase letter, a number and a special character. It must be different from a password you have used before.</GuideStep>
+          <GuideStep title="Enter New Password and Confirm Password">The rules are shown under the New Password box: at least 12 characters with an uppercase letter, a lowercase letter, a number and a special character.</GuideStep>
           <GuideStep title="Select Reset Password">You see <strong>Password Reset!</strong>. Select <strong>Continue to Login</strong>, or wait a few seconds for the sign-in page to open, and sign in with the new password.</GuideStep>
         </GuideSteps>
       </GuideSection>

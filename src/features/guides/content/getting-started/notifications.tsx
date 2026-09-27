@@ -21,7 +21,7 @@ export default function NotificationsArticle() {
       </GuideSection>
 
       <GuideSection id="notification-centre" title="Use the Notification Centre">
-        <p>Select <strong>View all notifications</strong> at the foot of the tray, or <strong>Notifications</strong> under Communication in the sidebar once your school is live.</p>
+        <p>Select <strong>View all notifications</strong> at the foot of the tray, or <strong>Notifications</strong> under Communication in the sidebar.</p>
         <GuideSteps>
           <GuideStep title="Choose a tab">The page opens on <strong>Unread</strong>. <strong>Read</strong> and <strong>All</strong> show older notifications.</GuideStep>
           <GuideStep title="Search">Type in <strong>Search notifications</strong> to find one by its words.</GuideStep>

@@ -605,9 +605,8 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     // Open to everyone: a person who cannot reach a single other screen is
     // exactly the person who needs to say so.
     gate: null,
-    // Opens the header's panel rather than navigating. Support is one surface
-    // now that the sidebar has no Help item, and the panel keeps the screen
-    // being reported on visible behind it.
+    // Opens the header's filing panel rather than the Support screen, so the
+    // screen being reported on stays visible behind the form.
     run: { command: "help" },
   },
   {

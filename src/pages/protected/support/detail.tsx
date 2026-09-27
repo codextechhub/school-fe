@@ -27,6 +27,7 @@ import { formatBytes } from "@/utils/format-bytes";
 import { apiErrorMessage } from "@/utils/api-error";
 import { fetchAttachmentObjectUrl, openAttachment } from "@/utils/attachment-download";
 import { routesPath } from "@/routes/routesPath";
+import { requestSupportOpen } from "@/components/layout/support-open";
 import {
   useAddTicketAttachmentMutation,
   useAddTicketCommentMutation,
@@ -37,6 +38,7 @@ import {
 } from "@/redux/services/support/support-api";
 import type {
   TicketAttachment,
+  TicketCategory,
   TicketStatus,
 } from "@/redux/services/support/support-types";
 import {
@@ -77,6 +79,58 @@ import {
  */
 
 const CARD = "rounded-md border border-border bg-white";
+
+/**
+ * What a closed ticket says in place of the reply box, worded for the reader.
+ *
+ * Reopening is a lifecycle move, so only somebody the server lets transition
+ * the ticket (`can_transition`) has a Mark open button, and it sits in the
+ * Manage panel. Everybody else has no reply box on a closed ticket and no way
+ * to reopen it, so they are offered what they can do: raise a new ticket,
+ * started with the old reference so whoever picks it up can find the history.
+ */
+function ClosedTicketNote({
+  canManage,
+  reference,
+  title,
+  category,
+}: {
+  canManage: boolean;
+  reference: string;
+  title: string;
+  category: TicketCategory;
+}) {
+  if (canManage) {
+    return (
+      <p className="shrink-0 border-t border-white-02 bg-white p-4 text-[13px] text-gray-01">
+        This ticket is closed. If the problem is back, select Mark open under
+        Manage to reopen it.
+      </p>
+    );
+  }
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-3 border-t border-white-02 bg-white p-4">
+      <p className="min-w-0 flex-1 text-[13px] text-gray-01">
+        This ticket is closed. If the problem is back, raise a new ticket and
+        quote {reference}.
+      </p>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() =>
+          requestSupportOpen({
+            title: `Follow-up to ${reference}: ${title}`.slice(0, 220),
+            description: `Follow-up to ${reference}, which is closed.\n\n`,
+            category,
+          })
+        }
+      >
+        Raise a new ticket
+      </Button>
+    </div>
+  );
+}
+
 
 const ACCEPTED_FILES = ".pdf,.png,.jpg,.jpeg,.webp,.gif,.csv,.xls,.xlsx";
 
@@ -642,9 +696,12 @@ export default function SupportTicketDetail() {
               </div>
 
               {isClosed ? (
-                <p className="shrink-0 border-t border-white-02 bg-white p-4 text-[13px] text-gray-01">
-                  This ticket is closed. Reopen it if the problem is back.
-                </p>
+                <ClosedTicketNote
+                  canManage={canManage}
+                  reference={ticket.ticket_number}
+                  title={ticket.title}
+                  category={ticket.category}
+                />
               ) : canComment ? (
                 <div className="shrink-0 border-t border-white-02 bg-white p-3">
                   <Textarea
@@ -774,7 +831,8 @@ export default function SupportTicketDetail() {
 
               {isClosed ? (
                 <p className="mt-1 text-xs leading-5 text-gray-01">
-                  This ticket is closed. Reopen it if the problem is back.
+                  This ticket is closed. Select Mark open below if the problem
+                  is back.
                 </p>
               ) : canEscalate ? (
                 <>

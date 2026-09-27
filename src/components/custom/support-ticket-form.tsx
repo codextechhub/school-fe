@@ -36,20 +36,18 @@ import { useOnboardingState } from "@/pages/protected/onboarding/use-onboarding-
  * and filing one from the page must not drift into two different forms with two
  * different validation rules.
  *
- * Filing is all it does. The rest of the support desk - the ticket list, the
- * thread, attachments - is not on this app's API at all, so the confirmation
- * has to be self-sufficient: the reference, what happens next, and that replies
- * come by email. No "track your ticket" link, because there is nothing to track
- * against yet.
+ * Filing is all it does. The ticket list and the conversation on each ticket
+ * are the Support screen (`pages/protected/support`), so the confirmation says
+ * who picks the ticket up and where the answer appears rather than repeating
+ * any of that here. A ticket goes to the school's own support desk first, and
+ * reaches XVS only if the school sends it on.
  *
  * Everything onboarding-shaped in here is gated on the school still being
- * pre-live, and nothing new may assume it. This form was written when the only
- * door to it was the control room, so "not live yet" was a constant: the
- * confirmation said so out loud and every ticket was filed as an Onboarding
- * one. The header's headset then put the same form on every page of a live
- * school. `selectTenantIsPending` is the answer to ask - it comes with the
- * session, costs no request, is not gated on an onboarding permission, and
- * reads an unknown status as live.
+ * pre-live, and nothing new may assume it: the header's headset puts this form
+ * on every page of a live school as well, and a live school's fees bug must not
+ * arrive stamped with a setup step. `selectTenantIsPending` is the answer to
+ * ask - it comes with the session, costs no request, is not gated on an
+ * onboarding permission, and reads an unknown status as live.
  */
 
 const CATEGORY_OPTIONS: { value: TicketCategory; label: string }[] = [
@@ -293,7 +291,6 @@ export function SupportTicketForm({
         reference={reference}
         email={user?.email}
         failedFiles={failedFiles}
-        tenantIsPending={tenantIsPending}
         onDone={onDone}
         doneLabel={doneLabel}
         onFileAnother={() => {
@@ -460,17 +457,21 @@ export function SupportTicketForm({
 /**
  * What a school sees once the ticket is filed.
  *
- * Its own component because it is the half of this form that talks about the
- * school's situation rather than the ticket, and that is where the reachability
- * of the form leaked in: it promised a support desk "when your school goes
- * live" to schools that went live months ago. Rendered from props so the
- * promise can be tested without filing a ticket.
+ * Its own component, rendered from props, so what a school is promised can be
+ * tested without filing a ticket.
+ *
+ * The promise is the routing as it is: the school's own support desk reads the
+ * ticket first and sends on to XVS only what it cannot solve, so the person
+ * filing is not told XVS will answer. Replies arrive on the ticket's
+ * conversation under Support, with a notification in the app and by email, and
+ * an email reply does not reach the ticket - so a file that failed to upload is
+ * sent as a reply on the ticket, not by email. The desk is open before go-live
+ * as well, so nothing here depends on whether the school is live.
  */
 export function TicketFiledConfirmation({
   reference,
   email,
   failedFiles,
-  tenantIsPending,
   onDone,
   doneLabel = "Done",
   onFileAnother,
@@ -479,8 +480,6 @@ export function TicketFiledConfirmation({
   reference: string;
   email?: string;
   failedFiles: string[];
-  /** Pre-live schools, and only they, are told what opens at go-live. */
-  tenantIsPending: boolean;
   onDone?: () => void;
   doneLabel?: string;
   onFileAnother: () => void;
@@ -506,25 +505,20 @@ export function TicketFiledConfirmation({
         </code>
       </div>
       <p className="text-[13px] text-gray-06 max-w-[52ch] text-pretty">
-        Keep this reference. XVS support will reply
-        {email ? ` to ${email}` : " by email"}, and you can answer them straight
-        from that email.
+        Keep this reference. Your school&apos;s support team picks it up first,
+        and sends it on to XVS if they cannot solve it. Replies appear on the
+        ticket under Support, and you are notified in the app
+        {email ? ` and at ${email}` : " and by email"}.
       </p>
-      {failedFiles.length > 0 ? (
+      {failedFiles.length > 0 && (
         // Said plainly and separately from the reference. The ticket IS filed;
         // only the files did not make it, and somebody who reads "something
         // went wrong" here will raise the whole thing again.
         <p className="text-[13px] text-error-text max-w-[52ch] text-pretty">
           Your ticket is filed, but {failedFiles.join(", ")} did not upload.
-          Reply to the confirmation email to send{" "}
-          {failedFiles.length === 1 ? "it" : "them"}.
+          Open the ticket under Support and attach{" "}
+          {failedFiles.length === 1 ? "it" : "them"} to a reply.
         </p>
-      ) : (
-        tenantIsPending && (
-          <p className="text-[13px] text-gray-05 max-w-[52ch] text-pretty">
-            The full support desk opens when your school goes live.
-          </p>
-        )
       )}
       <div className="mt-2 flex flex-wrap justify-center gap-2">
         {onDone && <Button onClick={onDone}>{doneLabel}</Button>}

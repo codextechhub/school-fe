@@ -8,6 +8,7 @@ import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { cn } from "@/lib/utils";
+import { P } from "@/permissions";
 import { Button } from "@/components/ui/button";
 import { useUpdateStaffMutation } from "@/redux/services/staff/staff-api";
 import type {
@@ -21,6 +22,7 @@ import {
   Field,
   inputClass,
 } from "../../students/drawers/drawer-shell";
+import { PhotoPicker } from "../../students/photo-picker";
 import { useCanChangeStaffEmail } from "../can-change-email";
 
 type FieldKey = keyof StaffUpdate;
@@ -68,6 +70,13 @@ const TYPES: { value: EmploymentType; label: string }[] = [
  * **Email, gender, date of birth and phone follow Field Access (`school.teachers`).**
  * One the viewer may not read is absent from the record and not on the form;
  * one the record lists in `_read_only_fields` is greyed and never sent.
+ *
+ * **The photograph saves on its own, the moment it is picked.** It is a file,
+ * so it goes as a multipart PATCH of `photo` rather than inside the JSON save,
+ * and a picture that is already on the record should not wait on Save changes
+ * or be lost by Cancel. It is the same picker the student profile uses, gated
+ * on `school.teachers.update` (the key the PATCH enforces) and on the photo's
+ * own Field Access.
  */
 export function EditDrawer({
   person,
@@ -81,6 +90,7 @@ export function EditDrawer({
   onChangeEmail: () => void;
 }) {
   const [update, { isLoading: saving }] = useUpdateStaffMutation();
+  const [updatePhoto, { isLoading: savingPhoto }] = useUpdateStaffMutation();
   const canChangeEmail = useCanChangeStaffEmail(person);
 
   const [draft, setDraft] = useState<Partial<StaffUpdate>>({});
@@ -172,6 +182,30 @@ export function EditDrawer({
       saving={saving}
     >
       <div className="grid gap-4">
+        {!access.isHidden("photo_url") && (
+          <div className="flex items-center gap-3.5">
+            <PhotoPicker
+              name={person.full_name}
+              photoUrl={person.photo_url ?? ""}
+              saving={savingPhoto}
+              editable={!person.as_at && !access.isReadOnly("photo_url")}
+              permission={P.MODIFY_TEACHER}
+              size="size-16"
+              textClassName="text-[21px]"
+              onPick={(file) => {
+                const body = new FormData();
+                body.append("photo", file);
+                return updatePhoto({ id: person.id, body }).unwrap();
+              }}
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-black-01">Photograph</p>
+              <p className="mt-0.5 text-xs text-gray-05">
+                Select the camera to add or replace it. It saves straight away.
+              </p>
+            </div>
+          </div>
+        )}
         <AccessField access={access} name="first_name">
           <Field label="First name" required error={errors.first_name}>
             <input

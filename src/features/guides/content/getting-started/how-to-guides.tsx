@@ -13,7 +13,7 @@ export default function HowToGuidesArticle() {
 
       <GuideSection id="open-the-guides" title="Open the guides">
         <GuideSteps>
-          <GuideStep title="From the sidebar">Select <strong>How-to Guides</strong> under Communication (shown once your school is live). The page opens on <strong>What do you want to do today?</strong>.</GuideStep>
+          <GuideStep title="From the sidebar">Select <strong>How-to Guides</strong> under Communication, which is in the sidebar while your school is being set up as well. The page opens on <strong>What do you want to do today?</strong>.</GuideStep>
           <GuideStep title="From the screen you are on">Select the headset in the header, then the link at the foot of the panel. <strong>Guides for this page</strong> lists the guides <strong>For this screen</strong> and, under <strong>If something goes wrong</strong>, the troubleshooting guides for it. <strong>Browse all guides</strong> opens the full list, and <strong>Back to your ticket</strong> returns to the form with your typing kept.</GuideStep>
           <GuideStep title="From the search box">Type two or more letters into <strong>Search your workspace</strong>. Matching guides appear under <strong>Guides</strong>, after the actions. Typing <em>manual</em> or <em>how do i</em> offers <strong>View how-to guides</strong>.</GuideStep>
         </GuideSteps>

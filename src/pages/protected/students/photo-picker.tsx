@@ -3,7 +3,7 @@ import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import PermissionGate from "@/components/custom/permission-gate";
-import { P } from "@/permissions";
+import type { PermissionCode } from "@/permissions";
 import { cn } from "@/lib/utils";
 import { writeErrorMessage } from "@/utils/api-error";
 
@@ -14,12 +14,13 @@ import { PersonAvatar } from "./person-avatar";
  *
  * **The picker is on the picture.** Somebody looking for where a photograph
  * goes looks at the empty circle where the face should be, not at a tab two
- * clicks away, so the circle carries the button. One component for students
- * and guardians because they are the same gesture on the same shape, and two
- * copies would drift.
+ * clicks away, so the circle carries the button. One component for students,
+ * guardians and staff because they are the same gesture on the same shape, and
+ * copies would drift. `permission` is the key the caller's photo endpoint
+ * enforces, which differs by record, so every caller names it.
  *
- * A photograph is optional on both. Nothing in the module gates on one being
- * set, and neither record is marked incomplete without it: a school
+ * A photograph is optional on all of them. Nothing gates on one being set, and
+ * a student or guardian record is not marked incomplete without it: a school
  * photographs its intake on a day it chooses, not at the desk while a parent
  * waits.
  *
@@ -39,6 +40,7 @@ export function PhotoPicker({
   size = "size-18",
   textClassName = "text-2xl",
   editable = true,
+  permission,
 }: {
   name: string;
   /** "" when none is held, which is the ordinary case. */
@@ -50,6 +52,8 @@ export function PhotoPicker({
   size?: string;
   textClassName?: string;
   editable?: boolean;
+  /** The key the photo endpoint enforces for this record. */
+  permission: PermissionCode;
 }) {
   const input = useRef<HTMLInputElement>(null);
 
@@ -71,7 +75,7 @@ export function PhotoPicker({
         className={size}
         textClassName={textClassName}
       />
-      <PermissionGate permission={P.MODIFY_STUDENT} disabled={!editable}>
+      <PermissionGate permission={permission} disabled={!editable}>
         <input
           ref={input}
           type="file"

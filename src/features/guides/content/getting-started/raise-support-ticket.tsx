@@ -20,7 +20,7 @@ export default function RaiseSupportTicketArticle() {
           <GuideStep title="Write a Title and Description">The title is one line, up to 220 characters. In the description, say what happened, what you expected, and what you have tried.</GuideStep>
           <GuideStep title="Choose a Category and Priority">Category is one of Support request, Bug report, Help, Account, Billing or Other. Priority runs from Low to Urgent; keep Urgent for work that has stopped.</GuideStep>
           <GuideStep title="Add screenshots or files">Optional. Up to 5 files of 10 MB each: images, PDFs and spreadsheets.</GuideStep>
-          <GuideStep title="Select Create ticket">You see <strong>Ticket filed</strong> and a <strong>Reference</strong>. Keep the reference. Select <strong>Done</strong> to return to your page, or <strong>File another ticket</strong>.</GuideStep>
+          <GuideStep title="Select Create ticket">You see <strong>Ticket filed</strong> and a <strong>Reference</strong>. Keep the reference. Replies appear on the ticket under <strong>Support</strong>, and you are notified in the app and by email. Select <strong>Done</strong> to return to your page, or <strong>File another ticket</strong>.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="info" title="A file did not upload">If the confirmation names a file that did not upload, the ticket is still filed. Do not raise it again: add the file as a reply on the ticket instead.</GuideCallout>
       </GuideSection>
@@ -45,9 +45,8 @@ export default function RaiseSupportTicketArticle() {
       <GuideSection id="common-problems" title="Common problems">
         <ul className="list-disc space-y-2 pl-5">
           <li><strong>You can read this ticket, but you cannot reply to it.</strong>: you can see the ticket but are not one of the people who may answer it.</li>
-          <li>A closed ticket shows <strong>This ticket is closed.</strong> and no reply box. Ask whoever looks after support at your school to select <strong>Mark open</strong>, or raise a fresh ticket and quote the old reference.</li>
+          <li>A closed ticket shows <strong>This ticket is closed.</strong> and no reply box. If you look after support, select <strong>Mark open</strong> under Manage. Otherwise select <strong>Raise a new ticket</strong>: the form opens with the old reference already in it.</li>
           <li><strong>Nothing raised yet</strong> on the Support screen: nobody has raised a ticket you can see. Check the <strong>All</strong> tab before assuming a ticket is lost.</li>
-          <li>Support is missing from the sidebar: while your school is still being set up, the sidebar shows only the onboarding screens. Type <em>support</em> into the search box and choose <strong>View support tickets</strong>.</li>
           <li>There is no <strong>Send to XVS</strong> button: either the ticket is already with XVS, or you do not look after support for your school.</li>
         </ul>
       </GuideSection>

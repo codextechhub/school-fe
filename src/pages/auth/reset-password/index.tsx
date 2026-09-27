@@ -7,13 +7,13 @@ import {
 } from "@/redux/services/auth/auth-api";
 import { routesPath } from "@/routes/routesPath";
 import { resetPasswordSchema } from "@/schema/auth";
+import { PasswordRules, passwordFieldErrors } from "@/components/auth/set-password";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { useFormik } from "formik";
-import { toast } from "sonner";
 
 export default function ResetPassword() {
   const { activation_key } = useParams<{ activation_key: string }>();
@@ -28,16 +28,25 @@ export default function ResetPassword() {
 
   const [passwordResetConfirm, { isLoading: confirmLoading }] =
     usePasswordResetConfirmMutation();
+  const [apiError, setApiError] = useState("");
 
   const formik = useFormik({
     initialValues: { password: "", confirm_password: "" },
     validationSchema: resetPasswordSchema,
     onSubmit: (values) => {
+      setApiError("");
       passwordResetConfirm({ activation_key: activation_key!, ...values })
         .unwrap()
         .then(() => setSuccess(true))
         .catch((err) => {
-          toast.error(
+          // A refused password goes under its box; only the rest is a banner.
+          const perField = passwordFieldErrors(err);
+          if (perField.password || perField.confirm_password) {
+            formik.setErrors(perField);
+            formik.setTouched({ password: true, confirm_password: true }, false);
+            return;
+          }
+          setApiError(
             humanizeAuthError(
               err,
               "Couldn't reset your password. Please try again.",
@@ -112,8 +121,8 @@ export default function ResetPassword() {
                 Set a New Password
               </h4>
               <p className="text-sm font-medium text-gray-01 font-mont max-w-84.5 mx-auto">
-                Your new password must be different from your previously used
-                password.
+                Choose a new password for your account. You sign in with it
+                from now on.
               </p>
             </div>
 
@@ -142,8 +151,13 @@ export default function ResetPassword() {
                 placeholder="Enter your new password"
                 className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
                 {...formik.getFieldProps("password")}
+                onChange={(e) => {
+                  setApiError("");
+                  formik.handleChange(e);
+                }}
                 error={formik.touched.password ? formik.errors.password : ""}
               />
+              {!formik.errors.password && <PasswordRules />}
               <CustomInput
                 label="Confirm Password"
                 id="confirm_password"
@@ -151,6 +165,10 @@ export default function ResetPassword() {
                 placeholder="Re-enter your new password"
                 className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
                 {...formik.getFieldProps("confirm_password")}
+                onChange={(e) => {
+                  setApiError("");
+                  formik.handleChange(e);
+                }}
                 error={
                   formik.touched.confirm_password
                     ? formik.errors.confirm_password
@@ -158,6 +176,12 @@ export default function ResetPassword() {
                 }
               />
             </div>
+
+            {apiError && (
+              <p className="text-xs font-medium text-error-text -mt-6 mb-2">
+                {apiError}
+              </p>
+            )}
 
             <Button
               disabled={!formik.isValid || !formik.dirty || confirmLoading}

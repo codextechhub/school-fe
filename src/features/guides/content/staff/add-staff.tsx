@@ -53,6 +53,7 @@ export default function AddStaffArticle() {
           { title: "The email is refused", body: "It is not a valid address, or it is already in use. Every account needs its own email." },
           { title: "The Teaching duties step does not appear", body: "The starting role is not a teaching role, or this year has no classes or subjects yet. Assign duties later on Teaching duties." },
           { title: "Posted to is not on the form", body: "It appears only when you can choose between more than one branch. Otherwise the person is filed under the branch you work in." },
+          { title: "The photograph did not upload", body: "The person was still added. Open their record, select Edit staff, and add the photograph with the camera on the picture." },
         ]} />
       </GuideSection>
 

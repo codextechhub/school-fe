@@ -6,13 +6,13 @@ import {
   useActivateAccountMutation,
 } from "@/redux/services/auth/auth-api";
 import { routesPath } from "@/routes/routesPath";
-import { PASSWORD_MIN_LENGTH, resetPasswordSchema } from "@/schema/auth";
+import { resetPasswordSchema } from "@/schema/auth";
+import { PasswordRules, passwordFieldErrors } from "@/components/auth/set-password";
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
-import { fieldErrors } from "@/utils/api-error";
 import { useFormik } from "formik";
 
 export default function ActivateAccount() {
@@ -42,19 +42,10 @@ export default function ActivateAccount() {
         .unwrap()
         .then(() => setSuccess(true))
         .catch((err) => {
-          // A refused password is not a mystery, and the server says exactly
-          // why - "too common", "at least 12 characters", "an uppercase
-          // letter", "a special character". Those belong under the box being
-          // complained about. Only what has no field to sit under falls
-          // through to the banner.
-          const perField = fieldErrors(err);
+          // A refused password goes under its box; only the rest is a banner.
+          const perField = passwordFieldErrors(err);
           if (perField.password || perField.confirm_password) {
-            formik.setErrors({
-              ...(perField.password ? { password: perField.password } : {}),
-              ...(perField.confirm_password
-                ? { confirm_password: perField.confirm_password }
-                : {}),
-            });
+            formik.setErrors(perField);
             formik.setTouched({ password: true, confirm_password: true }, false);
             return;
           }
@@ -159,16 +150,7 @@ export default function ActivateAccount() {
                 }}
                 error={formik.touched.password ? formik.errors.password : ""}
               />
-              {/* Stated before it is needed. The rules are the server's, and
-                  finding them out by being refused is the slowest way to learn
-                  them - especially on activation, which somebody does once and
-                  under a link they were sent. */}
-              {!formik.errors.password && (
-                <p className="-mt-2 text-xs text-gray-01 font-mont">
-                  At least {PASSWORD_MIN_LENGTH} characters, with an uppercase
-                  letter, a lowercase letter, a number and a special character.
-                </p>
-              )}
+              {!formik.errors.password && <PasswordRules />}
               <CustomInput
                 label="Confirm Password"
                 id="confirm_password"

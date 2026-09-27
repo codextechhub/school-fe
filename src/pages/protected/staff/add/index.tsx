@@ -248,7 +248,7 @@ export default function AddStaff() {
         await update({ id: person.id, body }).unwrap();
       } catch {
         toast.warning(
-          `${person.full_name} was added, but the photograph did not upload. It can be set on their record.`,
+          `${person.full_name} was added, but the photograph did not upload. Add it from Edit staff on their record.`,
         );
       }
     }
@@ -622,8 +622,8 @@ export default function AddStaff() {
           old one and restarts the clock.
         </p>
         <p className="mt-2 text-xs text-gray-05">
-          Documents are added on their record once it exists, on the Documents
-          tab.
+          Documents such as a CV or certificates are uploaded on the Documents
+          tab of their record once it exists.
         </p>
         <div className="mt-4 flex flex-wrap gap-2.5">
           <Button

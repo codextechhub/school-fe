@@ -118,6 +118,8 @@ export function AppSidebar({
    * or padlocked: the server refuses every one of those surfaces to a PENDING
    * tenant, and a disabled row is a promise the school can see but not use. They
    * appear at go-live, when the routes behind them start answering.
+   * Communication stays: Notifications, Support and the guides answer a
+   * pending school, and it is the stage at which it most needs help.
    */
   onboarding?: boolean;
 }) {
@@ -944,6 +946,10 @@ export function AppSidebar({
             <>
               {onboardingNav.length > 0 && (
                 <NavMain items={onboardingNav} groupTitle="Onboarding" />
+              )}
+              {/* Open before go-live: every route here is a pendingSurface. */}
+              {help.length > 0 && (
+                <NavMain items={help} groupTitle="Communication" />
               )}
             </>
           ) : (

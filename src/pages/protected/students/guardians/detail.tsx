@@ -745,6 +745,7 @@ function GuardianPhoto({ guardian }: { guardian: GuardianRecord }) {
       photoUrl={guardian.photo_url ?? ""}
       saving={isLoading}
       editable={!guardian.as_at && !access.isReadOnly("photo_url")}
+      permission={P.MODIFY_STUDENT}
       size="size-16"
       textClassName="text-[21px]"
       onPick={(file) => upload({ id: guardian.id, file }).unwrap()}

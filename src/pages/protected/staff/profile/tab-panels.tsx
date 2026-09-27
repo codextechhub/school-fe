@@ -1,13 +1,27 @@
-import { CalendarPlus, FileText, ShieldCheck } from "lucide-react";
+import { useRef, useState } from "react";
+import { useParams } from "react-router";
+import { CalendarPlus, FileText, ShieldCheck, Upload } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
+import { ViewDocument } from "@/components/custom/view-document";
 import PermissionGate from "@/components/custom/permission-gate";
 import { LiveOnly } from "@/components/custom/as-at-control";
 import FieldAccessOverrides from "@/components/custom/field-access-overrides";
 import { P } from "@/permissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useAsAt } from "@/lib/as-at";
+import { usePermissions } from "@/hooks/use-permissions";
+import { fieldErrors, writeErrorMessage } from "@/utils/api-error";
+import {
+  useDeleteStaffDocumentMutation,
+  useGetStaffMemberQuery,
+  useUploadStaffDocumentMutation,
+} from "@/redux/services/staff/staff-api";
 import type {
+  DocumentType,
   StaffDocument,
   StaffGrant,
   StaffHistoryEntry,
@@ -22,6 +36,9 @@ import type {
 // two ways is a birthday that reads a day early on one screen and not the
 // other. If a third module needs them they move somewhere shared.
 import { formatDate, formatDateTime } from "../../students/format";
+import { ConfirmDialog } from "../../students/drawers/confirm-dialog";
+import { Field, inputClass } from "../../students/drawers/drawer-shell";
+import { canManage } from "../can-manage";
 
 /**
  * The profile's tab bodies, each with the empty state it is most often in.
@@ -383,7 +400,48 @@ export function QualificationsTab({ rows }: { rows: StaffQualification[] }) {
   );
 }
 
+const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
+  { value: "CV", label: "CV" },
+  { value: "DEGREE_CERTIFICATE", label: "Degree certificate" },
+  { value: "PROFESSIONAL_CERTIFICATE", label: "Professional certificate" },
+  { value: "IDENTIFICATION", label: "National ID" },
+  { value: "OTHER", label: "Other" },
+];
+
+/** The extensions the server's storage accepts, offered by the picker. */
+const ACCEPTED_DOCUMENTS = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.xls,.xlsx";
+
+/**
+ * The files held against a person, and the controls that add and remove them.
+ *
+ * Built to behave like the student Documents tab: View opens the file through
+ * the authenticated media route, a new file uploads the moment it is picked,
+ * and Remove asks first because the stored bytes do not come back. Staff files
+ * are an open list rather than a checklist, so the type and the title are
+ * chosen before the file instead of being fixed per row.
+ *
+ * Adding and removing need `school.staff_records.update`, the key the upload
+ * and delete endpoints enforce, and a person the viewer manages: a branch
+ * administrator reading somebody school-wide is refused by the server, so the
+ * controls are absent rather than offered and refused. The record is read from
+ * the profile's own query (same arguments, so no second request), because the
+ * tab is handed only its rows. Both are hidden when reading an earlier day.
+ */
 export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
+  const { id } = useParams();
+  const staffId = Number(id);
+  const asAt = useAsAt();
+  const { hasPermission } = usePermissions();
+  const { currentData: record } = useGetStaffMemberQuery(
+    { id: staffId, asAt },
+    { skip: !Number.isFinite(staffId) },
+  );
+  const person = record?.data;
+  const canChange =
+    !asAt &&
+    (person ? canManage(person) : false) &&
+    hasPermission(P.UPDATE_STAFF_RECORD);
+
   return (
     <section>
       <SectionNote>
@@ -391,31 +449,179 @@ export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
         state: nothing checks either, and a field somebody sets by hand reads as
         a check that was made.
       </SectionNote>
+      {canChange && <DocumentUpload staffId={staffId} />}
       {rows.length ? (
         <ul className="grid gap-2.5">
           {rows.map((row) => (
-            <li
-              key={row.id}
-              className="flex flex-wrap items-center gap-2.5 rounded-lg border border-white-02 px-3.5 py-2.5"
-            >
-              <FileText className="size-4 shrink-0 text-gray-05" aria-hidden />
-              <span className="min-w-0">
-                <span className="block truncate text-sm text-black-01">
-                  {row.title || row.document_type_label}
-                </span>
-                <span className="block text-xs text-gray-05">
-                  {row.document_type_label} · added {formatDate(row.created_at)}
-                  {row.uploaded_by ? ` by ${row.uploaded_by.name}` : ""}
-                  {row.file_retired ? " · replaced or removed since" : ""}
-                </span>
-              </span>
-            </li>
+            <DocumentRow key={row.id} row={row} canChange={canChange} />
           ))}
         </ul>
       ) : (
-        <Empty>Nothing uploaded.</Empty>
+        <Empty>
+          {canChange
+            ? "Nothing uploaded. Choose a type above and upload the first file."
+            : "Nothing uploaded."}
+        </Empty>
       )}
     </section>
+  );
+}
+
+/**
+ * Pick a type, optionally name the file, then choose it.
+ *
+ * The server checks the extension and the size and answers 422 naming which
+ * failed, so that refusal is shown under the control rather than in a toast.
+ * A blank title takes the file's own name, since the server requires one.
+ */
+function DocumentUpload({ staffId }: { staffId: number }) {
+  const input = useRef<HTMLInputElement>(null);
+  const [upload, { isLoading }] = useUploadStaffDocumentMutation();
+  const [type, setType] = useState<DocumentType>("CV");
+  const [title, setTitle] = useState("");
+  const [error, setError] = useState("");
+
+  async function send(file: File | undefined) {
+    if (!file) return;
+    setError("");
+    const body = new FormData();
+    body.append("document_type", type);
+    body.append(
+      "title",
+      (title.trim() || file.name.replace(/\.[^.]+$/, "")).slice(0, 200),
+    );
+    body.append("file", file);
+    try {
+      await upload({ id: staffId, body }).unwrap();
+      toast.success("Document uploaded.");
+      setTitle("");
+    } catch (failure) {
+      const perField = fieldErrors(failure);
+      setError(
+        perField.file ??
+          perField.title ??
+          perField.document_type ??
+          writeErrorMessage(failure, "We could not upload that file."),
+      );
+    }
+  }
+
+  return (
+    <div className="mb-4 rounded-lg border border-white-02 p-3.5">
+      <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto]">
+        <Field label="Type">
+          <NativeSelect
+            value={type}
+            onChange={(e) => setType(e.target.value as DocumentType)}
+            className="h-9"
+          >
+            {DOCUMENT_TYPES.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field label="Title">
+          <input
+            value={title}
+            maxLength={200}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Optional, the file name if left blank"
+            className={inputClass}
+          />
+        </Field>
+        <div>
+          <input
+            ref={input}
+            type="file"
+            accept={ACCEPTED_DOCUMENTS}
+            className="hidden"
+            onChange={(e) => {
+              void send(e.target.files?.[0]);
+              // Cleared so picking the same file again still fires a change.
+              e.target.value = "";
+            }}
+          />
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full sm:w-auto"
+            disabled={isLoading}
+            onClick={() => input.current?.click()}
+          >
+            <Upload className="size-4" aria-hidden />
+            {isLoading ? "Uploading…" : "Upload document"}
+          </Button>
+        </div>
+      </div>
+      {error && (
+        <p role="alert" className="mt-2 text-xs text-red-600">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function DocumentRow({
+  row,
+  canChange,
+}: {
+  row: StaffDocument;
+  canChange: boolean;
+}) {
+  const [remove, { isLoading: removing }] = useDeleteStaffDocumentMutation();
+  const [confirming, setConfirming] = useState(false);
+  const label = row.title || row.document_type_label;
+
+  async function drop() {
+    try {
+      await remove(row.id).unwrap();
+      toast.success(`${label} removed.`);
+      setConfirming(false);
+    } catch (failure) {
+      toast.error(writeErrorMessage(failure, "We could not remove that file."));
+    }
+  }
+
+  return (
+    <li className="flex flex-wrap items-center gap-2.5 rounded-lg border border-white-02 px-3.5 py-2.5">
+      <FileText className="size-4 shrink-0 text-gray-05" aria-hidden />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm text-black-01">{label}</span>
+        <span className="block text-xs text-gray-05">
+          {row.document_type_label} · added {formatDate(row.created_at)}
+          {row.uploaded_by ? ` by ${row.uploaded_by.name}` : ""}
+          {row.file_retired ? " · replaced or removed since" : ""}
+        </span>
+      </span>
+      <span className="flex shrink-0 flex-wrap items-center gap-3">
+        {row.file_url && <ViewDocument url={row.file_url} label={label} />}
+        {canChange && (
+          <>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={removing}
+              onClick={() => setConfirming(true)}
+              className="text-error-text hover:text-error-text"
+            >
+              {removing ? "Removing…" : "Remove"}
+            </Button>
+            <ConfirmDialog
+              open={confirming}
+              onCancel={() => setConfirming(false)}
+              onConfirm={drop}
+              title={`Remove ${label}?`}
+              body="The file is deleted and cannot be recovered. A new one can be uploaded at any time."
+              confirmLabel="Remove"
+              busy={removing}
+            />
+          </>
+        )}
+      </span>
+    </li>
   );
 }
 

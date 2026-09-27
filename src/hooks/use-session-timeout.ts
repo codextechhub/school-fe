@@ -5,6 +5,7 @@ import { routesPath } from "@/routes/routesPath";
 import { refreshTokenSingleFlight } from "@/utils/token-refresh";
 import { recordActivity } from "@/utils/session-activity";
 import { endSession } from "@/utils/end-session";
+import { captureReturnTo } from "@/utils/return-to";
 import { getCsrfToken } from "@/utils/csrf";
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL as string;
@@ -68,24 +69,45 @@ export function useSessionTimeout() {
     }
   };
 
+  /**
+   * End an idle session and show Session Expired.
+   *
+   * The page is remembered here, at the moment the session ends, so that Go to
+   * Login (or a reload of the expired page) brings the person back to it after
+   * signing in, as every other involuntary sign-out does. It is captured after
+   * endSession, which clears sessionStorage.
+   */
   const expireSession = useCallback(() => {
     clearCountdown();
     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     revokeSessionOnBackend();
     endSession("Your session has expired due to inactivity. Please log in to continue.");
+    captureReturnTo();
     dispatch(resetAuth());
     setOpen(false);
     setIsExpired(true);
   }, [dispatch]);
 
-  const logout = useCallback(() => {
-    clearCountdown();
-    if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-    revokeSessionOnBackend();
-    endSession();
-    dispatch(resetAuth());
-    window.location.href = routesPath.AUTH.LOGIN;
-  }, [dispatch]);
+  /**
+   * End the session now and go to the sign-in page.
+   *
+   * `rememberPage` is for an involuntary end, such as a refresh token the
+   * server no longer accepts, where the person should come back to where they
+   * were. Choosing Log Out is deliberate, so it does not.
+   */
+  const endAndSignIn = useCallback(
+    (rememberPage: boolean) => {
+      clearCountdown();
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      revokeSessionOnBackend();
+      endSession();
+      if (rememberPage) captureReturnTo();
+      dispatch(resetAuth());
+      window.location.href = routesPath.AUTH.LOGIN;
+    },
+    [dispatch],
+  );
+  const logout = useCallback(() => endAndSignIn(false), [endAndSignIn]);
 
   // Starts (or resumes) the visible countdown from a given wall-clock start time.
   const startCountdown = useCallback(
@@ -205,11 +227,11 @@ export function useSessionTimeout() {
     if (outcome.ok) return;
 
     if (outcome.reason === "token_invalid") {
-      logout();
+      endAndSignIn(true);
       return;
     }
     // transient error - user stays signed in; next 401 will retry the refresh
-  }, [logout, resetIdleTimer]);
+  }, [endAndSignIn, resetIdleTimer]);
 
   const goToLogin = useCallback(() => {
     // Retry revocation in case the expiry-time request hit a transient failure.

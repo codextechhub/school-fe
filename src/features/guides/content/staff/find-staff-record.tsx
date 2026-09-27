@@ -42,7 +42,7 @@ export default function FindStaffRecordArticle() {
             { tab: "Teaching", body: "What the person teaches this year and their part in each class subject." },
             { tab: "Access", body: "The roles they hold, the branches those roles reach, and any permission allowed or denied for them alone." },
             { tab: "Qualifications", body: "The qualifications recorded for them, with the institution and year." },
-            { tab: "Documents", body: "The files on their record." },
+            { tab: "Documents", body: "The files on their record. View opens one. Where your role may update staff records, choose a type and select Upload document to add a file, or Remove to delete one." },
             { tab: "Leave", body: "Days taken by type, and every leave request with its status." },
             { tab: "History", body: "Every change to their employment and account, newest first." },
           ].map(({ tab, body }) => (
@@ -58,7 +58,7 @@ export default function FindStaffRecordArticle() {
       <GuideSection id="fix-the-record" title="Fix the record">
         <GuideSteps>
           <GuideStep title="Find the gaps">The <strong>Profile completeness</strong> card counts details still missing. Select <strong>Complete profile</strong> to scroll to <strong>Missing information</strong>, then <strong>Fill</strong> beside a gap.</GuideStep>
-          <GuideStep title="Edit">Select <strong>Edit staff</strong>, correct the name, contact, staff ID, job title, employment type or hire date, and select <strong>Save changes</strong>. The hire date is what length of service is worked out from.</GuideStep>
+          <GuideStep title="Edit">Select <strong>Edit staff</strong>, correct the name, contact, staff ID, job title, employment type or hire date, and select <strong>Save changes</strong>. To add or replace the photograph, select the camera on the picture at the top of the drawer; it saves straight away. The hire date is what length of service is worked out from.</GuideStep>
           <GuideStep title="Change the sign-in email">Use <strong>Change email address</strong>, where your role allows it. Type the new email twice and select <strong>Continue</strong>, then <strong>Change email</strong>. Employment status is changed with <strong>Change status</strong>.</GuideStep>
           <GuideStep title="Unlock or resend">For a locked account, <strong>Unlock account</strong> lets the person sign in again. For someone who has not activated, <strong>Resend invitation</strong> sends a fresh link.</GuideStep>
         </GuideSteps>

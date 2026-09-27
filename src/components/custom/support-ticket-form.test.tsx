@@ -19,42 +19,50 @@ const { TicketFiledConfirmation, ticketContext } = await import(
 
 const GO_LIVE_PROMISE = "opens when your school goes live";
 
-function confirmation(tenantIsPending: boolean, failedFiles: string[] = []) {
+function confirmation(failedFiles: string[] = []) {
   return renderToStaticMarkup(
     <TicketFiledConfirmation
       reference="TK-000123"
       email="bursar@coronaschool.ng"
       failedFiles={failedFiles}
-      tenantIsPending={tenantIsPending}
       onFileAnother={() => {}}
     />,
   );
 }
 
 describe("the ticket confirmation", () => {
-  it("does not tell a live school to wait for go-live", () => {
-    // Corona Secondary went live in March. Its bursar files a ticket about a
-    // fees report, from the header, on the fees page - and was being told the
-    // full support desk opens when her school goes live.
-    const html = confirmation(false);
+  it("says the school's own desk picks the ticket up, not XVS", () => {
+    // Corona Secondary's bursar files a ticket about a fees report. Its first
+    // reader is Ngozi, who looks after support at Corona; XVS sees it only if
+    // Ngozi sends it on. Telling the bursar "XVS support will reply" has her
+    // waiting on people who may never be shown the ticket.
+    const html = confirmation();
 
-    expect(html).not.toContain(GO_LIVE_PROMISE);
-    // What is left still stands on its own: the reference and where the reply
-    // will come, which is all this app can offer either way.
     expect(html).toContain("TK-000123");
+    expect(html).toContain("support team picks it up first");
+    expect(html).not.toContain("XVS support will reply");
+  });
+
+  it("points at the Support screen for replies, not at an email thread", () => {
+    // Nothing reads an emailed reply back onto the ticket, so an answer sent
+    // from the inbox would reach nobody.
+    const html = confirmation();
+
+    expect(html).toContain("Replies appear on the ticket under Support");
     expect(html).toContain("bursar@coronaschool.ng");
+    expect(html).not.toContain("straight from that email");
   });
 
-  it("still says it to a school that has not gone live", () => {
-    expect(confirmation(true)).toContain(GO_LIVE_PROMISE);
+  it("never promises a desk that opens at go-live", () => {
+    // The desk is open before go-live, so the promise is wrong for every school.
+    expect(confirmation()).not.toContain(GO_LIVE_PROMISE);
   });
 
-  it("gives way to a failed upload, live or not", () => {
-    for (const pending of [true, false]) {
-      const html = confirmation(pending, ["error-screen.png"]);
-      expect(html).toContain("did not upload");
-      expect(html).not.toContain(GO_LIVE_PROMISE);
-    }
+  it("sends a failed upload to a reply on the ticket", () => {
+    const html = confirmation(["error-screen.png"]);
+    expect(html).toContain("error-screen.png did not upload");
+    expect(html).toContain("attach it to a reply");
+    expect(html).not.toContain("confirmation email");
   });
 });
 

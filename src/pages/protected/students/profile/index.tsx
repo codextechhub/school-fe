@@ -21,7 +21,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
 import { writeErrorMessage } from "@/utils/api-error";
-import { useLazyFetchAuthMediaQuery } from "@/redux/services/media-api";
+import { ViewDocument } from "@/components/custom/view-document";
 import {
   useGetStudentClassHistoryQuery,
   useGetStudentDocumentsQuery,
@@ -1133,6 +1133,7 @@ function StudentPhoto({ student }: { student: StudentDetail }) {
         photoUrl={student.photo_url ?? ""}
         saving={isLoading}
         editable={!past && !access.isReadOnly("photo_url")}
+        permission={P.MODIFY_STUDENT}
         onPick={(file) =>
           upload({
             id: student.id, documentType: "PASSPORT_PHOTO", file,
@@ -1172,61 +1173,6 @@ function DocumentsTab({
         ))}
       </ul>
     </Panel>
-  );
-}
-
-/**
- * Open an attached document.
- *
- * **A plain link could never have worked.** MediaView is behind the JWT, and a
- * new tab opened from an <a href> sends no Authorization header - so "View" on
- * a birth certificate answered 401 for as long as the tab has existed. The
- * signature on the url binds it to one reader; it is not what authenticates
- * the read.
- *
- * So the bytes are fetched with the token and opened as a local blob. Same
- * route the school crest and the student's own photograph take.
- */
-function ViewDocument({ url, label }: { url: string; label: string }) {
-  const [fetchMedia, { isFetching }] = useLazyFetchAuthMediaQuery();
-
-  async function open() {
-    // The tab is opened ON THE CLICK, before the await. A window opened from an
-    // async continuation has lost the user gesture and the browser blocks it as
-    // a popup - which is silent: nothing opens and nothing says why.
-    //
-    // No "noopener" here on purpose: with it window.open returns null by spec
-    // and there would be no handle to point at the bytes. The opener is cleared
-    // by hand instead.
-    const tab = window.open("", "_blank");
-    if (tab) tab.opener = null;
-    try {
-      const blobUrl = await fetchMedia(url).unwrap();
-      if (tab) {
-        tab.location.href = blobUrl;
-        return;
-      }
-      // Popups blocked. Save it instead of navigating this page away from a
-      // record the reader is in the middle of.
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = label;
-      link.click();
-    } catch {
-      tab?.close();
-      toast.error(`We could not open the ${label.toLowerCase()}.`);
-    }
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={open}
-      disabled={isFetching}
-      className="text-xs text-primary underline-offset-2 hover:underline disabled:opacity-60"
-    >
-      {isFetching ? "Opening…" : "View"}
-    </button>
   );
 }
 
