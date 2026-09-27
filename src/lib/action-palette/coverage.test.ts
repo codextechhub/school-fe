@@ -58,6 +58,8 @@ const NOT_A_DESTINATION: Record<string, string> = {
   "/academic/calender":
     "legacy address (and the old misspelling), redirects to the calendar",
   "/classes": "legacy address, redirects to Classes & Arms",
+  "/workflow/notifications":
+    "redirects to Settings > Notifications, where approval emails now live",
   "/settings/more":
     "a list of links to other settings screens, each of which has its own " +
     "action; the list itself is reached from the settings console",

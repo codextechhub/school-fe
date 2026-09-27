@@ -17,7 +17,8 @@ describe("capabilityForPath", () => {
 
   it("reads the settings sections' own modules", () => {
     expect(capabilityForPath("/settings/payroll")).toBe("finance_advanced");
-    expect(capabilityForPath("/settings/notifications")).toBe("email_alerts");
+    // Two parts sold separately; each palette action names its own module.
+    expect(capabilityForPath("/settings/notifications")).toBeUndefined();
     expect(capabilityForPath("/settings/admission-numbers")).toBe("students");
     expect(capabilityForPath("/settings/security")).toBeUndefined();
   });

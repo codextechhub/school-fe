@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router";
 import { toast } from "sonner";
-import { ArrowRight, BellRing, Mail, RotateCcw } from "lucide-react";
+import { BellRing, Mail, RotateCcw, Workflow } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
@@ -19,7 +18,11 @@ import {
 } from "@/redux/services/notifications/notification-settings-api";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
-import { routesPath } from "@/routes/routesPath";
+import { useCapabilities } from "@/hooks/use-capabilities";
+import {
+  useGetWorkflowNotificationSettingQuery,
+  useSetWorkflowNotificationSettingMutation,
+} from "@/redux/services/dashboard/workflow-api";
 import { parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { SectionLoadError, SectionLoading } from "./shared";
 import { useSettingsBranches } from "../use-settings-branches";
@@ -66,13 +69,19 @@ function describe(line: EventLine, atBranch: boolean): string {
  *
  * Each switch saves on its own, so a change is never lost by leaving the page.
  *
- * The school's other notification choice, whether approvers are emailed when
- * a document waits on them, lives with the approval paths it belongs to. It is
- * linked from here, gated as its own screen is, so the reader finds every
- * notification setting they may change from this one section.
+ * The school's other notification choice is whether its approvals notify
+ * anybody at all: one switch for the whole school, above the per-event list,
+ * because switching it off silences every approval email in that list. It is
+ * gated on the approval-path keys its endpoint checks, and the event list on
+ * the notification key and the email alerts module, so a reader who holds
+ * only one of the two sees only that part.
  */
 export function NotificationsSection() {
   const { hasPermission } = usePermissions();
+  const { hasCapability } = useCapabilities();
+  const showsEvents =
+    hasPermission(P.MANAGE_NOTIFICATION_SETTINGS) && hasCapability("email_alerts");
+  const showsApprovals = hasPermission(P.UPDATE_WORKFLOW_TEMPLATE);
   const branches = useSettingsBranches();
   // A reader who cannot act for the whole school opens on their own branch.
   const [picked, setPicked] = useState<string | null>(null);
@@ -85,7 +94,7 @@ export function NotificationsSection() {
   // own branch rather than a whole-school read that is thrown away.
   const query = useGetNotificationSettingsQuery(
     { branch: branch || undefined },
-    { skip: branches.isLoading },
+    { skip: branches.isLoading || !showsEvents },
   );
   const [save] = useUpdateNotificationSettingsMutation();
   const [pending, setPending] = useState<string | null>(null);
@@ -132,7 +141,9 @@ export function NotificationsSection() {
         description="Choose which events also send an email. Everything always appears in the bell inside XVS, whatever you choose here."
       />
 
-      {branches.applies && branches.choices.length > 0 ? (
+      {showsApprovals ? <ApprovalEmails /> : null}
+
+      {showsEvents && branches.applies && branches.choices.length > 0 ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white-02 bg-white p-4">
           <div className="w-full sm:w-60">
             <NativeSelect
@@ -157,7 +168,7 @@ export function NotificationsSection() {
         </div>
       ) : null}
 
-      {rows === null ? (
+      {!showsEvents ? null : rows === null ? (
         query.isError ? (
           <SectionLoadError
             forbidden={parseApiError(query.error).status === 403}
@@ -229,25 +240,54 @@ export function NotificationsSection() {
         ))
       )}
 
-      {hasPermission(P.UPDATE_WORKFLOW_TEMPLATE) ? (
-        <SettingsPanel title="Other notification settings">
-          <Link
-            to={routesPath.PROTECTED.WORKFLOW.NOTIFICATIONS}
-            className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-gray-02/40 sm:px-5"
-          >
-            <span className="grid size-8 shrink-0 place-content-center rounded-md bg-gray-02 text-gray-05">
-              <BellRing className="size-4" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-mont text-sm font-medium text-gray-01">Approval emails</span>
-              <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
-                Whether approvers are emailed when a document waits on them.
-              </span>
-            </span>
-            <ArrowRight className="size-4 shrink-0 text-gray-05 transition-transform group-hover:translate-x-0.5" />
-          </Link>
-        </SettingsPanel>
-      ) : null}
     </div>
+  );
+}
+
+/**
+ * Whether this school's approvals notify anybody: one answer for the school.
+ *
+ * Off silences every approval email, whatever the event list below says for
+ * each one, and changes nothing about the approvals themselves: a request
+ * still waits for the same people, who find it in their own queue.
+ */
+function ApprovalEmails() {
+  const { data, isLoading } = useGetWorkflowNotificationSettingQuery();
+  const [save, { isLoading: saving }] = useSetWorkflowNotificationSettingMutation();
+  // Notifying is what the engine does when a school has chosen nothing.
+  const enabled = data?.enabled ?? true;
+
+  const choose = (next: boolean) => {
+    save(next)
+      .unwrap()
+      .then(() =>
+        toast.success(next ? "Approvals will email people again." : "Approvals will not email anybody."),
+      )
+      .catch((error) => toast.error(writeErrorMessage(error, "That could not be changed.")));
+  };
+
+  return (
+    <SettingsPanel title="Approvals" description="Applies to the whole school, every branch.">
+      <SettingsRow
+        icon={Workflow}
+        label="Approval emails"
+        description={
+          enabled
+            ? "On. Approvers are told when something waits on them, and whoever raised a request is told how it ended."
+            : "Off. Nobody is emailed about approvals. They still run, and approvers find what is waiting in their own queue."
+        }
+        badge={
+          <label className="flex items-center gap-2 font-mont text-xs font-normal text-gray-05">
+            Email
+            <Switch
+              aria-label="Approval emails"
+              checked={enabled}
+              disabled={isLoading || saving}
+              onCheckedChange={choose}
+            />
+          </label>
+        }
+      />
+    </SettingsPanel>
   );
 }

@@ -745,7 +745,8 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     section: "Settings",
     group: "School settings",
     kind: "view",
-    gate: { any: SECTION_GATES.notifications.anyOf },
+    gate: { perm: P.MANAGE_NOTIFICATION_SETTINGS },
+    capability: "email_alerts",
     run: { to: R.SETTINGS.NOTIFICATIONS },
   },
   {
@@ -820,13 +821,13 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   },
   {
     id: "view-workflow-notifications",
-    label: "View workflow notifications",
-    aliases: ["approval emails", "notify approvers", "stop notifications"],
+    label: "View approval emails",
+    aliases: ["workflow notifications", "notify approvers", "stop approval emails"],
     section: "Settings",
-    group: "Workflow",
+    group: "School settings",
     kind: "view",
     gate: { perm: P.UPDATE_WORKFLOW_TEMPLATE },
-    run: { to: R.WORKFLOW.NOTIFICATIONS },
+    run: { to: R.SETTINGS.NOTIFICATIONS },
   },
   {
     id: "view-dynamic-roles",

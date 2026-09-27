@@ -38,14 +38,22 @@ export interface SectionGate {
   anyOf: PermissionCode[];
   /** A plan module the school must have bought, when the section needs one. */
   capability?: string;
+  /**
+   * A section made of parts with different gates opens when ANY part does.
+   * When present, `anyOf` and `capability` are ignored.
+   */
+  parts?: Omit<SectionGate, "parts">[];
 }
 
 /**
  * The key each section's read endpoint checks, and the plan module it
  * configures. Capability names are the backend's (vs_rbac permission_bands):
- * notification settings belong to `email_alerts`, and payroll runs sit in
- * the advanced band of finance, so a school without payroll is not asked how
- * it runs one.
+ * payroll runs sit in the advanced band of finance, so a school without
+ * payroll is not asked how it runs one.
+ *
+ * Notifications has two parts, and each is gated inside the section: the
+ * event list on the notification key and `email_alerts`, and approval emails
+ * on the key that changes an approval path.
  *
  * Admission numbers are gated on the key that SAVES the rule rather than the
  * one that reads it: every enrolling clerk reads the rule, because the
@@ -58,7 +66,13 @@ export const SECTION_GATES: Record<
 > = {
   profile: { anyOf: [P.VIEW_SCHOOL_PROFILE] },
   security: { anyOf: [P.VIEW_SETTINGS] },
-  notifications: { anyOf: [P.MANAGE_NOTIFICATION_SETTINGS], capability: "email_alerts" },
+  notifications: {
+    anyOf: [],
+    parts: [
+      { anyOf: [P.MANAGE_NOTIFICATION_SETTINGS], capability: "email_alerts" },
+      { anyOf: [P.UPDATE_WORKFLOW_TEMPLATE] },
+    ],
+  },
   "admission-numbers": { anyOf: [P.MODIFY_STUDENT], capability: "students" },
   payroll: { anyOf: [P.VIEW_SETTINGS], capability: "finance_advanced" },
 };
@@ -75,9 +89,11 @@ export function openSettingsSections(can: {
   hasAnyPermission: (...codes: PermissionCode[]) => boolean;
   hasCapability: (key: string | null | undefined) => boolean;
 }): SettingsPanelSection[] {
+  const passes = (gate: Omit<SectionGate, "parts">) =>
+    can.hasAnyPermission(...gate.anyOf) && can.hasCapability(gate.capability);
   return (Object.keys(SECTION_GATES) as SettingsPanelSection[]).filter((key) => {
     const gate = SECTION_GATES[key];
-    return can.hasAnyPermission(...gate.anyOf) && can.hasCapability(gate.capability);
+    return gate.parts ? gate.parts.some(passes) : passes(gate);
   });
 }
 
@@ -92,6 +108,7 @@ export function openSettingsSections(can: {
 export const UNPLANNED_SETTINGS_KEYS: PermissionCode[] = Array.from(
   new Set(
     Object.values(SECTION_GATES)
+      .flatMap((gate) => gate.parts ?? [gate])
       .filter((gate) => !gate.capability)
       .flatMap((gate) => gate.anyOf),
   ),

@@ -96,6 +96,11 @@ export interface ActionDef {
   kind: "view" | "do";
   gate: ActionGate;
   run: ActionRun;
+  /**
+   * The plan module this action needs, when it differs from its address's
+   * (see plan.ts). One settings address can hold parts sold separately.
+   */
+  capability?: string;
 }
 
 // A scored, permission-passed action ready to render.

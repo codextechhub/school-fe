@@ -127,7 +127,8 @@ export function availableActions(
     (action) =>
       isAvailableAtReadiness(action.id, tenantIsPending) &&
       passesActionGate(action.gate, permissionsForAction(action, identity)) &&
-      ("command" in action.run || hasCapability(capabilityForPath(action.run.to))),
+      ("command" in action.run ||
+        hasCapability(action.capability ?? capabilityForPath(action.run.to))),
   );
 }
 

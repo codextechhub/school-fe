@@ -1,7 +1,6 @@
 import type { ElementType } from "react";
 import {
   Banknote,
-  BellRing,
   Building2,
   GitBranch,
   ShieldAlert,
@@ -70,13 +69,6 @@ export function useSettingsDoors(): SettingsDoor[] {
       to: R.WORKFLOW.APPROVER_GROUPS,
       icon: Users,
       show: hasPermission(P.VIEW_APPROVER_GROUPS),
-    },
-    {
-      title: "Approval emails",
-      description: "Whether approvers are emailed when a document waits on them.",
-      to: R.WORKFLOW.NOTIFICATIONS,
-      icon: BellRing,
-      show: hasPermission(P.UPDATE_WORKFLOW_TEMPLATE),
     },
     {
       title: "Finance settings",

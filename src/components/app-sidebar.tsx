@@ -789,17 +789,6 @@ export function AppSidebar({
           // one without being able to adjust it is a screen that answers a
           // question nobody asked it: which ladder governs a document is
           // already on the document's own approval panel.
-          // Whether approvals write to people is the school's answer, and the
-          // same access decides it as decides who approves what.
-          ...(hasPermission(P.UPDATE_WORKFLOW_TEMPLATE)
-            ? [{
-                title: "Notifications",
-                url: routesPath.PROTECTED.WORKFLOW.NOTIFICATIONS,
-                isActive: location.startsWith(
-                  routesPath.PROTECTED.WORKFLOW.NOTIFICATIONS,
-                ),
-              }]
-            : []),
           ...(hasPermission(P.UPDATE_WORKFLOW_TEMPLATE)
             ? [{
                 title: "Templates",

@@ -3,7 +3,7 @@ import { GuideCallout, GuideSection, GuideStep, GuideSteps } from "../../article
 const AREAS = [
   ["School profile", "Your crest, address, website and motto, and the details XVS set up for you."],
   ["Sign-in and security", "How many wrong passwords lock an account, and how long reset links and invitations last."],
-  ["Notifications", "Which events also send an email to the people they concern."],
+  ["Notifications", "Which events also send an email to the people they concern, and whether approvals email anybody."],
   ["Admission numbers", "Whether every child needs an admission number, and what a valid one looks like."],
   ["Payroll", "Whether the whole school is paid in one run, or each branch runs its own."],
   ["More settings", "Roles, field access, approval paths, and the Finance and Procurement settings."],
@@ -44,7 +44,7 @@ export default function SettingsOverviewArticle() {
       </GuideSection>
 
       <GuideSection id="more-settings" title="Find the settings on other screens">
-        <p>Some settings have screens of their own. <strong>More settings</strong> gathers the ways in: <strong>Roles and permissions</strong>, <strong>Field access</strong>, <strong>Branches</strong>, <strong>Approval paths</strong>, <strong>Approvers</strong>, <strong>Approval emails</strong>, <strong>Finance settings</strong> and <strong>Procurement settings</strong>.</p>
+        <p>Some settings have screens of their own. <strong>More settings</strong> gathers the ways in: <strong>Roles and permissions</strong>, <strong>Field access</strong>, <strong>Branches</strong>, <strong>Approval paths</strong>, <strong>Approvers</strong>, <strong>Finance settings</strong> and <strong>Procurement settings</strong>.</p>
         <p>Each one is listed only when your role can open the screen behind it, so a link here never ends at a refusal. When none of them is open to you, <strong>More settings</strong> is not in the list of areas at all.</p>
       </GuideSection>
 
