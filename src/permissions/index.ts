@@ -79,7 +79,6 @@ const REGISTRY: Record<string, string> = {
   "100408": "school.teachers.transition",
   "100411": "school.teachers.assign",
 
-  // ── school / staff records  (MM=10, RR=11) ─────────────────────────────────
   // ── school / staff import  (MM=10, RR=16) ─────────────────────────────────
   // Loading staff from a file. The resource is `staff`, not `teachers`: the key
   // is newer than the directory's and was named for what it governs. The
@@ -87,6 +86,7 @@ const REGISTRY: Record<string, string> = {
   // staff batch, but not in place of the upload key.
   "101617": "school.staff.import",
 
+  // ── school / staff records  (MM=10, RR=11) ─────────────────────────────────
   // Employment history, qualifications and contract documents, kept apart from
   // the directory keys above for the same reason leave is: a colleague's
   // salary grade and disciplinary record are not something everyone who may
@@ -419,6 +419,7 @@ export const P = {
   MODIFY_TEACHER:          "100403",  // edit a record, its records and its posting
   TRANSITION_TEACHER:         "100408",  // employment transitions and deletions
   ASSIGN_TEACHING:         "100411",  // write a teaching duty, set a class teacher
+  IMPORT_STAFF:            "101617",  // check and load a staff file already uploaded
 
   // ── Staff Records ──────────────────────────────────────────────────────────
   // Employment history, qualifications and contract documents. Separate from
@@ -447,7 +448,6 @@ export const P = {
   INVITE_ADMINISTRATOR:    "100502",  // invite a new school administrator
   MODIFY_ADMINISTRATOR:    "100503",  // edit an administrator's profile
   SUSPEND_ADMINISTRATOR:   "100509",  // suspend an administrator account
-  IMPORT_STAFF:            "101617",  // check and load a staff file already uploaded
   REACTIVATE_ADMINISTRATOR:"100510",  // reactivate a suspended administrator
   IMPORT_ADMINISTRATORS:   "100517",  // invite a list of them from a file
 
