@@ -1,13 +1,14 @@
 import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { ArrowRight, Check, GraduationCap } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, GraduationCap } from "lucide-react";
 
 import KpiCard from "@/components/custom/kpi-card";
 import PermissionGate from "@/components/custom/permission-gate";
 import { Panel } from "@/components/custom/surface";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useStudentsLens } from "@/hooks/use-students-lens";
@@ -71,6 +72,8 @@ function PromotionWorkflow({
   const [plan, setPlan] = useState<PromotionPlan | null>(null);
   const [done, setDone] = useState<PromotionBatch | null>(null);
   const [confirming, setConfirming] = useState(false);
+  // An acknowledgement, never a default: unticked every time the plan changes.
+  const [goOverCapacity, setGoOverCapacity] = useState(false);
   const previewSequence = useRef(0);
   const pageTop = useRef<HTMLElement>(null);
 
@@ -93,6 +96,7 @@ function PromotionWorkflow({
       }).unwrap();
       if (previewSequence.current !== sequence) return null;
       setPlan(result.data);
+      setGoOverCapacity(false);
       return result.data;
     } catch (error) {
       if (previewSequence.current === sequence) {
@@ -153,6 +157,7 @@ function PromotionWorkflow({
         branch,
         to_session: Number(target),
         overrides,
+        allow_over_capacity: goOverCapacity,
       }).unwrap();
       setDone(result.data);
       goToStep(3);
@@ -163,6 +168,8 @@ function PromotionWorkflow({
   }
 
   const counts = plan?.counts;
+  const overCapacity = plan?.over_capacity ?? [];
+  const waitsForCapacity = overCapacity.length > 0 && !goOverCapacity;
   const liveCounts = plan ? reviewCounts(plan, overrides) : null;
   const nothingToMove = plan != null && plan.counts.candidates === 0;
   const allHeld =
@@ -362,6 +369,32 @@ function PromotionWorkflow({
               This cannot be undone from here.
             </p>
           </Panel>
+          {overCapacity.length > 0 && (
+            <Panel className="border-amber-200 bg-amber-50 p-4 sm:p-5">
+              <p className="flex items-start gap-2 text-sm font-semibold text-amber-900">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                {overCapacity.length === 1
+                  ? "This promotion would put a class over capacity"
+                  : `This promotion would put ${overCapacity.length} classes over capacity`}
+              </p>
+              <ul className="mt-2 grid gap-1 pl-6 text-sm text-amber-900">
+                {overCapacity.map((row) => (
+                  <li key={row.class}>
+                    {row.class_name}: {row.used + row.adding} of {row.capacity} seats,{" "}
+                    {row.over_by} over
+                  </li>
+                ))}
+              </ul>
+              <label className="mt-3 flex items-start gap-2 pl-6 text-sm text-amber-900">
+                <Checkbox
+                  checked={goOverCapacity}
+                  onCheckedChange={(value) => setGoOverCapacity(value === true)}
+                  className="mt-0.5"
+                />
+                Go ahead and put {overCapacity.length === 1 ? "this class" : "these classes"} over capacity
+              </label>
+            </Panel>
+          )}
           <Exceptions plan={plan} />
         </section>
       )}
@@ -435,7 +468,7 @@ function PromotionWorkflow({
               <Button
                 data-guide="promotion.run"
                 onClick={() => setConfirming(true)}
-                disabled={running || counts?.candidates === 0}
+                disabled={running || counts?.candidates === 0 || waitsForCapacity}
               >
                 Run promotion
               </Button>

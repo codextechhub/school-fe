@@ -608,6 +608,8 @@ export const studentsApi = baseApi.injectEndpoints({
         overrides?: Record<string, PromotionOutcome>;
         /** The branch lens. Preview and run must carry the SAME one. */
         branch?: number;
+        /** Go ahead although the preview listed classes over capacity. */
+        allow_over_capacity?: boolean;
       }
     >({
       query: ({ branch, ...body }) => ({

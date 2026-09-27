@@ -350,6 +350,19 @@ export interface PromotionPlan {
     students: number;
   }[];
   /**
+   * Target classes the run would fill past their capacity. The run refuses
+   * them (PROMOTION_OVER_CAPACITY) until it is sent `allow_over_capacity`.
+   * Absent from a server older than that rule, so read it as optional.
+   */
+  over_capacity?: {
+    class: number;
+    class_name: string;
+    capacity: number;
+    used: number;
+    adding: number;
+    over_by: number;
+  }[];
+  /**
    * Class-wide causes collapse to one row however many students they cover;
    * per-student causes get one each. Repeating a class-wide cause per student
    * would bury the rows that actually need a decision.
