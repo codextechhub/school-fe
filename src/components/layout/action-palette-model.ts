@@ -21,6 +21,7 @@ import {
   type ScoredAction,
   type SectionGroup,
 } from "@/lib/action-palette";
+import { capabilityForPath } from "@/lib/action-palette/plan";
 
 /**
  * Anywhere in the app can ask the header to put the cursor in the search box.
@@ -106,18 +107,27 @@ function permissionsForAction(action: ActionDef, identity: PaletteIdentity): rea
 }
 
 /**
- * The actions this person may be offered right now: gated on permissions, then
- * filtered by what the tenant's readiness actually serves.
+ * The actions this person may be offered right now: gated on permissions,
+ * filtered by what the tenant's readiness actually serves, and by what the
+ * school's plan reaches.
+ *
+ * `hasCapability` is the plan question, asked of the address a navigation
+ * action opens (see capabilityForPath). It defaults to "yes" so a caller that
+ * does not know the plan yet offers everything the role allows, which is the
+ * same optimistic default useCapabilities takes. A header command opens no
+ * address and is never plan-gated.
  */
 export function availableActions(
   actions: readonly ActionDef[],
   identity: PaletteIdentity,
   tenantIsPending: boolean,
+  hasCapability: (key: string | undefined) => boolean = () => true,
 ): ActionDef[] {
   return actions.filter(
     (action) =>
       isAvailableAtReadiness(action.id, tenantIsPending) &&
-      passesActionGate(action.gate, permissionsForAction(action, identity)),
+      passesActionGate(action.gate, permissionsForAction(action, identity)) &&
+      ("command" in action.run || hasCapability(capabilityForPath(action.run.to))),
   );
 }
 

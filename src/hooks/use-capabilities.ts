@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useGetMyCapabilitiesQuery } from "@/redux/services/config/capabilities-api";
 
 /**
@@ -29,20 +30,24 @@ export function useCapabilities() {
 
   const isKnown = !isLoading && !isError && Array.isArray(data?.data);
 
-  const enabled = new Set(
-    (data?.data ?? []).filter((row) => row.enabled).map((row) => row.key),
-  );
+  // Stable across renders while the plan is unchanged, so a caller can use
+  // these as memo dependencies without recomputing on every render.
+  return useMemo(() => {
+    const enabled = new Set(
+      (data?.data ?? []).filter((row) => row.enabled).map((row) => row.key),
+    );
 
-  const hasCapability = (key: string | null | undefined): boolean => {
-    // A control that names no capability is core to every plan.
-    if (!key) return true;
-    if (!isKnown) return true;
-    return enabled.has(key);
-  };
+    const hasCapability = (key: string | null | undefined): boolean => {
+      // A control that names no capability is core to every plan.
+      if (!key) return true;
+      if (!isKnown) return true;
+      return enabled.has(key);
+    };
 
-  /** True when the school reaches ANY of these - for a door onto several. */
-  const hasAnyCapability = (...keys: string[]): boolean =>
-    keys.length === 0 || keys.some((key) => hasCapability(key));
+    /** True when the school reaches ANY of these - for a door onto several. */
+    const hasAnyCapability = (...keys: string[]): boolean =>
+      keys.length === 0 || keys.some((key) => hasCapability(key));
 
-  return { hasCapability, hasAnyCapability, isKnown };
+    return { hasCapability, hasAnyCapability, isKnown };
+  }, [data, isKnown]);
 }

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { useCapabilities } from "@/hooks/use-capabilities";
 import { ChevronRight, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
@@ -59,9 +60,10 @@ type SearchVariant = "desktop" | "mobile";
  * child, not an action whose description happens to contain those letters, and
  * a name is a far more specific thing to have typed than a verb.
  *
- * What it can offer comes from three filters, each with its own owner:
+ * What it can offer comes from four filters, each with its own owner:
  * permissions (the registry's gate, same key the screen checks), tenant
  * readiness (a pending school is offered only what a pending school can open),
+ * the school's plan (action-palette/plan.ts, the module each address needs),
  * and the typed query (the engine in src/lib/action-palette). Ranking learns
  * from what this user picks, but only ever within a match tier - see
  * rankActions.
@@ -116,14 +118,15 @@ export function AppSearch({
   useSearchFocusTriggers(focusSearch);
 
   const tenantIsPending = useAppSelector(selectTenantIsPending);
+  const { hasCapability } = useCapabilities();
   const permissions = useAppSelector(selectPermissions);
   const actorPermissions = useAppSelector(selectActorPermissions);
   const user = useAppSelector(selectUser);
   const userId = user?.id == null ? undefined : String(user.id);
 
   const available = useMemo(
-    () => availableActions(ACTIONS, { permissions, actorPermissions }, tenantIsPending),
-    [permissions, actorPermissions, tenantIsPending],
+    () => availableActions(ACTIONS, { permissions, actorPermissions }, tenantIsPending, hasCapability),
+    [permissions, actorPermissions, tenantIsPending, hasCapability],
   );
 
   // Popularity is re-read while the dropdown is open rather than held in

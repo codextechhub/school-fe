@@ -11,6 +11,7 @@
  */
 
 import { describe, expect, it } from "vitest";
+import { capabilityForPath } from "@/lib/action-palette/plan";
 import { P, resolvePermissionKey } from "@/permissions";
 import {
   ACTIONS,
@@ -307,5 +308,37 @@ describe("the dropdown's rows", () => {
     const walked = view.rows.flatMap((row) => (row.kind === "action" ? [row.result.action.id] : []));
     expect(walked).toEqual(drawn);
     expect(walked).toEqual(["pupils", "staff", "terms", "fees"]);
+  });
+});
+
+describe("plan filtering", () => {
+  const everyone = { permissions: ALL_PERMISSIONS, actorPermissions: ALL_PERMISSIONS };
+  // A school on the basic plan: every core module and none of the add-ons.
+  const basic = (key: string | undefined) =>
+    !key || ["students", "teachers", "calendar"].includes(key);
+
+  it("hides actions whose address needs a module the school has not bought", () => {
+    const offered = availableActions(ACTIONS, everyone, false, basic);
+    for (const action of offered) {
+      if ("command" in action.run) continue;
+      const needs = capabilityForPath(action.run.to);
+      expect(basic(needs), `${action.id} needs ${needs}`).toBe(true);
+    }
+    const offeredIds = ids(offered);
+    expect(offeredIds).not.toContain("view-payroll-settings");
+    expect(offeredIds).not.toContain("view-notification-settings");
+    expect(offeredIds).toContain("view-school-settings");
+    expect(offeredIds).toContain("view-admission-number-settings");
+  });
+
+  it("offers everything the role allows when the plan is not known", () => {
+    expect(availableActions(ACTIONS, everyone, false)).toEqual(
+      availableActions(ACTIONS, everyone, false, () => true),
+    );
+  });
+
+  it("never plan-gates a header command", () => {
+    const offered = ids(availableActions(ACTIONS, everyone, false, (key) => !key));
+    expect(offered).toContain("get-help");
   });
 });
