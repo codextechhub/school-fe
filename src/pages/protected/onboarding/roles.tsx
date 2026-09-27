@@ -164,7 +164,7 @@ export default function OnboardingRoles() {
               : "The people who will operate the system, and whether their invitations have landed."}
           </p>
         </div>
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5">
           <Button
             variant="outline"
             onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.INDEX)}
@@ -172,7 +172,8 @@ export default function OnboardingRoles() {
             <ArrowLeft />
             Back to control room
           </Button>
-          <PermissionGate permission={P.VIEW_ROLES}>
+          {/* Completing the step needs the step key as well as the roles key. */}
+          <PermissionGate permission={[P.VIEW_ROLES, P.UPDATE_ONBOARDING_TASK]} mode="all">
             <Button onClick={confirm} loading={confirming} disabled={alreadyDone}>
               {alreadyDone ? "Confirmed" : "Save and continue"}
             </Button>

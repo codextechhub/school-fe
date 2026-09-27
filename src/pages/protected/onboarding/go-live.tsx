@@ -51,6 +51,8 @@ import {
 } from "./components/onboarding-chips";
 import { OutlinedNotice } from "./components/outlined-notice";
 import { PageShell } from "@/components/layout/page-shell";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
 
 /** Anchor for the request form, so the rejected card can point back at it. */
 const GO_LIVE_FORM_ID = "go-live-request-form";
@@ -249,6 +251,12 @@ function GoLive({ state }: { state: OnboardingState }) {
  * The gate. Same numbers and the same "last checked" as the control room's
  * summary, read from the same call, so the two can never disagree about whether
  * a school may ask.
+ *
+ * The screen opens to anyone who may read go-live requests, so its two actions
+ * carry the control room's gates: the request form needs the go-live request
+ * key, and Re-check needs the key to work setup steps. A reader without them
+ * sees where the school stands and who can act on it, not a form that would
+ * be refused.
  */
 function GateCard({
   state,
@@ -260,6 +268,9 @@ function GateCard({
   latest: GoLiveRequest | null;
 }) {
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
+  const canRequest = hasPermission(P.REQUEST_GO_LIVE);
+  const canRecheck = hasPermission(P.UPDATE_ONBOARDING_TASK);
   const [revalidate, { isLoading: isChecking }] =
     useRevalidateOnboardingMutation();
   const readiness = state.readiness_state;
@@ -300,7 +311,7 @@ function GateCard({
               ? `Last checked ${humanDateTime(state.last_validation_at)}`
               : "Not checked yet"}
           </p>
-          {readiness !== "LIVE" && (
+          {readiness !== "LIVE" && canRecheck && (
             <Button
               variant="outline"
               size="xs"
@@ -337,7 +348,15 @@ function GateCard({
         </div>
       )}
 
-      {readiness === "READY" && <RequestForm />}
+      {readiness === "READY" &&
+        (canRequest ? (
+          <RequestForm />
+        ) : (
+          <p className="rounded-md border border-border p-4 text-[13px] text-gray-06 text-pretty">
+            Your school is ready. Asking XVS to take it live is done by your
+            school administrator.
+          </p>
+        ))}
 
       {readiness === "PENDING_APPROVAL" && <PendingBlock latest={latest} />}
     </section>
