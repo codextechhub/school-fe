@@ -3,6 +3,7 @@ import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types
 import type {
   CreateTicketBody,
   Ticket,
+  TicketComment,
   TicketListParams,
   TicketStatus,
 } from "./support-types";
@@ -73,7 +74,7 @@ export const supportApi = baseApi.injectEndpoints({
      * school anyway.
      */
     addTicketComment: builder.mutation<
-      Envelope<unknown>,
+      Envelope<TicketComment>,
       { id: string | number; body: string }
     >({
       query: ({ id, body }) => ({
@@ -156,14 +157,18 @@ export const supportApi = baseApi.injectEndpoints({
      * The server checks every file: 10 MB, an extension allowlist, and that the
      * bytes match the extension. The accept attribute on a picker is a courtesy
      * on top of that, not the rule.
+     *
+     * `comment_id` binds the file to a reply, so it shows inside that message
+     * rather than as a separate event in the thread.
      */
     addTicketAttachment: builder.mutation<
       Envelope<{ id: string; original_filename: string }>,
-      { ticketId: string; file: File }
+      { ticketId: string; file: File; comment_id?: string }
     >({
-      query: ({ ticketId, file }) => {
+      query: ({ ticketId, file, comment_id }) => {
         const body = new FormData();
         body.append("file", file);
+        if (comment_id) body.append("comment_id", comment_id);
         return {
           url: `/support/tickets/${ticketId}/attachments/`,
           method: "POST",

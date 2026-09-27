@@ -1,27 +1,34 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
+  ArrowDown,
   ArrowLeft,
   ArrowUpRight,
   Bell,
   BellOff,
+  FileText,
+  Image,
   Loader2,
+  MessageSquare,
   Paperclip,
   RotateCcw,
   Send,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CustomTextArea } from "@/components/custom/custom-textarea";
+import { Textarea } from "@/components/ui/textarea";
 import { PageShell } from "@/components/layout/page-shell";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/utils/relative-date";
+import { formatBytes } from "@/utils/format-bytes";
 import { apiErrorMessage } from "@/utils/api-error";
-import { openAttachment } from "@/utils/attachment-download";
+import { fetchAttachmentObjectUrl, openAttachment } from "@/utils/attachment-download";
 import { routesPath } from "@/routes/routesPath";
 import {
+  useAddTicketAttachmentMutation,
   useAddTicketCommentMutation,
   useEscalateTicketMutation,
   useGetTicketQuery,
@@ -34,21 +41,29 @@ import type {
 } from "@/redux/services/support/support-types";
 import {
   buildConversationDays,
+  conversationCommentBody,
   partitionTicketAttachments,
 } from "./conversation-model";
 
 /**
  * One ticket, and the conversation on it.
  *
- * Built on the same two-column shape as the Console's ticket page - the thread
- * on the left, what the ticket IS on the right - so a CodeX operator and a
- * school administrator looking at the same ticket are reading the same screen.
- * What differs is the vocabulary, and it differs deliberately.
+ * Built on the same shape as the Console's ticket page - the thread on the
+ * left, what the ticket IS on the right - so a CodeX operator and a school
+ * administrator looking at the same ticket are reading the same screen. What
+ * differs is the vocabulary, and it differs deliberately.
+ *
+ * On a wide screen the page is exactly the height of the window and nothing
+ * outside it scrolls: the thread scrolls inside its own box and the reply box
+ * sits under it, always in view, and the right rail scrolls on its own. The
+ * description moves into the rail there, so a long description never pushes
+ * the conversation down. On a phone the page scrolls normally and the thread
+ * box takes most of the screen.
  *
  * A school does not need to be told which tenant it is, and cannot assign work
  * to CodeX staff, so those panels are absent rather than shown greyed out. What
  * it does need, and the Console has no equivalent of, is where the ticket now
- * sits: "Ngozi Eze sent this to CodeX" is the fact a teacher is missing when
+ * sits: "Ngozi Eze sent this to XVS" is the fact a teacher is missing when
  * their own school goes quiet on them.
  *
  * The thread IS the ticket. Escalating opens nothing new and moves nothing: the
@@ -62,6 +77,22 @@ import {
  */
 
 const CARD = "rounded-md border border-border bg-white";
+
+const ACCEPTED_FILES = ".pdf,.png,.jpg,.jpeg,.webp,.gif,.csv,.xls,.xlsx";
+
+/** How close to the bottom still counts as reading the newest message. */
+const NEAR_LATEST_PX = 72;
+
+/**
+ * The thread refreshes while the tab is in front of somebody, the same cadence
+ * as the Console, so a reply from XVS appears without reloading the page.
+ */
+const TICKET_DETAIL_POLL = {
+  pollingInterval: 10_000,
+  skipPollingIfUnfocused: true,
+  refetchOnFocus: true,
+  refetchOnReconnect: true,
+} as const;
 
 const STATUS_TONE: Record<TicketStatus, string> = {
   OPEN: "bg-primary/10 text-primary",
@@ -107,21 +138,88 @@ const messageTime = (value: string): string => {
   });
 };
 
-function AttachmentLink({ file }: { file: TicketAttachment }) {
+const isPrimaryEnter = (event: React.KeyboardEvent) =>
+  event.key === "Enter" && (event.metaKey || event.ctrlKey);
+
+/**
+ * A file on the ticket, as a card with its name and size.
+ *
+ * Images show a thumbnail. The media route needs the caller's token, so the
+ * picture is fetched as a blob rather than pointed at, and the blob is released
+ * when the card leaves the screen. Clicking opens the file in a new tab.
+ */
+function AttachmentCard({
+  file,
+  compact = false,
+}: {
+  file: TicketAttachment;
+  compact?: boolean;
+}) {
+  const isImage = file.content_type?.startsWith("image/") ?? false;
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [opening, setOpening] = useState(false);
+
+  useEffect(() => {
+    if (!isImage) return;
+    let active = true;
+    let objectUrl = "";
+    fetchAttachmentObjectUrl(file.url)
+      .then((url) => {
+        if (!active) {
+          URL.revokeObjectURL(url);
+          return;
+        }
+        objectUrl = url;
+        setPreviewUrl(url);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [file.url, isImage]);
+
   const open = () => {
-    openAttachment(file.url, file.original_filename).catch((error) => {
-      toast.error(error instanceof Error ? error.message : "We could not open that file.");
-    });
+    setOpening(true);
+    openAttachment(file.url, file.original_filename)
+      .catch((error) => {
+        toast.error(error instanceof Error ? error.message : "We could not open that file.");
+      })
+      .finally(() => setOpening(false));
   };
 
   return (
     <button
       type="button"
       onClick={open}
-      className="inline-flex min-w-0 items-center gap-1.5 text-left text-xs font-medium text-primary hover:underline"
+      className={cn(
+        "flex w-full min-w-0 items-center overflow-hidden rounded-lg border border-white-02 bg-gray-03 text-left hover:border-primary/30 hover:bg-primary/5",
+        compact ? "mt-1.5 max-w-xs gap-2 p-2" : "max-w-sm gap-3 p-2.5",
+      )}
     >
-      <Paperclip className="size-3.5 shrink-0" />
-      <span className="truncate">{file.original_filename}</span>
+      {isImage && previewUrl ? (
+        <img
+          src={previewUrl}
+          alt={file.original_filename}
+          className={cn("shrink-0 rounded-md object-cover", compact ? "size-10" : "size-14")}
+        />
+      ) : (
+        <span
+          className={cn(
+            "grid shrink-0 place-items-center rounded-md bg-white text-primary",
+            compact ? "size-8" : "size-10",
+          )}
+        >
+          {isImage ? <Image className="size-5" /> : <FileText className="size-5" />}
+        </span>
+      )}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-xs font-medium text-black-01">
+          {file.original_filename}
+        </span>
+        <span className="mt-0.5 block text-[11px] text-gray-01">{formatBytes(file.size)}</span>
+      </span>
+      {opening && <Loader2 className="size-4 shrink-0 animate-spin text-gray-01" />}
     </button>
   );
 }
@@ -129,30 +227,80 @@ function AttachmentLink({ file }: { file: TicketAttachment }) {
 export default function SupportTicketDetail() {
   const navigate = useNavigate();
   const { id = "" } = useParams<{ id: string }>();
-  const { data, isLoading, isError, refetch } = useGetTicketQuery(id, { skip: !id });
+  const { data, isLoading, isError, refetch } = useGetTicketQuery(id, {
+    skip: !id,
+    ...TICKET_DETAIL_POLL,
+  });
   const ticket = data?.data;
 
   const [reply, setReply] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [escalateNote, setEscalateNote] = useState("");
   const [escalateOpen, setEscalateOpen] = useState(false);
 
   const [addComment, { isLoading: replying }] = useAddTicketCommentMutation();
+  const [addAttachment, { isLoading: uploading }] = useAddTicketAttachmentMutation();
   const [escalate, { isLoading: escalating }] = useEscalateTicketMutation();
   const [transition, { isLoading: transitioning }] = useTransitionTicketMutation();
   const [setFollowing, { isLoading: muting }] = useSetTicketFollowingMutation();
 
-  // The thread scrolls inside its own box, so arriving at a ticket has to land
-  // on the newest message rather than the oldest. Without this, opening a long
-  // thread shows a conversation from three weeks ago and the reply box below
-  // something nobody is answering.
-  const threadRef = useRef<HTMLDivElement>(null);
-  const conversationItemCount =
-    (ticket?.comments?.length ?? 0) + (ticket?.attachments?.length ?? 0);
-  useEffect(() => {
-    const viewport = threadRef.current;
+  const unattachedFiles = (ticket?.attachments ?? []).filter((file) => !file.comment_id);
+  const ticketAttachments = partitionTicketAttachments(
+    unattachedFiles,
+    ticket?.created_at ?? "",
+  );
+  const conversationDays = buildConversationDays(
+    ticket?.comments ?? [],
+    ticketAttachments.conversation,
+  );
+  const conversationItemCount = conversationDays.reduce(
+    (dayTotal, day) =>
+      dayTotal + day.groups.reduce((groupTotal, group) => groupTotal + group.items.length, 0),
+    0,
+  );
+
+  // Follow the newest message unless the reader has scrolled up to read older
+  // ones; then count what arrives below and offer a way back down instead.
+  const sendingRef = useRef(false);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const activeTicketRef = useRef("");
+  const staysAtLatestRef = useRef(true);
+  const forceLatestRef = useRef(false);
+  const knownItemCountRef = useRef(0);
+  const [showJumpToLatest, setShowJumpToLatest] = useState(false);
+  const [newMessagesBelow, setNewMessagesBelow] = useState(0);
+  const hasTicket = Boolean(ticket);
+
+  const scrollToLatest = (behavior: ScrollBehavior = "smooth") => {
+    const viewport = viewportRef.current;
     if (!viewport) return;
-    viewport.scrollTop = viewport.scrollHeight;
-  }, [conversationItemCount, id]);
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+    staysAtLatestRef.current = true;
+    setShowJumpToLatest(false);
+    setNewMessagesBelow(0);
+  };
+
+  useEffect(() => {
+    if (!hasTicket) return;
+    const isOpening = activeTicketRef.current !== id;
+    const arrived = isOpening
+      ? 0
+      : Math.max(0, conversationItemCount - knownItemCountRef.current);
+    activeTicketRef.current = id;
+    knownItemCountRef.current = conversationItemCount;
+    const follow = isOpening || staysAtLatestRef.current || forceLatestRef.current;
+    forceLatestRef.current = false;
+    if (!follow) {
+      if (arrived > 0) {
+        setNewMessagesBelow((count) => count + arrived);
+        setShowJumpToLatest(true);
+      }
+      return;
+    }
+    setNewMessagesBelow(0);
+    const frame = requestAnimationFrame(() => scrollToLatest(isOpening ? "auto" : "smooth"));
+    return () => cancelAnimationFrame(frame);
+  }, [conversationItemCount, hasTicket, id]);
 
   if (isLoading) {
     return (
@@ -180,6 +328,7 @@ export default function SupportTicketDetail() {
   }
 
   const canComment = ticket.capabilities?.can_comment !== false;
+  const canAttach = ticket.capabilities?.can_attach !== false;
   const canManage = ticket.capabilities?.can_transition === true;
   // Offered exactly when the endpoint would accept it: the server already
   // accounts for "already escalated" and for a CodeX ticket.
@@ -190,23 +339,48 @@ export default function SupportTicketDetail() {
   // Absent means following: the server only records a row once somebody has
   // deliberately muted, and everyone on a ticket hears about it by default.
   const following = ticket.is_following !== false;
-  const unattachedFiles = (ticket.attachments ?? []).filter((file) => !file.comment_id);
-  const ticketAttachments = partitionTicketAttachments(
-    unattachedFiles,
-    ticket.created_at,
-  );
-  const conversationDays = buildConversationDays(
-    ticket.comments ?? [],
-    ticketAttachments.conversation,
-  );
+  const canSend = Boolean(reply.trim()) || Boolean(pendingFile);
+  const isSending = replying || uploading;
 
+  /**
+   * Post the reply, then the file bound to it.
+   *
+   * The two are separate calls, so the file can fail after the words landed.
+   * That is said plainly and the file stays picked, rather than reporting the
+   * whole reply as failed when most of it went through.
+   */
   const send = async () => {
-    if (!reply.trim()) return;
+    if (!canSend || sendingRef.current) return;
+    sendingRef.current = true;
+    const text = reply.trim();
     try {
-      await addComment({ id: ticket.id, body: reply.trim() }).unwrap();
+      const created = await addComment({
+        id: ticket.id,
+        body: conversationCommentBody(text, Boolean(pendingFile)),
+      }).unwrap();
+      forceLatestRef.current = true;
       setReply("");
+      if (pendingFile) {
+        try {
+          await addAttachment({
+            ticketId: String(ticket.id),
+            file: pendingFile,
+            comment_id: created.data?.id,
+          }).unwrap();
+          setPendingFile(null);
+        } catch (error) {
+          toast.warning(
+            apiErrorMessage(
+              error,
+              "Your reply was posted, but the file could not be uploaded. Try the file again.",
+            ),
+          );
+        }
+      }
     } catch (error) {
       toast.error(apiErrorMessage(error, "We could not post your reply."));
+    } finally {
+      sendingRef.current = false;
     }
   };
 
@@ -251,196 +425,252 @@ export default function SupportTicketDetail() {
   };
 
   return (
-    <PageShell className="space-y-5 text-black-01">
+    <PageShell className="text-black-01 lg:flex lg:h-[calc(100dvh-3.75rem)] lg:flex-col lg:overflow-hidden">
       <button
         onClick={() => navigate(routesPath.PROTECTED.SUPPORT.INDEX)}
-        className="inline-flex cursor-pointer items-center gap-1 text-sm text-gray-01 hover:text-black-01"
+        className="inline-flex shrink-0 cursor-pointer items-center gap-1 self-start text-sm text-gray-01 hover:text-black-01"
       >
         <ArrowLeft className="size-4" />
         Back to support
       </button>
 
-      {/* One column on a phone, thread-and-facts on a wide screen. The right
-          rail is fixed-width so the conversation keeps a readable measure
-          rather than stretching across a 27-inch display. */}
-      <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="grid min-w-0 gap-5">
-          <section className={cn(CARD, "min-w-0 overflow-hidden")}>
-            <div className="border-b border-white-02 p-5 sm:p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-mont text-xs font-medium text-primary">
-                    {ticket.ticket_number}
-                  </p>
-                  <h1 className="mt-1 font-mont text-xl font-semibold text-black-01">
-                    {ticket.title}
-                  </h1>
+      <div className="mt-5 grid min-w-0 gap-5 lg:min-h-0 lg:flex-1 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <section className={cn(CARD, "min-w-0 overflow-hidden lg:flex lg:min-h-0 lg:flex-col")}>
+          <div className="shrink-0 border-b border-white-02 p-5 sm:p-6">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-mont text-xs font-medium text-primary">
+                  {ticket.ticket_number}
+                </p>
+                <h1 className="mt-1 font-mont text-xl font-semibold text-black-01">
+                  {ticket.title}
+                </h1>
+              </div>
+              <StatusBadge status={ticket.status} />
+            </div>
+            <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-01 lg:hidden">
+              {ticket.description}
+            </p>
+          </div>
+
+          <div className="p-4 sm:p-6 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+            <div className="flex shrink-0 flex-wrap items-center gap-2">
+              <MessageSquare className="size-4" />
+              <h2 className="font-mont text-sm font-semibold">Conversation</h2>
+              <span className="text-xs text-gray-01">{conversationItemCount}</span>
+              {/* Muting is not leaving: the ticket stays open to you and you
+                  can still reply, it just stops notifying you. */}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="ml-auto h-8 shrink-0 gap-1.5 px-2.5 text-xs"
+                aria-pressed={!following}
+                disabled={muting}
+                onClick={toggleMute}
+              >
+                {muting ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : following ? (
+                  <BellOff className="size-3.5" />
+                ) : (
+                  <Bell className="size-3.5" />
+                )}
+                {following ? "Mute" : "Unmute"}
+              </Button>
+            </div>
+
+            <div className="mt-4 flex h-[65dvh] min-h-[430px] flex-col overflow-hidden rounded-xl border border-white-02 bg-gray-03/60 lg:h-auto lg:min-h-0 lg:flex-1">
+              <div className="relative min-h-0 flex-1">
+                <div
+                  ref={viewportRef}
+                  data-testid="ticket-conversation-viewport"
+                  onScroll={(event) => {
+                    const viewport = event.currentTarget;
+                    const distance =
+                      viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+                    const nearLatest = distance <= NEAR_LATEST_PX;
+                    staysAtLatestRef.current = nearLatest;
+                    setShowJumpToLatest(!nearLatest);
+                    if (nearLatest) setNewMessagesBelow(0);
+                  }}
+                  className="absolute inset-0 space-y-4 overflow-y-auto overscroll-contain p-3 sm:p-4"
+                >
+                  {!conversationDays.length && (
+                    <p className="px-1 py-2 text-sm text-gray-01">
+                      No replies yet. Anything written here is seen by everybody
+                      on the ticket.
+                    </p>
+                  )}
+
+                  {conversationDays.map((day) => (
+                    <section key={day.key} className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <span className="h-px flex-1 bg-white-02" />
+                        <time className="shrink-0 text-[11px] font-medium text-gray-01">
+                          {dayLabel(day.date)}
+                        </time>
+                        <span className="h-px flex-1 bg-white-02" />
+                      </div>
+
+                      {day.groups.map((group, groupIndex) => {
+                        const fromXvs = group.author?.tenant_kind === "PLATFORM";
+                        return (
+                          <div
+                            key={`${day.key}-${group.author?.id ?? "unknown"}-${groupIndex}`}
+                            className="min-w-0 space-y-1.5"
+                          >
+                            <div className="flex items-baseline gap-2">
+                              <p className="min-w-0 truncate text-sm font-semibold text-black-01">
+                                {group.author?.name ?? "Unknown"}
+                              </p>
+                              {fromXvs && (
+                                <span className="shrink-0 rounded-full bg-pry-01 px-2 py-0.5 text-[10px] font-medium text-primary">
+                                  XVS
+                                </span>
+                              )}
+                              <time className="ml-auto shrink-0 text-[11px] text-gray-01">
+                                {messageTime(group.items.at(-1)?.createdAt ?? "")}
+                              </time>
+                            </div>
+
+                            <div className="space-y-1">
+                              {group.items.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className={cn(
+                                    "min-w-0 rounded-md border px-3 py-2",
+                                    fromXvs
+                                      ? "border-primary/15 bg-pry-01/30"
+                                      : "border-white-02 bg-white",
+                                  )}
+                                >
+                                  {item.kind === "comment" ? (
+                                    <>
+                                      <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black-01">
+                                        {item.comment.body}
+                                      </p>
+                                      {item.comment.attachments?.map((file) => (
+                                        <AttachmentCard key={file.id} file={file} compact />
+                                      ))}
+                                    </>
+                                  ) : (
+                                    <AttachmentCard file={item.attachment} compact />
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </section>
+                  ))}
                 </div>
-                <div className="flex shrink-0 flex-wrap items-center gap-2">
-                  <StatusBadge status={ticket.status} />
-                  {/* Muting is not leaving. The ticket stays open to you and
-                      you can still reply; it just stops paging you, which is
-                      what somebody on twenty threads actually needs. */}
-                  <Button
+
+                {showJumpToLatest && (
+                  <button
                     type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-8 shrink-0 gap-1.5 px-2.5 text-xs"
-                    aria-pressed={!following}
-                    disabled={muting}
-                    onClick={toggleMute}
+                    aria-label={
+                      newMessagesBelow
+                        ? `Jump to latest message, ${newMessagesBelow} new ${newMessagesBelow === 1 ? "message" : "messages"}`
+                        : "Jump to latest message"
+                    }
+                    onClick={() => scrollToLatest()}
+                    className="absolute bottom-3 right-3 grid size-9 place-content-center rounded-full border border-primary/15 bg-white text-primary shadow-lg transition hover:-translate-y-0.5 hover:bg-primary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                   >
-                    {muting ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : following ? (
-                      <BellOff className="size-3.5" />
-                    ) : (
-                      <Bell className="size-3.5" />
+                    <ArrowDown className="size-4" />
+                    {newMessagesBelow > 0 && (
+                      <span className="absolute -right-1.5 -top-1.5 grid min-w-5 place-content-center rounded-full bg-primary px-1 text-[10px] font-bold leading-5 text-white ring-2 ring-white">
+                        {newMessagesBelow > 99 ? "99+" : newMessagesBelow}
+                      </span>
                     )}
-                    {following ? "Mute" : "Unmute"}
-                  </Button>
-                </div>
+                  </button>
+                )}
               </div>
 
-              <p className="mt-4 whitespace-pre-wrap text-sm leading-6 text-gray-01">
-                {ticket.description}
-              </p>
-            </div>
-
-            {/* ── The conversation ──────────────────────────────────────────
-                A bounded box the thread scrolls inside, with the reply stuck to
-                the bottom of it, the way the Console does it. A long thread that
-                grows the page pushes the reply box off the screen, so answering
-                a ticket means scrolling back down past everything you have just
-                read. Bounding it means the thing you came to do never moves.
-
-                `min-h-0` on the middle row is what lets it shrink: a grid row
-                sizes to its content by default, and without it the list simply
-                pushes the composer out of the box instead of scrolling. */}
-            <div className="grid h-[72dvh] min-h-[34rem] max-h-[52rem] grid-rows-[auto_minmax(0,1fr)_auto] lg:h-[calc(100dvh-10rem)] lg:min-h-[38rem] lg:max-h-[58rem]">
-              {/* The rule is the top edge of the scrolling box, not decoration.
-                  Without it the thread simply stops mid-air when you scroll and
-                  the oldest message looks cut off by nothing; with it the
-                  conversation visibly passes underneath the heading, which is
-                  what tells you there is more above. */}
-              <p className="border-b border-white-02 px-5 pb-3 pt-5 font-mont text-sm font-semibold sm:px-6 sm:pt-6">
-                Conversation
-              </p>
-
-              {!conversationDays.length ? (
-                <p className="px-5 py-3 text-sm text-gray-01 sm:px-6">
-                  No replies yet. Anything written here is seen by everybody on
-                  the ticket.
-                </p>
-              ) : (
-                <ScrollArea
-                  viewportRef={threadRef}
-                  className="min-h-0"
-                  viewportClassName="px-5 py-4 sm:px-6"
-                >
-                  <ol className="grid gap-4">
-                    {conversationDays.map((day) => (
-                      <li key={day.key} className="grid min-w-0 gap-3">
-                        <div className="flex items-center gap-3" aria-label={dayLabel(day.date)}>
-                          <span className="h-px flex-1 bg-white-02" />
-                          <time className="shrink-0 text-[11px] font-medium text-gray-05">
-                            {dayLabel(day.date)}
-                          </time>
-                          <span className="h-px flex-1 bg-white-02" />
-                        </div>
-
-                        {day.groups.map((group, groupIndex) => {
-                          const fromCodex = group.author?.tenant_kind === "PLATFORM";
-                          return (
-                            <div
-                              key={`${day.key}-${group.author?.id ?? "unknown"}-${groupIndex}`}
-                              className="grid min-w-0 gap-1"
-                            >
-                              <div className="flex flex-wrap items-baseline gap-2">
-                                <span className="font-mont text-sm font-medium text-black-01">
-                                  {group.author?.name ?? "Unknown"}
-                                </span>
-                                {fromCodex && (
-                                  <span className="rounded-full bg-pry-01 px-2 py-0.5 text-[10px] font-medium text-primary">
-                                    XVS
-                                  </span>
-                                )}
-                                <time className="ml-auto shrink-0 text-[11px] text-gray-05">
-                                  {messageTime(group.items.at(-1)?.createdAt ?? "")}
-                                </time>
-                              </div>
-
-                              <div className="grid gap-1">
-                                {group.items.map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className={cn(
-                                      "min-w-0 rounded-md px-3 py-1.5 text-sm leading-5",
-                                      fromCodex
-                                        ? "bg-pry-01/40 text-black-01"
-                                        : "bg-gray-03 text-gray-01",
-                                    )}
-                                  >
-                                    {item.kind === "comment" ? (
-                                      <>
-                                        <p className="whitespace-pre-wrap">{item.comment.body}</p>
-                                        {item.comment.attachments?.length > 0 && (
-                                          <div className="mt-2 grid gap-1 border-t border-black/5 pt-2">
-                                            {item.comment.attachments.map((file) => (
-                                              <AttachmentLink key={file.id} file={file} />
-                                            ))}
-                                          </div>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <AttachmentLink file={item.attachment} />
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </li>
-                    ))}
-                  </ol>
-                </ScrollArea>
-              )}
-
-              {canComment && !isClosed ? (
-                // Pinned: the composer is the last row of the grid, so it sits
-                // under the thread however long the thread gets.
-                <div className="grid gap-2 border-t border-white-02 p-5 sm:p-6">
-                  <CustomTextArea
-                    id="reply"
-                    label="Reply"
-                    rows={3}
-                    placeholder="Add what you have found, or what you have tried."
-                    value={reply}
-                    onChange={(event) => setReply(event.target.value)}
-                  />
-                  <div className="flex justify-end">
-                    <Button onClick={send} loading={replying} disabled={!reply.trim() || replying}>
-                      <Send className="size-4" />
-                      Post reply
-                    </Button>
-                  </div>
-                </div>
-              ) : isClosed ? (
-                <p className="border-t border-white-02 px-5 py-4 text-[13px] text-gray-01 sm:px-6">
+              {isClosed ? (
+                <p className="shrink-0 border-t border-white-02 bg-white p-4 text-[13px] text-gray-01">
                   This ticket is closed. Reopen it if the problem is back.
                 </p>
+              ) : canComment ? (
+                <div className="shrink-0 border-t border-white-02 bg-white p-3">
+                  <Textarea
+                    rows={3}
+                    aria-label="Reply"
+                    value={reply}
+                    onChange={(event) => setReply(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (!isPrimaryEnter(event)) return;
+                      event.preventDefault();
+                      if (!isSending && canSend) void send();
+                    }}
+                    aria-keyshortcuts="Control+Enter Meta+Enter"
+                    placeholder="Add what you have found, or what you have tried."
+                    className="max-h-40"
+                  />
+                  <div className="mt-2 flex items-center gap-2">
+                    {canAttach && (
+                      <label className="inline-flex cursor-pointer items-center gap-1 rounded px-2 py-1 text-xs text-gray-01 hover:bg-gray-03">
+                        <Paperclip className="size-3" />
+                        Attach file
+                        <input
+                          type="file"
+                          accept={ACCEPTED_FILES}
+                          className="sr-only"
+                          onChange={(event) => {
+                            setPendingFile(event.target.files?.[0] ?? null);
+                            event.target.value = "";
+                          }}
+                        />
+                      </label>
+                    )}
+                    <Button
+                      size="sm"
+                      className="ml-auto"
+                      onClick={send}
+                      disabled={isSending || !canSend}
+                    >
+                      {isSending ? (
+                        <Loader2 className="size-3 animate-spin" />
+                      ) : (
+                        <Send className="size-3" />
+                      )}
+                      {isSending ? "Sending…" : "Send reply"}
+                    </Button>
+                  </div>
+                  {pendingFile && (
+                    <div className="mt-2 inline-flex max-w-full items-center gap-2 rounded-md bg-gray-03 px-2.5 py-1.5 text-xs text-gray-01">
+                      <Paperclip className="size-3.5 shrink-0" />
+                      <span className="truncate">{pendingFile.name}</span>
+                      <button
+                        type="button"
+                        aria-label="Remove attachment"
+                        onClick={() => setPendingFile(null)}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <span />
+                <p className="shrink-0 border-t border-white-02 bg-white p-4 text-[13px] text-gray-01">
+                  You can read this ticket, but you cannot reply to it.
+                </p>
               )}
             </div>
-          </section>
-        </div>
+          </div>
+        </section>
 
         {/* ── What the ticket is, and where it sits ───────────────────────── */}
-        <aside className="grid min-w-0 content-start gap-4">
+        <aside className="grid min-w-0 content-start gap-4 lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:pr-1">
+          <div className={cn(CARD, "hidden p-5 lg:block")}>
+            <h2 className="font-mont text-sm font-semibold">Description</h2>
+            <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-6 text-gray-01">
+              {ticket.description}
+            </p>
+          </div>
+
           {isEscalated && (
-            // The fact a teacher is missing when their own school goes quiet.
             // Named, dated, and explicit that the thread did not move.
             <div className={cn(CARD, "border-primary/20 bg-pry-01/30 p-4")}>
               <p className="font-mont text-sm font-semibold text-primary">With XVS</p>
@@ -477,13 +707,11 @@ export default function SupportTicketDetail() {
               <p className="mt-1 text-xs leading-5 text-gray-05">
                 Included when this ticket was raised.
               </p>
-              <ul className="mt-3 grid max-h-48 gap-2 overflow-y-auto pr-1">
+              <div className="mt-3 grid max-h-48 gap-2 overflow-y-auto pr-1">
                 {ticketAttachments.initial.map((file) => (
-                  <li key={file.id} className="min-w-0 rounded-md bg-gray-03 px-3 py-2">
-                    <AttachmentLink file={file} />
-                  </li>
+                  <AttachmentCard key={file.id} file={file} />
                 ))}
-              </ul>
+              </div>
             </div>
           )}
 

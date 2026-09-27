@@ -52,6 +52,19 @@ const sameAuthor = (left: TicketUser, right: TicketUser): boolean =>
   );
 
 /**
+ * The text posted when a reply goes out.
+ *
+ * A file sent on its own still travels as a reply, so it has a message to sit
+ * inside and a sender heading above it, the same as a file sent with words.
+ */
+export function conversationCommentBody(
+  body: string,
+  hasAttachment: boolean,
+): string {
+  return body.trim() || (hasAttachment ? "Shared a file." : "");
+}
+
+/**
  * Builds the support timeline shown to a school.
  *
  * Later unbound files are conversation events because their sender and timing

@@ -6,6 +6,7 @@ import type {
 } from "@/redux/services/support/support-types";
 import {
   buildConversationDays,
+  conversationCommentBody,
   partitionTicketAttachments,
 } from "./conversation-model";
 
@@ -98,5 +99,21 @@ describe("support conversation grouping", () => {
 
     expect(files.initial.map((file) => file.id)).toEqual(["one", "two"]);
     expect(files.conversation.map((file) => file.id)).toEqual(["later"]);
+  });
+});
+
+describe("conversationCommentBody", () => {
+  it("posts the trimmed words when there are any", () => {
+    expect(conversationCommentBody("  Tried the other socket.  ", true)).toBe(
+      "Tried the other socket.",
+    );
+  });
+
+  it("gives a file sent on its own a message to sit inside", () => {
+    expect(conversationCommentBody("   ", true)).toBe("Shared a file.");
+  });
+
+  it("posts nothing when there are neither words nor a file", () => {
+    expect(conversationCommentBody("", false)).toBe("");
   });
 });

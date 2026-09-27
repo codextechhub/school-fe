@@ -31,6 +31,26 @@ export function buildAttachmentUrl(storedUrl: string, base: string = apiBase): s
 }
 
 /**
+ * Fetch an attachment with the caller's token and return a blob URL for it.
+ *
+ * The caller owns the URL and revokes it when done with it.
+ */
+export async function fetchAttachmentObjectUrl(storedUrl: string): Promise<string> {
+  const token = getAccessToken();
+  const response = await fetch(buildAttachmentUrl(storedUrl), {
+    headers: token && token !== "undefined" ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!response.ok) {
+    throw new Error(
+      response.status === 404
+        ? "That file is no longer available."
+        : "Could not open the file.",
+    );
+  }
+  return URL.createObjectURL(await response.blob());
+}
+
+/**
  * Fetch an attachment with the caller's token and open it in a new tab.
  *
  * The tab is opened synchronously inside the click gesture; opening it after the
@@ -40,18 +60,7 @@ export async function openAttachment(storedUrl: string, filename: string) {
   const win = window.open("", "_blank");
   if (!win) throw new Error("Allow pop-ups for this site to open the file.");
   try {
-    const token = getAccessToken();
-    const response = await fetch(buildAttachmentUrl(storedUrl), {
-      headers: token && token !== "undefined" ? { Authorization: `Bearer ${token}` } : {},
-    });
-    if (!response.ok) {
-      throw new Error(
-        response.status === 404
-          ? "That file is no longer available."
-          : "Could not open the file.",
-      );
-    }
-    const url = URL.createObjectURL(await response.blob());
+    const url = await fetchAttachmentObjectUrl(storedUrl);
     win.location.href = url;
     // Long enough for the tab to load it; the browser holds its own reference after.
     window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
