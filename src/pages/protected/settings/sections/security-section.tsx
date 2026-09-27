@@ -12,7 +12,6 @@ import {
 } from "@/components/settings/settings-layout";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
-import { useGetAllMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
   useGetSchoolSecuritySettingsQuery,
   useUpdateSchoolSecuritySettingsMutation,
@@ -25,6 +24,7 @@ import type {
 } from "@/redux/services/school/school-settings-types";
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { SectionLoadError, SectionLoading } from "./shared";
+import { useSettingsBranches } from "../use-settings-branches";
 
 const FIELDS: Array<{
   key: SecuritySettingKey;
@@ -102,19 +102,19 @@ function boundText(compliance: SecurityCompliance | undefined, suffix: string) {
  * The inputs carry those bounds, and the server enforces them again.
  *
  * The branch picker is absent for a school with one branch, because there is
- * nothing to choose between.
+ * nothing to choose between, and offers only the branches the reader reaches.
  */
 export function SecuritySection() {
   const { hasPermission } = usePermissions();
   const canSave = hasPermission(P.UPDATE_SETTINGS);
   const [branch, setBranch] = useState("");
-  const branches = useGetAllMyBranchesQuery();
+  const branches = useSettingsBranches();
   const query = useGetSchoolSecuritySettingsQuery({ branch: branch || undefined });
   // currentData, not data: while another branch loads, `data` still holds the
   // previous scope's values, and a save from that form would write them here.
   const data = query.currentData?.data;
 
-  const branchList = branches.data ?? [];
+  const branchList = branches.choices;
   const branchName = branchList.find((b) => String(b.id) === branch)?.name;
 
   return (
@@ -124,7 +124,7 @@ export function SecuritySection() {
         description="How strict sign-in and password recovery are for your staff. You can make any of these stricter than XVS requires, but never looser."
       />
 
-      {branchList.length > 1 ? (
+      {branches.applies && branchList.length > 0 ? (
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white-02 bg-white p-4">
           <div className="w-full sm:w-60">
             <NativeSelect
