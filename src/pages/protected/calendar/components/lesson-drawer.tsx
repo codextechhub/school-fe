@@ -46,6 +46,12 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
  * **The room list IS narrowed**, and for the opposite reason: a room is a
  * physical place, and a class cannot be scheduled into one at another branch.
  * The server refuses that outright, so offering it would be offering a refusal.
+ *
+ * **What the reader may do shapes the footer.** Clearing a slot is a delete and
+ * is offered only when `onRemove` is passed, which the screen does for a
+ * reader holding the delete key. The clash preview runs on the server's create
+ * key, so a reader who may edit lessons but not add them saves without the
+ * live preview (`canPreview` false) and learns of a clash from the save.
  */
 
 export interface LessonTarget {
@@ -76,6 +82,7 @@ export function LessonDrawer({
   onSave,
   onRemove,
   onPreview,
+  canPreview = true,
 }: {
   open: boolean;
   target: LessonTarget | null;
@@ -88,9 +95,12 @@ export function LessonDrawer({
   removing: boolean;
   onClose: () => void;
   onSave: (values: LessonValues) => Promise<ClashWarning[]>;
-  onRemove: () => Promise<void>;
+  /** Clears the slot. Omitted for a reader who may not delete lessons. */
+  onRemove?: () => Promise<void>;
   /** Asks the server what this draft would clash with. Writes nothing. */
   onPreview: (values: LessonValues) => Promise<{ warnings: ClashWarning[] }>;
+  /** Whether the reader holds the key the preview endpoint asks for. */
+  canPreview?: boolean;
 }) {
   // Rooms are only named with their branch for a reader who works across branches.
   const { multiBranch } = useAcademicsLens();
@@ -114,7 +124,8 @@ export function LessonDrawer({
   // the same hour all week.
   const clash = useClashPreview({
     values,
-    ready: open && !!target && (!!values.teacher || !!values.room),
+    ready:
+      canPreview && open && !!target && (!!values.teacher || !!values.room),
     ask: onPreview,
   });
 
@@ -149,6 +160,7 @@ export function LessonDrawer({
   };
 
   const remove = async () => {
+    if (!onRemove) return;
     try {
       await onRemove();
       onClose();
@@ -272,7 +284,7 @@ export function LessonDrawer({
         <div className="shrink-0 border-t border-white-02 pt-4">
           <ProblemSummary problems={showing} />
           <div className="flex flex-wrap items-center justify-end gap-2 px-5 pb-4">
-          {editing && (
+          {editing && onRemove && (
             <Button
               variant="ghost"
               className="mr-auto text-error-text"

@@ -55,6 +55,12 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
  * **Times are optional and stay that way.** A school that publishes exact times
  * has them; one that publishes only morning and afternoon does not, and is not
  * made to invent them.
+ *
+ * **What the reader may do shapes the footer.** Removing a paper is a delete
+ * and is offered only when `onRemove` is passed, which the screen does for a
+ * reader holding the exam delete key. The clash preview runs on the server's
+ * exam create key, so a reader who may edit papers but not add them saves
+ * without the live preview (`canPreview` false) and meets a refusal on save.
  */
 
 const SITTINGS: { value: Sitting; label: string }[] = [
@@ -80,6 +86,7 @@ export function PaperDrawer({
   onSave,
   onRemove,
   onPreview,
+  canPreview = true,
 }: {
   open: boolean;
   initial: PaperValues;
@@ -96,11 +103,14 @@ export function PaperDrawer({
   removing: boolean;
   onClose: () => void;
   onSave: (values: ExamSlotWrite) => Promise<unknown>;
-  onRemove: () => Promise<void>;
+  /** Removes the paper. Omitted for a reader who may not delete papers. */
+  onRemove?: () => Promise<void>;
   /** Asks the server what this draft would clash with. Writes nothing. */
   onPreview: (
     values: PaperValues,
   ) => Promise<{ refusal: string | null; warnings: ClashWarning[] }>;
+  /** Whether the reader holds the key the preview endpoint asks for. */
+  canPreview?: boolean;
 }) {
   // Rooms are only named with their branch for a reader who works across branches.
   const { multiBranch } = useAcademicsLens();
@@ -138,6 +148,7 @@ export function PaperDrawer({
   const clash = useClashPreview({
     values,
     ready:
+      canPreview &&
       open &&
       !!values.school_class &&
       !!values.subject &&
@@ -195,6 +206,7 @@ export function PaperDrawer({
   };
 
   const remove = async () => {
+    if (!onRemove) return;
     try {
       await onRemove();
       onClose();
@@ -402,7 +414,7 @@ export function PaperDrawer({
         <div className="shrink-0 border-t border-white-02 pt-4">
           <ProblemSummary problems={showing} />
           <div className="flex flex-wrap items-center justify-end gap-2 px-5 pb-4">
-          {editing && (
+          {editing && onRemove && (
             <Button
               variant="ghost"
               className="mr-auto text-error-text"

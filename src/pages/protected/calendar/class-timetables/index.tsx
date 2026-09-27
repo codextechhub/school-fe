@@ -128,6 +128,7 @@ export default function ClassTimetables() {
 
   // A school-wide class's grid is read-only to a branch administrator.
   const mine = canManageRow(currentRow);
+  const canCreate = hasPermission(P.CREATE_TIMETABLE_ENTRY) && !readOnlyYear && mine;
   const canEdit = hasPermission(P.MODIFY_TIMETABLE_ENTRY) && !readOnlyYear && mine;
   const canManage = hasPermission(P.DELETE_TIMETABLE) && !readOnlyYear && mine;
   const canPublish = hasPermission(P.PUBLISH_TIMETABLE) && !readOnlyYear && mine;
@@ -136,7 +137,8 @@ export default function ClassTimetables() {
   const published = grid?.status === "PUBLISHED";
 
   const openCell = (cell: GridCell, dayIndex: number) => {
-    if (!canEdit || !grid) return;
+    // A filled cell is an edit; an empty one is a new lesson.
+    if (!grid || !(cell.slot ? canEdit : canCreate)) return;
     const day = grid.days[dayIndex];
     setLesson({
       slot: cell.slot ?? null,
@@ -398,7 +400,7 @@ export default function ClassTimetables() {
             </div>
           )}
 
-          {grid.filled === 0 && (
+          {grid.filled === 0 && canCreate && (
             <p className="print-hide border-b border-primary/10 bg-pry-01/25 px-4 py-3 text-[13px] text-gray-06 text-pretty sm:px-5">
               {grid.lesson_periods} teaching slots this week. Click any empty
               slot to add the first lesson, or duplicate another class's week.
@@ -410,8 +412,8 @@ export default function ClassTimetables() {
               days={grid.days}
               warnings={warnings}
               variant="class"
-              onCellClick={canEdit ? openCell : undefined}
-              emptyLabel={canEdit ? "Add" : "Free"}
+              onCellClick={canEdit || canCreate ? openCell : undefined}
+              emptyLabel={canCreate ? "Add" : "Free"}
             />
           </div>
 
@@ -449,8 +451,9 @@ export default function ClassTimetables() {
         removing={deleting}
         onClose={() => setLesson(null)}
         onSave={saveLesson}
-        onRemove={removeLesson}
+        onRemove={canManage ? removeLesson : undefined}
         onPreview={previewLesson}
+        canPreview={hasPermission(P.CREATE_TIMETABLE_ENTRY)}
       />
 
       <DuplicateDrawer

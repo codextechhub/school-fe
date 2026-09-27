@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { cn } from "@/lib/utils";
 import { apiErrorMessage } from "@/utils/api-error";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
 import {
   useGetClassesQuery,
   useGetSubjectsQuery,
@@ -42,6 +44,10 @@ import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
  *
  * **An assignment says what, never when.** No day, no period, no room: that is
  * the timetable's, and a school with a paper timetable still needs this.
+ *
+ * Every write here goes to the teaching routes, which the server refuses
+ * without `school.teachers.assign`. A reader who lacks it still sees who
+ * teaches what, with Close in place of Save and no row or add controls.
  */
 export function AssignDutiesDrawer({
   staffId,
@@ -60,6 +66,8 @@ export function AssignDutiesDrawer({
   const teaching = useGetStaffTeachingQuery({ id: staffId });
   const { data: subjectData } = useGetSubjectsQuery();
   const { data: classData } = useGetClassesQuery();
+
+  const canAssign = usePermissions().hasPermission(P.ASSIGN_TEACHING);
 
   const [assign, { isLoading: assigning }] = useAssignTeachingMutation();
   const [setPart, { isLoading: changingPart }] = useSetTeachingPartMutation();
@@ -145,6 +153,7 @@ export function AssignDutiesDrawer({
       onSave={() => void add()}
       canSave={Boolean(classId) && Boolean(subjectId) && !duplicate}
       saving={assigning}
+      readOnly={!canAssign}
     >
       <div className="grid gap-5">
         <section>
@@ -178,36 +187,38 @@ export function AssignDutiesDrawer({
                   >
                     {row.part_label}
                   </span>
-                  <span className="ml-auto flex items-center gap-1">
-                    {row.part === "ASSISTANT" ? (
-                      <Button
-                        variant="ghost"
+                  {canAssign && (
+                    <span className="ml-auto flex items-center gap-1">
+                      {row.part === "ASSISTANT" ? (
+                        <Button
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() => void changePart(row.id, "LEAD")}
+                        >
+                          <ArrowUp className="size-3.5" />
+                          Make main
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() => void changePart(row.id, "ASSISTANT")}
+                        >
+                          <ArrowDown className="size-3.5" />
+                          Move to assisting
+                        </Button>
+                      )}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${row.subject_name} in ${row.class_name}`}
                         disabled={busy}
-                        onClick={() => void changePart(row.id, "LEAD")}
+                        onClick={() => void drop(row.id)}
+                        className="rounded-lg p-2 text-gray-05 hover:bg-gray-03 hover:text-error-text"
                       >
-                        <ArrowUp className="size-3.5" />
-                        Make main
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        disabled={busy}
-                        onClick={() => void changePart(row.id, "ASSISTANT")}
-                      >
-                        <ArrowDown className="size-3.5" />
-                        Move to assisting
-                      </Button>
-                    )}
-                    <button
-                      type="button"
-                      aria-label={`Remove ${row.subject_name} in ${row.class_name}`}
-                      disabled={busy}
-                      onClick={() => void drop(row.id)}
-                      className="rounded-lg p-2 text-gray-05 hover:bg-gray-03 hover:text-error-text"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </span>
+                        <X className="size-4" />
+                      </button>
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -218,73 +229,77 @@ export function AssignDutiesDrawer({
           )}
         </section>
 
-        <section className="border-t border-white-02 pt-4">
-          <h3 className="mb-3 text-sm font-semibold text-black-01">
-            Add a duty
-          </h3>
-          <div className="grid gap-4">
-            <Field label="Class" required>
-              <NativeSelect
-                aria-label="Class"
-                value={classId}
-                onChange={(e) => setClassId(e.target.value)}
-                className="h-9"
-              >
-                <option value="">Choose a class</option>
-                {classes.map((row) => (
-                  <option key={row.id} value={row.id}>
-                    {row.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
+        {canAssign && (
+          <section className="border-t border-white-02 pt-4">
+            <h3 className="mb-3 text-sm font-semibold text-black-01">
+              Add a duty
+            </h3>
+            <div className="grid gap-4">
+              <Field label="Class" required>
+                <NativeSelect
+                  aria-label="Class"
+                  value={classId}
+                  onChange={(e) => setClassId(e.target.value)}
+                  className="h-9"
+                >
+                  <option value="">Choose a class</option>
+                  {classes.map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
 
-            <Field label="Subject" required>
-              <NativeSelect
-                aria-label="Subject"
-                value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
-                className="h-9"
-              >
-                <option value="">Choose a subject</option>
-                {subjects.map((row) => (
-                  <option key={row.id} value={row.id}>
-                    {row.name}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
+              <Field label="Subject" required>
+                <NativeSelect
+                  aria-label="Subject"
+                  value={subjectId}
+                  onChange={(e) => setSubjectId(e.target.value)}
+                  className="h-9"
+                >
+                  <option value="">Choose a subject</option>
+                  {subjects.map((row) => (
+                    <option key={row.id} value={row.id}>
+                      {row.name}
+                    </option>
+                  ))}
+                </NativeSelect>
+              </Field>
 
-            <Field
-              label="Their part"
-              required
-              hint="The main teacher enters that subject's results for that class. Anyone else assisting also teaches it, and there can be several."
-            >
-              <NativeSelect
-                aria-label="Their part"
-                value={part}
-                onChange={(e) => setPartChoice(e.target.value as TeachingPart)}
-                className="h-9"
+              <Field
+                label="Their part"
+                required
+                hint="The main teacher enters that subject's results for that class. Anyone else assisting also teaches it, and there can be several."
               >
-                <option value="LEAD">Main teacher</option>
-                <option value="ASSISTANT">Assisting</option>
-              </NativeSelect>
-            </Field>
+                <NativeSelect
+                  aria-label="Their part"
+                  value={part}
+                  onChange={(e) =>
+                    setPartChoice(e.target.value as TeachingPart)
+                  }
+                  className="h-9"
+                >
+                  <option value="LEAD">Main teacher</option>
+                  <option value="ASSISTANT">Assisting</option>
+                </NativeSelect>
+              </Field>
 
-            {duplicate && (
-              <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
-                {personName} already teaches that subject in that class. Change
-                their part on the row above instead.
+              {duplicate && (
+                <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                  {personName} already teaches that subject in that class.
+                  Change their part on the row above instead.
+                </p>
+              )}
+
+              <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
+                <Info className="mt-px size-3.5 shrink-0 text-primary" />
+                This says what they teach. When and where it happens is the
+                timetable&apos;s, and nothing here schedules a lesson.
               </p>
-            )}
-
-            <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
-              <Info className="mt-px size-3.5 shrink-0 text-primary" />
-              This says what they teach. When and where it happens is the
-              timetable&apos;s, and nothing here schedules a lesson.
-            </p>
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
       </div>
     </DrawerShell>
   );

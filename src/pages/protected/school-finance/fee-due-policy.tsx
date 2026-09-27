@@ -15,6 +15,10 @@
  *
  * School-only, which is why it lives here and not in @xvs/finance: the endpoint
  * is the FAL's, and CodeX does not bill anybody school fees.
+ *
+ * Reading the rule needs `school.fees.view`; changing it is a PATCH the server
+ * refuses without `school.fees.update`. A reader without the second sees the
+ * rule and its dates with the choices locked and no Save.
  */
 
 import { useState } from "react";
@@ -27,6 +31,8 @@ import {
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
 import {
   useGetFeeDuePolicyQuery,
   useUpdateFeeDuePolicyMutation,
@@ -53,6 +59,7 @@ function formatDue(iso: string) {
  */
 function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
   const [save, { isLoading: isSaving }] = useUpdateFeeDuePolicyMutation();
+  const canEdit = usePermissions().hasPermission(P.UPDATE_FEES);
   const [basis, setBasis] = useState<FeeDueBasis>(policy.basis);
   const [days, setDays] = useState(String(policy.days_after));
 
@@ -68,7 +75,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
     (basis === "DAYS_AFTER" && daysNumber !== policy.days_after);
 
   const onSave = async () => {
-    if (!basis || blocked || !changed) return;
+    if (!canEdit || !basis || blocked || !changed) return;
     await save(
       basis === "DAYS_AFTER" ? { basis, days_after: daysNumber } : { basis },
     ).unwrap().catch(() => undefined);
@@ -82,13 +89,15 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
         title="Fee due dates"
         description="When a fee bill falls due once it is raised. One rule for the whole school, so a child and their sibling at another branch are due on the same day."
         action={
-          <Button
-            onClick={onSave}
-            disabled={!changed || blocked || isSaving}
-            className="font-mont text-xs"
-          >
-            {isSaving ? "Saving…" : "Save"}
-          </Button>
+          canEdit ? (
+            <Button
+              onClick={onSave}
+              disabled={!changed || blocked || isSaving}
+              className="font-mont text-xs"
+            >
+              {isSaving ? "Saving…" : "Save"}
+            </Button>
+          ) : undefined
         }
       />
 
@@ -109,6 +118,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
                   key={option.value}
                   type="button"
                   onClick={() => setBasis(option.value)}
+                  disabled={!canEdit}
                   aria-pressed={active}
                   className={cn(
                     "rounded-xl border p-3.5 text-left transition-colors",
@@ -158,6 +168,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
                 max={365}
                 value={days}
                 onChange={(event) => setDays(event.target.value)}
+                disabled={!canEdit}
                 className="mt-1.5 max-w-32 font-mont text-xs"
                 aria-invalid={!daysValid}
                 aria-describedby="fee-due-days-help"

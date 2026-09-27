@@ -34,6 +34,7 @@ import { invitationAgeDays, waitingLabel } from "./invitation-model";
 export function InvitationDetailDrawer({
   person,
   showBranch,
+  canResend,
   canWithdraw,
   resending,
   onClose,
@@ -43,6 +44,8 @@ export function InvitationDetailDrawer({
 }: {
   person: StaffListRow | null;
   showBranch: boolean;
+  /** Whether this reader may resend to this person; see `invitationActions`. */
+  canResend: boolean;
   canWithdraw: boolean;
   resending: boolean;
   onClose: () => void;
@@ -139,29 +142,33 @@ export function InvitationDetailDrawer({
                 />
               </section>
 
-              <div className="flex items-start gap-2.5 rounded-lg bg-blue-50 px-3.5 py-3 text-xs leading-5 text-gray-01">
-                <Info className="mt-0.5 size-4 shrink-0 text-blue-600" />
-                <p>
-                  Resending sends a new single-use link. The previous link stops
-                  working.
-                </p>
-              </div>
+              {canResend && (
+                <div className="flex items-start gap-2.5 rounded-lg bg-blue-50 px-3.5 py-3 text-xs leading-5 text-gray-01">
+                  <Info className="mt-0.5 size-4 shrink-0 text-blue-600" />
+                  <p>
+                    Resending sends a new single-use link. The previous link
+                    stops working.
+                  </p>
+                </div>
+              )}
             </div>
           )}
         </ScrollArea>
 
         {person && (
           <div className="grid shrink-0 gap-2 border-t border-border px-5 py-4 sm:grid-cols-2">
-            <Button
-              onClick={() => onResend(person)}
-              disabled={resending || !person.can_resend}
-              loading={resending}
-              loadingText="Sending"
-              className="sm:col-span-2"
-            >
-              <RefreshCw className="size-4" />
-              Resend invitation
-            </Button>
+            {canResend && (
+              <Button
+                onClick={() => onResend(person)}
+                disabled={resending || !person.can_resend}
+                loading={resending}
+                loadingText="Sending"
+                className="sm:col-span-2"
+              >
+                <RefreshCw className="size-4" />
+                Resend invitation
+              </Button>
+            )}
             <Button variant="outline" onClick={() => onViewRecord(person)}>
               <UserRound className="size-4" />
               View staff record

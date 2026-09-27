@@ -7,6 +7,8 @@ import { Combobox, ComboboxContent, ComboboxInput, ComboboxItem, ComboboxList, C
 import { cn } from "@/lib/utils";
 import { formatBytes } from "@/utils/format-bytes";
 import { useFieldAccess } from "@/components/finance-ui/field-access";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
 import { toast } from "sonner";
 import {
   useGetImportTemplatesQuery,
@@ -998,6 +1000,7 @@ export function ConfirmStep({
   const summary = batch.validation_summary as Record<string, number> | null;
   const errorCount = summary?.error_count ?? batch.error_count;
   const rowsReady = errorCount === 0 ? batch.total_rows : 0;
+  const canRollback = usePermissions().hasPermission(P.RUN_IMPORT_ROLLBACK);
   // The parsed preview is a Field Access field: a viewer who may not read it gets no preview.
   const access = useFieldAccess("import.batches", batch);
   const previewRows = access.isHidden("preview_rows") ? [] : batch.preview_rows ?? [];
@@ -1078,7 +1081,12 @@ export function ConfirmStep({
         <AlertTriangle className="size-4 text-amber-600 shrink-0 mt-0.5" />
         <div>
           <p className="text-xs font-semibold text-amber-700">This action will write data to the database.</p>
-          <p className="text-[11px] text-gray-500 mt-0.5">Publishing starts only after every validation error is cleared. You can roll back this import for up to 7 days after completion.</p>
+          <p className="text-[11px] text-gray-500 mt-0.5">
+            Publishing starts only after every validation error is cleared.
+            {canRollback
+              ? " You can roll back this import after it completes."
+              : " To correct it afterwards, import a corrected file."}
+          </p>
         </div>
       </div>
 
@@ -1222,6 +1230,18 @@ function CounterCard({ label, value, accent }: { label: string; value: number; a
 
 // ── Step 7: Complete ────────────────────────────────────────────────────────
 
+/**
+ * The outcome of a finished import, and what to do about it.
+ *
+ * Rollback is offered only to a reader holding `import.rollbacks.run`, the key
+ * the rollback endpoint names. No school role holds it by default: a school
+ * corrects a bad load by importing a corrected file, so neither the button nor
+ * the advice to use it appears for them. The server imposes no time limit on a
+ * rollback, so none is promised here.
+ *
+ * `returnLabel` is the finish button's whole label, verb included
+ * ("Back to students"), and is shown as given.
+ */
 export function CompleteStep({
   batch,
   batchId,
@@ -1240,6 +1260,7 @@ export function CompleteStep({
   returnLabel?: string;
 }) {
   const latestJobId = jobId;
+  const canRollback = usePermissions().hasPermission(P.RUN_IMPORT_ROLLBACK);
 
   const { data: jobData } = useGetImportJobQuery(
     { batchId, jobId: latestJobId! },
@@ -1387,7 +1408,9 @@ export function CompleteStep({
             <ul className="text-[11px] text-blue-600 space-y-0.5 list-disc list-inside">
               <li>Review the skipped/failed rows above to understand why they were rejected.</li>
               <li>Fix the data in those rows and create a new import batch with just the corrected rows.</li>
-              <li>If the data was imported incorrectly, use the rollback option below within 7 days.</li>
+              {canRollback && (
+                <li>If the data was imported incorrectly, use the rollback option below.</li>
+              )}
             </ul>
           )}
           {isFailed && (
@@ -1401,7 +1424,7 @@ export function CompleteStep({
       )}
 
       {/* Rollback inline confirm */}
-      {rollbackConfirm && (
+      {canRollback && rollbackConfirm && (
         <div className="rounded-md border border-destructive/30 bg-red-50 px-4 py-3 space-y-3">
           <p className="text-xs font-semibold text-destructive">Confirm rollback</p>
           <p className="text-[11px] text-gray-500">This will revert all records written by this import. Provide an optional reason.</p>
@@ -1428,7 +1451,7 @@ export function CompleteStep({
               <ExternalLink className="size-3.5" /> View import details
             </Button>
           )}
-          {latestJobId && (isPartial || isFailed) && !rollbackConfirm && (
+          {canRollback && latestJobId && (isPartial || isFailed) && !rollbackConfirm && (
             <Button variant="ghost" className="text-destructive hover:text-destructive hover:bg-red-50" onClick={() => setRollbackConfirm(true)}>
               Roll back import
             </Button>
@@ -1437,7 +1460,7 @@ export function CompleteStep({
         <div className="flex flex-wrap gap-2.5 sm:ml-auto">
           {onReturn && (
             <Button variant="white" onClick={onReturn}>
-              <ChevronLeft className="size-3.5" /> {returnLabel ? `Back to ${returnLabel}` : "Go back"}
+              <ChevronLeft className="size-3.5" /> {returnLabel ?? "Go back"}
             </Button>
           )}
           <Button onClick={onNewImport}>

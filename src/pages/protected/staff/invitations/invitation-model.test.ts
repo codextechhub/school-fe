@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { StaffListRow } from "@/redux/services/staff/staff-types";
 
+import { P, type PermissionCode } from "@/permissions";
+
 import {
+  invitationActions,
   invitationAgeDays,
   invitationPageMetrics,
   waitingLabel,
@@ -55,5 +58,41 @@ describe("invitation page metrics", () => {
       followUp: 0,
       oldestDays: null,
     });
+  });
+});
+
+describe("invitation actions", () => {
+  const holding =
+    (...codes: PermissionCode[]) =>
+    (code: PermissionCode) =>
+      codes.includes(code);
+  const person = (canManage?: boolean) =>
+    ({ id: 1, can_resend: true, can_manage: canManage }) as StaffListRow;
+
+  it("offers neither on the directory's view key alone", () => {
+    expect(invitationActions(person(), holding(P.BROWSE_TEACHERS))).toEqual({
+      resend: false,
+      withdraw: false,
+    });
+  });
+
+  it("offers resend on the invite key and withdraw on the transition key", () => {
+    expect(invitationActions(person(), holding(P.INVITE_TEACHER))).toEqual({
+      resend: true,
+      withdraw: false,
+    });
+    expect(invitationActions(person(), holding(P.TRANSITION_TEACHER))).toEqual({
+      resend: false,
+      withdraw: true,
+    });
+  });
+
+  it("offers neither on a row the reader may not change", () => {
+    expect(
+      invitationActions(
+        person(false),
+        holding(P.INVITE_TEACHER, P.TRANSITION_TEACHER),
+      ),
+    ).toEqual({ resend: false, withdraw: false });
   });
 });

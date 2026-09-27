@@ -664,9 +664,10 @@ export function AppSidebar({
           },
           // Exam scheduling reaches deeper than the group around it -
           // `calendar_advanced` against the group's `calendar_plus` - so a
-          // school on Plus gets timetables and not exams. Filtered here because
-          // sub-items carry no capability of their own.
-          ...(hasCapability("calendar_advanced") ? [{
+          // school on Plus gets timetables and not exams. It also reads on its
+          // own key, `academics.exam.view`. Filtered here because sub-items
+          // carry no capability or permission of their own.
+          ...(hasCapability("calendar_advanced") && hasPermission(P.BROWSE_EXAMS) ? [{
             title: "Exam scheduling",
             url: routesPath.PROTECTED.TIMETABLES.EXAMS,
             isActive: location.startsWith(

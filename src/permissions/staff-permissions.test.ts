@@ -42,6 +42,10 @@ describe("Staff permission registry", () => {
     );
   });
 
+  it("resolves the staff import key, whose resource is staff and not teachers", () => {
+    expect(resolvePermissionKey(P.IMPORT_STAFF)).toBe("school.staff.import");
+  });
+
   it("resolves the three leave keys, which are three different questions", () => {
     // Applying for your own is not reading a colleague's, and neither is
     // filing one on somebody's behalf. A single key here would let every
@@ -58,6 +62,7 @@ describe("Staff permission registry", () => {
     const codes = [
       P.BROWSE_TEACHERS, P.INVITE_TEACHER, P.MODIFY_TEACHER, P.TRANSITION_TEACHER,
       P.ASSIGN_TEACHING, P.APPLY_FOR_LEAVE, P.VIEW_LEAVE, P.UPDATE_LEAVE,
+      P.IMPORT_STAFF,
     ];
     expect(new Set(codes).size).toBe(codes.length);
     for (const code of codes) expect(resolvePermissionKey(code)).not.toBe("");

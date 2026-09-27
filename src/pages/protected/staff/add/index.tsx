@@ -9,6 +9,9 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { PageShell } from "@/components/layout/page-shell";
 import { Panel as Surface } from "@/components/custom/surface";
 import { routesPath } from "@/routes/routesPath";
+import PermissionGate from "@/components/custom/permission-gate";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
 import { CREATING, FIELD_RESOURCE } from "@/lib/field-resources";
@@ -66,6 +69,10 @@ function roleTeaches(label: string, key: string): boolean {
  * and there is no record to attach it to until the record exists. It goes up
  * immediately afterwards, and a failure there is reported as what it is - the
  * person was created, their picture was not - rather than as a failed create.
+ * Attaching it is a PATCH on the new record, which the server refuses without
+ * `school.teachers.update`, so the photo field is offered only with that key.
+ * The create itself needs `school.teachers.create`, and without it the form
+ * says so in place of its submit button.
  *
  * **At a live school the form does not ask for a role.** Everybody starts on
  * the school's Teacher role (`starting_role`), reaching as far as their
@@ -90,6 +97,7 @@ function roleTeaches(label: string, key: string): boolean {
  */
 export default function AddStaff() {
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
 
   // The list carries the starting role and, while onboarding, the admin roles
   // to pick from. Read from here rather than from the roles catalogue, which is
@@ -383,13 +391,15 @@ export default function AddStaff() {
               </Field>
             </AccessField>
           </div>
-          <div className="mt-4">
-            <PhotoField
-              file={photo}
-              onPick={setPhoto}
-              onClear={() => setPhoto(null)}
-            />
-          </div>
+          {hasPermission(P.MODIFY_TEACHER) && (
+            <div className="mt-4">
+              <PhotoField
+                file={photo}
+                onPick={setPhoto}
+                onClear={() => setPhoto(null)}
+              />
+            </div>
+          )}
         </Section>
 
         <Section step={2} title="Employment">
@@ -623,10 +633,19 @@ export default function AddStaff() {
           >
             Cancel
           </Button>
-          <Button onClick={() => void save()} disabled={creating}>
-            <Mail className="size-4" />
-            {creating ? "Sending…" : "Create and invite"}
-          </Button>
+          <PermissionGate
+            permission={P.INVITE_TEACHER}
+            fallback={
+              <span className="self-center text-xs text-gray-05">
+                Adding staff needs the permission to invite them.
+              </span>
+            }
+          >
+            <Button onClick={() => void save()} disabled={creating}>
+              <Mail className="size-4" />
+              {creating ? "Sending…" : "Create and invite"}
+            </Button>
+          </PermissionGate>
         </div>
       </Surface>
     </PageShell>

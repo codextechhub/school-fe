@@ -7,6 +7,8 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { SearchSelect } from "@/components/custom/search-select";
 import { cn } from "@/lib/utils";
 import { apiErrorMessage } from "@/utils/api-error";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
 import {
   useAssignTeachingMutation,
   useGetStaffListQuery,
@@ -47,6 +49,10 @@ import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
  * The cell is passed in live rather than captured when the drawer opens, so a
  * change made here is reflected in the list behind it and in the drawer at
  * once, from the one query that owns the answer.
+ *
+ * Every write here goes to the teaching routes, which the server refuses
+ * without `school.teachers.assign`. A reader who lacks it still sees who
+ * teaches what, with Close in place of Save and no row or add controls.
  */
 export function PairingDrawer({
   cell,
@@ -56,6 +62,8 @@ export function PairingDrawer({
   onClose: () => void;
 }) {
   const { data: staffData } = useGetStaffListQuery({ page: 1 });
+
+  const canAssign = usePermissions().hasPermission(P.ASSIGN_TEACHING);
 
   const [assign, { isLoading: assigning }] = useAssignTeachingMutation();
   const [setPart, { isLoading: changingPart }] = useSetTeachingPartMutation();
@@ -165,6 +173,7 @@ export function PairingDrawer({
       onSave={() => void add()}
       canSave={Boolean(staffId) && !already}
       saving={assigning}
+      readOnly={!canAssign}
     >
       <div className="grid gap-5">
         <section>
@@ -191,42 +200,44 @@ export function PairingDrawer({
                   >
                     {person.part === "LEAD" ? "Main teacher" : "Assisting"}
                   </span>
-                  <span className="ml-auto flex items-center gap-1">
-                    {person.part === "ASSISTANT" ? (
-                      <Button
-                        variant="ghost"
+                  {canAssign && (
+                    <span className="ml-auto flex items-center gap-1">
+                      {person.part === "ASSISTANT" ? (
+                        <Button
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() =>
+                            void changePart(person.assignment_id, "LEAD")
+                          }
+                        >
+                          <ArrowUp className="size-3.5" />
+                          Make main
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          disabled={busy}
+                          onClick={() =>
+                            void changePart(person.assignment_id, "ASSISTANT")
+                          }
+                        >
+                          <ArrowDown className="size-3.5" />
+                          Move to assisting
+                        </Button>
+                      )}
+                      <button
+                        type="button"
+                        aria-label={`Remove ${person.name} from ${where}`}
                         disabled={busy}
                         onClick={() =>
-                          void changePart(person.assignment_id, "LEAD")
+                          void drop(person.assignment_id, person.name)
                         }
+                        className="rounded-lg p-2 text-gray-05 hover:bg-gray-03 hover:text-error-text"
                       >
-                        <ArrowUp className="size-3.5" />
-                        Make main
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="ghost"
-                        disabled={busy}
-                        onClick={() =>
-                          void changePart(person.assignment_id, "ASSISTANT")
-                        }
-                      >
-                        <ArrowDown className="size-3.5" />
-                        Move to assisting
-                      </Button>
-                    )}
-                    <button
-                      type="button"
-                      aria-label={`Remove ${person.name} from ${where}`}
-                      disabled={busy}
-                      onClick={() =>
-                        void drop(person.assignment_id, person.name)
-                      }
-                      className="rounded-lg p-2 text-gray-05 hover:bg-gray-03 hover:text-error-text"
-                    >
-                      <X className="size-4" />
-                    </button>
-                  </span>
+                        <X className="size-4" />
+                      </button>
+                    </span>
+                  )}
                 </li>
               ))}
             </ul>
@@ -247,61 +258,65 @@ export function PairingDrawer({
           )}
         </section>
 
-        <section className="border-t border-white-02 pt-4">
-          <h3 className="mb-3 text-sm font-semibold text-black-01">
-            Add a teacher
-          </h3>
-          <div className="grid gap-4">
-            <div>
-              <SearchSelect
-                label="Teacher"
-                isRequired
-                options={people}
-                value={staffId}
-                onChange={(e) => setStaffId(e.target.value)}
-                placeholder="Search staff by name"
-              />
-            </div>
+        {canAssign && (
+          <section className="border-t border-white-02 pt-4">
+            <h3 className="mb-3 text-sm font-semibold text-black-01">
+              Add a teacher
+            </h3>
+            <div className="grid gap-4">
+              <div>
+                <SearchSelect
+                  label="Teacher"
+                  isRequired
+                  options={people}
+                  value={staffId}
+                  onChange={(e) => setStaffId(e.target.value)}
+                  placeholder="Search staff by name"
+                />
+              </div>
 
-            <Field
-              label="Their part"
-              required
-              hint="The main teacher enters this subject's results for this class. Anyone else assisting also teaches it, and there can be several."
-            >
-              <NativeSelect
-                aria-label="Their part"
-                value={part}
-                onChange={(e) => setPartChoice(e.target.value as TeachingPart)}
-                className="h-9"
+              <Field
+                label="Their part"
+                required
+                hint="The main teacher enters this subject's results for this class. Anyone else assisting also teaches it, and there can be several."
               >
-                <option value="LEAD">Main teacher</option>
-                <option value="ASSISTANT">Assisting</option>
-              </NativeSelect>
-            </Field>
+                <NativeSelect
+                  aria-label="Their part"
+                  value={part}
+                  onChange={(e) =>
+                    setPartChoice(e.target.value as TeachingPart)
+                  }
+                  className="h-9"
+                >
+                  <option value="LEAD">Main teacher</option>
+                  <option value="ASSISTANT">Assisting</option>
+                </NativeSelect>
+              </Field>
 
-            {already && (
-              <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
-                They already teach this. Change their part on the row above
-                instead.
+              {already && (
+                <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                  They already teach this. Change their part on the row above
+                  instead.
+                </p>
+              )}
+
+              {part === "LEAD" && cell.lead && (
+                <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                  {cell.lead.name} is already the main teacher, and a class
+                  subject has only one. Move them to assisting first, or add
+                  this person as assisting.
+                </p>
+              )}
+
+              <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
+                <Info className="mt-px size-3.5 shrink-0 text-primary" />
+                This says who teaches it. When and where the lessons happen is
+                the timetable's, and being the main teacher for a subject is not
+                the same as being the class teacher for {cell.class_name}.
               </p>
-            )}
-
-            {part === "LEAD" && cell.lead && (
-              <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
-                {cell.lead.name} is already the main teacher, and a class
-                subject has only one. Move them to assisting first, or add this
-                person as assisting.
-              </p>
-            )}
-
-            <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
-              <Info className="mt-px size-3.5 shrink-0 text-primary" />
-              This says who teaches it. When and where the lessons happen is the
-              timetable's, and being the main teacher for a subject is not the
-              same as being the class teacher for {cell.class_name}.
-            </p>
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
       </div>
     </DrawerShell>
   );

@@ -34,6 +34,7 @@ import { PersonAvatar } from "../../students/person-avatar";
 import { formatDate } from "../../students/format";
 import { InvitationDetailDrawer } from "./invitation-detail-drawer";
 import {
+  invitationActions,
   invitationAgeDays,
   invitationPageMetrics,
   waitingLabel,
@@ -78,7 +79,9 @@ export default function StaffInvitations() {
   const total = pagination?.totalItems ?? 0;
   const multiplePages = (pagination?.totalPages ?? 0) > 1;
   const showBranch = data?.multi_branch ?? false;
-  const canWithdraw = hasPermission(P.TRANSITION_TEACHER);
+  const actionsFor = (person: StaffListRow) =>
+    invitationActions(person, hasPermission);
+  const selectedActions = selected ? actionsFor(selected) : null;
 
   async function resendTo(person: StaffListRow) {
     if (!person.can_resend) {
@@ -264,15 +267,17 @@ export default function StaffInvitations() {
                 className="flex items-center justify-end gap-1.5"
                 onClick={(event) => event.stopPropagation()}
               >
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={resending || !person.can_resend}
-                  onClick={() => void resendTo(person)}
-                >
-                  <RefreshCw className="size-3.5" />
-                  Resend
-                </Button>
+                {actionsFor(person).resend && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={resending || !person.can_resend}
+                    onClick={() => void resendTo(person)}
+                  >
+                    <RefreshCw className="size-3.5" />
+                    Resend
+                  </Button>
+                )}
                 <Button
                   variant="ghost"
                   size="icon-sm"
@@ -300,14 +305,16 @@ export default function StaffInvitations() {
       <p className="flex items-start gap-1.5 text-xs leading-5 text-gray-05">
         <Info className="mt-px size-3.5 shrink-0" />
         Only the invited person can activate this account by opening the link
-        and setting their first password. Resending keeps the same staff record
-        and invalidates the previous link.
+        and setting their first password.
+        {hasPermission(P.INVITE_TEACHER) &&
+          " Resending keeps the same staff record and invalidates the previous link."}
       </p>
 
       <InvitationDetailDrawer
         person={selected}
         showBranch={showBranch}
-        canWithdraw={canWithdraw}
+        canResend={selectedActions?.resend ?? false}
+        canWithdraw={selectedActions?.withdraw ?? false}
         resending={resending}
         onClose={() => setSelected(null)}
         onResend={(person) => void resendTo(person)}

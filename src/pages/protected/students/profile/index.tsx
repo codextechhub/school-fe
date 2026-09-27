@@ -40,6 +40,7 @@ import type {
 } from "@/redux/services/students/students-types";
 
 import { StudentDrawers, type DrawerRequest } from "../drawers";
+import { STUDENT_DRAWER_PERMISSION } from "../drawers/access";
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
 import PermissionGate from "@/components/custom/permission-gate";
@@ -247,7 +248,7 @@ export default function StudentProfile() {
 
               <div className="mt-4 flex flex-wrap items-center gap-2">
                 <LiveOnly>
-                <PermissionGate permission={P.MODIFY_STUDENT}>
+                <PermissionGate permission={STUDENT_DRAWER_PERMISSION.edit}>
                   <Button
                     size="sm"
                     onClick={() =>
@@ -257,7 +258,10 @@ export default function StudentProfile() {
                     Edit student
                   </Button>
                 </PermissionGate>
-                <PermissionGate permission={P.ASSIGN_CLASS} disabled={pastYear}>
+                <PermissionGate
+                  permission={STUDENT_DRAWER_PERMISSION.transfer}
+                  disabled={pastYear}
+                >
                   <Button
                     size="sm"
                     variant="outline"
@@ -268,7 +272,7 @@ export default function StudentProfile() {
                     {student.class_name ? "Change class" : "Assign a class"}
                   </Button>
                 </PermissionGate>
-                <PermissionGate permission={P.TRANSITION_STUDENT}>
+                <PermissionGate permission={STUDENT_DRAWER_PERMISSION.status}>
                   <Button
                     size="sm"
                     variant="outline"
@@ -279,7 +283,7 @@ export default function StudentProfile() {
                     Change status
                   </Button>
                 </PermissionGate>
-                <PermissionGate permission={P.MODIFY_STUDENT}>
+                <PermissionGate permission={STUDENT_DRAWER_PERMISSION.guardian}>
                   <Button
                     size="sm"
                     variant="outline"

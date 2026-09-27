@@ -37,6 +37,7 @@ interface ImportWizardProps {
   onFinished?: (completion: ImportWizardCompletion) => void | Promise<void>;
   onComplete?: (batchId: number) => void;
   onReturn?: () => void;
+  /** The finish button's whole label, verb included: "Back to students". */
   returnLabel?: string;
   onCancel?: () => void;
 }

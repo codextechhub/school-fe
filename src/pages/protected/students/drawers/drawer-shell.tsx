@@ -33,6 +33,11 @@ import { cn } from "@/lib/utils";
  * other. The padding rides on the viewport rather than on this element,
  * because the scrolling box has to be the one that is padded or the last field
  * sits against the footer.
+ *
+ * `readOnly` shows the same drawer to a reader who may look but not change:
+ * the footer offers only Close, and the caller leaves its own write controls
+ * out of the body. Save is then never on screen for a request the server
+ * would refuse.
  */
 export function DrawerShell({
   open,
@@ -46,6 +51,7 @@ export function DrawerShell({
   saving,
   destructive,
   wide,
+  readOnly = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -60,6 +66,8 @@ export function DrawerShell({
   destructive?: boolean;
   /** Gives comparison-heavy forms enough room for two readable columns. */
   wide?: boolean;
+  /** Offer Close alone, for a reader who may see the record but not change it. */
+  readOnly?: boolean;
 }) {
   return (
     <Sheet open={open} onOpenChange={(next) => !next && onClose()}>
@@ -84,16 +92,26 @@ export function DrawerShell({
         </ScrollArea>
 
         <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3">
-          <Button variant="outline" onClick={onClose} disabled={saving}>
-            Cancel
-          </Button>
-          <Button
-            onClick={onSave}
-            disabled={!canSave || saving}
-            className={destructive ? "bg-red-600 hover:bg-red-700" : undefined}
-          >
-            {saving ? "Saving…" : saveLabel}
-          </Button>
+          {readOnly ? (
+            <Button variant="outline" onClick={onClose}>
+              Close
+            </Button>
+          ) : (
+            <>
+              <Button variant="outline" onClick={onClose} disabled={saving}>
+                Cancel
+              </Button>
+              <Button
+                onClick={onSave}
+                disabled={!canSave || saving}
+                className={
+                  destructive ? "bg-red-600 hover:bg-red-700" : undefined
+                }
+              >
+                {saving ? "Saving…" : saveLabel}
+              </Button>
+            </>
+          )}
         </div>
       </SheetContent>
     </Sheet>

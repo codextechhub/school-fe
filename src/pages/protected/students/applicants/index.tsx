@@ -36,6 +36,10 @@ import type { StudentRow } from "@/redux/services/students/students-types";
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { DrawerShell, Field, inputClass } from "../drawers/drawer-shell";
 import { StudentDrawers, type DrawerRequest } from "../drawers";
+import {
+  ENROL_PERMISSIONS,
+  STUDENT_DRAWER_PERMISSION,
+} from "../drawers/access";
 import { formatDate } from "../format";
 import { Pager } from "../pager";
 import { PersonAvatar } from "../person-avatar";
@@ -59,6 +63,7 @@ export default function Applicants() {
     multiBranch,
     label: branchLabel,
     sessionName,
+    pastYear,
   } = useStudentsLens();
 
   const [enrolling, setEnrolling] = useState<StudentRow | null>(null);
@@ -117,7 +122,7 @@ export default function Applicants() {
             {sessionName ? ` in ${sessionName}` : ""}.
           </p>
         </div>
-        <PermissionGate permission={P.ENROLL_STUDENT}>
+        <PermissionGate permission={ENROL_PERMISSIONS} mode="all">
           <Button
             onClick={() =>
               navigate(`${routesPath.PROTECTED.STUDENTS.ENROL}?applicant=1`)
@@ -152,7 +157,8 @@ export default function Applicants() {
           totalPages={waiting.data?.pagination.totalPages ?? 1}
           onPageChange={(page) => setPage("waiting", page)}
           actions={(student) => (
-            <PermissionGate permission={P.TRANSITION_STUDENT}>
+            // Confirm and close are record updates on the server, not transitions.
+            <PermissionGate permission={P.MODIFY_STUDENT}>
               <Button size="sm" onClick={() => setEnrolling(student)}>
                 Put on the roll
               </Button>
@@ -187,7 +193,10 @@ export default function Applicants() {
           totalPages={placement.data?.pagination.totalPages ?? 1}
           onPageChange={(page) => setPage("placement", page)}
           actions={(student) => (
-            <PermissionGate permission={P.ASSIGN_CLASS}>
+            <PermissionGate
+              permission={STUDENT_DRAWER_PERMISSION.transfer}
+              disabled={pastYear}
+            >
               <Button
                 size="sm"
                 onClick={() =>

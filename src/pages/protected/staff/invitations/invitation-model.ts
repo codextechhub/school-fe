@@ -1,3 +1,5 @@
+import { canManageRow } from "@/lib/can-manage";
+import { P, type PermissionCode } from "@/permissions";
 import type { StaffListRow } from "@/redux/services/staff/staff-types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -55,5 +57,27 @@ export function invitationPageMetrics(
   return {
     followUp: ages.filter((age) => age >= 7).length,
     oldestDays: ages.length ? Math.max(...ages) : null,
+  };
+}
+
+/**
+ * Which of the two invitation writes this reader may offer on one row.
+ *
+ * Each follows the key its endpoint enforces, not the key that opens the list:
+ * resending is the same act as inviting and needs `school.teachers.create`,
+ * and withdrawing ends an employment and needs `school.teachers.transition`.
+ * Both also need the row to be one the reader may change, since the server
+ * refuses a branch administrator's write to somebody posted school-wide.
+ * Whether the link is still unused (`can_resend`) is a separate question: a
+ * reader who may resend sees the button disabled on a used link.
+ */
+export function invitationActions(
+  person: StaffListRow,
+  hasPermission: (code: PermissionCode) => boolean,
+): { resend: boolean; withdraw: boolean } {
+  const manageable = canManageRow(person);
+  return {
+    resend: manageable && hasPermission(P.INVITE_TEACHER),
+    withdraw: manageable && hasPermission(P.TRANSITION_TEACHER),
   };
 }

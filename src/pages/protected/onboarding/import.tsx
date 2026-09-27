@@ -12,6 +12,7 @@ import { routesPath } from "@/routes/routesPath";
 import { usePermissions } from "@/hooks/use-permissions";
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
 import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
+import { canRunImport } from "@/components/custom/import-wizard/import-access";
 import {
   importDownloadUrls,
   useGetImportBatchesQuery,
@@ -118,6 +119,16 @@ const DATA_KEY = "INITIAL_DATA";
  */
 type ImportableDataset = Exclude<DatasetType, "bank_statements">;
 
+/** The datasets a school loads itself, each asked whether this reader may. */
+const SCHOOL_DATASETS: DatasetType[] = [
+  "students",
+  "guardians",
+  "staff",
+  "academic_structure",
+  "subjects",
+  "calendar_events",
+];
+
 /**
  * One row of the templates table: either a template the server offers, or a
  * placeholder for a dataset that has none yet.
@@ -160,7 +171,10 @@ export default function OnboardingImport() {
   // render and the memos were doing nothing at all.
   const offered = useMemo(() => templates.data?.data ?? [], [templates.data]);
   const batchRowsData = useMemo(() => batches.data?.data ?? [], [batches.data]);
-  const canImport = hasPermission(P.UPLOAD_IMPORT_BATCH);
+  // A string, so the table below recomputes only when the answer changes.
+  const importable = SCHOOL_DATASETS.filter((dataset) =>
+    canRunImport(dataset, hasPermission),
+  ).join(",");
 
   /**
    * The rows the table shows: the design's five, with any real template the
@@ -338,7 +352,7 @@ export default function OnboardingImport() {
                 Template
               </a>
             )}
-            {canImport && (
+            {importable.split(",").includes(template.dataset_type) && (
               <Button
                 size="sm"
                 onClick={() => {
@@ -355,7 +369,7 @@ export default function OnboardingImport() {
         ),
         };
       }),
-    [visible, canImport],
+    [visible, importable],
   );
 
   const batchRows = useMemo(

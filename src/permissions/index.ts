@@ -79,6 +79,13 @@ const REGISTRY: Record<string, string> = {
   "100411": "school.teachers.assign",
 
   // ── school / staff records  (MM=10, RR=11) ─────────────────────────────────
+  // ── school / staff import  (MM=10, RR=16) ─────────────────────────────────
+  // Loading staff from a file. The resource is `staff`, not `teachers`: the key
+  // is newer than the directory's and was named for what it governs. The
+  // import engine accepts it in place of its own validate and import keys on a
+  // staff batch, but not in place of the upload key.
+  "101617": "school.staff.import",
+
   // Employment history, qualifications and contract documents, kept apart from
   // the directory keys above for the same reason leave is: a colleague's
   // salary grade and disciplinary record are not something everyone who may
@@ -412,6 +419,7 @@ export const P = {
   INVITE_ADMINISTRATOR:    "100502",  // invite a new school administrator
   MODIFY_ADMINISTRATOR:    "100503",  // edit an administrator's profile
   SUSPEND_ADMINISTRATOR:   "100509",  // suspend an administrator account
+  IMPORT_STAFF:            "101617",  // check and load a staff file already uploaded
   REACTIVATE_ADMINISTRATOR:"100510",  // reactivate a suspended administrator
   IMPORT_ADMINISTRATORS:   "100517",  // invite a list of them from a file
 

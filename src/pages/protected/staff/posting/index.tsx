@@ -22,6 +22,7 @@ import { P } from "@/permissions";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { PersonAvatar } from "@/pages/protected/students/person-avatar";
 import { useBranchLens } from "@/hooks/use-branch-lens";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useGetStaffRosterQuery } from "@/redux/services/staff/staff-api";
 import type { StaffListRow } from "@/redux/services/staff/staff-types";
 import { routesPath } from "@/routes/routesPath";
@@ -51,6 +52,7 @@ import {
  */
 export default function StaffPosting() {
   const navigate = useNavigate();
+  const { hasPermission } = usePermissions();
   // Only the branches this reader works in: the roster refuses any other.
   const {
     choices: branches,
@@ -90,8 +92,11 @@ export default function StaffPosting() {
     setSearch("");
   }
 
+  // Moving a posting is a record update on the server.
+  const canMove = hasPermission(P.MODIFY_TEACHER);
+
   function openRow(person: StaffListRow) {
-    if (view === "posted" && canManage(person)) {
+    if (view === "posted" && canManage(person) && canMove) {
       setDrawer({
         kind: "posting",
         staffIds: [person.id],
@@ -264,6 +269,7 @@ export default function StaffPosting() {
           rows={rows}
           search={search}
           picked={picked}
+          canMove={canMove}
           onToggle={toggle}
           onOpen={openRow}
         />
@@ -291,6 +297,7 @@ function RosterPanel({
   rows,
   search,
   picked,
+  canMove,
   onToggle,
   onOpen,
 }: {
@@ -299,13 +306,17 @@ function RosterPanel({
   rows: ReturnType<typeof rowsForPostingView>;
   search: string;
   picked: number[];
+  /** Whether the reader may move postings, which decides the note and the checkboxes. */
+  canMove: boolean;
   onToggle: (id: number) => void;
   onOpen: (person: StaffListRow) => void;
 }) {
   const copy = {
     posted: {
       title: `Posted to ${branchName}`,
-      note: "Open a person to change their posting, or select several people and move them together.",
+      note: canMove
+        ? "Open a person to change their posting, or select several people and move them together."
+        : "Open a person to see their staff record.",
       empty: search
         ? "No posted staff match this search."
         : `Nobody is posted to ${branchName}.`,
@@ -346,7 +357,12 @@ function RosterPanel({
               person={row.person}
               view={view}
               viaRoles={row.viaRoles}
-              selectable={view === "posted" && row.person.on_roll && canManage(row.person)}
+              selectable={
+                canMove &&
+                view === "posted" &&
+                row.person.on_roll &&
+                canManage(row.person)
+              }
               picked={picked.includes(row.person.id)}
               onToggle={() => onToggle(row.person.id)}
               onOpen={() => onOpen(row.person)}

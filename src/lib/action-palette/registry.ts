@@ -391,7 +391,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     section: "Academics",
     group: "Timetables",
     kind: "view",
-    gate: { perm: P.BROWSE_TIMETABLES },
+    gate: { perm: P.BROWSE_EXAMS },
     run: { to: R.TIMETABLES.EXAMS },
   },
 

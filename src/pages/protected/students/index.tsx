@@ -12,9 +12,10 @@ import {
 
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
-import { P } from "@/permissions";
+import { usePermissions } from "@/hooks/use-permissions";
 import { PageShell } from "@/components/layout/page-shell";
 import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
+import { canRunImport } from "@/components/custom/import-wizard/import-access";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { ExportButton } from "@/components/custom/export-button";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -33,7 +34,12 @@ import type {
 } from "@/redux/services/students/students-types";
 import { useGetClassesQuery } from "@/redux/services/academics/academics-api";
 
-import { StudentDrawers, type DrawerRequest } from "./drawers";
+import {
+  StudentDrawers,
+  type DrawerKind,
+  type DrawerRequest,
+} from "./drawers";
+import { ENROL_PERMISSIONS, canOpenStudentDrawer } from "./drawers/access";
 import { FiltersPopover } from "./filters-popover";
 import { OverviewCard } from "./overview-card";
 import { buildWorkQueue, type QueueRow } from "./work-queue";
@@ -64,7 +70,9 @@ export default function StudentDirectory() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [unassignedOnly, setUnassignedOnly] = useState(false);
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
-
+  const { hasPermission } = usePermissions();
+  const canOpen = (kind: DrawerKind) =>
+    canOpenStudentDrawer(kind, hasPermission, { pastYear });
 
   const listArgs = {
     ...lens,
@@ -116,16 +124,25 @@ export default function StudentDirectory() {
     [summaryData, unplacedData, applicantsData, seatsData],
   );
 
-  /** Send the reader where the row's verb says. */
+  /**
+   * Send the reader where the row's verb says.
+   *
+   * Place and Move both open the class drawer, because both are a class
+   * assignment and differ only in whether the student had one. A reader who
+   * may not assign a class, or who is reading a past year, is taken to the
+   * student's profile instead, where the record says what is missing.
+   */
   function actOnQueueRow(row: QueueRow) {
     if (row.action === "review") {
       navigate(routesPath.PROTECTED.STUDENTS.APPLICANTS);
       return;
     }
-    // Place and Move both end in the same drawer, because both are a class
-    // assignment - the difference is only whether the student had one.
     if (row.studentId) {
-      setDrawer({ kind: "transfer", studentId: row.studentId });
+      if (canOpen("transfer")) {
+        setDrawer({ kind: "transfer", studentId: row.studentId });
+      } else {
+        navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(row.studentId));
+      }
       return;
     }
     navigate(routesPath.PROTECTED.STUDENTS.ASSIGN);
@@ -210,7 +227,7 @@ export default function StudentDirectory() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          <PermissionGate permission={P.IMPORT_STUDENTS}>
+          {canRunImport("students", hasPermission) && (
             <button
               type="button"
               onClick={() => setImporting(true)}
@@ -219,8 +236,8 @@ export default function StudentDirectory() {
               <Upload className="size-4" />
               Import
             </button>
-          </PermissionGate>
-          <PermissionGate permission={P.ENROLL_STUDENT}>
+          )}
+          <PermissionGate permission={ENROL_PERMISSIONS} mode="all">
             <button
               type="button"
               onClick={() => navigate(routesPath.PROTECTED.STUDENTS.ENROL)}
@@ -367,28 +384,21 @@ export default function StudentDirectory() {
               onActionClick: (row: { _id: number }) =>
                 navigate(routesPath.PROTECTED.STUDENTS.PROFILE_ID(row._id)),
             },
-            {
-              label: "Edit record",
-              onActionClick: (row: { _id: number }) =>
-                setDrawer({ kind: "edit", studentId: row._id }),
-            },
-            {
-              label: "Change status",
-              onActionClick: (row: { _id: number }) =>
-                setDrawer({ kind: "status", studentId: row._id }),
-            },
-            {
-              // One item, two words, because the route is the same either way
-              // and the difference is only whether the student had a class.
-              label: "Assign or transfer class",
-              onActionClick: (row: { _id: number }) =>
-                setDrawer({ kind: "transfer", studentId: row._id }),
-            },
-            {
-              label: "Link a guardian",
-              onActionClick: (row: { _id: number }) =>
-                setDrawer({ kind: "guardian", studentId: row._id }),
-            },
+            ...(
+              [
+                { kind: "edit", label: "Edit record" },
+                { kind: "status", label: "Change status" },
+                // One item, two words: the route is the same either way.
+                { kind: "transfer", label: "Assign or transfer class" },
+                { kind: "guardian", label: "Link a guardian" },
+              ] as const
+            )
+              .filter(({ kind }) => canOpen(kind))
+              .map(({ kind, label }) => ({
+                label,
+                onActionClick: (row: { _id: number }) =>
+                  setDrawer({ kind, studentId: row._id }),
+              })),
           ]}
           tableBodyList={rows.map((s) => ({
             // Carried so the row menu can find the student back; CustomTable

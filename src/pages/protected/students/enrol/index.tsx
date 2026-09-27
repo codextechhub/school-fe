@@ -24,7 +24,9 @@ import {
   type Gender,
 } from "@/redux/services/students/students-types";
 
+import PermissionGate from "@/components/custom/permission-gate";
 import { ConfirmDialog } from "../drawers/confirm-dialog";
+import { ENROL_PERMISSIONS } from "../drawers/access";
 import { Field, errorInputClass, inputClass } from "../drawers/drawer-shell";
 import { ChoiceButtons } from "./choice-buttons";
 import { StepRail } from "./step-rail";
@@ -980,15 +982,26 @@ export default function EnrolStudent() {
           {index === 0 ? "Cancel" : "Back"}
         </Button>
         {isLast ? (
-          <Button onClick={() => submit()} disabled={isLoading}>
-            {isLoading
-              ? "Saving…"
-              : asApplicant
-                ? "Save applicant"
-                : allowOverCapacity
-                  ? "Enrol anyway"
-                  : "Enrol student"}
-          </Button>
+          <PermissionGate
+            permission={ENROL_PERMISSIONS}
+            mode="all"
+            fallback={
+              <span className="text-xs text-gray-05">
+                Enrolling needs both the enrol and the class-assignment
+                permissions.
+              </span>
+            }
+          >
+            <Button onClick={() => submit()} disabled={isLoading}>
+              {isLoading
+                ? "Saving…"
+                : asApplicant
+                  ? "Save applicant"
+                  : allowOverCapacity
+                    ? "Enrol anyway"
+                    : "Enrol student"}
+            </Button>
+          </PermissionGate>
         ) : (
           <Button onClick={next} disabled={isLoading}>
             {STEPS[index].optional ? "Skip" : "Next"}

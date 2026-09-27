@@ -7,6 +7,8 @@ import CustomTable from "@/components/custom/custom-table";
 import { CustomInput } from "@/components/custom/custom-input";
 import { CustomNativeSelect } from "@/components/custom/custom-native-select";
 import PermissionGate from "@/components/custom/permission-gate";
+import { usePermissions } from "@/hooks/use-permissions";
+import { invitationActions } from "@/pages/protected/staff/invitations/invitation-model";
 import { P } from "@/permissions";
 import {
   useCreateStaffMutation,
@@ -90,6 +92,10 @@ function StatusChip({ status }: { status?: string }) {
  * (`school.teachers`) with `CREATING`: the email is declared open on create and
  * is offered and sent even to an administrator who may not read it on an
  * existing staff member.
+ *
+ * Inviting and resending are one act on the server, both refused without
+ * `school.teachers.create`, so the form and each row's Resend are offered on
+ * that key. A reader without it still sees who has been invited.
  */
 export function InvitationsPanel() {
   const [page, setPage] = useState(1);
@@ -100,6 +106,7 @@ export function InvitationsPanel() {
   const [invite, { isLoading: inviting }] = useCreateStaffMutation();
   const access = useFieldAccess(FIELD_RESOURCE.STAFF);
   const [resend, { isLoading: resending }] = useResendStaffInvitationMutation();
+  const { hasPermission } = usePermissions();
 
   const people = useMemo(() => list.data?.data ?? [], [list.data]);
   const roleOptions = useMemo(
@@ -225,7 +232,7 @@ export function InvitationsPanel() {
   return (
     <div className="space-y-5">
     <PermissionGate
-      permission={P.INVITE_ADMINISTRATOR}
+      permission={P.INVITE_TEACHER}
       fallback={
         <p className="rounded-md border border-border bg-white px-4 py-3 text-[13px] text-gray-06">
           You can see who has been invited, but only a school administrator
@@ -315,33 +322,39 @@ export function InvitationsPanel() {
           emptyText="Nobody has been invited yet."
           dropDown
           disabledDropdown={resending}
-          dropDownList={[
-            {
-              label: "Resend invitation",
-              onActionClick: (row: { _slug: number }) => {
-                const person = people.find((entry) => entry.id === row._slug);
-                if (!person) return;
-                if (!person.can_resend) {
-                  toast.info(
-                    `${person.full_name} has already activated their account, so there is nothing to resend.`,
-                  );
-                  return;
-                }
-                void resendTo(person);
+          dropDownList={(row: { _slug: number }) => {
+            const person = people.find((entry) => entry.id === row._slug);
+            if (!person || !invitationActions(person, hasPermission).resend) {
+              return [];
+            }
+            return [
+              {
+                label: "Resend invitation",
+                onActionClick: () => {
+                  if (!person.can_resend) {
+                    toast.info(
+                      `${person.full_name} has already activated their account, so there is nothing to resend.`,
+                    );
+                    return;
+                  }
+                  void resendTo(person);
+                },
               },
-            },
-          ]}
+            ];
+          }}
           currentPage={list.data?.pagination?.currentPage ?? page}
           totalPage={list.data?.pagination?.totalPages ?? 0}
           onPageChange={(next) => setPage(Number(next) || 1)}
           hidePagination={(list.data?.pagination?.totalPages ?? 0) < 2}
         />
       </div>
-      <p className="mt-2.5 flex items-start gap-1.5 text-xs text-gray-05">
-        <Info className="size-3.5 shrink-0 mt-px text-gray-05" />
-        Resending reuses the account that is already there, so chasing
-        somebody never creates a second record for them.
-      </p>
+      {hasPermission(P.INVITE_TEACHER) && (
+        <p className="mt-2.5 flex items-start gap-1.5 text-xs text-gray-05">
+          <Info className="size-3.5 shrink-0 mt-px text-gray-05" />
+          Resending reuses the account that is already there, so chasing
+          somebody never creates a second record for them.
+        </p>
+      )}
     </section>
     </div>
   );

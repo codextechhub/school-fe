@@ -163,10 +163,14 @@ const CustomTable = ({
    * table can offer different actions per row: a cancelled import batch has
    * nothing to roll back, and an array would have to offer the item to every
    * row and refuse it on click.
+   *
+   * A row with no actions gets no menu. Screens filter their actions by what
+   * the reader may do, and a "..." that opens onto nothing reads as broken.
    */
   const RowActionsMenu = ({ item }: { item: any }) => {
     const actions =
       typeof dropDownList === "function" ? dropDownList(item) : dropDownList;
+    if (!actions?.length) return null;
     return (
     <DropdownMenu>
       <DropdownMenuTrigger

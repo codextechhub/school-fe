@@ -4,6 +4,7 @@ import { Briefcase, Check, Search, Upload, UserPlus, X } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
+import { canRunImport } from "@/components/custom/import-wizard/import-access";
 import PermissionGate from "@/components/custom/permission-gate";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
@@ -166,16 +167,12 @@ export default function StaffDirectory() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2.5">
-          {/* Gated on the ENGINE's key, not a staff one. There is no
-              school.teachers.import: the dataset is reachable by the seven
-              import keys a school already holds, which is what FR-016 means by
-              needing a dataset rather than a new key. */}
-          <PermissionGate permission={P.UPLOAD_IMPORT_BATCH}>
+          {canRunImport("staff", hasPermission) && (
             <Button variant="outline" onClick={() => setImporting(true)}>
               <Upload className="size-4" />
               Import
             </Button>
-          </PermissionGate>
+          )}
           <PermissionGate permission={P.INVITE_TEACHER}>
             <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
               <UserPlus className="size-4" />

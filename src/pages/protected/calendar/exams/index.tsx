@@ -144,10 +144,10 @@ export default function ExamScheduling() {
   const [remove, { isLoading: removing }] = useDeleteExamSlotMutation();
   const [publish, { isLoading: publishing }] = usePublishExamMutation();
 
-  const canCreate = hasPermission(P.CREATE_TIMETABLE_ENTRY) && !readOnlyYear;
-  const canEdit = hasPermission(P.MODIFY_TIMETABLE_ENTRY) && !readOnlyYear;
-  const canDelete = hasPermission(P.DELETE_TIMETABLE) && !readOnlyYear;
-  const canPublish = hasPermission(P.PUBLISH_TIMETABLE) && !readOnlyYear;
+  const canCreate = hasPermission(P.CREATE_EXAM) && !readOnlyYear;
+  const canEdit = hasPermission(P.MODIFY_EXAM) && !readOnlyYear;
+  const canDelete = hasPermission(P.DELETE_EXAM) && !readOnlyYear;
+  const canPublish = hasPermission(P.PUBLISH_EXAM_TIMETABLE) && !readOnlyYear;
 
   const published = exam?.status === "PUBLISHED";
 
@@ -267,7 +267,7 @@ export default function ExamScheduling() {
             params={{ branch: lens.branch === "all" ? undefined : lens.branch }}
           />
           <PermissionGate
-            permission={P.CREATE_TIMETABLE_ENTRY}
+            permission={P.CREATE_EXAM}
             disabled={readOnlyYear}
           >
             <Button
@@ -282,7 +282,7 @@ export default function ExamScheduling() {
             </Button>
           </PermissionGate>
           <PermissionGate
-            permission={P.PUBLISH_TIMETABLE}
+            permission={P.PUBLISH_EXAM_TIMETABLE}
             disabled={readOnlyYear}
           >
             <Button
@@ -548,8 +548,13 @@ export default function ExamScheduling() {
         removing={removing}
         onClose={() => setPaper(null)}
         onPreview={previewPaper}
+        canPreview={hasPermission(P.CREATE_EXAM)}
         onSave={savePaper}
-        onRemove={removePaper}
+        onRemove={
+          canDelete && paper?.slot && canManageRow(paper.slot)
+            ? removePaper
+            : undefined
+        }
       />
     </PageShell>
   );
