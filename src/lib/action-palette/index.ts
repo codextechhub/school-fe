@@ -26,8 +26,8 @@ export const SECTION_ORDER: ActionSection[] = [
   "Academics",
   "Finance",
   "Procurement",
-  "Settings",
   "Data",
+  "Settings",
   "Onboarding",
   "Account",
 ];

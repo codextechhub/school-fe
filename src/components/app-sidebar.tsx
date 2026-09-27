@@ -985,9 +985,6 @@ export function AppSidebar({
               {academics.length > 0 && (
                 <NavMain items={academics} groupTitle="Academics" />
               )}
-              {administration.length > 0 && (
-                <NavMain items={administration} groupTitle="Administration" />
-              )}
               {business.length > 0 && (
                 <NavMain items={business} groupTitle="Operations" />
               )}
@@ -996,6 +993,9 @@ export function AppSidebar({
               )}
               {help.length > 0 && (
                 <NavMain items={help} groupTitle="Communication" />
+              )}
+              {administration.length > 0 && (
+                <NavMain items={administration} groupTitle="Administration" />
               )}
             </>
           )}
