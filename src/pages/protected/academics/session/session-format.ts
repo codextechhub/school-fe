@@ -3,6 +3,7 @@ import type {
   SessionStatus,
   TermState,
 } from "@/redux/services/academics/academics-types";
+import { todayIso } from "@/lib/as-at";
 
 /**
  * The bits of a session both the list and the detail screen print, spelled once
@@ -46,7 +47,7 @@ export function scopeOf(session: AcademicSession): string {
  */
 export function termState(
   term: { start_date: string; end_date: string },
-  today = new Date().toISOString().slice(0, 10),
+  today = todayIso(),
 ): TermState {
   if (!term.start_date || !term.end_date) return "pending";
   if (term.end_date < today) return "completed";

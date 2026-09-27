@@ -31,6 +31,7 @@ import { Field, errorInputClass, inputClass } from "../drawers/drawer-shell";
 import { ChoiceButtons } from "./choice-buttons";
 import { StepRail } from "./step-rail";
 import { GuardianRows, type GuardianDraft } from "./guardian-rows";
+import { todayIso } from "@/lib/as-at";
 
 /** A new guardian's name as one line, from the parts typed so far. */
 function draftName(g: GuardianDraft): string {
@@ -40,8 +41,9 @@ function draftName(g: GuardianDraft): string {
     .join(" ");
 }
 
+/** Today on this device, not in UTC: before 1am in Lagos they differ. */
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIso();
 }
 
 /** Under 2 or over 25 is a mistyped year, not a pupil. Mirrors the backend. */

@@ -13,11 +13,13 @@ import {
   TRANSFER_REASONS,
   type StudentDetail,
 } from "@/redux/services/students/students-types";
+import { todayIso } from "@/lib/as-at";
 
 import { DrawerShell, Field, inputClass } from "./drawer-shell";
 
+/** Today on this device, not in UTC: before 1am in Lagos they differ. */
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIso();
 }
 
 /**

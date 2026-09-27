@@ -19,6 +19,7 @@ import type {
 } from "@/redux/services/students/students-types";
 
 import { DrawerShell, Field, errorInputClass, inputClass } from "./drawer-shell";
+import { todayIso } from "@/lib/as-at";
 
 // The fields, grouped the way the design groups them, with the label used both
 // on the form and in the "what changed" line - so the two can never disagree.
@@ -64,7 +65,7 @@ const TABS: { value: EditSectionKey; label: string }[] = [
 /** Under 2 or over 25 is a typed year, not a pupil. Matches the backend's rule. */
 function dobProblem(value: string): string {
   if (!value) return "A date of birth is required.";
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayIso();
   if (value > today) return "That date is in the future.";
   const years = Number(today.slice(0, 4)) - Number(value.slice(0, 4));
   if (years < 2) return "That would make the student under 2 years old.";

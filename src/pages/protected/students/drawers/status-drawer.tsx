@@ -9,6 +9,7 @@ import type {
   AllowedTransition,
   StudentDetail,
 } from "@/redux/services/students/students-types";
+import { todayIso } from "@/lib/as-at";
 
 import { DrawerShell, Field, inputClass } from "./drawer-shell";
 import { ConfirmDialog } from "./confirm-dialog";
@@ -17,8 +18,9 @@ import { ConfirmDialog } from "./confirm-dialog";
 // look. Not every status change deserves one - going back to Active does not.
 const HEAVY = new Set(["WITHDRAWN", "SUSPENDED", "TRANSFERRED", "REJECTED"]);
 
+/** Today on this device, not in UTC: before 1am in Lagos they differ. */
 function today() {
-  return new Date().toISOString().slice(0, 10);
+  return todayIso();
 }
 
 /**
