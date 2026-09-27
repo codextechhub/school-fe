@@ -297,7 +297,7 @@ export const SCHOOL_SETUP_GUIDES = [
     id: "school.setup.settings-notifications",
     slug: "choose-which-notifications-send-email",
     title: "Choose which notifications send email",
-    summary: "Turn email on or off for each event your school's people are notified about, and know which ones always send and which stay in the bell.",
+    summary: "Turn email on or off for each event your school's people are notified about, for the whole school or one branch, and know which ones always send and which stay in the bell.",
     category: "school-setup",
     tags: ["notifications", "email", "bell", "events", "transactional"],
     aliases: ["stop emails", "turn off email", "email notifications", "too many emails", "notification preferences", "always sent"],
@@ -308,6 +308,7 @@ export const SCHOOL_SETUP_GUIDES = [
     primaryRoute: R.SETTINGS.NOTIFICATIONS,
     sections: [
       { id: "before-you-start", title: "Before you start" },
+      { id: "whole-school-or-branch", title: "Choose the whole school or a branch" },
       { id: "read-the-list", title: "Read the list" },
       { id: "turn-email-on-or-off", title: "Turn email on or off" },
       { id: "common-problems", title: "Common problems" },

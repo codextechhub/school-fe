@@ -61,7 +61,7 @@ export default function SettingsSecurityArticle() {
 
       <GuideSection id="change-a-rule" title="Change a rule">
         <GuideSteps>
-          <GuideStep title="Choose whole school or a branch">If your school has more than one branch, a picker sits at the top. Leave it on <strong>Whole school</strong> to change the rule for every branch, or pick a branch to change it for that branch only. The sentence beside the picker says which you are editing.</GuideStep>
+          <GuideStep title="Choose whole school or a branch">If your school has more than one branch, a picker sits at the top listing <strong>Whole school</strong> and the branches you work in. Leave it on <strong>Whole school</strong> to change the rule for every branch, or pick a branch to change it for that branch only. The sentence beside the picker says which you are editing.</GuideStep>
           <GuideStep title="Type the new values">Type a whole number into the box for each rule you want to change. A counter beside <strong>Save</strong> shows how many changes are not saved yet.</GuideStep>
           <GuideStep title="Save">Select <strong>Save</strong>. XVS confirms which scope it saved for, and records every change with who made it.</GuideStep>
         </GuideSteps>
