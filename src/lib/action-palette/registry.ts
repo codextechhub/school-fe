@@ -821,8 +821,8 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   },
   {
     id: "view-workflow-notifications",
-    label: "View approval emails",
-    aliases: ["workflow notifications", "notify approvers", "stop approval emails"],
+    label: "View approval notifications",
+    aliases: ["approval emails", "workflow notifications", "notify approvers", "stop approval emails"],
     section: "Settings",
     group: "School settings",
     kind: "view",

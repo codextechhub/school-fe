@@ -52,8 +52,8 @@ export interface SectionGate {
  * payroll is not asked how it runs one.
  *
  * Notifications has two parts, and each is gated inside the section: the
- * event list on the notification key and `email_alerts`, and approval emails
- * on the key that changes an approval path.
+ * event list on the notification key and `email_alerts`, and approval
+ * notifications on the key that changes an approval path.
  *
  * Admission numbers are gated on the key that SAVES the rule rather than the
  * one that reads it: every enrolling clerk reads the rule, because the

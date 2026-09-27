@@ -70,8 +70,9 @@ function describe(line: EventLine, atBranch: boolean): string {
  * Each switch saves on its own, so a change is never lost by leaving the page.
  *
  * The school's other notification choice is whether its approvals notify
- * anybody at all: one switch for the whole school, above the per-event list,
- * because switching it off silences every approval email in that list. It is
+ * anybody at all: one switch for the whole school, above the per-event list.
+ * Off, the approval events are never raised, so nobody is told by email OR
+ * in the bell, whatever the list below says for each one. It is
  * gated on the approval-path keys its endpoint checks, and the event list on
  * the notification key and the email alerts module, so a reader who holds
  * only one of the two sees only that part.
@@ -138,7 +139,7 @@ export function NotificationsSection() {
     <div className="space-y-5">
       <SettingsSectionHeader
         title="Notifications"
-        description="Choose which events also send an email. Everything always appears in the bell inside XVS, whatever you choose here."
+        description="Choose which events also send an email. The events in the list always appear in the bell inside XVS, whatever you choose for their email."
       />
 
       {showsApprovals ? <ApprovalEmails /> : null}
@@ -247,9 +248,10 @@ export function NotificationsSection() {
 /**
  * Whether this school's approvals notify anybody: one answer for the school.
  *
- * Off silences every approval email, whatever the event list below says for
- * each one, and changes nothing about the approvals themselves: a request
- * still waits for the same people, who find it in their own queue.
+ * Off, the approval events are never raised, so nobody is told by email or in
+ * the bell, whatever the event list below says for each one. It changes
+ * nothing about the approvals themselves: a request still waits for the same
+ * people, who find it in their own queue.
  */
 function ApprovalEmails() {
   const { data, isLoading } = useGetWorkflowNotificationSettingQuery();
@@ -261,7 +263,7 @@ function ApprovalEmails() {
     save(next)
       .unwrap()
       .then(() =>
-        toast.success(next ? "Approvals will email people again." : "Approvals will not email anybody."),
+        toast.success(next ? "Approvals will notify people again." : "Approvals will not notify anybody."),
       )
       .catch((error) => toast.error(writeErrorMessage(error, "That could not be changed.")));
   };
@@ -270,17 +272,17 @@ function ApprovalEmails() {
     <SettingsPanel title="Approvals" description="Applies to the whole school, every branch.">
       <SettingsRow
         icon={Workflow}
-        label="Approval emails"
+        label="Approval notifications"
         description={
           enabled
-            ? "On. Approvers are told when something waits on them, and whoever raised a request is told how it ended."
-            : "Off. Nobody is emailed about approvals. They still run, and approvers find what is waiting in their own queue."
+            ? "On. Approvers are told when something waits on them, and whoever raised a request is told how it ended, by email and in the app."
+            : "Off. Nobody is told about approvals, by email or in the app. Approvals still run, and approvers find what is waiting in their own queue."
         }
         badge={
           <label className="flex items-center gap-2 font-mont text-xs font-normal text-gray-05">
-            Email
+            Notify
             <Switch
-              aria-label="Approval emails"
+              aria-label="Approval notifications"
               checked={enabled}
               disabled={isLoading || saving}
               onCheckedChange={choose}
