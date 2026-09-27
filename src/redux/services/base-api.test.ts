@@ -92,6 +92,23 @@ describe("TENANT_NOT_LIVE handling", () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
+  it("never moves the reader for a silent background request", async () => {
+    // Guide telemetry is silent: a school being set up reading a guide must
+    // stay on the guide even if the event is refused.
+    setPath("/support/guides/get-started-with-xvs");
+    respondWith(403, {
+      success: false,
+      message: "This school is still being set up.",
+      error: { code: "TENANT_NOT_LIVE", detail: {} },
+    });
+
+    await baseQueryInterceptor("/support/guides/analytics/events/", apiStub("mutation"), { silent: true });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
   it("leaves an ordinary 403 alone - that one really is a permission failure", async () => {
     respondWith(403, {
       success: false,

@@ -375,8 +375,12 @@ export const baseQueryInterceptor: BaseQueryFn<
     // here rather than per page because ANY screen can produce it - a bookmark,
     // a stale link, a redirect - and the alternative is every page in the app
     // learning that it might be closed.
+    //
+    // Not for a silent request. A background call (telemetry, a poll) refused
+    // this way says nothing about the screen being read, and it must never
+    // move the reader off it.
     if (res?.data?.error?.code === "TENANT_NOT_LIVE") {
-      redirectToOnboardingNotLive();
+      if (!silent) redirectToOnboardingNotLive();
       return result;
     }
     // A refused field write is answered on the form, beside each field it names.
