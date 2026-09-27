@@ -625,6 +625,23 @@ export const studentsApi = baseApi.injectEndpoints({
       query: () => ({ url: `/students/admission-number-policy/`, method: "GET" }),
       providesTags: ["Students"],
     }),
+
+    /**
+     * Set the rule. The whole rule every time (`PUT`), so a save cannot leave
+     * a hint that describes a pattern somebody else has since changed.
+     */
+    updateAdmissionPolicy: builder.mutation<
+      Envelope<Omit<AdmissionPolicy, "suggestion">>,
+      Omit<AdmissionPolicy, "suggestion">
+    >({
+      query: (body) => ({
+        url: `/students/admission-number-policy/`,
+        method: "PUT",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
   }),
 });
 
@@ -648,6 +665,7 @@ export const {
   useUploadGuardianPhotoMutation,
   useDeleteGuardianPhotoMutation,
   useGetAdmissionPolicyQuery,
+  useUpdateAdmissionPolicyMutation,
   useGetClassSeatsQuery,
   usePreviewPromotionMutation,
   useRunPromotionMutation,

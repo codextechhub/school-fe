@@ -1,27 +1,17 @@
-import { useFormik } from "formik";
 import { useNavigate } from "react-router";
-import { toast } from "sonner";
 import { CircleAlert, Info, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CustomInput } from "@/components/custom/custom-input";
-import { CustomNativeSelect } from "@/components/custom/custom-native-select";
 import { routesPath } from "@/routes/routesPath";
 import { requestSupportOpen } from "@/components/layout/support-open";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
-import {
-  useGetSchoolProfileQuery,
-  useUpdateSchoolProfileMutation,
-} from "@/redux/services/school/school-api";
-import type {
-  SchoolProfile,
-  SchoolProfileUpdate,
-} from "@/redux/services/school/school-types";
-import { schoolProfileSchema } from "@/schema/onboarding";
-import { apiErrorMessage, parseApiError } from "@/utils/api-error";
+import { useGetSchoolProfileQuery } from "@/redux/services/school/school-api";
+import type { SchoolProfile } from "@/redux/services/school/school-types";
+import { parseApiError } from "@/utils/api-error";
 import { SUPPORT_MAIL } from "@/utils/static";
-import { LogoField } from "./components/logo-field";
+import { LogoField } from "@/components/school-profile/logo-field";
+import { SchoolProfileForm } from "@/components/school-profile/school-profile-form";
 import { OutlinedNotice } from "./components/outlined-notice";
 import { PageShell } from "@/components/layout/page-shell";
 
@@ -88,51 +78,10 @@ export default function SchoolProfilePage() {
 function ProfileForm({ profile }: { profile: SchoolProfile }) {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
-  const [update, { isLoading }] = useUpdateSchoolProfileMutation();
-
-  // A branch admin may read this record - the currency and term structure
-  // govern screens they work in - and may not change it. They get the same page
-  // with the fields locked, rather than a form that collects their typing and
-  // then answers 403 to the Save they were invited to press.
+  // A branch admin may read this record, because its currency and term
+  // structure govern screens they work in, and may not change it.
   const canEdit = hasPermission(P.UPDATE_SCHOOL_PROFILE);
-
-  const formik = useFormik({
-    initialValues: {
-      ownership_type: profile.ownership_type ?? "",
-      term_structure: profile.term_structure ?? "",
-      currency: profile.currency ?? "",
-      address: profile.address ?? "",
-      website: profile.website ?? "",
-      motto: profile.motto ?? "",
-      registration_id: profile.registration_id ?? "",
-    },
-    validationSchema: schoolProfileSchema,
-    onSubmit: async (values, helpers) => {
-      // Only what actually moved. The endpoint refuses a payload that changes
-      // nothing, and sending every field would make an untouched form look like
-      // an edit to the audit trail this save writes.
-      const changed: SchoolProfileUpdate = {};
-      for (const [key, value] of Object.entries(values)) {
-        const before = (profile as unknown as Record<string, string>)[key] ?? "";
-        if (value !== before) {
-          (changed as Record<string, string>)[key] = value;
-        }
-      }
-      if (Object.keys(changed).length === 0) return;
-
-      try {
-        await update(changed).unwrap();
-        toast.success("Saved. Your changes are recorded.");
-        helpers.resetForm({ values });
-      } catch (error) {
-        toast.error(
-          apiErrorMessage(error, "We could not save your profile. Try again."),
-        );
-      }
-    },
-  });
-
-  const missing = profile.missing_required.filter(
+  const missing =profile.missing_required.filter(
     // name, slug and code are CodeX's to fix, so listing them here would be
     // telling the school to go and do something it cannot do.
     (row) => !["name", "slug", "code"].includes(row.field),
@@ -205,107 +154,10 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
       <LogoField logoUrl={profile.logo} canEdit={canEdit} />
 
       {/* ── What the school sets ──────────────────────────────────────────── */}
-      <form
-        onSubmit={formik.handleSubmit}
-        className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 space-y-4 max-w-200"
-      >
-        <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
-          Yours to confirm
-        </p>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {/* Options come from the server with the record, so this form cannot
-              offer a value the model will refuse. */}
-          <CustomNativeSelect
-            id="ownership_type"
-            disabled={!canEdit}
-            label="Ownership type"
-            isRequired
-            options={profile.options.ownership_type}
-            placeholder="How is the school owned?"
-            {...formik.getFieldProps("ownership_type")}
-            error={
-              formik.touched.ownership_type ? formik.errors.ownership_type : ""
-            }
-          />
-          <CustomNativeSelect
-            id="term_structure"
-            disabled={!canEdit}
-            label="Term structure"
-            isRequired
-            options={profile.options.term_structure}
-            placeholder="How is your year divided?"
-            {...formik.getFieldProps("term_structure")}
-            error={
-              formik.touched.term_structure ? formik.errors.term_structure : ""
-            }
-          />
-          <CustomNativeSelect
-            id="currency"
-            disabled={!canEdit}
-            label="Currency"
-            isRequired
-            options={profile.options.currency}
-            placeholder="Select a currency"
-            {...formik.getFieldProps("currency")}
-            error={formik.touched.currency ? formik.errors.currency : ""}
-          />
-          <CustomInput
-            id="registration_id"
-            disabled={!canEdit}
-            label="Registration number"
-            placeholder="Optional"
-            {...formik.getFieldProps("registration_id")}
-            error={
-              formik.touched.registration_id
-                ? formik.errors.registration_id
-                : ""
-            }
-          />
-          <CustomInput
-            id="address"
-            disabled={!canEdit}
-            label="Address"
-            placeholder="Optional"
-            containerClass="sm:col-span-2"
-            {...formik.getFieldProps("address")}
-            error={formik.touched.address ? formik.errors.address : ""}
-          />
-          <CustomInput
-            id="website"
-            disabled={!canEdit}
-            label="Website"
-            placeholder="https://example.com"
-            {...formik.getFieldProps("website")}
-            error={formik.touched.website ? formik.errors.website : ""}
-          />
-          <CustomInput
-            id="motto"
-            disabled={!canEdit}
-            label="Motto"
-            placeholder="Optional"
-            {...formik.getFieldProps("motto")}
-            error={formik.touched.motto ? formik.errors.motto : ""}
-          />
-        </div>
-
-        {/* Not a setting. XVS shows West Africa Time everywhere and a school
-            cannot change it, so it is stated rather than offered as a control
-            that would do nothing. */}
-        <p className="text-xs text-gray-05">
-          All times are shown in West Africa Time (WAT).
-        </p>
-
-        <div className="flex flex-wrap gap-2 pt-1">
-          {canEdit && (
-            <Button
-              type="submit"
-              loading={isLoading}
-              disabled={!formik.isValid || !formik.dirty || isLoading}
-            >
-              Save changes
-            </Button>
-          )}
+      <SchoolProfileForm
+        profile={profile}
+        canEdit={canEdit}
+        footer={
           <Button
             type="button"
             variant="outline"
@@ -313,13 +165,8 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
           >
             Back to control room
           </Button>
-        </div>
-        <p className="text-xs text-gray-05">
-          {canEdit
-            ? "Every save here is recorded against your school."
-            : "You can read your school's profile. Changing it is the school administrator's to do."}
-        </p>
-      </form>
+        }
+      />
     </PageShell>
   );
 }

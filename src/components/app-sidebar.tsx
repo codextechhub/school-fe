@@ -38,6 +38,7 @@ import {
   DatabaseZap,
   FileDown,
   Rocket,
+  Settings,
   ShieldCheck,
   ShieldAlert,
   UserPlus,
@@ -55,6 +56,7 @@ import { LensRail } from "./layout/lens-pills";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { SchoolMark } from "./school-mark";
 import { deriveSidebarWorkCounts } from "./sidebar-work-counts";
+import { openSettingsSections } from "@/pages/protected/settings/sections";
 
 // A nav item may declare a permission (single code or a list). When absent the
 // item always renders. `permissionMode` decides whether a list requires ANY
@@ -775,6 +777,17 @@ export function AppSidebar({
             : []),
         ],
       },
+      // The school's own settings console, offered exactly when the page
+      // would open a section for this reader (key and plan both).
+      ...(openSettingsSections({ hasAnyPermission, hasCapability }).length > 0
+        ? [{
+            title: "Settings",
+            url: routesPath.PROTECTED.SETTINGS.INDEX,
+            icon: Settings,
+            isActive: location.startsWith(routesPath.PROTECTED.SETTINGS.INDEX),
+            childActive: false,
+          }]
+        : []),
     ],
     // Finance and Procurement are separate consoles: opening one replaces this
     // sidebar with that area's own. They are grouped apart from the school's

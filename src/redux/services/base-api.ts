@@ -504,6 +504,10 @@ export const baseApi = createApi({
     "Onboarding",
     "GoLiveRequests",
     "SchoolProfile",
+    // The settings console's security and payroll values. One tag: a branch
+    // override changes what the whole-school view reports as overridden.
+    "SchoolSettings",
+    "NotificationSettings",
     // The staff list AND one person's record. They carry the same facts, and
     // every write that moves one moves the other: a role grant changes a row's
     // Role column, a teaching duty changes its load, a status change changes

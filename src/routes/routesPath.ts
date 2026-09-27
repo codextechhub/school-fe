@@ -141,6 +141,18 @@ export const routesPath = {
       DETAIL_ID: (id: string | number) => `/support/${id}`,
     },
     BRANCHES: { INDEX: "/branches" },
+    // The school's own settings console. One path per section (see
+    // pages/protected/settings/sections.ts), so a section that does not exist
+    // is a 404 rather than a quiet fall back to the overview.
+    SETTINGS: {
+      INDEX: "/settings",
+      PROFILE: "/settings/profile",
+      SECURITY: "/settings/security",
+      NOTIFICATIONS: "/settings/notifications",
+      ADMISSION_NUMBERS: "/settings/admission-numbers",
+      PAYROLL: "/settings/payroll",
+      MORE: "/settings/more",
+    },
     // Who can do what, after go-live. The onboarding screen at
     // /onboarding/roles asks a school to confirm its baseline once and is gone
     // the moment the school is live; this is the permanent door, and the only

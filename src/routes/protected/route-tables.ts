@@ -2,6 +2,7 @@ import { type RouteObject } from "react-router";
 import { overviewRoutes } from "./overview-routes";
 import { branchesRoutes } from "./branches-routes";
 import { rolesRoutes } from "./roles-routes";
+import { settingsRoutes } from "./settings-routes";
 import { workflowRoutes } from "./workflow-routes";
 import { academicRoutes } from "./academic-routes";
 import { classesRoutes } from "./classes-routes";
@@ -34,6 +35,7 @@ export const protectedChildren: RouteObject[] = [
   ...overviewRoutes,
   ...branchesRoutes,
   ...rolesRoutes,
+  ...settingsRoutes,
   ...workflowRoutes,
   ...academicRoutes,
   ...classesRoutes,

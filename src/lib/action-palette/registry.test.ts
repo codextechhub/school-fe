@@ -30,6 +30,7 @@ import {
   PROCUREMENT_MOUNTED_PATHS,
 } from "@/routes/protected/procurement-routes";
 import { rolesRoutes } from "@/routes/protected/roles-routes";
+import { settingsRoutes } from "@/routes/protected/settings-routes";
 import { workflowRoutes } from "@/routes/protected/workflow-routes";
 import { dataImportRoutes } from "@/routes/protected/data-import-routes";
 import { exportRoutes } from "@/routes/protected/export-routes";
@@ -64,6 +65,7 @@ const SERVED_PATHS = new Set([
     ...staffRoutes,
     ...supportRoutes,
     ...rolesRoutes,
+    ...settingsRoutes,
     ...workflowRoutes,
     ...dataImportRoutes,
     ...exportRoutes,

@@ -34,6 +34,10 @@
 // so a result reads as the sidebar item or page title it opens.
 
 import { P } from "@/permissions";
+import {
+  SECTION_GATES,
+  UNPLANNED_SETTINGS_KEYS,
+} from "@/pages/protected/settings/sections";
 import { routesPath } from "@/routes/routesPath";
 import {
   schoolFinanceNav,
@@ -642,6 +646,70 @@ const SCHOOL_ACTIONS: ActionDef[] = [
       any: [P.VIEW_FIELD_ACCESS, P.UPDATE_FIELD_ACCESS],
     },
     run: { to: R.ROLES.FIELD_ACCESS },
+  },
+
+  // ── School settings ────────────────────────────────────────────────────────
+  // The settings console and each of its sections. Every gate is the key the
+  // section's own endpoint checks (pages/protected/settings/sections.ts).
+  {
+    id: "view-school-settings",
+    label: "View settings",
+    aliases: ["school settings", "configuration", "preferences", "setup"],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: UNPLANNED_SETTINGS_KEYS },
+    run: { to: R.SETTINGS.INDEX },
+  },
+  {
+    id: "view-school-profile-settings",
+    label: "View school profile and logo",
+    aliases: ["logo", "crest", "address", "motto", "website", "currency", "school details"],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.profile.anyOf },
+    run: { to: R.SETTINGS.PROFILE },
+  },
+  {
+    id: "view-security-settings",
+    label: "View sign-in and security settings",
+    aliases: ["password", "lockout", "account lock", "reset link", "invitation expiry"],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.security.anyOf },
+    run: { to: R.SETTINGS.SECURITY },
+  },
+  {
+    id: "view-notification-settings",
+    label: "View notification settings",
+    aliases: ["emails", "email notifications", "stop emails", "notification preferences"],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.notifications.anyOf },
+    run: { to: R.SETTINGS.NOTIFICATIONS },
+  },
+  {
+    id: "view-admission-number-settings",
+    label: "View admission number rule",
+    aliases: ["admission numbers", "admission number format", "numbering"],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES["admission-numbers"].anyOf },
+    run: { to: R.SETTINGS.ADMISSION_NUMBERS },
+  },
+  {
+    id: "view-payroll-settings",
+    label: "View payroll settings",
+    aliases: ["payroll scope", "per branch payroll", "central payroll"],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.payroll.anyOf },
+    run: { to: R.SETTINGS.PAYROLL },
   },
 
   // ── Workflow ───────────────────────────────────────────────────────────────
