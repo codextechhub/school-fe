@@ -326,6 +326,7 @@ describe("plan filtering", () => {
     }
     const offeredIds = ids(offered);
     expect(offeredIds).not.toContain("view-payroll-settings");
+    expect(offeredIds).not.toContain("view-notification-settings");
     expect(offeredIds).toContain("view-school-settings");
     expect(offeredIds).toContain("view-admission-number-settings");
   });

@@ -1,5 +1,6 @@
 import type { ElementType } from "react";
 import {
+  BellRing,
   Hash,
   LayoutGrid,
   Landmark,
@@ -27,6 +28,7 @@ import {
 import { AdmissionNumbersSection } from "./sections/admission-numbers-section";
 import { MoreSection } from "./sections/more-section";
 import { useSettingsDoors } from "./use-settings-doors";
+import { NotificationsSection } from "./sections/notifications-section";
 import { PayrollSection } from "./sections/payroll-section";
 import { ProfileSection } from "./sections/profile-section";
 import { SecuritySection } from "./sections/security-section";
@@ -40,6 +42,7 @@ const SECTION_META: Record<
   overview: { title: "Overview", description: "Everything in one place", icon: LayoutGrid },
   profile: { title: "School profile", description: "Crest, address and details", icon: School },
   security: { title: "Sign-in and security", description: "Lockouts and link lifetimes", icon: ShieldCheck },
+  notifications: { title: "Notifications", description: "Which events send email", icon: BellRing },
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash },
   payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark },
   more: { title: "More settings", description: "Roles, approvals, finance", icon: ListChecks },
@@ -48,6 +51,7 @@ const SECTION_META: Record<
 const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX.Element> = {
   profile: ProfileSection,
   security: SecuritySection,
+  notifications: NotificationsSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
   more: MoreSection,
@@ -62,9 +66,9 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
  * not open falls back to the overview rather than refusing, because the
  * address is right and the page is simply not theirs.
  *
- * Platform settings (integrations, notification emails, what a plan
- * includes, the runtime values XVS operates) are not here: they belong to
- * XVS, and the server refuses every school role the keys for them.
+ * Platform settings (integrations, what a plan includes, the runtime values
+ * XVS operates) are not here: they belong to XVS, and the server refuses
+ * every school role the keys for them.
  */
 export default function SchoolSettings({
   section = DEFAULT_SCHOOL_SETTINGS_SECTION,
@@ -91,7 +95,7 @@ export default function SchoolSettings({
   return (
     <ConsoleSettingsLayout
       title="Settings"
-      description="How your school runs in XVS: its profile, sign-in rules, and the rules its records follow."
+      description="How your school runs in XVS: its profile, sign-in rules, notifications, and the rules its records follow."
       basePath={BASE}
       activeSection={active}
       sections={visible.map((key) => ({ key, ...SECTION_META[key] }))}
@@ -128,6 +132,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   overview: "",
   profile: "Your crest, address, website and motto, and the details XVS set up for you.",
   security: "How many wrong passwords lock an account, and how long reset links and invitations last.",
+  notifications: "Which events also send an email to the people they concern.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
   more: "Roles, field access, approval paths, and the Finance and Procurement settings.",

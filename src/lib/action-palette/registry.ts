@@ -739,6 +739,16 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.SETTINGS.SECURITY },
   },
   {
+    id: "view-notification-settings",
+    label: "View notification settings",
+    aliases: ["emails", "email notifications", "stop emails", "notification preferences"],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.notifications.anyOf },
+    run: { to: R.SETTINGS.NOTIFICATIONS },
+  },
+  {
     id: "view-admission-number-settings",
     label: "View admission number rule",
     aliases: ["admission numbers", "admission number format", "numbering"],
