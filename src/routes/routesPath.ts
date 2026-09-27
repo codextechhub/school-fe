@@ -195,9 +195,10 @@ export const routesPath = {
       TEMPLATE_NEW: "/workflow/templates/new",
       TEMPLATE_DETAIL: "/workflow/templates/:id",
       TEMPLATE_EDIT: "/workflow/templates/:id/edit",
-      // Instances are not mounted in this app - a school approves its own queue
-      // rather than auditing everyone's - but procurement links a requisition to
-      // its instance, so the path has to exist for that link to be typed.
+      // Instances are not mounted in this app: a school approves its own queue
+      // rather than auditing everyone's. The package still names the path, and
+      // asks the router whether it is served before drawing a link to it, so a
+      // school reader is sent to their own submission instead.
       INSTANCES: "/workflow/instances",
       INSTANCE_DETAIL_PATH: "/workflow/instances/:id",
       INSTANCE_DETAIL: (id: string) => `/workflow/instances/${id}`,

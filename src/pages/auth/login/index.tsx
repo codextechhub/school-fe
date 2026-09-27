@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useLoginMutation } from "@/redux/services/auth/auth-api";
 import { routesPath } from "@/routes/routesPath";
 import { consumeReturnTo } from "@/utils/return-to";
+import { signInTarget } from "./sign-in-target";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { loginSchema } from "@/schema/auth";
 import { useFormik } from "formik";
@@ -53,22 +54,10 @@ export default function Login() {
             );
             return;
           }
-          // A school that has not gone live may reach onboarding and nothing
-          // else, so sending it to the dashboard would land it on the one
-          // screen it is not allowed to open. A captured deep link is honoured
-          // only when it points somewhere this school can actually go.
-          const returnTo = consumeReturnTo();
-          const isPending = res.data.tenant?.status === "PENDING";
-          const onboardingHome = isPending
-            ? routesPath.PROTECTED.ONBOARDING.WELCOME
-            : routesPath.PROTECTED.OVERVIEW.INDEX;
-          const target =
-            returnTo &&
-            (!isPending ||
-              returnTo.startsWith(routesPath.PROTECTED.ONBOARDING.INDEX))
-              ? returnTo
-              : onboardingHome;
-          navigate(target, { replace: true });
+          navigate(
+            signInTarget(consumeReturnTo(), res.data.tenant?.status === "PENDING"),
+            { replace: true },
+          );
         })
         .catch((err) => {
           setApiError(
