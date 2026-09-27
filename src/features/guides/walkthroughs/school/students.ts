@@ -393,7 +393,7 @@ export const STUDENTS_WALKTHROUGHS = [
         id: "confirm",
         target: "promotion.confirm",
         title: "Check the final counts",
-        body: "How many students each outcome covers and how many move into the new year. Students left out stay in the current year. Compare them with what the school agreed.",
+        body: "How many students each outcome covers and how many move into the new year. Students left out stay in the current year. If a class would go over capacity it is listed here, and Run promotion waits until you tick to go ahead.",
         placement: "bottom",
         advance: "manual",
       },

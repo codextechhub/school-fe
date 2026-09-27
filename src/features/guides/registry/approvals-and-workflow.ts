@@ -129,10 +129,10 @@ export const APPROVALS_AND_WORKFLOW_GUIDES = [
   {
     id: "school.workflow.approval-notifications",
     slug: "turn-approval-notifications-on-or-off",
-    title: "Turn approval emails on or off",
+    title: "Turn approval notifications on or off",
     summary: "Decide in Settings whether approvals email approvers and requesters about what is happening, with one switch for the whole school.",
     category: "approvals-and-workflow",
-    tags: ["notifications", "approval emails", "alerts", "workflow"],
+    tags: ["notifications", "approval notifications", "approval emails", "alerts", "workflow"],
     aliases: ["stop approval emails", "notify approvers", "approval alerts", "nobody told me it was approved"],
     audiences: ["school-administrator"],
     routes: [R.SETTINGS.NOTIFICATIONS],
