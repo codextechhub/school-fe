@@ -360,7 +360,7 @@ export default function ExamScheduling() {
 
         {exam.warnings.length > 0 && (
           <p className="print-only mb-3 text-sm text-error-text">
-            {exam.warnings.length} unresolved clash
+            {exam.warnings.length} clash
             {exam.warnings.length === 1 ? "" : "es"} in this schedule.
           </p>
         )}
@@ -384,7 +384,8 @@ export default function ExamScheduling() {
             </ul>
             <p className="mt-2 text-xs text-gray-05 text-pretty">
               Two classes really can sit in one hall, and one person really does
-              float between rooms, so these save. They only block publishing.
+              float between rooms, so these save and publish. Check each one is
+              meant before you publish.
             </p>
           </div>
         )}
