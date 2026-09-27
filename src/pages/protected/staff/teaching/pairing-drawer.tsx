@@ -20,7 +20,9 @@ import type {
   TeachingPart,
 } from "@/redux/services/staff/staff-types";
 
+import { ConfirmDialog } from "../../students/drawers/confirm-dialog";
 import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
+import { teachingRemovalCopy } from "./removal-copy";
 
 /**
  * Who teaches one subject in one class, asked of the subject rather than of a
@@ -50,6 +52,15 @@ import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
  * change made here is reflected in the list behind it and in the drawer at
  * once, from the one query that owns the answer.
  *
+ * **Removing somebody is confirmed first; changing a part is not.** A removal
+ * takes the row away, and a mis-tap on the remove button beside "Move to
+ * assisting" would otherwise leave nobody entering a subject's results with
+ * nothing on screen to say who had been doing it. Make main never displaces
+ * anyone: it is offered only while the subject has no main teacher, because
+ * the server refuses a second one, so replacing the main teacher is Move to
+ * assisting on their row, then Make main on the new one. Move to assisting is
+ * undone by Make main on the same row.
+ *
  * Every write here goes to the teaching routes, which the server refuses
  * without `school.teachers.assign`. A reader who lacks it still sees who
  * teaches what, with Close in place of Save and no row or add controls.
@@ -70,6 +81,11 @@ export function PairingDrawer({
   const [remove, { isLoading: removing }] = useRemoveTeachingMutation();
 
   const [staffId, setStaffId] = useState("");
+  const [toRemove, setToRemove] = useState<{
+    assignmentId: number;
+    name: string;
+    part: TeachingPart;
+  } | null>(null);
   const [part, setPartChoice] = useState<TeachingPart>(
     // A square with nobody on it is nearly always somebody being given the
     // subject outright, so that is what the form is already set to. Where
@@ -152,10 +168,12 @@ export function PairingDrawer({
     }
   }
 
-  async function drop(assignmentId: number, name: string) {
+  async function drop() {
+    if (!toRemove) return;
     try {
-      await remove(assignmentId).unwrap();
-      toast.success(`${name} no longer teaches ${where}.`);
+      await remove(toRemove.assignmentId).unwrap();
+      toast.success(`${toRemove.name} no longer teaches ${where}.`);
+      setToRemove(null);
     } catch (error) {
       toast.error(
         apiErrorMessage(error, "We could not remove that. Try again."),
@@ -163,164 +181,191 @@ export function PairingDrawer({
     }
   }
 
-  return (
-    <DrawerShell
-      open
-      onClose={onClose}
-      title={cell.subject_name}
-      subtitle={`Who teaches it to ${cell.class_name}.`}
-      saveLabel="Add them"
-      onSave={() => void add()}
-      canSave={Boolean(staffId) && !already}
-      saving={assigning}
-      readOnly={!canAssign}
-    >
-      <div className="grid gap-5">
-        <section data-guide="staff-pairing.current">
-          <h3 className="mb-3 text-sm font-semibold text-black-01">
-            Teaching it now
-          </h3>
-          {onIt.length ? (
-            <ul className="grid gap-2.5">
-              {onIt.map((person) => (
-                <li
-                  key={person.assignment_id}
-                  className="flex flex-wrap items-center gap-2.5 rounded-lg border border-white-02 px-3.5 py-2.5"
-                >
-                  <span className="min-w-0 truncate text-sm text-black-01">
-                    {person.name}
-                  </span>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                      person.part === "LEAD"
-                        ? "bg-[#DBE0EB] text-[#4A659D]"
-                        : "bg-gray-04 text-gray-05",
-                    )}
-                  >
-                    {person.part === "LEAD" ? "Main teacher" : "Assisting"}
-                  </span>
-                  {canAssign && (
-                    <span className="ml-auto flex items-center gap-1">
-                      {person.part === "ASSISTANT" ? (
-                        <Button
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={() =>
-                            void changePart(person.assignment_id, "LEAD")
-                          }
-                        >
-                          <ArrowUp className="size-3.5" />
-                          Make main
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          disabled={busy}
-                          onClick={() =>
-                            void changePart(person.assignment_id, "ASSISTANT")
-                          }
-                        >
-                          <ArrowDown className="size-3.5" />
-                          Move to assisting
-                        </Button>
-                      )}
-                      <button
-                        type="button"
-                        aria-label={`Remove ${person.name} from ${where}`}
-                        disabled={busy}
-                        onClick={() =>
-                          void drop(person.assignment_id, person.name)
-                        }
-                        className="rounded-lg p-2 text-gray-05 hover:bg-gray-03 hover:text-error-text"
-                      >
-                        <X className="size-4" />
-                      </button>
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="rounded-lg bg-gray-04 px-3.5 py-2.5 text-[13px] text-gray-01">
-              Nobody teaches this yet.
-            </p>
-          )}
+  const confirm = toRemove
+    ? teachingRemovalCopy({
+        name: toRemove.name,
+        className: cell.class_name,
+        subjectName: cell.subject_name,
+        part: toRemove.part,
+      })
+    : null;
 
-          {/* Said where it is true rather than as a permanent warning. A class
+  return (
+    <>
+      <DrawerShell
+        open
+        onClose={onClose}
+        title={cell.subject_name}
+        subtitle={`Who teaches it to ${cell.class_name}.`}
+        saveLabel="Add them"
+        onSave={() => void add()}
+        canSave={Boolean(staffId) && !already}
+        saving={assigning}
+        readOnly={!canAssign}
+      >
+        <div className="grid gap-5">
+          <section data-guide="staff-pairing.current">
+            <h3 className="mb-3 text-sm font-semibold text-black-01">
+              Teaching it now
+            </h3>
+            {onIt.length ? (
+              <ul className="grid gap-2.5">
+                {onIt.map((person) => (
+                  <li
+                    key={person.assignment_id}
+                    className="flex flex-wrap items-center gap-2.5 rounded-lg border border-white-02 px-3.5 py-2.5"
+                  >
+                    <span className="min-w-0 truncate text-sm text-black-01">
+                      {person.name}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        person.part === "LEAD"
+                          ? "bg-[#DBE0EB] text-[#4A659D]"
+                          : "bg-gray-04 text-gray-05",
+                      )}
+                    >
+                      {person.part === "LEAD" ? "Main teacher" : "Assisting"}
+                    </span>
+                    {canAssign && (
+                      <span className="ml-auto flex items-center gap-1">
+                        {person.part === "ASSISTANT" ? (
+                          !onIt.some((other) => other.part === "LEAD") && (
+                            <Button
+                              variant="ghost"
+                              disabled={busy}
+                              onClick={() =>
+                                void changePart(person.assignment_id, "LEAD")
+                              }
+                            >
+                              <ArrowUp className="size-3.5" />
+                              Make main
+                            </Button>
+                          )
+                        ) : (
+                          <Button
+                            variant="ghost"
+                            disabled={busy}
+                            onClick={() =>
+                              void changePart(person.assignment_id, "ASSISTANT")
+                            }
+                          >
+                            <ArrowDown className="size-3.5" />
+                            Move to assisting
+                          </Button>
+                        )}
+                        <button
+                          type="button"
+                          aria-label={`Remove ${person.name} from ${where}`}
+                          disabled={busy}
+                          onClick={() =>
+                            setToRemove({
+                              assignmentId: person.assignment_id,
+                              name: person.name,
+                              part: person.part,
+                            })
+                          }
+                          className="rounded-lg p-2 text-gray-05 hover:bg-gray-03 hover:text-error-text"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="rounded-lg bg-gray-04 px-3.5 py-2.5 text-[13px] text-gray-01">
+                Nobody teaches this yet.
+              </p>
+            )}
+
+            {/* Said where it is true rather than as a permanent warning. A class
               subject being taught with nobody entering its results is the one
               state that looks fine in a list and is not. */}
-          {cell.lead_gap && (
-            <p className="mt-2.5 rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
-              Somebody is teaching this, but no one is set to enter its results.
-              Make one of them the main teacher.
-            </p>
-          )}
-        </section>
-
-        {canAssign && (
-          <section
-            data-guide="staff-pairing.add"
-            className="border-t border-white-02 pt-4"
-          >
-            <h3 className="mb-3 text-sm font-semibold text-black-01">
-              Add a teacher
-            </h3>
-            <div className="grid gap-4">
-              <div>
-                <SearchSelect
-                  label="Teacher"
-                  isRequired
-                  options={people}
-                  value={staffId}
-                  onChange={(e) => setStaffId(e.target.value)}
-                  placeholder="Search staff by name"
-                />
-              </div>
-
-              <Field
-                label="Their part"
-                required
-                hint="The main teacher enters this subject's results for this class. Anyone else assisting also teaches it, and there can be several."
-              >
-                <NativeSelect
-                  aria-label="Their part"
-                  value={part}
-                  onChange={(e) =>
-                    setPartChoice(e.target.value as TeachingPart)
-                  }
-                  className="h-9"
-                >
-                  <option value="LEAD">Main teacher</option>
-                  <option value="ASSISTANT">Assisting</option>
-                </NativeSelect>
-              </Field>
-
-              {already && (
-                <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
-                  They already teach this. Change their part on the row above
-                  instead.
-                </p>
-              )}
-
-              {part === "LEAD" && cell.lead && (
-                <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
-                  {cell.lead.name} is already the main teacher, and a class
-                  subject has only one. Move them to assisting first, or add
-                  this person as assisting.
-                </p>
-              )}
-
-              <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
-                <Info className="mt-px size-3.5 shrink-0 text-primary" />
-                This says who teaches it. When and where the lessons happen is
-                the timetable's, and being the main teacher for a subject is not
-                the same as being the class teacher for {cell.class_name}.
+            {cell.lead_gap && (
+              <p className="mt-2.5 rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                Somebody is teaching this, but no one is set to enter its
+                results. Make one of them the main teacher.
               </p>
-            </div>
+            )}
           </section>
-        )}
-      </div>
-    </DrawerShell>
+
+          {canAssign && (
+            <section
+              data-guide="staff-pairing.add"
+              className="border-t border-white-02 pt-4"
+            >
+              <h3 className="mb-3 text-sm font-semibold text-black-01">
+                Add a teacher
+              </h3>
+              <div className="grid gap-4">
+                <div>
+                  <SearchSelect
+                    label="Teacher"
+                    isRequired
+                    options={people}
+                    value={staffId}
+                    onChange={(e) => setStaffId(e.target.value)}
+                    placeholder="Search staff by name"
+                  />
+                </div>
+
+                <Field
+                  label="Their part"
+                  required
+                  hint="The main teacher enters this subject's results for this class. Anyone else assisting also teaches it, and there can be several."
+                >
+                  <NativeSelect
+                    aria-label="Their part"
+                    value={part}
+                    onChange={(e) =>
+                      setPartChoice(e.target.value as TeachingPart)
+                    }
+                    className="h-9"
+                  >
+                    <option value="LEAD">Main teacher</option>
+                    <option value="ASSISTANT">Assisting</option>
+                  </NativeSelect>
+                </Field>
+
+                {already && (
+                  <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                    They already teach this. Change their part on the row above
+                    instead.
+                  </p>
+                )}
+
+                {part === "LEAD" && cell.lead && (
+                  <p className="rounded-lg bg-amber-50 px-3.5 py-2.5 text-xs text-amber-900">
+                    {cell.lead.name} is already the main teacher, and a class
+                    subject has only one. Move them to assisting first, or add
+                    this person as assisting.
+                  </p>
+                )}
+
+                <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
+                  <Info className="mt-px size-3.5 shrink-0 text-primary" />
+                  This says who teaches it. When and where the lessons happen is
+                  the timetable's, and being the main teacher for a subject is
+                  not the same as being the class teacher for {cell.class_name}.
+                </p>
+              </div>
+            </section>
+          )}
+        </div>
+      </DrawerShell>
+
+      <ConfirmDialog
+        open={Boolean(toRemove)}
+        onCancel={() => setToRemove(null)}
+        onConfirm={() => void drop()}
+        title={confirm?.title ?? ""}
+        body={confirm?.body ?? ""}
+        confirmLabel="Remove"
+        busy={removing}
+      />
+    </>
   );
 }

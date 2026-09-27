@@ -32,7 +32,7 @@ export default function TeachingDutiesArticle() {
         <GuideSteps>
           <GuideStep title="Open the subject">Select a subject in the coverage grid. The drawer lists who is <strong>Teaching it now</strong>, each marked <strong>Main teacher</strong> or <strong>Assisting</strong>.</GuideStep>
           <GuideStep title="Add a teacher">Under <strong>Add a teacher</strong>, search in <strong>Teacher</strong>, choose <strong>Their part</strong>, and select <strong>Add them</strong>.</GuideStep>
-          <GuideStep title="Change a part">Use <strong>Make main</strong> to make an assisting teacher the main teacher, or <strong>Move to assisting</strong> for the reverse. Use the remove button on a row to take somebody off the subject.</GuideStep>
+          <GuideStep title="Change a part">Use <strong>Make main</strong> to make an assisting teacher the main teacher, or <strong>Move to assisting</strong> for the reverse. To take somebody off the subject, use the remove button on their row and confirm with <strong>Remove</strong>. If they were the main teacher, nobody enters its results until you make another teacher main.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="info" title="One main teacher per class subject">The main teacher enters that subject&apos;s results for that class. Any number of people can assist. To give the main part to somebody else, move the current main teacher to assisting first.</GuideCallout>
       </GuideSection>
@@ -41,7 +41,7 @@ export default function TeachingDutiesArticle() {
         <GuideSteps>
           <GuideStep title="Switch view">Choose <strong>By teacher</strong> and select a teacher.</GuideStep>
           <GuideStep title="Read their duties">The <strong>Teaching duties</strong> drawer lists every class subject they carry this year and their part in each.</GuideStep>
-          <GuideStep title="Add or change">Pick a <strong>Class</strong>, a <strong>Subject</strong> and <strong>Their part</strong>, then select <strong>Add duty</strong>. Change a part or remove a duty from its row.</GuideStep>
+          <GuideStep title="Add or change">Pick a <strong>Class</strong>, a <strong>Subject</strong> and <strong>Their part</strong>, then select <strong>Add duty</strong>. Change a part from its row. To remove a duty, use the remove button on its row and confirm with <strong>Remove</strong>.</GuideStep>
         </GuideSteps>
         <p>Assignment counts are shown without a target, because the school records no maximum teaching load.</p>
       </GuideSection>

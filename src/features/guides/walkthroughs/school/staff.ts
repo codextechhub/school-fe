@@ -11,8 +11,9 @@ const R = routesPath.PROTECTED;
  * None of them saves anything. Each stops at the button that would create,
  * invite, assign or grant, and says what that button does instead of pressing
  * it. The one drawer a tour opens is the class subject drawer on Teaching
- * duties, because opening it changes nothing; its row buttons do write
- * straight away, so the step that shows them says so.
+ * duties, because opening it changes nothing. Its part buttons write
+ * straight away and its remove button asks first, and the step that shows
+ * them says which is which.
  *
  * The role editor is reached through its own route rather than by clicking
  * Create role, because a step's route decides which screen the tour holds the
@@ -114,7 +115,7 @@ export const STAFF_WALKTHROUGHS = [
     prerequisites: [
       "The school is live and an academic year is running, with its classes and subjects set up.",
     ],
-    version: 1,
+    version: 2,
     steps: [
       {
         id: "welcome",
@@ -172,7 +173,7 @@ export const STAFF_WALKTHROUGHS = [
         id: "pairing-current",
         target: "staff-pairing.current",
         title: "Who teaches it now",
-        body: "Each person is marked Main teacher or Assisting. The main teacher enters this subject's results for the class, and there is only one. With permission to assign teaching, Make main, Move to assisting and the remove button act straight away, without a save, so the tour does not touch them.",
+        body: "Each person is marked Main teacher or Assisting. The main teacher enters this subject's results for the class, and there is only one. With permission to assign teaching, Make main and Move to assisting act straight away, without a save. The remove button asks you to confirm first. The tour does not touch any of them.",
         placement: "left",
         advance: "manual",
       },
