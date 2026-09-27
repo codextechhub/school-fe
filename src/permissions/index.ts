@@ -15,7 +15,6 @@ import {
  *
  * ── Code format: MM RR AA (6 digits) ─────────────────────────────────────────
  *   MM = module group   10=school  20=onboarding  30=academics  40=import
- *                       50=communication
  *                       92=exports (the Export Centre, shared with console-fe)
  *   RR = resource       01 02 03 … (assigned sequentially per module)
  *   AA = action         01=view   02=create  03=update  04=delete
@@ -129,13 +128,6 @@ const REGISTRY: Record<string, string> = {
   // endpoint. `.update` is school_admin only; a branch admin may read.
   "101201": "school.profile.view",
   "101203": "school.profile.update",
-
-  // ── communication / notification settings  (MM=50, RR=02) ──────────────────
-  // Which events email this school's people. The key's name is the backend's;
-  // what it gates is the school's own notification preferences, and it is a
-  // default grant for school and branch administrators. RR and AA match the
-  // console's code for the same key, only MM differs.
-  "500208": "communication.communication_permissions.enforce",
 
   // ── school / roles  (MM=10, RR=08) ─────────────────────────────────────────
   // All five are seeded to school_admin and to NOBODY else - a branch admin
@@ -442,9 +434,6 @@ export const P = {
   // ── School Profile ─────────────────────────────────────────────────────────
   VIEW_SCHOOL_PROFILE:     "101201",  // read the school's own identity record
   UPDATE_SCHOOL_PROFILE:   "101203",  // edit ownership, term structure, currency, branding
-
-  // ── Notification settings ──────────────────────────────────────────────────
-  MANAGE_NOTIFICATION_SETTINGS: "500208", // choose which events email this school's people
 
   // ── Roles ──────────────────────────────────────────────────────────────────
   VIEW_ROLES:              "100801",  // view school roles and assignments

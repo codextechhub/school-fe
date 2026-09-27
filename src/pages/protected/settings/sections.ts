@@ -23,7 +23,6 @@ export const SCHOOL_SETTINGS_SECTIONS = [
   "overview",
   "profile",
   "security",
-  "notifications",
   "admission-numbers",
   "payroll",
   "more",
@@ -43,9 +42,8 @@ export interface SectionGate {
 /**
  * The key each section's read endpoint checks, and the plan module it
  * configures. Capability names are the backend's (vs_rbac permission_bands):
- * notification settings belong to `email_alerts`, and payroll runs sit in
- * the advanced band of finance, so a school without payroll is not asked how
- * it runs one.
+ * payroll runs sit in the advanced band of finance, so a school without
+ * payroll is not asked how it runs one.
  *
  * Admission numbers are gated on the key that SAVES the rule rather than the
  * one that reads it: every enrolling clerk reads the rule, because the
@@ -58,7 +56,6 @@ export const SECTION_GATES: Record<
 > = {
   profile: { anyOf: [P.VIEW_SCHOOL_PROFILE] },
   security: { anyOf: [P.VIEW_SETTINGS] },
-  notifications: { anyOf: [P.MANAGE_NOTIFICATION_SETTINGS], capability: "email_alerts" },
   "admission-numbers": { anyOf: [P.MODIFY_STUDENT], capability: "students" },
   payroll: { anyOf: [P.VIEW_SETTINGS], capability: "finance_advanced" },
 };

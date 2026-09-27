@@ -17,7 +17,6 @@ describe("capabilityForPath", () => {
 
   it("reads the settings sections' own modules", () => {
     expect(capabilityForPath("/settings/payroll")).toBe("finance_advanced");
-    expect(capabilityForPath("/settings/notifications")).toBe("email_alerts");
     expect(capabilityForPath("/settings/admission-numbers")).toBe("students");
     expect(capabilityForPath("/settings/security")).toBeUndefined();
   });
