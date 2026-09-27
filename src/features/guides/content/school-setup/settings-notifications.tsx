@@ -44,7 +44,7 @@ export default function SettingsNotificationsArticle() {
             </div>
           ))}
         </div>
-        <p>For readers who manage approval paths, an <strong>Approvals</strong> panel sits above the list with one switch, <strong>Approval emails</strong>, for the whole school. Turned off, it silences every approval email whatever the list says for each one.</p>
+        <p>For readers who manage approval paths, an <strong>Approvals</strong> panel sits above the list with one switch, <strong>Approval emails</strong>, for the whole school. Turned off, approvals tell nobody, by email or in the bell, whatever the list says for each one.</p>
       </GuideSection>
 
       <GuideSection id="turn-email-on-or-off" title="Turn email on or off">

@@ -26,7 +26,7 @@ export default function ApprovalNotificationsArticle() {
           <GuideStep title="Use the switch">Turn the <strong>Email</strong> switch beside <strong>Approval emails</strong> on or off. It saves straight away.</GuideStep>
           <GuideStep title="Read the confirmation">Turned on, the message reads <em>Approvals will email people again.</em> Turned off, it reads <em>Approvals will not email anybody.</em></GuideStep>
         </GuideSteps>
-        <GuideCallout tone="warning" title="Off means nobody is emailed about approvals">Off silences every approval email, whatever the event list below it says for each one. Approvals still run with the same approvers, but nobody is emailed. A bursar who raises a requisition hears nothing when it is approved, and the head teacher finds it only by opening Approvals.</GuideCallout>
+        <GuideCallout tone="warning" title="Off means nobody is told about approvals">Off stops approvals telling anybody, by email or by the bell in XVS, whatever the event list below it says for each one. Approvals still run with the same approvers. A bursar who raises a requisition hears nothing when it is approved, and the head teacher finds it only by opening Approvals.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
