@@ -29,7 +29,7 @@ import {
 } from "@/redux/services/staff/organogram-api";
 import type { Position, PositionAssignment } from "@/redux/services/staff/organogram-types";
 import { asArray, fmtDate } from "../lib/org-helpers";
-import { ActingBadge, OrgAvatar } from "../components/org-primitives";
+import { ActingBadge, OrgAvatar, SuspendedBadge } from "../components/org-primitives";
 import { refusalMessage } from "./refusal";
 
 export function AppointDialog({ position, onClose }: { position: Position | null; onClose: () => void }) {
@@ -128,6 +128,7 @@ export function AppointDialog({ position, onClose }: { position: Position | null
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="truncate text-[13px] font-medium text-slate-700">{a.staff.full_name}</span>
                           {a.is_acting && <ActingBadge />}
+                          {a.staff.is_suspended && <SuspendedBadge />}
                         </div>
                         <div className="text-[11.5px] text-slate-400">Since {fmtDate(a.start_date)}</div>
                       </div>

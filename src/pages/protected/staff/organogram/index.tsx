@@ -385,37 +385,36 @@ export default function OrganogramPage() {
 
   return (
     <>
-      <PageShell className="text-slate-800">
-        <div className="overflow-hidden rounded-xl border border-white-02 bg-white">
-          <div className="border-b border-white-02 bg-white px-4 py-3 sm:px-4.5">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-mont font-semibold text-gray-01">Organogram</p>
-                <p className="mt-0.5 text-xs text-gray-01">Who reports to whom across the school</p>
-              </div>
-              <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
-                <OrgSearch positions={positions} onJumpUser={jumpToUser} onJumpPosition={jumpToPosition} />
-                {canManage && (
-                  <Button asChild variant="outline" size="sm">
-                    <Link to={routesPath.PROTECTED.STAFF.ORGANOGRAM_MANAGE}>
-                      <Settings2 className="size-3.5" /> Manage
-                    </Link>
-                  </Button>
-                )}
-              </div>
-            </div>
-            {canViewSummary && summary && (
-              <div className="grid grid-cols-2 gap-y-2 sm:flex sm:flex-wrap sm:items-center sm:divide-x sm:divide-white-02">
-                <Stat icon={Users} label="Active staff" value={summary.active_staff} accent="bg-indigo-50 text-indigo-500" />
-                <Stat icon={Building2} label="Departments" value={summary.departments} accent="bg-slate-100 text-slate-500" />
-                <Stat icon={Sparkles} label="Acting" value={summary.acting} accent="bg-amber-50 text-amber-500" />
-                <Stat icon={PlaneTakeoff} label="On leave" value={summary.on_leave} accent="bg-amber-50 text-amber-500" />
-                <Stat icon={Ban} label="Suspended" value={summary.suspended} accent="bg-rose-50 text-rose-500" />
-              </div>
+      <PageShell className="space-y-5 text-black-01">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-mont font-semibold text-gray-01">Organogram</p>
+            <p className="mt-0.5 text-xs text-gray-01">Who reports to whom across the school</p>
+          </div>
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
+            <OrgSearch positions={positions} onJumpUser={jumpToUser} onJumpPosition={jumpToPosition} />
+            {canManage && (
+              <Button asChild variant="outline" size="sm">
+                <Link to={routesPath.PROTECTED.STAFF.ORGANOGRAM_MANAGE}>
+                  <Settings2 className="size-3.5" /> Manage
+                </Link>
+              </Button>
             )}
           </div>
+        </div>
 
-          <div role="tablist" className="flex max-w-full items-center gap-1 overflow-x-auto border-b border-white-02 bg-white px-4 sm:px-4.5">
+        {canViewSummary && summary && (
+          <div className="grid grid-cols-2 gap-y-2 sm:flex sm:flex-wrap sm:items-center sm:divide-x sm:divide-white-02">
+            <Stat icon={Users} label="Active staff" value={summary.active_staff} accent="bg-indigo-50 text-indigo-500" />
+            <Stat icon={Building2} label="Departments" value={summary.departments} accent="bg-slate-100 text-slate-500" />
+            <Stat icon={Sparkles} label="Acting" value={summary.acting} accent="bg-amber-50 text-amber-500" />
+            <Stat icon={PlaneTakeoff} label="On leave" value={summary.on_leave} accent="bg-amber-50 text-amber-500" />
+            <Stat icon={Ban} label="Suspended" value={summary.suspended} accent="bg-rose-50 text-rose-500" />
+          </div>
+        )}
+
+        <div className="space-y-3">
+          <div role="tablist" className="flex max-w-full items-center gap-1 overflow-x-auto border-b border-white-02">
             {([["people", "People", Users], ["positions", "Posts", Briefcase]] as const).map(([id, label, Icon]) => (
               <button
                 key={id}
@@ -423,15 +422,18 @@ export default function OrganogramPage() {
                 role="tab"
                 aria-selected={tab === id}
                 onClick={() => setTab(id)}
-                className={cn("relative flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-[13px] font-semibold transition-colors", tab === id ? "text-indigo-600" : "text-slate-500 hover:text-slate-700")}
+                className={cn(
+                  "relative flex items-center gap-1.5 whitespace-nowrap px-3 py-2.5 text-[13px] font-semibold transition-colors",
+                  tab === id ? "text-primary" : "text-gray-01 hover:text-black-01",
+                )}
               >
                 <Icon className="size-4" />{label}
-                {tab === id && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-indigo-600" />}
+                {tab === id && <span className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-primary" />}
               </button>
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white-02 bg-white/90 px-4 py-2.5 backdrop-blur sm:px-4.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex min-w-0 basis-full items-center gap-2 sm:basis-auto">
               <Building2 className="size-4 shrink-0 text-slate-400" />
               <div className="min-w-0 flex-1 sm:w-60 sm:flex-none">
@@ -468,92 +470,92 @@ export default function OrganogramPage() {
               )}
             </div>
           </div>
+        </div>
 
-          {/* The stage: scrolls both ways, zooms with Ctrl and the wheel or the
-              controls, and pans by dragging the background. */}
-          <div className="relative">
-            <ScrollArea
-              orientation="both"
-              viewportRef={scrollRef}
-              onPointerDown={onPanStart}
-              onPointerMove={onPanMove}
-              onPointerUp={onPanEnd}
-              onPointerCancel={onPanEnd}
-              className={cn(
-                "h-[calc(100dvh-21rem)] min-h-[420px] select-none overscroll-contain",
-                panning ? "cursor-grabbing" : "cursor-grab",
+        {/* The stage: scrolls both ways, zooms with Ctrl and the wheel or the
+            controls, and pans by dragging the background. */}
+        <div className="relative">
+          <ScrollArea
+            orientation="both"
+            viewportRef={scrollRef}
+            onPointerDown={onPanStart}
+            onPointerMove={onPanMove}
+            onPointerUp={onPanEnd}
+            onPointerCancel={onPanEnd}
+            className={cn(
+              "h-[calc(100dvh-21rem)] min-h-[420px] select-none overscroll-contain",
+              panning ? "cursor-grabbing" : "cursor-grab",
+            )}
+          >
+            <div ref={zoomWrapRef} className="w-max min-w-full px-6 py-8" style={{ zoom }}>
+              {deptFilter !== "ALL" && (
+                <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
+                  <Filter className="size-3.5 text-indigo-500" />
+                  Showing <span className="font-semibold text-slate-700">{orgNodes.find((d) => d.id === deptFilter)?.name}</span>
+                </div>
               )}
-            >
-              <div ref={zoomWrapRef} className="w-max min-w-full px-6 py-8" style={{ zoom }}>
-                {deptFilter !== "ALL" && (
-                  <div className="mb-3 flex items-center gap-2 text-sm text-slate-500">
-                    <Filter className="size-3.5 text-indigo-500" />
-                    Showing <span className="font-semibold text-slate-700">{orgNodes.find((d) => d.id === deptFilter)?.name}</span>
-                  </div>
-                )}
-                {treeLoading ? (
-                  <div className="mx-auto w-full max-w-3xl space-y-2">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />)}</div>
-                ) : treeError && tree.length === 0 ? (
-                  <div className="mx-auto flex min-h-56 w-full max-w-md flex-col items-center justify-center gap-3 text-center">
-                    <p className="text-sm font-medium text-destructive">The organogram could not be loaded. Check your connection and try again.</p>
-                    <Button variant="outline" size="sm" onClick={() => refetchTree()}>
-                      <RefreshCw className="size-3.5" /> Try again
-                    </Button>
-                  </div>
-                ) : viewTree.length === 0 ? (
-                  <div className="mx-auto w-full max-w-md rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-6 py-16 text-center">
-                    <Info className="mx-auto mb-2 size-6 text-slate-300" />
-                    <p className="text-[13px] font-medium text-slate-500">
-                      {deptFilter === "ALL" ? "Nobody has been appointed to a post yet." : "Nobody holds a post in this unit yet."}
+              {treeLoading ? (
+                <div className="mx-auto w-full max-w-3xl space-y-2">{[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-16 animate-pulse rounded-2xl bg-slate-100" />)}</div>
+              ) : treeError && tree.length === 0 ? (
+                <div className="mx-auto flex min-h-56 w-full max-w-md flex-col items-center justify-center gap-3 text-center">
+                  <p className="text-sm font-medium text-destructive">The organogram could not be loaded. Check your connection and try again.</p>
+                  <Button variant="outline" size="sm" onClick={() => refetchTree()}>
+                    <RefreshCw className="size-3.5" /> Try again
+                  </Button>
+                </div>
+              ) : viewTree.length === 0 ? (
+                <div className="mx-auto w-full max-w-md rounded-2xl border border-dashed border-slate-300 bg-slate-50/50 px-6 py-16 text-center">
+                  <Info className="mx-auto mb-2 size-6 text-slate-300" />
+                  <p className="text-[13px] font-medium text-slate-500">
+                    {deptFilter === "ALL" ? "Nobody has been appointed to a post yet." : "Nobody holds a post in this unit yet."}
+                  </p>
+                  {canManage && deptFilter === "ALL" && (
+                    <p className="mt-1 text-[12px] text-slate-400">
+                      Build the school&apos;s units and posts in{" "}
+                      <Link to={routesPath.PROTECTED.STAFF.ORGANOGRAM_MANAGE} className="font-medium text-primary hover:underline">Manage</Link>,
+                      then appoint staff to them.
                     </p>
-                    {canManage && deptFilter === "ALL" && (
-                      <p className="mt-1 text-[12px] text-slate-400">
-                        Build the school&apos;s units and posts in{" "}
-                        <Link to={routesPath.PROTECTED.STAFF.ORGANOGRAM_MANAGE} className="font-medium text-primary hover:underline">Manage</Link>,
-                        then appoint staff to them.
-                      </p>
-                    )}
-                  </div>
-                ) : tab === "positions" ? (
-                  <PositionsTree tree={viewTree} ctx={positionsCtx} />
-                ) : (
-                  <PeopleTree roots={peopleRoots} ctx={peopleCtx} />
-                )}
-              </div>
-            </ScrollArea>
-
-            <div className="absolute bottom-4 right-4 z-10 flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white/95 px-1 py-1 shadow-sm backdrop-blur">
-              <button
-                type="button"
-                onClick={() => applyZoom(zoomRef.current - 0.1)}
-                disabled={zoom <= MIN_ZOOM}
-                aria-label="Zoom out"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
-              >
-                <Minus className="size-3.5" />
-              </button>
-              <span className="w-11 text-center font-mono text-[11.5px] font-semibold text-slate-600">
-                {Math.round(zoom * 100)}%
-              </span>
-              <button
-                type="button"
-                onClick={() => applyZoom(zoomRef.current + 0.1)}
-                disabled={zoom >= MAX_ZOOM}
-                aria-label="Zoom in"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
-              >
-                <Plus className="size-3.5" />
-              </button>
-              <span className="mx-0.5 h-4 w-px bg-slate-200" />
-              <button
-                type="button"
-                onClick={() => applyZoom(1)}
-                aria-label="Reset zoom"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700"
-              >
-                <Maximize className="size-3.5" />
-              </button>
+                  )}
+                </div>
+              ) : tab === "positions" ? (
+                <PositionsTree tree={viewTree} ctx={positionsCtx} />
+              ) : (
+                <PeopleTree roots={peopleRoots} ctx={peopleCtx} />
+              )}
             </div>
+          </ScrollArea>
+
+          <div className="absolute bottom-4 right-4 z-10 flex items-center gap-0.5 rounded-lg border border-slate-200 bg-white/95 px-1 py-1 shadow-sm backdrop-blur">
+            <button
+              type="button"
+              onClick={() => applyZoom(zoomRef.current - 0.1)}
+              disabled={zoom <= MIN_ZOOM}
+              aria-label="Zoom out"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
+            >
+              <Minus className="size-3.5" />
+            </button>
+            <span className="w-11 text-center font-mono text-[11.5px] font-semibold text-slate-600">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => applyZoom(zoomRef.current + 0.1)}
+              disabled={zoom >= MAX_ZOOM}
+              aria-label="Zoom in"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
+            >
+              <Plus className="size-3.5" />
+            </button>
+            <span className="mx-0.5 h-4 w-px bg-slate-200" />
+            <button
+              type="button"
+              onClick={() => applyZoom(1)}
+              aria-label="Reset zoom"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+            >
+              <Maximize className="size-3.5" />
+            </button>
           </div>
         </div>
       </PageShell>

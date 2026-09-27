@@ -45,6 +45,7 @@ function user(id: string, name: string): StaffHolder {
     full_name: name,
     photo: null,
     job_title: "",
+    is_suspended: false,
   };
 }
 

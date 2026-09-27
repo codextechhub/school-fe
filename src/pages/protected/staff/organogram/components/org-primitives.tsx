@@ -1,7 +1,7 @@
 /** Small presentational pieces shared by the chart, the detail drawer and Manage. */
 
 import { skipToken } from "@reduxjs/toolkit/query";
-import { Sparkles, Users } from "lucide-react";
+import { Ban, Sparkles, Users } from "lucide-react";
 import type { StaffHolder } from "@/redux/services/staff/organogram-types";
 import { useFetchAuthMediaQuery } from "@/redux/services/media-api";
 import { cn } from "@/lib/utils";
@@ -19,7 +19,7 @@ export function OrgAvatar({
   size = 36,
   ring = false,
 }: {
-  user?: Pick<StaffHolder, "id" | "full_name" | "photo"> | null;
+  user?: Pick<StaffHolder, "id" | "full_name" | "photo"> & Partial<Pick<StaffHolder, "is_suspended">> | null;
   size?: number;
   ring?: boolean;
 }) {
@@ -28,7 +28,10 @@ export function OrgAvatar({
   const initials = user ? initialsOf(user.full_name) || "-" : "-";
   const color = user ? avatarColor(user.id) : "bg-slate-100 text-slate-400";
   return (
-    <span className="relative inline-flex shrink-0" style={{ width: size, height: size }}>
+    <span
+      className={cn("relative inline-flex shrink-0", user?.is_suspended && "opacity-50 grayscale")}
+      style={{ width: size, height: size }}
+    >
       {src ? (
         <img
           src={src}
@@ -57,6 +60,16 @@ export function ActingBadge() {
     <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-200">
       <Sparkles className="size-2.5" />
       Acting
+    </span>
+  );
+}
+
+/** A holder whose employment or account is suspended; they keep the post. */
+export function SuspendedBadge() {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-600 ring-1 ring-rose-200">
+      <Ban className="size-2.5" />
+      Suspended
     </span>
   );
 }
@@ -115,7 +128,7 @@ export function HolderStack({ users, onPick }: { users: StaffHolder[]; onPick: (
               e.stopPropagation();
               onPick(u);
             }}
-            title={u.full_name}
+            title={u.is_suspended ? `${u.full_name} (suspended)` : u.full_name}
             className="transform rounded-full transition-transform hover:z-10 hover:-translate-y-0.5"
           >
             <OrgAvatar user={u} size={28} ring />

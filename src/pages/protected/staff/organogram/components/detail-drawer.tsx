@@ -21,7 +21,7 @@ import { routesPath } from "@/routes/routesPath";
 import type { MatrixReport, Position, PositionAssignment, StaffHolder } from "@/redux/services/staff/organogram-types";
 import { useGetOrgAssignmentsQuery } from "@/redux/services/staff/organogram-api";
 import { asArray, fmtDate, KIND_LABEL } from "../lib/org-helpers";
-import { ActingBadge, BranchChip, DeptChip, OrgAvatar } from "./org-primitives";
+import { ActingBadge, BranchChip, DeptChip, OrgAvatar, SuspendedBadge } from "./org-primitives";
 
 export type DetailTarget =
   | { kind: "person"; user: StaffHolder; positionId: number | null }
@@ -100,6 +100,7 @@ function PersonDetail({ user, positionId, ctx }: { user: StaffHolder; positionId
           <div className="flex flex-wrap items-center gap-2">
             <h3 className="text-lg font-bold text-slate-800">{user.full_name}</h3>
             {isActing && <ActingBadge />}
+            {user.is_suspended && <SuspendedBadge />}
           </div>
           <p className="text-[13.5px] text-slate-500">
             {isActing && seat ? `Acting ${seat.title}` : seat?.title || user.job_title || "-"}
@@ -248,6 +249,7 @@ function PositionDetail({ id, ctx }: { id: number; ctx: DrawerCtx }) {
                 <div className="truncate text-[13px] font-medium text-slate-700">{u.full_name}</div>
                 {u.job_title && <div className="truncate text-[11.5px] text-slate-400">{u.job_title}</div>}
               </div>
+              {u.is_suspended && <SuspendedBadge />}
               {ctx.actingSet.has(`${u.id}@${id}`) && <ActingBadge />}
             </button>
           ))}

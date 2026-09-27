@@ -37,6 +37,11 @@ export interface StaffHolder {
   full_name: string;
   photo: string | null;
   job_title: string;
+  /**
+   * Their employment or their account is suspended. They keep their post on
+   * the chart, marked, and are passed over as an approver until it is lifted.
+   */
+  is_suspended: boolean;
 }
 
 export interface OrgNodeInline {

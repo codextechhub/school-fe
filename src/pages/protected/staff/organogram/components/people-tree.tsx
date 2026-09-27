@@ -10,7 +10,7 @@ import { ChevronDown } from "lucide-react";
 import type { StaffHolder } from "@/redux/services/staff/organogram-types";
 import { cn } from "@/lib/utils";
 import { countAllReports, nextFocusedNode, type PeopleNode } from "../lib/org-helpers";
-import { ActingBadge, OrgAvatar } from "./org-primitives";
+import { ActingBadge, OrgAvatar, SuspendedBadge } from "./org-primitives";
 
 export interface PeopleCtx {
   expanded: Set<string>;
@@ -66,6 +66,7 @@ function PersonNode({ node, ctx }: { node: Extract<PeopleNode, { kind: "person" 
           <span className="max-w-full truncate text-[12px] text-slate-500">
             {node.isActing ? `Acting ${node.positionTitle}` : jobTitle}
           </span>
+          {node.user.is_suspended && <span className="mt-1"><SuspendedBadge /></span>}
         </div>
 
         {hasChildren && (
