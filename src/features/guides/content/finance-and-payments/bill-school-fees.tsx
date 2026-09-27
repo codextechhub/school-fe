@@ -8,36 +8,37 @@ import {
 
 const PROBLEMS = [
   { title: "Generate invoices is greyed out", body: "Only a structure whose Applies to is Customer can raise invoices. Edit the structure and check the setting, or ask for the generate permission if the button is missing altogether." },
-  { title: "The invoice date is refused", body: "Invoice date must fall in an open fiscal period. Ask whoever runs period close to open or reopen the period, rather than picking a different date." },
-  { title: "A pupil was not billed", body: "The run bills active customers only, and skips anyone already billed from the same structure. Check the pupil's customer record is Active, then raise a single invoice if they genuinely owe." },
-  { title: "Somebody was billed who should not be", body: "Void the invoice from its detail panel, then check which customers are active before the next run." },
-  { title: "The due date is not what you expected", body: "A blank Due date takes Default invoice due days from Finance Settings, Documents. Type the date on the form when it matters." },
-  { title: "The fee structure is missing from the list", body: "Batch generate and the invoice shortcut list active structures only, and an inactive structure cannot be billed. Edit the structure and tick Active." },
+  { title: "It says the structure is not linked to a term", body: "Link it from the Generate invoices drawer. That needs permission to edit fee structures; without it, ask someone who has it. A structure bills one term, so next term needs its own structure." },
+  { title: "No classes are offered", body: "The classes shown are those of the year the structure is linked to, at its branch if it has one. Set up that year's classes under Academics. If the drawer says your role cannot see the class lists, ask for access to students and classes." },
+  { title: "A pupil was not billed", body: "The run bills pupils on the roll in the classes you chose (Enrolled, Active or Suspended), and leaves out anyone already billed from the same structure. Check the pupil is in one of those classes this year and has not been withdrawn." },
+  { title: "Somebody was billed who should not be", body: "Void the invoice from its detail panel, then check the pupil's class and status before the next run." },
+  { title: "The due date is not what you expected", body: "Fee bills take their due date from Fee due dates in Finance Settings, worked out against the term the structure is linked to. The preview shows the date before anything is billed." },
+  { title: "The run is refused because the period is closed", body: "Bills are dated the day they are raised, so today's fiscal period must be open. Ask whoever runs period close to open it." },
+  { title: "The fee structure is missing from Batch generate", body: "Batch generate lists active Customer structures only, and an inactive structure cannot be billed. Edit the structure and tick Active." },
 ] as const;
 
 export default function BillSchoolFeesArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>Fees are billed from <strong>Finance</strong>, in the <strong>Receivables</strong> part of the sidebar. Everyone you bill is a <strong>customer</strong>: a pupil or a family paying for one. A <strong>fee structure</strong> is the price list for a term, and generating invoices from it raises one bill per customer.</p>
+        <p>Fees are billed from <strong>Finance</strong>, in the <strong>Receivables</strong> part of the sidebar. A <strong>fee structure</strong> is the price list for a term. Generating invoices from it bills the pupils in the classes you choose, one bill each.</p>
         <GuideChecklist items={[
           "The term's fees and amounts are approved.",
           "You know which income account each fee belongs to, such as tuition or bus fees.",
-          "The fiscal period for the invoice date is open.",
-          "Each pupil you intend to bill has an active customer record.",
+          "The term is set up under Academics, and each pupil is in their class for it.",
+          "Today's fiscal period is open, because bills are dated the day they are raised.",
         ]} />
         <GuideCallout tone="warning" title="A posted invoice is a real debt">
-          Generated invoices are posted straight away: the parent owes the money from that moment, and the ledger shows it. Check the structure and the customer list before you generate, not after.
+          Generated invoices are posted straight away: the parent owes the money from that moment, and the ledger shows it. Read the preview before you bill, not the invoices after.
         </GuideCallout>
       </GuideSection>
 
-      <GuideSection id="add-customers" title="Add the pupils you bill">
-        <GuideSteps>
-          <GuideStep title="Open Customers / Payers">The list shows each customer&apos;s balance and status, with tabs for <strong>All</strong>, <strong>Active</strong>, <strong>Overdue</strong>, <strong>In credit</strong> and <strong>Inactive</strong>. Search by code or name before adding anyone, so a pupil does not end up with two accounts.</GuideStep>
-          <GuideStep title="Select New customer">Enter the <strong>Name</strong>, <strong>Billing email</strong> and <strong>Billing phone</strong>. The email is where invoices, receipts and statements are sent, so use the parent&apos;s address. Leave <strong>Receivable account</strong> on its default unless your accountant says otherwise.</GuideStep>
-          <GuideStep title="Bring across an old balance, if any">When a pupil already owes from before, enter it in <strong>Opening balance (₦)</strong> and set <strong>Opening as of</strong> to the date it was owed. That period must be open.</GuideStep>
-          <GuideStep title="Keep Active ticked">Select <strong>Create customer</strong>. Only active customers are billed by a fee run, so untick Active on the Contact tab when a pupil leaves.</GuideStep>
-        </GuideSteps>
+      <GuideSection id="add-customers" title="How pupils get an account">
+        <p>You do not add pupils as customers yourself. The first time a pupil is billed, the run opens their account, named for the child, at the pupil&apos;s branch. Every later bill, receipt and statement for that pupil goes to the same account.</p>
+        <p><strong>Customers / Payers</strong> lists those accounts with each one&apos;s balance and status. Use it to look a pupil up and to set the <strong>Billing email</strong>, which is where invoices, receipts and statements are sent.</p>
+        <GuideCallout tone="warning" title="Do not add a pupil by hand">
+          A customer added with <strong>New customer</strong> is not linked to the pupil, so the fee run opens a second account for them and the family ends up with two balances. Add a customer by hand only for someone who is not a pupil, and ask your accountant before entering a balance a pupil owed from before.
+        </GuideCallout>
       </GuideSection>
 
       <GuideSection id="build-a-fee-structure" title="Build a fee structure">
@@ -48,18 +49,20 @@ export default function BillSchoolFeesArticle() {
           <GuideStep title="Check the total and create">The drawer shows the <strong>Subtotal (net)</strong>. Select <strong>Create structure</strong>. Open it again from the list to see the lines, the tax and the <strong>Total per customer</strong>.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="tip" title="Next term, duplicate rather than retype">
-          <strong>Duplicate</strong> copies every line into an inactive copy. Change the amounts, then tick Active when it is ready to bill.
+          <strong>Duplicate</strong> copies every line into an inactive copy. Change the amounts, then tick Active when it is ready to bill. The copy is not linked to a term: you link it the first time you generate from it.
         </GuideCallout>
       </GuideSection>
 
       <GuideSection id="generate-invoices" title="Generate the term's invoices">
         <GuideSteps>
-          <GuideStep title="Open the structure and select Generate invoices">Or use <strong>Batch generate</strong> on the Customer Invoices screen and pick the structure there. Both do the same thing.</GuideStep>
-          <GuideStep title="Set the dates">Choose the <strong>Invoice date</strong>. Type a <strong>Due date</strong> when you want a specific one; left blank, the due date comes from <strong>Default invoice due days</strong> in Finance Settings, Documents.</GuideStep>
-          <GuideStep title="Select Generate">The screen confirms how many invoices were raised. The structure&apos;s activity then reads <em>Used to generate</em> with the count.</GuideStep>
+          <GuideStep title="Open the structure and select Generate invoices">Or use <strong>Batch generate</strong> on the Customer Invoices screen, pick the structure and select <strong>Continue</strong>. Both open the same drawer.</GuideStep>
+          <GuideStep title="Check the term">The drawer says which term the structure bills, such as <em>Bills First Term, 2026/2027</em>. A structure that is not linked yet cannot bill anyone: choose the <strong>Academic year</strong> and <strong>Term</strong> and select <strong>Link to this term</strong>. Leave Term on <strong>The whole year</strong> for fees charged once a year.</GuideStep>
+          <GuideStep title="Choose who to bill">Tick the classes this structure is for, or <strong>Every class</strong>. The classes offered are that year&apos;s. A structure that belongs to one branch offers only that branch&apos;s classes and pupils.</GuideStep>
+          <GuideStep title="Select Preview">Nothing is billed yet. The preview shows how many pupils will be billed, the total with tax, the due date, and the list of names. Pupils already billed from this structure are counted separately and left alone.</GuideStep>
+          <GuideStep title="Select Bill">The button names the number of pupils. The bills are dated today and fall due on the date the preview showed, from the school&apos;s <strong>Fee due dates</strong> rule. The structure&apos;s activity then reads <em>Used to generate</em> with the count.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="danger" title="Generate bills every active customer">
-          The run raises one posted invoice for every active customer, from this one structure. It does not pick a class. Before generating, make sure the active customers are exactly the pupils this structure is for. Customers already billed from the same structure are skipped, so running it twice does not double-bill anybody.
+        <GuideCallout tone="info" title="Running it twice is safe">
+          A pupil is billed once per structure. Run it again after a late admission and only the new pupil is billed. Changing the classes after a preview clears it, so the run always matches the preview you read.
         </GuideCallout>
       </GuideSection>
 
@@ -94,7 +97,7 @@ export default function BillSchoolFeesArticle() {
 
       <GuideSection id="completion-check" title="Completion check">
         <GuideCallout tone="tip" title="The term is billed when">
-          Every pupil who owes has one invoice for the term, the totals on Customer Invoices match the approved fee schedule, the due dates are the ones you intended, and no one who should not owe has a bill.
+          Every pupil who owes has one invoice for the term, the totals on Customer Invoices match the approved fee schedule, the due dates are the ones the preview showed, and no one who should not owe has a bill.
         </GuideCallout>
       </GuideSection>
     </div>

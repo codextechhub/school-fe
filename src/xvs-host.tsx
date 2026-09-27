@@ -121,6 +121,12 @@ export const platformName = "XVS";
 /** When this school's fee bills fall due. */
 export { default as FeeDuePolicyPanel } from "@/pages/protected/school-finance/fee-due-policy";
 
+/** Who a fee structure bills: chosen classes, previewed, then billed through
+ *  the school's own route, which keeps to the term the structure prices and
+ *  the school's due-date rule. Without it the package bills every active
+ *  customer, which in a school is every pupil. */
+export { default as FeeGenerationPanel } from "@/pages/protected/school-finance/fee-generation";
+
 /** The school's own crest at the top of the Finance sidebar, not the platform's.
  *
  *  The same component the school's own sidebar uses, deliberately: crossing

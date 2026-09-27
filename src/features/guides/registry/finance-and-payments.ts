@@ -17,7 +17,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
     id: "school.finance.bill-school-fees",
     slug: "bill-school-fees-with-fee-structures",
     title: "Bill school fees with fee structures",
-    summary: "Add the pupils you bill, build a term's fee structure, generate the invoices and check them.",
+    summary: "Build a term's fee structure, bill the classes it is for after a preview, and check the invoices.",
     category: "finance-and-payments",
     tags: ["school fees", "fee structure", "invoice", "bill", "term fees", "customer", "billing", "receivables"],
     aliases: [
@@ -36,7 +36,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
     primaryRoute: `${R.FINANCE.RECEIVABLES}/fee-structures`,
     sections: [
       { id: "before-you-start", title: "Before you start" },
-      { id: "add-customers", title: "Add the pupils you bill" },
+      { id: "add-customers", title: "How pupils get an account" },
       { id: "build-a-fee-structure", title: "Build a fee structure" },
       { id: "generate-invoices", title: "Generate the term's invoices" },
       { id: "raise-a-single-invoice", title: "Raise a single invoice" },
