@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
-import { BellRing, Mail } from "lucide-react";
+import { ArrowRight, BellRing, Mail } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import {
   PolicyBadge,
@@ -14,6 +15,9 @@ import {
   useUpdateNotificationSettingsMutation,
   type NotificationSettingRow,
 } from "@/redux/services/notifications/notification-settings-api";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
+import { routesPath } from "@/routes/routesPath";
 import { parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { SectionLoadError, SectionLoading } from "./shared";
 
@@ -40,8 +44,14 @@ interface EventLine {
  * facts rather than switches, since the server refuses to turn either off.
  *
  * Each switch saves on its own, so a change is never lost by leaving the page.
+ *
+ * The school's other notification choice, whether approvers are emailed when
+ * a document waits on them, lives with the approval paths it belongs to. It is
+ * linked from here, gated as its own screen is, so the reader finds every
+ * notification setting they may change from this one section.
  */
 export function NotificationsSection() {
+  const { hasPermission } = usePermissions();
   const query = useGetNotificationSettingsQuery();
   const [save] = useUpdateNotificationSettingsMutation();
   const [pending, setPending] = useState<string | null>(null);
@@ -134,6 +144,26 @@ export function NotificationsSection() {
           </SettingsPanel>
         ))
       )}
+
+      {hasPermission(P.UPDATE_WORKFLOW_TEMPLATE) ? (
+        <SettingsPanel title="Other notification settings">
+          <Link
+            to={routesPath.PROTECTED.WORKFLOW.NOTIFICATIONS}
+            className="group flex items-center gap-3 px-4 py-4 transition-colors hover:bg-gray-02/40 sm:px-5"
+          >
+            <span className="grid size-8 shrink-0 place-content-center rounded-md bg-gray-02 text-gray-05">
+              <BellRing className="size-4" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-mont text-sm font-medium text-gray-01">Approval emails</span>
+              <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
+                Whether approvers are emailed when a document waits on them.
+              </span>
+            </span>
+            <ArrowRight className="size-4 shrink-0 text-gray-05 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </SettingsPanel>
+      ) : null}
     </div>
   );
 }
