@@ -42,6 +42,7 @@ export function NotificationsBell() {
       <DropdownMenuTrigger asChild>
         <button
           type="button"
+          data-guide="header.notifications"
           aria-label={count > 0 ? `Notifications, ${count} unread` : "Notifications"}
           className="relative size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-gray-03"
         >

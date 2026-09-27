@@ -41,6 +41,7 @@ import { NotLiveNotice } from "@/pages/protected/onboarding/components/not-live-
 import { OnboardingStatusStrip } from "@/pages/protected/onboarding/components/onboarding-status-strip";
 import { ReadOnlyNotice, type LensChoice } from "./lens-pills";
 import { SUPPORT_OPEN_EVENT } from "@/components/layout/support-open";
+import { WalkthroughProvider } from "@/features/guides/walkthroughs/runtime";
 import type { EscalationPrefill } from "@/components/custom/support-ticket-form";
 import { ProxySessionBanner } from "@/components/proxy-session-banner";
 import { P, resolvePermissionKey } from "@/permissions";
@@ -276,6 +277,7 @@ export default function DashboardLayout() {
 
   return (
     <TooltipProvider>
+      <WalkthroughProvider>
       <DashboardHeaderContext.Provider value={headerApi}>
       <SessionTimeoutModal
         open={open}
@@ -380,6 +382,7 @@ export default function DashboardLayout() {
                   breaks. */}
               <button
                 type="button"
+                data-guide="header.page-help"
                 aria-label="Get help"
                 title="Raise an issue with XVS"
                 onClick={() => {
@@ -511,6 +514,7 @@ export default function DashboardLayout() {
         <ApprovalConfirmDialog />
       </SidebarProvider>
       </DashboardHeaderContext.Provider>
+      </WalkthroughProvider>
     </TooltipProvider>
   );
 }

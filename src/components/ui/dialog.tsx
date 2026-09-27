@@ -3,12 +3,17 @@ import { XIcon } from "lucide-react"
 import { Dialog as DialogPrimitive } from "radix-ui"
 
 import { cn } from "@/lib/utils"
+import { preventWalkthroughDismiss } from "@/components/ui/walkthrough-interaction"
+import { modalDuringWalkthrough, useWalkthrough } from "@/features/guides/walkthroughs/context"
 import { Button } from "@/components/ui/button"
 
 function Dialog({
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+  // Non-modal while a walkthrough runs, so its coach card stays clickable
+  // over the drawer or dialog it is pointing into.
+  const walkthrough = useWalkthrough()
+  return <DialogPrimitive.Root data-slot="dialog" modal={props.modal ?? modalDuringWalkthrough(walkthrough.active)} {...props} />
 }
 
 function DialogTrigger({
@@ -49,6 +54,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
@@ -58,6 +64,10 @@ function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         data-slot="dialog-content"
+        onInteractOutside={(event) => {
+          onInteractOutside?.(event)
+          preventWalkthroughDismiss(event)
+        }}
         className={cn(
           // grid-cols-1 (= minmax(0,1fr)) zeroes the implicit column's
           // min-content floor. Without it a long unbreakable string - an email,

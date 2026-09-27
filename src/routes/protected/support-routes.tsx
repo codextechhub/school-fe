@@ -7,6 +7,8 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 // shipping in the main bundle.
 const SupportDesk = lazy(() => import("@/pages/protected/support"));
 const SupportTicketDetail = lazy(() => import("@/pages/protected/support/detail"));
+const HowToGuides = lazy(() => import("@/pages/protected/support/guides"));
+const GuideArticle = lazy(() => import("@/pages/protected/support/guide-article"));
 
 const S = routesPath.PROTECTED.SUPPORT;
 
@@ -22,6 +24,26 @@ export const supportRoutes = [
     path: S.INDEX,
     Component: SupportDesk,
     handle: { title: "Support", pendingSurface: true } satisfies DashboardHandle,
+  },
+  // The how-to guides. Open before go-live for the same reason the desk is,
+  // and gated on nothing beyond a session: each guide is filtered against the
+  // reader's own permissions, so the home shows only what they may use.
+  {
+    path: S.GUIDES,
+    Component: HowToGuides,
+    handle: { title: "How-to Guides", pendingSurface: true } satisfies DashboardHandle,
+  },
+  {
+    path: S.GUIDE_DETAIL,
+    Component: GuideArticle,
+    // Back names the guides home: an article is opened from the search box and
+    // the help panel as often as from the list, and history-back would return
+    // the reader to whatever screen they had been on instead.
+    handle: {
+      title: "How-to Guides",
+      back: S.GUIDES,
+      pendingSurface: true,
+    } satisfies DashboardHandle,
   },
   {
     path: S.DETAIL,

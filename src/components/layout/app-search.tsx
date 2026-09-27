@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useCapabilities } from "@/hooks/use-capabilities";
-import { ChevronRight, Search, X } from "lucide-react";
+import { BookOpenText, ChevronRight, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
 import { P, resolvePermissionKey } from "@/permissions";
@@ -11,6 +11,14 @@ import {
 } from "@/redux/services/students/students-api";
 import { useSearchStaffQuery } from "@/redux/services/staff/staff-api";
 import { useAppSelector } from "@/redux/store";
+import {
+  GUIDE_REGISTRY,
+  resolveGuideRoutePattern,
+  searchGuides,
+  useGuideReader,
+  visibleGuides,
+} from "@/features/guides";
+import { useRecordGuideAnalyticsMutation } from "@/redux/services/support/guide-analytics-api";
 import {
   selectActorPermissions,
   selectPermissions,
@@ -60,6 +68,13 @@ type SearchVariant = "desktop" | "mobile";
  * child, not an action whose description happens to contain those letters, and
  * a name is a far more specific thing to have typed than a verb.
  *
+ * **Guides come last.** Once two characters are typed, the how-to guides the
+ * reader may open are searched too and the best three are listed under the
+ * actions: somebody typing "promote" most likely wants the screen, and the
+ * guide for it is the next thing they might want. A query that finds nothing
+ * at all (no person, no action, no guide) is recorded, words and route
+ * pattern only, so guides get written for what people actually look for.
+ *
  * What it can offer comes from four filters, each with its own owner:
  * permissions (the registry's gate, same key the screen checks), tenant
  * readiness (a pending school is offered only what a pending school can open),
@@ -83,6 +98,8 @@ export function AppSearch({
   className?: string;
 }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [recordGuideAnalytics] = useRecordGuideAnalyticsMutation();
   const [query, setQuery] = useState("");
   const [resultsOpen, setResultsOpen] = useState(false);
   // A broad query ("v") can match most of the registry, so the list starts
@@ -234,8 +251,41 @@ export function AppSearch({
     [recordGroups],
   );
   const recordCount = recordRows.length;
-  /** Every navigable row: people first, then the actions. */
-  const totalRows = recordCount + view.rows.length;
+
+  const guideReader = useGuideReader();
+  const guideRows = useMemo(
+    () => (resultsOpen && longEnough
+      ? searchGuides(visibleGuides(GUIDE_REGISTRY, guideReader), trimmed, 3).map(({ guide }) => ({
+          id: guide.id,
+          title: guide.title,
+          to: routesPath.PROTECTED.SUPPORT.GUIDE_DETAIL_SLUG(guide.slug),
+        }))
+      : []),
+    [resultsOpen, longEnough, guideReader, trimmed],
+  );
+  /** Where the guide rows start in the flat order: after every action row. */
+  const guideStart = recordCount + view.rows.length;
+  /** Every navigable row: people first, then the actions, then guides. */
+  const totalRows = guideStart + guideRows.length;
+
+  const nothingFound = longEnough && view.rows.length === 0 && recordCount === 0 && guideRows.length === 0;
+  const recordedMisses = useRef(new Set<string>());
+  useEffect(() => {
+    if (!nothingFound) return;
+    const key = trimmed.toLocaleLowerCase();
+    if (recordedMisses.current.has(key)) return;
+    const timeout = window.setTimeout(() => {
+      recordedMisses.current.add(key);
+      const routePattern = resolveGuideRoutePattern(pathname);
+      void recordGuideAnalytics({
+        name: "search.no_results",
+        query: trimmed.slice(0, 160),
+        ...(routePattern ? { route_pattern: routePattern } : {}),
+        result_count: 0,
+      });
+    }, 800);
+    return () => window.clearTimeout(timeout);
+  }, [nothingFound, pathname, recordGuideAnalytics, trimmed]);
 
   // Where each action sits in the flat row order, so a rendered row can label
   // itself with the index the arrow keys use.
@@ -280,7 +330,7 @@ export function AppSearch({
   };
 
   /**
-   * Open somebody's record - a child, a colleague, a guardian.
+   * Open somebody's record - a child, a colleague, a guardian - or a guide.
    *
    * Deliberately NOT recorded as a pick: the frecency store learns which
    * ACTIONS this person reaches for, and feeding it one row per person would
@@ -340,6 +390,11 @@ export function AppSearch({
       event.preventDefault();
       if (activeRow < recordCount) {
         openRecord(recordRows[activeRow].to);
+        return;
+      }
+      if (activeRow >= guideStart) {
+        const guide = guideRows[activeRow - guideStart];
+        if (guide) openRecord(guide.to);
         return;
       }
       const target = view.rows[activeRow - recordCount] ?? view.rows[0];
@@ -478,11 +533,11 @@ export function AppSearch({
           </section>
         ))}
 
-        {view.rows.length === 0 && recordCount === 0 ? (
+        {view.rows.length === 0 && recordCount === 0 && guideRows.length === 0 ? (
           <p className="px-3 py-4 text-center text-xs text-gray-400">
             {canSeeStudents && trimmed.length === 1
               ? "Keep typing to search students."
-              : "Nothing matches - no action, screen or student by that name."}
+              : "Nothing matches - no action, screen, guide or student by that name."}
           </p>
         ) : view.groups ? (
           view.groups.map((group) => (
@@ -528,6 +583,36 @@ export function AppSearch({
             </span>
           </button>
         )}
+
+        {guideRows.length > 0 && (
+          <section aria-labelledby={`app-search-${variant}-guides`}>
+            {renderSectionHeader(`app-search-${variant}-guides`, "Guides")}
+            {guideRows.map((guide, offset) => {
+              const index = guideStart + offset;
+              return (
+                <button
+                  key={guide.id}
+                  id={`app-search-option-${variant}-${index}`}
+                  ref={index === activeRow ? (el) => el?.scrollIntoView({ block: "nearest" }) : undefined}
+                  type="button"
+                  role="option"
+                  aria-selected={activeRow === index}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onMouseEnter={() => setActiveRow(index)}
+                  onClick={() => openRecord(guide.to)}
+                  className={cn(
+                    "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left",
+                    activeRow === index && "bg-gray-50",
+                  )}
+                >
+                  <BookOpenText className="size-4 shrink-0 text-primary" />
+                  <span className="min-w-0 flex-1 truncate text-sm text-black-01">{guide.title}</span>
+                  <span className="shrink-0 text-[10px] font-medium text-gray-400">Guide</span>
+                </button>
+              );
+            })}
+          </section>
+        )}
       </div>
     </div>
   );
@@ -538,6 +623,7 @@ export function AppSearch({
           long the page title is. Out of flow, so it is exempt from the
           header's flex gaps and cannot push the account controls off. */}
       <div
+        data-guide="header.workspace-search"
         className={cn(
           "absolute left-1/2 top-1/2 hidden w-[min(38vw,430px)] -translate-x-1/2 -translate-y-1/2 lg:block",
           className,
@@ -558,6 +644,7 @@ export function AppSearch({
       {/* The phone affordance: an icon beside the other header controls. */}
       <button
         type="button"
+        data-guide="header.workspace-search"
         aria-label={SEARCH_LABEL}
         aria-expanded={mobileOpen}
         onClick={() => (mobileOpen ? closeSearch() : focusSearch())}

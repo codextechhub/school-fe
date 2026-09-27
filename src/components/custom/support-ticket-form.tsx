@@ -22,6 +22,7 @@ import type {
   TicketPriority,
 } from "@/redux/services/support/support-types";
 import { screenTicketContext } from "@/lib/support/ticket-context";
+import { contextualGuideContext, GUIDE_REGISTRY, ticketGuideId, useGuideReader } from "@/features/guides";
 import { escalationSchema } from "@/schema/onboarding";
 import { apiErrorMessage } from "@/utils/api-error";
 import { useOnboardingState } from "@/pages/protected/onboarding/use-onboarding-state";
@@ -219,10 +220,19 @@ export function SupportTicketForm({
   // navigating to one, so this is still the screen they were reading when
   // something went wrong - which is the routing a ticket most needs and the
   // thing the old blanket "Onboarding" stamp was standing in for.
+  // The guide written for that screen goes with it, so whoever picks the
+  // ticket up can see what the person had to read before asking.
   const location = useLocation();
   const params = useParams();
+  const guideReader = useGuideReader();
+  const guideId = ticketGuideId(
+    contextualGuideContext(GUIDE_REGISTRY, location.pathname, guideReader),
+  );
   const context = ticketContext({
-    screen: screenTicketContext(location.pathname, params),
+    screen: {
+      ...screenTicketContext(location.pathname, params),
+      ...(guideId ? { guide_id: guideId } : {}),
+    },
     tenantIsPending,
     taskKey: contextTaskKey,
     readinessState: state?.readiness_state,

@@ -23,6 +23,7 @@ import { Link, useLocation } from "react-router";
 import {
   Bell,
   BookOpen,
+  BookOpenText,
   Briefcase,
   Headset,
   MailCheck,
@@ -561,7 +562,19 @@ export function AppSidebar({
         title: "Support",
         url: routesPath.PROTECTED.SUPPORT.INDEX,
         icon: Headset,
-        isActive: location.startsWith(routesPath.PROTECTED.SUPPORT.INDEX),
+        // The guides sit under /support too, and have their own item below.
+        isActive:
+          location.startsWith(routesPath.PROTECTED.SUPPORT.INDEX) &&
+          !location.startsWith(routesPath.PROTECTED.SUPPORT.GUIDES),
+        childActive: false,
+      },
+      {
+        // No permission, like Support: every guide is filtered against the
+        // reader's own permissions, so the home is never a door to more.
+        title: "How-to Guides",
+        url: routesPath.PROTECTED.SUPPORT.GUIDES,
+        icon: BookOpenText,
+        isActive: location.startsWith(routesPath.PROTECTED.SUPPORT.GUIDES),
         childActive: false,
       },
     ],
@@ -925,7 +938,7 @@ export function AppSidebar({
         </SidebarHeader>
         {/* One expandable group open at a time, across every group rather than
             within each - see nav-main. */}
-        <SidebarContent className="bg-white pt-3">
+        <SidebarContent data-guide="sidebar.navigation" className="bg-white pt-3">
           <NavAccordionProvider>
           {onboarding ? (
             <>

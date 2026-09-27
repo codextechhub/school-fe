@@ -45,6 +45,8 @@ export type ProductArea = import("@/lib/support/ticket-context").ProductArea;
 export interface TicketContext {
   product_area?: ProductArea;
   route_pattern?: string;
+  /** The how-to guide written for the screen the ticket was raised on. */
+  guide_id?: string;
   /** Pre-live only: which setup step the person was working through. */
   onboarding_task_key?: string;
   /** Pre-live only: how far off go-live the school was at the time. */

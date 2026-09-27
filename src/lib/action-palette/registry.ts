@@ -610,6 +610,18 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     // being reported on visible behind it.
     run: { command: "help" },
   },
+  {
+    id: "view-guides",
+    label: "View how-to guides",
+    aliases: ["help articles", "user guide", "manual", "instructions", "how do i", "tutorial"],
+    section: "Onboarding",
+    group: "Help",
+    kind: "view",
+    // Open to everybody: the home lists only the guides the reader's own
+    // permissions reach, so there is nothing here to withhold.
+    gate: null,
+    run: { to: R.SUPPORT.GUIDES },
+  },
 
   // ── Administration ─────────────────────────────────────────────────────────
   // The permanent doors under Administration, matching app-sidebar.tsx. Roles

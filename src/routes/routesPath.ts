@@ -139,6 +139,12 @@ export const routesPath = {
       INDEX: "/support",
       DETAIL: "/support/:id",
       DETAIL_ID: (id: string | number) => `/support/${id}`,
+      // The how-to guides. A literal segment under /support, so the router
+      // ranks it above the ticket detail and never asks for ticket "guides".
+      GUIDES: "/support/guides",
+      GUIDE_DETAIL: "/support/guides/:slug",
+      GUIDE_DETAIL_SLUG: (slug: string) =>
+        `/support/guides/${encodeURIComponent(slug)}`,
     },
     BRANCHES: { INDEX: "/branches" },
     // The school's own settings console. One path per section (see

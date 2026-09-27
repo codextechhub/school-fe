@@ -184,7 +184,7 @@ export function LensRail({ collapsed }: { collapsed: boolean }) {
   if (!showBranch && !showSession) return null;
 
   return (
-    <div className="flex flex-col gap-1.5 border-t border-white-02 px-2 py-2.5">
+    <div data-guide="sidebar.lenses" className="flex flex-col gap-1.5 border-t border-white-02 px-2 py-2.5">
       {showBranch && <BranchPill collapsed={collapsed} />}
       {showSession && <SessionPill collapsed={collapsed} />}
     </div>
