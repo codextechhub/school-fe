@@ -4,6 +4,7 @@ const PROBLEMS = [
   ["There is no Organogram in the sidebar", "Your role does not include the organogram, or your school is not live yet. The organogram opens once the school is live."],
   ["Nobody has been appointed to a post yet", "The school has not built its chart. Somebody who can manage the organogram sets up units and posts, then appoints staff to them."],
   ["A post you know exists is missing", "The chart shows posts that somebody holds. A vacant post is left off, and the people under it move up to the nearest filled post above."],
+  ["Someone suspended still appears", "Suspension keeps a person in their post, so the chart still shows them, marked Suspended, and their seat still counts as filled. Approvals that would have gone to them go past them instead."],
   ["Nobody holds a post in this unit yet", "The unit filter is on a unit with no filled posts. Select Reset to see the whole school again."],
   ["There is no Open staff profile", "You can always open your own record. Opening a colleague's needs access to the staff directory."],
 ] as const;
@@ -29,6 +30,7 @@ export default function ReadOrganogramArticle() {
           </div>
         </div>
         <p>Both tabs show the school as it is staffed: a post nobody holds is left off, and the people under it move up to the nearest filled post above.</p>
+        <p>A suspended member of staff keeps their post, and their seat still counts as filled. On <strong>People</strong> their card is greyed with a red <strong>Suspended</strong> badge; on <strong>Posts</strong> their face is faded, and pointing at it reads their name followed by &quot;(suspended)&quot;. The person panel shows the same badge. Suspended covers a suspended job or a suspended sign-in, and while it lasts they are passed over as an approver.</p>
         <p>If your role can edit staff records, a strip above the tabs counts <strong>Active staff</strong>, <strong>Departments</strong>, <strong>Acting</strong>, <strong>On leave</strong> and <strong>Suspended</strong>.</p>
       </GuideSection>
 
