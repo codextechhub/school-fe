@@ -23,7 +23,10 @@ import {
   WALKTHROUGH_START_EVENT,
   walkthroughCompletionRoute,
   walkthroughStepRoute,
+  followingStepRoute,
+  isOnStepRoute,
 } from "./engine";
+import { routePatternMatches } from "../route-pattern";
 import { findWalkthrough } from "./registry";
 import { WalkthroughRuntimeContext } from "./context";
 import { canFocusWalkthroughCoach } from "./focus";
@@ -80,13 +83,20 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
       .every((permission) => (auth.permissions ?? []).includes(permission));
     if (!allowed) return;
     const saved = loadWalkthroughProgress(localStorage, identityKey, selected);
-    const savedStep = saved && !saved.completedAt
+    const resumable = saved && !saved.completedAt
       ? nextContentStep(selected, saved.currentStepId, hasTarget)
+      : undefined;
+    // A saved step on a record page (a pattern route) can only be resumed from
+    // that kind of page; anywhere else the tour starts again at its first screen.
+    const savedStep = resumable
+      && (!walkthroughStepRoute(selected, resumable.id).includes(":")
+        || isOnStepRoute(selected, resumable.id, location.pathname))
+      ? resumable
       : undefined;
     const startRoute = savedStep
       ? walkthroughStepRoute(selected, savedStep.id)
       : selected.route;
-    if (location.pathname !== startRoute) {
+    if (!routePatternMatches(startRoute, location.pathname)) {
       queueWalkthrough(id);
       navigate(startRoute);
       return;
@@ -133,7 +143,7 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
       if (
         fallback
         && fallback.id !== step.id
-        && walkthroughStepRoute(walkthrough, step.id) === location.pathname
+        && isOnStepRoute(walkthrough, step.id, location.pathname)
       ) {
         const fallbackIndex = walkthrough.steps.findIndex((item) => item.id === fallback.id);
         const completed = (loadWalkthroughProgress(localStorage, identityKey, walkthrough)?.completedStepIds ?? [])
@@ -163,7 +173,14 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
     const search = step.search
       ? (step.search.startsWith("?") ? step.search : `?${step.search}`)
       : undefined;
-    if (location.pathname === pathname && (search === undefined || location.search === search)) return;
+    if (routePatternMatches(pathname, location.pathname) && (search === undefined || location.search === search)) return;
+    // The reader clicked through to the next step's screen (a row opening its
+    // record); the step after this one takes over from there.
+    const nextRoute = followingStepRoute(walkthrough, step.id);
+    if (nextRoute && routePatternMatches(nextRoute, location.pathname)) return;
+    // A record page cannot be navigated to by pattern; the step shows as
+    // unavailable until the reader returns to one.
+    if (pathname.includes(":")) return;
     navigate(search === undefined ? pathname : { pathname, search }, { replace: true });
   }, [location.pathname, location.search, navigate, step, walkthrough]);
 
@@ -268,7 +285,7 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!walkthrough || !step || step.advance !== "route-change") return;
-    if (step.route && location.pathname !== step.route) return;
+    if (step.route && !routePatternMatches(step.route, location.pathname)) return;
     const timeout = window.setTimeout(() => move(1), 0);
     return () => window.clearTimeout(timeout);
   }, [location.pathname, move, step, walkthrough]);

@@ -126,7 +126,10 @@ export default function TeachingDuties() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div
+        data-guide="staff-teaching.summary"
+        className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+      >
         <KpiCard
           label="Class subjects"
           value={summaryQuery.isLoading ? "..." : summary.total}
@@ -152,7 +155,11 @@ export default function TeachingDuties() {
         />
       </div>
 
-      <Surface as="section" className="grid gap-4 px-4 py-4 sm:px-5">
+      <Surface
+        as="section"
+        data-guide="staff-teaching.toolbar"
+        className="grid gap-4 px-4 py-4 sm:px-5"
+      >
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3">
           <div className="max-w-full overflow-x-auto">
             <SegmentedToggle
@@ -232,7 +239,11 @@ export default function TeachingDuties() {
       </Surface>
 
       {section === "coverage" && view === "grid" && (
-        <Surface as="section" className="px-4 py-5 sm:px-6">
+        <Surface
+          as="section"
+          data-guide="staff-teaching.coverage"
+          className="px-4 py-5 sm:px-6"
+        >
           <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
             <div>
               <h2 className="text-sm font-semibold text-black-01">

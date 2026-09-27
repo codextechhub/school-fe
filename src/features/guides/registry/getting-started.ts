@@ -110,6 +110,7 @@ export const GETTING_STARTED_GUIDES = [
     routes: [R.SUPPORT.INDEX, R.SUPPORT.DETAIL],
     actionIds: ["get-help", "view-support"],
     access: { mode: "authenticated", permissions: [] },
+    walkthroughId: "walkthrough.school.getting-started.raise-support-ticket",
     primaryRoute: R.SUPPORT.INDEX,
     sections: [
       { id: "before-you-start", title: "Before you start" },

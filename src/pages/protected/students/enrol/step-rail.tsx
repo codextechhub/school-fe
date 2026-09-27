@@ -39,7 +39,7 @@ export function StepRail({
   const index = steps.findIndex((s) => s.key === current);
 
   return (
-    <ol className="hidden items-start sm:flex">
+    <ol data-guide="student-enrol.steps" className="hidden items-start sm:flex">
       {steps.map((step, i) => {
         const isCurrent = i === index;
         const isPast = i < index;

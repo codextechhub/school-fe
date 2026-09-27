@@ -186,7 +186,7 @@ export default function StudentProfile() {
           </div>
         ) : (
           <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_15rem]">
-            <div className="min-w-0">
+            <div data-guide="student-profile.header" className="min-w-0">
               <div className="flex flex-wrap items-start gap-4.5">
                 <StudentPhoto student={student} />
 
@@ -316,10 +316,13 @@ export default function StudentProfile() {
         )}
       </Surface>
 
-      <Tabs
-        tabKey="tab"
-        tabs={TABS.map((t) => ({ value: t.key, label: t.label }))}
-      />
+      {/* Carries the tab strip's walkthrough target, which Tabs does not forward. */}
+      <div data-guide="student-profile.tabs" className="w-fit max-w-full min-w-0">
+        <Tabs
+          tabKey="tab"
+          tabs={TABS.map((t) => ({ value: t.key, label: t.label }))}
+        />
+      </div>
 
       {tab === "overview" && (
         <Overview
@@ -574,7 +577,10 @@ function CompletenessCard({
   const gapCount = completeness.gaps.length;
 
   return (
-    <div className="flex min-w-0 items-center gap-3 self-start rounded-xl border border-border bg-white-05 p-3">
+    <div
+      data-guide="student-profile.completeness"
+      className="flex min-w-0 items-center gap-3 self-start rounded-xl border border-border bg-white-05 p-3"
+    >
       <div className="relative grid size-14 shrink-0 place-content-center self-center text-primary">
         <svg viewBox="0 0 44 44" className="absolute inset-0 size-full -rotate-90">
           <circle

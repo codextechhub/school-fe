@@ -113,6 +113,7 @@ export const CALENDAR_AND_TIMETABLES_GUIDES = [
     routes: [R.TIMETABLES.CLASSES],
     actionIds: ["view-class-timetables"],
     access: { mode: "any", permissions: [P.BROWSE_TIMETABLES] },
+    walkthroughId: "walkthrough.school.timetables.build-class-timetable",
     primaryRoute: R.TIMETABLES.CLASSES,
     sections: [
       { id: "before-you-start", title: "Before you start" },

@@ -172,7 +172,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
       </div>
 
       {/* ── Progress summary ───────────────────────────────────────────── */}
-      <section className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
+      <section data-guide="onboarding.status" className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">
         <div className="flex items-center gap-5">
           <ProgressRing value={percent} />
           <div className="min-w-0">
@@ -235,7 +235,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
 
       <div className="flex flex-wrap items-start gap-5">
         {/* ── The checklist ────────────────────────────────────────────── */}
-        <div className="flex-[5_1_460px] min-w-0 flex flex-col gap-3">
+        <div data-guide="onboarding.tasks" className="flex-[5_1_460px] min-w-0 flex flex-col gap-3">
           {tasks.map((task) => (
             <TaskCard key={task.key} task={task} readOnly={checklistReadOnly} />
           ))}
@@ -246,7 +246,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
           <GoLivePanel state={state} titleOf={titleOf} />
 
           {nextTask && !isLive && (
-            <section className="bg-white rounded-md border border-white-02 p-4.5">
+            <section data-guide="onboarding.next-action" className="bg-white rounded-md border border-white-02 p-4.5">
               <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
                 Next best action
               </p>
@@ -279,7 +279,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
             </section>
           )}
 
-          <section className="bg-white rounded-md border border-white-02 p-4.5">
+          <section data-guide="onboarding.required" className="bg-white rounded-md border border-white-02 p-4.5">
             <p className="text-xs uppercase tracking-widest text-gray-05 font-mont">
               Required for go-live
             </p>
@@ -310,7 +310,7 @@ function ControlRoom({ state }: { state: OnboardingState }) {
             </div>
           </section>
 
-          <section className="bg-white rounded-md border border-white-02 p-4.5">
+          <section data-guide="onboarding.help" className="bg-white rounded-md border border-white-02 p-4.5">
             <p className="text-sm font-semibold font-mont text-black-01">
               Need a hand?
             </p>
@@ -347,13 +347,13 @@ function GoLivePanel({
 
   // The panel's words come from the state payload, so anyone who can read the
   // control room can read where the school stands. Only the buttons are gated:
-  // asking CodEx to go live is the school administrator's to do, and the
+  // asking CodeX to go live is the school administrator's to do, and the
   // request screen is closed to a reader without the go-live key.
   const canRequest = hasPermission(P.REQUEST_GO_LIVE);
   const canReadRequests = hasPermission(P.VIEW_GO_LIVE_REQUESTS);
 
   return (
-    <section className="bg-white rounded-md border border-white-02 p-4.5">
+    <section data-guide="onboarding.go-live" className="bg-white rounded-md border border-white-02 p-4.5">
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm font-semibold font-mont text-black-01">
           Going live

@@ -279,6 +279,7 @@ export default function StudentDirectory() {
           <div className="relative min-w-55 flex-[1_1_20rem] lg:max-w-md">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
             <input
+              data-guide="students-directory.search"
               value={search}
               onChange={(e) => resetTo(() => setSearch(e.target.value))}
               placeholder="Search name or admission no."
@@ -409,7 +410,10 @@ export default function StudentDirectory() {
             // separate column repeated a fact already on the row and pushed
             // the guardian off the fold on a laptop.
             Student: (
-              <span className="flex min-w-0 items-center gap-2.5">
+              <span
+                data-guide="students-directory.row"
+                className="flex min-w-0 items-center gap-2.5"
+              >
                 <PersonAvatar
                   name={s.full_name}
                   photoUrl={s.photo_url}

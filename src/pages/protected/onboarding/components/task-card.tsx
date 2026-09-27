@@ -156,7 +156,7 @@ export function TaskCard({
             page 53px past a 390px viewport. Letting it shrink is what makes its
             own flex-wrap fire. */}
         {(openRoute || !readOnly) && (
-          <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
+          <div data-guide="onboarding.task-actions" className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-2">
             {/* Outside the readOnly guard: a reader who may open the screen
                 behind a step should still be able to go and look at it. */}
             {openRoute && (

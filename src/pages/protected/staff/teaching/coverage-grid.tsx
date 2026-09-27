@@ -66,6 +66,7 @@ function Cell({ cell, onOpen }: { cell: CoverageCell; onOpen: () => void }) {
   return (
     <button
       type="button"
+      data-guide="staff-teaching.subject"
       onClick={onOpen}
       className={cn(
         "w-full cursor-pointer rounded-lg border px-3.5 py-2.5 text-left transition-all",

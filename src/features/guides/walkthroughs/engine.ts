@@ -6,6 +6,7 @@ import type {
   WalkthroughStep,
 } from "./types";
 import type { GuideRecord } from "../types";
+import { routePatternMatches } from "../route-pattern";
 import { routesPath } from "@/routes/routesPath";
 
 const STORAGE_PREFIX = "school-guide-walkthrough";
@@ -162,6 +163,24 @@ export function walkthroughStepRoute(walkthrough: Walkthrough, stepId: string): 
   return route;
 }
 
+/**
+ * Whether the reader is on the screen a step belongs to.
+ *
+ * A step's route may be a pattern (`/students/:id`): the tour reaches a record
+ * page by the reader clicking into it, since no step can name a record's id,
+ * and any record then counts.
+ */
+export function isOnStepRoute(walkthrough: Walkthrough, stepId: string, pathname: string): boolean {
+  return routePatternMatches(walkthroughStepRoute(walkthrough, stepId), pathname);
+}
+
+/** The route of the next content step after this one, if there is one. */
+export function followingStepRoute(walkthrough: Walkthrough, stepId: string): string | undefined {
+  const index = walkthrough.steps.findIndex((step) => step.id === stepId);
+  const next = walkthrough.steps.slice(index + 1).find((step) => step.kind !== "branch");
+  return next ? walkthroughStepRoute(walkthrough, next.id) : undefined;
+}
+
 /** Return completed walkthroughs to the published article that launched them. */
 export function walkthroughCompletionRoute(
   walkthrough: Walkthrough,
@@ -187,6 +206,7 @@ export function validateWalkthroughs(
     ids.add(walkthrough.id);
     if (!guideIds.has(walkthrough.guideId)) issues.push(`Missing guide for ${walkthrough.id}`);
     if (!walkthrough.route.startsWith("/")) issues.push(`Invalid route for ${walkthrough.id}`);
+    if (walkthrough.route.includes(":")) issues.push(`Start route names a record for ${walkthrough.id}`);
     if (walkthrough.version < 1) issues.push(`Invalid version for ${walkthrough.id}`);
     const stepIds = new Set(walkthrough.steps.map((step) => step.id));
     if (stepIds.size !== walkthrough.steps.length) issues.push(`Duplicate step ID in ${walkthrough.id}`);

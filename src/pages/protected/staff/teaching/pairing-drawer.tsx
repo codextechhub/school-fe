@@ -176,7 +176,7 @@ export function PairingDrawer({
       readOnly={!canAssign}
     >
       <div className="grid gap-5">
-        <section>
+        <section data-guide="staff-pairing.current">
           <h3 className="mb-3 text-sm font-semibold text-black-01">
             Teaching it now
           </h3>
@@ -259,7 +259,10 @@ export function PairingDrawer({
         </section>
 
         {canAssign && (
-          <section className="border-t border-white-02 pt-4">
+          <section
+            data-guide="staff-pairing.add"
+            className="border-t border-white-02 pt-4"
+          >
             <h3 className="mb-3 text-sm font-semibold text-black-01">
               Add a teacher
             </h3>

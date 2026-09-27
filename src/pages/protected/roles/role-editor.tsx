@@ -177,7 +177,7 @@ export default function RoleEditor() {
       <div><h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">{creating ? "Create Role" : `Edit ${detail?.name}`}</h1><p className="mt-1 text-sm text-gray-01">Name the job, choose its branch reach, and grant the permissions it needs.</p></div>
       {errors.form && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{errors.form}</p>}
       <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
-        <section className="min-w-0 rounded-xl border border-border bg-white p-4 sm:p-6">
+        <section data-guide="roles-editor.details" className="min-w-0 rounded-xl border border-border bg-white p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-black-01">Role details</h2>
           <p className="mt-1 text-sm text-gray-01">Help your team recognise and assign the role.</p>
           <div className="mt-6 space-y-5">
@@ -186,7 +186,7 @@ export default function RoleEditor() {
             <label className="grid gap-2 text-sm font-medium text-black-01">Description<Textarea value={draft.description} onChange={(event) => patch({ description: event.target.value })} placeholder="What is this role for?" rows={3} /></label>
             {errors.description && <p role="alert" className="-mt-4 text-xs text-error">{errors.description}</p>}
             {canChooseBranches && (
-              <div className="space-y-3">
+              <div data-guide="roles-editor.branch-reach" className="space-y-3">
                 <div><p className="text-sm font-medium text-black-01">Branch reach</p><p className="mt-1 text-xs text-gray-05">People given this role automatically receive its full branch reach.</p></div>
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   <button type="button" aria-pressed={draft.branchMode === "school"} onClick={() => patch({ branchMode: "school", branchIds: [] })} className={`rounded-lg border p-3 text-left text-sm ${draft.branchMode === "school" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}><span className="block font-semibold">School-wide</span><span className="mt-1 block text-xs text-gray-05">All branches, including future ones</span></button>
@@ -197,20 +197,20 @@ export default function RoleEditor() {
               </div>
             )}
             {(creating || permissionChanged || branchChanged) && (
-              <label className="grid gap-2 text-sm font-medium text-black-01">Why is this role needed or changing?<Input value={draft.reason} onChange={(event) => patch({ reason: event.target.value })} aria-invalid={Boolean(errors.reason)} placeholder="e.g. Ada covers fees in Ikeja and Yaba" />{errors.reason && <span role="alert" className="text-xs text-error">{errors.reason}</span>}</label>
+              <label data-guide="roles-editor.reason" className="grid gap-2 text-sm font-medium text-black-01">Why is this role needed or changing?<Input value={draft.reason} onChange={(event) => patch({ reason: event.target.value })} aria-invalid={Boolean(errors.reason)} placeholder="e.g. Ada covers fees in Ikeja and Yaba" />{errors.reason && <span role="alert" className="text-xs text-error">{errors.reason}</span>}</label>
             )}
             {restrictedAdditions.length > 0 && <p className="flex gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"><Lock className="size-4 shrink-0" /> <span>{labelList(restrictedAdditions)} {restrictedAdditions.length === 1 ? "is a restricted permission" : "are restricted permissions"}. The role saves now and sends {restrictedAdditions.length === 1 ? "it" : "them"} for approval; {restrictedAdditions.length === 1 ? "it takes" : "they take"} effect once approved.</span></p>}
             {waiting.size > 0 && <p className="flex gap-2 rounded-lg border border-border bg-gray-04 p-3 text-xs text-gray-01"><Lock className="size-4 shrink-0" /> <span>Waiting for approval: {labelList(waiting)}.</span></p>}
           </div>
         </section>
 
-        <section className="min-w-0 rounded-xl border border-border bg-white p-4 sm:p-6">
+        <section data-guide="roles-editor.permissions" className="min-w-0 rounded-xl border border-border bg-white p-4 sm:p-6">
           <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-black-01">Permissions to grant</h2><p className="mt-1 text-sm text-gray-01">Choose the actions this role may take.</p></div><Badge variant="inactive">{draft.ticked.size} selected</Badge></div>
           {catalogue.isLoading ? <Skeleton className="mt-5 h-80 w-full" /> : <div className="mt-5"><AccessCataloguePicker modules={catalogue.data?.data ?? []} selected={draft.ticked} onToggle={toggle} /></div>}
           {errors.permission_keys && <p role="alert" className="mt-3 text-xs text-error">{errors.permission_keys}</p>}
         </section>
       </div>
-      <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-5"><Button variant="outline" onClick={() => navigate(creating ? base : roleDetailPath(base, key))}>Cancel</Button><Button onClick={() => void save()} loading={saving} disabled={!dirty || branches.isLoading || branches.isError || (creating && (catalogue.isLoading || catalogue.isError))}>{creating ? "Create role" : "Save changes"}</Button></div>
+      <div data-guide="roles-editor.actions" className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-5"><Button variant="outline" onClick={() => navigate(creating ? base : roleDetailPath(base, key))}>Cancel</Button><Button onClick={() => void save()} loading={saving} disabled={!dirty || branches.isLoading || branches.isError || (creating && (catalogue.isLoading || catalogue.isError))}>{creating ? "Create role" : "Save changes"}</Button></div>
     </PageShell>
   );
 }

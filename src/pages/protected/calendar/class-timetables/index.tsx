@@ -241,11 +241,7 @@ export default function ClassTimetables() {
           title="No classes yet"
           body="A timetable is a week for one class, so there has to be a class first. Add them on Classes & Arms."
           actionLabel="Go to Classes & Arms"
-          onAction={() => {
-            window.location.assign(
-              routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES,
-            );
-          }}
+          actionTo={routesPath.PROTECTED.ACADEMIC_STRUCTURE.CLASSES}
         />
       </PageShell>
     );
@@ -267,9 +263,7 @@ export default function ClassTimetables() {
           title="No bell schedule yet"
           body="A timetable grid is built on the school's periods, so the bell schedule has to come first."
           actionLabel="Set up the bell schedule"
-          onAction={() => {
-            window.location.assign(routesPath.PROTECTED.TIMETABLES.BELL_SCHEDULE);
-          }}
+          actionTo={routesPath.PROTECTED.TIMETABLES.BELL_SCHEDULE}
         />
       </PageShell>
     );
@@ -279,7 +273,7 @@ export default function ClassTimetables() {
     <PageShell className="content-start gap-5" grid>
       <div className="print-hide flex flex-wrap items-start justify-between gap-3">
         <PageHeading />
-        <div className="flex flex-wrap items-center gap-2">
+        <div data-guide="class-timetable.actions" className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             className="text-sm"
@@ -330,7 +324,7 @@ export default function ClassTimetables() {
         </div>
       </div>
 
-      <div className="print-hide flex flex-wrap items-center justify-between gap-3">
+      <div data-guide="class-timetable.class-bar" className="print-hide flex flex-wrap items-center justify-between gap-3">
         <ClassPicker classes={classes} current={current} onPick={setClassId} />
 
         <div className="flex min-w-0 flex-wrap items-center gap-2.5 sm:justify-end">
@@ -350,7 +344,7 @@ export default function ClassTimetables() {
       {gridLoading || !grid ? (
         <Skeleton className="h-[28rem] w-full rounded-md" />
       ) : (
-        <Panel className="print-area overflow-hidden">
+        <Panel data-guide="class-timetable.grid" className="print-area overflow-hidden">
           {/* The document's own heading: on paper there is no session pill and
               no page title to say which class or which year this is. */}
           <div className="print-only mb-4">
@@ -378,7 +372,7 @@ export default function ClassTimetables() {
           )}
 
           {warnings.length > 0 && (
-            <div className="print-hide border-b border-error-text/20 bg-error-text/5 px-4 py-3.5 sm:px-5">
+            <div data-guide="class-timetable.clashes" className="print-hide border-b border-error-text/20 bg-error-text/5 px-4 py-3.5 sm:px-5">
               <p className="flex items-center gap-1.5 text-[13px] font-medium text-error-text">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 {warnings.length} clash

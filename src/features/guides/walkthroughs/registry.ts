@@ -2,6 +2,9 @@ import { P } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
 
 import type { Walkthrough } from "./types";
+import { ACADEMICS_WALKTHROUGHS } from "./school/academics";
+import { STAFF_WALKTHROUGHS } from "./school/staff";
+import { STUDENTS_WALKTHROUGHS } from "./school/students";
 
 const R = routesPath.PROTECTED;
 
@@ -33,7 +36,8 @@ const R = routesPath.PROTECTED;
  * progress from an older version is discarded rather than resumed at a step
  * that no longer means the same thing.
  */
-export const WALKTHROUGH_REGISTRY = [
+/** The tours for the shared package's screens and the basics. */
+const PACKAGE_WALKTHROUGHS = [
   {
     id: "walkthrough.school.getting-started.basics",
     guideId: "school.getting-started.basics",
@@ -1710,6 +1714,17 @@ export const WALKTHROUGH_REGISTRY = [
     ],
   },
 ] as const satisfies readonly Walkthrough[];
+
+/**
+ * Every walkthrough. The school's own screens keep their tours in
+ * ./school/<area>.ts, so each area is written and reviewed apart.
+ */
+export const WALKTHROUGH_REGISTRY: readonly Walkthrough[] = [
+  ...PACKAGE_WALKTHROUGHS,
+  ...STUDENTS_WALKTHROUGHS,
+  ...STAFF_WALKTHROUGHS,
+  ...ACADEMICS_WALKTHROUGHS,
+];
 
 export function findWalkthrough(id: string): Walkthrough | undefined {
   return (WALKTHROUGH_REGISTRY as readonly Walkthrough[]).find((walkthrough) => walkthrough.id === id);

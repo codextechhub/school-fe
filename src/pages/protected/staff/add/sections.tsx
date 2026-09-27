@@ -11,23 +11,36 @@ import { inputClass } from "../../students/drawers/drawer-shell";
  * The pieces the Add form is built from.
  *
  * Separate from the form itself because the form is long and its shape is the
- * thing worth reading there: six numbered sections, one save, one transaction.
+ * thing worth reading there: numbered sections and one save in one transaction.
+ * Bio, Employment and Qualifications are always drawn. Role appears only while
+ * the school is being set up, and Teaching duties only when the person's role
+ * teaches and the year has classes and subjects, so a reader sees three to five.
  */
 
-/** One numbered section of the form. */
+/**
+ * One numbered section of the form.
+ *
+ * `data-guide` lands on the section itself, so a walkthrough step can point at
+ * the whole section, heading included.
+ */
 export function Section({
   step,
   title,
   note,
   children,
+  "data-guide": guide,
 }: {
   step: number;
   title: string;
   note?: string;
   children: React.ReactNode;
+  "data-guide"?: string;
 }) {
   return (
-    <section className="min-w-0 border-t border-white-02 pt-5 first:border-0 first:pt-0">
+    <section
+      data-guide={guide}
+      className="min-w-0 border-t border-white-02 pt-5 first:border-0 first:pt-0"
+    >
       <div className="mb-4 flex items-baseline gap-2.5">
         <span className="grid size-5.5 shrink-0 place-items-center rounded-full bg-white-03 text-[11px] font-semibold text-primary">
           {step}

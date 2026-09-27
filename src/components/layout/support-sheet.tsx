@@ -152,7 +152,7 @@ export function SupportSheet({
           </div>
         )}
 
-        <div className="flex items-center border-t border-border px-5 py-3">
+        <div data-guide="support-sheet.guides" className="flex items-center border-t border-border px-5 py-3">
           <button
             type="button"
             // Keeps focus in the form: a blur would show its required-field

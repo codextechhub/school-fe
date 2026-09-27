@@ -16,6 +16,7 @@ export const SCHOOL_SETUP_GUIDES = [
     routes: [R.ONBOARDING.INDEX, R.ONBOARDING.WELCOME, R.ONBOARDING.NOT_LIVE],
     actionIds: ["view-control-room"],
     access: { mode: "any", permissions: [P.VIEW_ONBOARDING] },
+    walkthroughId: "walkthrough.school.setup.onboarding-checklist",
     primaryRoute: R.ONBOARDING.INDEX,
     sections: [
       { id: "before-you-start", title: "Before you start" },

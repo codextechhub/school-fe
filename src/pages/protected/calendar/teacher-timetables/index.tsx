@@ -94,9 +94,7 @@ export default function TeacherTimetables() {
           title="Nobody carries the teacher role yet"
           body="A timetable names a person, so somebody has to carry the teacher role before there is a week to show. Grant it on Roles & Invitations, then come back."
           actionLabel="Go to Roles & Invitations"
-          onAction={() => {
-            window.location.assign(routesPath.PROTECTED.ONBOARDING.ROLES);
-          }}
+          actionTo={routesPath.PROTECTED.ONBOARDING.ROLES}
         />
       </PageShell>
     );

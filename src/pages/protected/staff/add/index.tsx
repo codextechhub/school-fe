@@ -311,7 +311,7 @@ export default function AddStaff() {
       </div>
 
       <Surface as="section" className="grid gap-6 px-6 py-5.5">
-        <Section step={1} title="Bio">
+        <Section step={1} title="Bio" data-guide="staff-add.section-bio">
           <div className="grid gap-4 sm:grid-cols-2">
             <AccessField access={access} name="first_name" creating>
               <Field label="First name" required error={errors.first_name}>
@@ -402,7 +402,11 @@ export default function AddStaff() {
           )}
         </Section>
 
-        <Section step={2} title="Employment">
+        <Section
+          step={2}
+          title="Employment"
+          data-guide="staff-add.section-employment"
+        >
           <div className="grid gap-4 sm:grid-cols-2">
             <AccessField access={access} name="staff_number" creating>
               <Field
@@ -489,7 +493,7 @@ export default function AddStaff() {
         </Section>
 
         {choosesRole && (
-          <Section step={3} title="Role">
+          <Section step={3} title="Role" data-guide="staff-add.section-role">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Role" required error={errors.role}>
                 <NativeSelect
@@ -542,6 +546,7 @@ export default function AddStaff() {
           <Section
             step={choosesRole ? 4 : 3}
             title="Teaching duties"
+            data-guide="staff-add.section-teaching"
             note="Optional. Every subject you pick is assigned in every class you pick, and they can be changed later."
           >
             <div className="grid gap-4">
@@ -599,13 +604,14 @@ export default function AddStaff() {
         <Section
           step={3 + Number(choosesRole) + Number(canAssignTeaching)}
           title="Qualifications"
+          data-guide="staff-add.section-qualifications"
           note="Typed rows, as your school records them. Nothing here checks a qualification, so nothing claims one was checked."
         >
           <QualificationRows rows={quals} onChange={setQuals} />
         </Section>
       </Surface>
 
-      <Surface as="section" className="px-6 py-5">
+      <Surface as="section" className="px-6 py-5" data-guide="staff-add.on-save">
         <p className="text-sm font-semibold text-black-01">
           What happens when you save
         </p>

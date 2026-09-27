@@ -167,6 +167,7 @@ function Cell({
     return onClick ? (
       <button
         type="button"
+        data-guide="timetable-grid.cell"
         onClick={onClick}
         aria-label={`Fill ${cell.period_label}`}
         className="grid min-h-[68px] w-full place-content-center transition-colors hover:bg-pry-01/40 hover:text-primary active:bg-pry-01/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary"
@@ -217,6 +218,7 @@ function Cell({
   return onClick ? (
     <button
       type="button"
+      data-guide="timetable-grid.cell"
       onClick={onClick}
       aria-label={
         variant === "teacher"

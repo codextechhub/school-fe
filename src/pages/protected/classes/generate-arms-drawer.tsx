@@ -160,12 +160,13 @@ export function GenerateArmsDrawer({
             Level *
           </label>
           {levels.length === 0 ? (
-            <p className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-sm text-gray-05 text-pretty">
+            <p data-guide="generate-arms.level" className="rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-sm text-gray-05 text-pretty">
               There are no levels in view. Add one on the Programmes & Levels
               screen first, or widen the branch filter.
             </p>
           ) : (
             <select
+              data-guide="generate-arms.level"
               value={levelId ?? ""}
               onChange={(e) => {
                 const next =
@@ -184,7 +185,7 @@ export function GenerateArmsDrawer({
             </select>
           )}
 
-          <div className="mt-4">
+          <div data-guide="generate-arms.arms" className="mt-4">
             <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
               Arms *
             </label>
@@ -200,7 +201,7 @@ export function GenerateArmsDrawer({
           </div>
 
           {multiBranch && (
-            <div className="mt-4">
+            <div data-guide="generate-arms.runs-at" className="mt-4">
               <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
                 Runs at *
               </label>
@@ -242,7 +243,7 @@ export function GenerateArmsDrawer({
             </div>
           )}
 
-          <div className="mt-5">
+          <div data-guide="generate-arms.preview" className="mt-5">
             <p className="mb-2 text-[13px] font-medium text-gray-06">
               What will be created
             </p>

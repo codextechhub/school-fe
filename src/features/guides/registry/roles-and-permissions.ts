@@ -16,6 +16,7 @@ export const ROLES_AND_PERMISSIONS_GUIDES = [
     routes: [R.ROLES.INDEX, R.ROLES.NEW, R.ROLES.DETAIL, R.ROLES.EDIT],
     actionIds: ["view-school-roles", "create-school-role"],
     access: { mode: "any", permissions: [P.VIEW_ROLES, P.CREATE_ROLE, P.MODIFY_ROLE] },
+    walkthroughId: "walkthrough.school.roles.create-and-edit-role",
     primaryRoute: R.ROLES.INDEX,
     sections: [
       { id: "before-you-start", title: "Before you start" },

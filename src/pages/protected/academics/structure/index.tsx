@@ -103,9 +103,7 @@ export default function AcademicStructureOverview() {
             .map((b) => b.name)
             .join(", ")} ${orphans.length === 1 ? "runs" : "run"} no year at the moment, because every live session names the branches it applies to. Add ${orphans.length === 1 ? "it" : "them"} to a session so the branch has a calendar.`}
           actionLabel="Open sessions"
-          onAction={() => {
-            window.location.href = routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS;
-          }}
+          actionTo={routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS}
         />
       )}
 
@@ -166,9 +164,7 @@ function SessionHero({
         title="No active academic session"
         body="The academic structure hangs off a school year. Create one and make it active, and everything below starts to mean something."
         actionLabel="Go to sessions"
-        onAction={() => {
-          window.location.href = routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS;
-        }}
+        actionTo={routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS}
       />
     );
   }

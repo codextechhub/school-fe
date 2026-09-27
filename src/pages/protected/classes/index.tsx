@@ -161,7 +161,7 @@ export default function Classes() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div data-guide="classes.toolbar" className="flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-0 flex-1 basis-52">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
           <input
@@ -231,6 +231,7 @@ export default function Classes() {
 
         <PermissionGate permission={P.CREATE_CLASS} disabled={readOnlyYear}>
           <Button
+            data-guide="classes.generate-arms"
             variant="outline"
             className="shrink-0 border-primary text-sm text-primary"
             onClick={() => setArmsOpen(true)}
@@ -239,6 +240,7 @@ export default function Classes() {
             Generate arms
           </Button>
           <Button
+            data-guide="classes.add"
             className="shrink-0 text-sm"
             onClick={() => {
               setEditing(null);
@@ -252,6 +254,7 @@ export default function Classes() {
 
       <Panel
         as="section"
+        data-guide="classes.summary"
         className="grid grid-cols-2 divide-x divide-y divide-border overflow-hidden sm:grid-cols-3 sm:divide-y-0"
         aria-label="Class structure summary"
       >
@@ -294,7 +297,7 @@ export default function Classes() {
           }}
         />
       ) : view === "cards" ? (
-        <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div data-guide="classes.list" className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
           {classes.map((klass) => (
             <ClassCard
               key={klass.id}

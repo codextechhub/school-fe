@@ -1,6 +1,7 @@
 import type { GuideRecord } from "./types";
 import { canDiscoverGuide, type GuideReader } from "./discovery";
 import { GUIDE_ROUTE_PATTERNS } from "./route-catalog";
+import { routePatternMatches, routeSegments } from "./route-pattern";
 
 /**
  * What the help panel knows about the screen it was opened on: the pattern the
@@ -20,15 +21,9 @@ const cleanPath = (value: string) => {
   return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
 };
 
-const segments = (value: string) => cleanPath(value).split("/").filter(Boolean);
+const segments = routeSegments;
 
-export function routePatternMatches(pattern: string, pathname: string): boolean {
-  const patternSegments = segments(pattern);
-  const pathSegments = segments(pathname);
-  return patternSegments.length === pathSegments.length && patternSegments.every(
-    (segment, index) => segment.startsWith(":") || segment === pathSegments[index],
-  );
-}
+export { routePatternMatches };
 
 /**
  * The catalogued pattern an address belongs to. The pattern with the most

@@ -16,6 +16,7 @@ export const STUDENTS_AND_GUARDIANS_GUIDES = [
     routes: [R.STUDENTS.INDEX, R.STUDENTS.PROFILE],
     actionIds: ["view-students"],
     access: { mode: "any", permissions: [P.BROWSE_STUDENTS] },
+    walkthroughId: "walkthrough.school.students.find-student-record",
     primaryRoute: R.STUDENTS.INDEX,
     sections: [
       { id: "before-you-start", title: "Before you start" },
@@ -87,6 +88,7 @@ export const STUDENTS_AND_GUARDIANS_GUIDES = [
     routes: [R.STUDENTS.ENROL],
     actionIds: ["enrol-student"],
     access: { mode: "all", permissions: [P.ENROLL_STUDENT, P.ASSIGN_CLASS] },
+    walkthroughId: "walkthrough.school.students.enrol-student",
     primaryRoute: R.STUDENTS.ENROL,
     sections: [
       { id: "before-you-start", title: "Before you start" },
@@ -255,6 +257,7 @@ export const STUDENTS_AND_GUARDIANS_GUIDES = [
     routes: [R.STUDENTS.PROMOTION],
     actionIds: ["view-promotion"],
     access: { mode: "any", permissions: [P.PROMOTE_STUDENTS] },
+    walkthroughId: "walkthrough.school.students.promote-students",
     primaryRoute: R.STUDENTS.PROMOTION,
     sections: [
       { id: "before-you-start", title: "Before you start" },

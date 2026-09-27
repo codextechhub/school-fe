@@ -49,14 +49,18 @@ export function ClassGroups({
 
   if (groups.length === 0) {
     return (
-      <Panel as="section" className="px-4 py-10 text-center text-sm text-gray-05">
+      <Panel
+        as="section"
+        data-guide="promotion.class-groups"
+        className="px-4 py-10 text-center text-sm text-gray-05"
+      >
         No student in this year is a candidate for promotion.
       </Panel>
     );
   }
 
   return (
-    <div className="grid min-w-0 gap-3">
+    <div data-guide="promotion.class-groups" className="grid min-w-0 gap-3">
       {groups.map((group) => {
         const isOpen = classFilter !== "all" || Boolean(open[group.from_id]);
         const tally = reviewCounts({ ...plan, students: group.students }, overrides);

@@ -13,6 +13,8 @@ import { GUIDE_REGISTRY } from "../registry";
 import { WALKTHROUGH_REGISTRY } from "./registry";
 import {
   followingContentStep,
+  followingStepRoute,
+  isOnStepRoute,
   isFollowingStepReady,
   loadWalkthroughProgress,
   resumableContentStep,
@@ -94,6 +96,26 @@ describe("walkthrough engine", () => {
     expect(walkthroughStepRoute(sample, "form")).toBe("/students");
     expect(walkthroughStepRoute(sample, "elsewhere")).toBe("/students/classes");
     expect(walkthroughStepRoute(sample, "complete")).toBe("/students/classes");
+  });
+
+  it("treats a pattern route as any record of that kind", () => {
+    const withProfile: Walkthrough = {
+      ...sample,
+      steps: [
+        { id: "row", target: "sample.row", title: "Row", body: "Open one.", advance: "target-click" },
+        { id: "profile", route: "/students/:id", target: "sample.tabs", title: "Tabs", body: "Read.", advance: "manual" },
+      ],
+    };
+    expect(isOnStepRoute(withProfile, "profile", "/students/1042")).toBe(true);
+    expect(isOnStepRoute(withProfile, "profile", "/students")).toBe(false);
+    expect(isOnStepRoute(withProfile, "row", "/students")).toBe(true);
+    expect(followingStepRoute(withProfile, "row")).toBe("/students/:id");
+    expect(followingStepRoute(withProfile, "profile")).toBeUndefined();
+  });
+
+  it("refuses a walkthrough that would start on a record page", () => {
+    expect(validateWalkthroughs([{ ...sample, route: "/students/:id" }], new Set([sample.guideId])))
+      .toContain(`Start route names a record for ${sample.id}`);
   });
 
   it("returns a finished walkthrough to the guide that launched it", () => {

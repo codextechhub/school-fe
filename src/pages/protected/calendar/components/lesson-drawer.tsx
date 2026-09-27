@@ -186,7 +186,7 @@ export function LessonDrawer({
           </SheetDescription>
         </SheetHeader>
 
-        <ScrollArea className="flex-1" viewportClassName="px-5 py-5">
+        <ScrollArea data-guide="lesson-drawer.fields" className="flex-1" viewportClassName="px-5 py-5">
           <Field
             label="Subject *"
             error={errorFor("subject")}
@@ -281,7 +281,7 @@ export function LessonDrawer({
           />
         </ScrollArea>
 
-        <div className="shrink-0 border-t border-white-02 pt-4">
+        <div data-guide="lesson-drawer.actions" className="shrink-0 border-t border-white-02 pt-4">
           <ProblemSummary problems={showing} />
           <div className="flex flex-wrap items-center justify-end gap-2 px-5 pb-4">
           {editing && onRemove && (

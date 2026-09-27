@@ -1,3 +1,4 @@
+import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
@@ -9,6 +10,12 @@ import type { LucideIcon } from "lucide-react";
  * shape for the cases that are not a list at all - a control room that was never
  * provisioned, a route that opens at go-live, a state call that failed. Keeping
  * one ring means those pages do not each invent their own empty screen.
+ *
+ * An action that goes to another screen in this app takes `actionTo` rather
+ * than an `onAction` that sets `window.location`: the button renders as a
+ * router link, so the move keeps the loaded app, the store and the reader's
+ * history instead of reloading everything. `onAction` is for work done in
+ * place, such as a retry. When both are given, `actionTo` wins.
  */
 export function OutlinedNotice({
   icon: Icon,
@@ -16,6 +23,7 @@ export function OutlinedNotice({
   body,
   actionLabel,
   onAction,
+  actionTo,
   actionLoading,
   secondaryLabel,
   onSecondary,
@@ -26,6 +34,8 @@ export function OutlinedNotice({
   body?: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** An in-app path the primary button links to. */
+  actionTo?: string;
   actionLoading?: boolean;
   secondaryLabel?: string;
   onSecondary?: () => void;
@@ -49,7 +59,12 @@ export function OutlinedNotice({
       )}
       {(actionLabel || secondaryLabel) && (
         <div className="mt-2 flex flex-wrap justify-center gap-2">
-          {actionLabel && (
+          {actionLabel && actionTo && (
+            <Button asChild>
+              <Link to={actionTo}>{actionLabel}</Link>
+            </Button>
+          )}
+          {actionLabel && !actionTo && (
             <Button onClick={onAction} loading={actionLoading}>
               {actionLabel}
             </Button>

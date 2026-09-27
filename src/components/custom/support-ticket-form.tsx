@@ -316,7 +316,7 @@ export function SupportTicketForm({
       onSubmit={formik.handleSubmit}
       className={cn(compact ? "space-y-3 min-w-0" : "space-y-4 min-w-0", className)}
     >
-      <div>
+      <div data-guide="support-ticket.title">
         <CustomInput
           id="title"
           label="Title"
@@ -332,6 +332,7 @@ export function SupportTicketForm({
       </div>
 
       <CustomTextArea
+        data-guide="support-ticket.description"
         id="description"
         label="Description"
         isRequired
@@ -341,7 +342,7 @@ export function SupportTicketForm({
         error={formik.touched.description ? formik.errors.description : ""}
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div data-guide="support-ticket.category" className="grid gap-4 sm:grid-cols-2">
         <CustomNativeSelect
           id="category"
           label="Category"
@@ -361,7 +362,7 @@ export function SupportTicketForm({
         />
       </div>
 
-      <div>
+      <div data-guide="support-ticket.attachments">
         <input
           ref={filePicker}
           type="file"
@@ -426,6 +427,7 @@ export function SupportTicketForm({
       )}
 
       <div
+        data-guide="support-ticket.actions"
         className={cn(
           "flex flex-wrap items-center gap-2",
           compact && "justify-end pt-1",

@@ -52,6 +52,7 @@ export const STAFF_GUIDES = [
     routes: [R.STAFF.ADD, R.STAFF.INDEX],
     actionIds: ["add-staff"],
     access: { mode: "any", permissions: [P.INVITE_TEACHER] },
+    walkthroughId: "walkthrough.school.staff.add-staff",
     primaryRoute: R.STAFF.ADD,
     sections: [
       { id: "before-you-start", title: "Before you start" },
@@ -152,6 +153,7 @@ export const STAFF_GUIDES = [
     routes: [R.STAFF.TEACHING],
     actionIds: ["view-teaching-duties"],
     access: { mode: "any", permissions: [P.BROWSE_TEACHERS] },
+    walkthroughId: "walkthrough.school.staff.teaching-duties",
     primaryRoute: R.STAFF.TEACHING,
     sections: [
       { id: "before-you-start", title: "Before you start" },

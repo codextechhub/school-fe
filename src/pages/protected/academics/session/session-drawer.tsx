@@ -266,6 +266,7 @@ export function SessionDrawer({
             Session name *
           </label>
           <Input
+            data-guide="session-drawer.name"
             value={draft.name}
             onChange={(e) => {
               setEditedName(true);
@@ -284,7 +285,7 @@ export function SessionDrawer({
             </p>
           )}
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <div data-guide="session-drawer.dates" className="mt-4 grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
                 Starts *
@@ -319,7 +320,7 @@ export function SessionDrawer({
               the catalogue entities use, so it gets its own control rather than
               borrowing one that cannot express "these two". */}
           {multiBranch && (
-            <div className="mt-5 border-t border-white-02 pt-4">
+            <div data-guide="session-drawer.applies-to" className="mt-5 border-t border-white-02 pt-4">
               <p className="mb-2 text-[13px] font-medium text-gray-06">
                 Applies to *
               </p>
@@ -376,7 +377,7 @@ export function SessionDrawer({
             </div>
           )}
 
-          <div className="mt-5 border-t border-white-02 pt-4">
+          <div data-guide="session-drawer.terms" className="mt-5 border-t border-white-02 pt-4">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[13px] font-medium text-gray-06">
                 {termStructure === "2_SEMESTERS" ? "Semesters" : "Terms"}
@@ -502,7 +503,7 @@ export function SessionDrawer({
           )}
         </ScrollArea>
 
-        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
+        <div data-guide="session-drawer.actions" className="flex shrink-0 items-center justify-end gap-2 border-t border-white-02 px-5 py-4">
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             Cancel
           </Button>

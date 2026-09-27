@@ -60,6 +60,7 @@ export function FiltersPopover({
       <PopoverTrigger asChild>
         <button
           type="button"
+          data-guide="students-directory.filters"
           className={cn(
             "inline-flex h-10.5 items-center gap-2 rounded-lg border px-3.5 text-[13.5px] font-medium",
             facets > 0 || open

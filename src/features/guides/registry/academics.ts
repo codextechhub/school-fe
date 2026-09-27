@@ -53,6 +53,7 @@ export const ACADEMICS_GUIDES = [
     routes: [R.ACADEMIC_STRUCTURE.SESSIONS, R.ACADEMIC_STRUCTURE.SESSION_DETAILS],
     actionIds: ["view-academic-session", "add-session"],
     access: { mode: "any", permissions: [P.BROWSE_SESSIONS] },
+    walkthroughId: "walkthrough.school.academics.sessions-and-terms",
     primaryRoute: R.ACADEMIC_STRUCTURE.SESSIONS,
     sections: [
       { id: "before-you-start", title: "Before you start" },
@@ -160,6 +161,7 @@ export const ACADEMICS_GUIDES = [
     routes: [R.ACADEMIC_STRUCTURE.CLASSES, R.ACADEMIC_STRUCTURE.CLASS_DETAILS],
     actionIds: ["view-classes", "add-class"],
     access: { mode: "any", permissions: [P.BROWSE_CLASSES] },
+    walkthroughId: "walkthrough.school.academics.classes-and-arms",
     primaryRoute: R.ACADEMIC_STRUCTURE.CLASSES,
     sections: [
       { id: "before-you-start", title: "Before you start" },

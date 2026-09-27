@@ -39,7 +39,7 @@ export function OnboardingStatusStrip() {
 
   return (
     <>
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-white border-b border-white-02 px-5 py-2">
+      <div data-guide="onboarding.status-strip" className="flex flex-wrap items-center gap-x-3 gap-y-1.5 bg-white border-b border-white-02 px-5 py-2">
         {/* The crest, not the name. The name is already in the sidebar header
             directly above this line, and printing it twice in the same corner
             of the screen reads as two different things being named. The alt

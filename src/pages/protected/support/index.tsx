@@ -78,7 +78,7 @@ export default function SupportDesk() {
 
   return (
     <PageShell className="space-y-5 text-black-01">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div data-guide="support.heading" className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="font-semibold font-mont text-black-01">Support</p>
           <p className="mt-0.5 text-xs text-gray-01">
@@ -93,7 +93,7 @@ export default function SupportDesk() {
         </Button>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div data-guide="support.filters" className="flex flex-wrap items-center justify-between gap-3">
         {/* The same switcher the rest of the app uses, so a filter behaves the
             same way here as it does anywhere else. */}
         <Tabs

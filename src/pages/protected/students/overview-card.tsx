@@ -87,13 +87,20 @@ export function OverviewCard({
 
   return (
     <div className="grid min-w-0 gap-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div
+        data-guide="students-directory.summary"
+        className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+      >
         {metrics.map((metric) => (
           <MetricCard key={metric.label} metric={metric} loading={loading} />
         ))}
       </div>
 
-      <Panel as="section" className="overflow-hidden rounded-xl">
+      <Panel
+        as="section"
+        data-guide="students-directory.work-queue"
+        className="overflow-hidden rounded-xl"
+      >
         <div className="flex flex-wrap items-center gap-3 border-b border-border px-4 py-3.5 sm:px-5">
           <span className="grid size-9 shrink-0 place-content-center rounded-lg bg-primary/10 text-primary">
             <ClipboardList className="size-4.5" />

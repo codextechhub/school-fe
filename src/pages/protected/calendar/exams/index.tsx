@@ -240,9 +240,7 @@ export default function ExamScheduling() {
           title="No exam period yet"
           body="An exam timetable sits inside a dated exam period on the calendar, so that has to exist first. Add one as a calendar event with the type Exam period."
           actionLabel="Add an exam period"
-          onAction={() => {
-            window.location.assign(routesPath.PROTECTED.ACADEMIC_CALENDAR.EVENTS);
-          }}
+          actionTo={routesPath.PROTECTED.ACADEMIC_CALENDAR.EVENTS}
         />
       </PageShell>
     );

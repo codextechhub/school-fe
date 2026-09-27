@@ -166,7 +166,7 @@ export default function AcademicSessions() {
 
       {/* flex-wrap, so the toolbar stacks on a phone instead of squeezing the
           search box to nothing. */}
-      <div className="flex flex-wrap items-center gap-2.5">
+      <div data-guide="sessions.toolbar" className="flex flex-wrap items-center gap-2.5">
         <div className="relative min-w-0 flex-1 basis-52">
           <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" />
           <input
@@ -212,7 +212,7 @@ export default function AcademicSessions() {
         />
 
         <PermissionGate permission={P.CREATE_SESSION}>
-          <Button className="shrink-0 text-sm" onClick={openNew}>
+          <Button data-guide="sessions.new" className="shrink-0 text-sm" onClick={openNew}>
             <Plus /> New session
           </Button>
         </PermissionGate>
@@ -249,7 +249,7 @@ export default function AcademicSessions() {
           }
         />
       ) : view === "cards" ? (
-        <div className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div data-guide="sessions.list" className="grid items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
           {sessions.map((session) => (
             <SessionCard
               key={session.id}
@@ -405,7 +405,7 @@ function SessionSummary({
   ];
 
   return (
-    <section className="grid gap-3 sm:grid-cols-3" aria-label="Session summary">
+    <section data-guide="sessions.summary" className="grid gap-3 sm:grid-cols-3" aria-label="Session summary">
       {cards.map((card) => (
         <Panel key={card.label} className="flex min-w-0 items-center gap-3 px-4 py-3">
           <span className={cn("grid size-10 shrink-0 place-content-center rounded-md", card.tone)}>

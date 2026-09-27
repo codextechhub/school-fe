@@ -527,7 +527,7 @@ export default function EnrolStudent() {
           choosing WHAT to create - and the difference between the two is the
           most consequential thing on the form, because one takes a class seat
           and the other does not. */}
-      <fieldset className="min-w-0">
+      <fieldset data-guide="student-enrol.shape" className="min-w-0">
         <legend className="text-xs font-medium text-gray-05">
           What are you creating?
         </legend>
@@ -581,7 +581,10 @@ export default function EnrolStudent() {
           Guardia" - clipped words that read as broken rather than as something
           to swipe. The counter says the same thing and fits. Back-navigation is
           still there: the footer's Back button, and Edit on the review. */}
-      <p className="text-sm font-semibold text-black-01 sm:hidden">
+      <p
+        data-guide="student-enrol.steps"
+        className="text-sm font-semibold text-black-01 sm:hidden"
+      >
         Step {index + 1} of {STEPS.length} · {STEPS[index].label}
       </p>
 
@@ -602,7 +605,7 @@ export default function EnrolStudent() {
       </p>
 
       {step === "student" && (
-      <Section title="The student">
+      <Section data-guide="student-enrol.step-student" title="The student">
         <div className="grid gap-3.5 sm:grid-cols-2">
           <AccessField access={access} name="first_name" creating>
             <Field label="First name" error={err("first_name")} required>
@@ -700,7 +703,10 @@ export default function EnrolStudent() {
       )}
 
       {step === "placement" && (
-      <Section title={asApplicant ? "The application" : "Admission"}>
+      <Section
+        data-guide="student-enrol.step-placement"
+        title={asApplicant ? "The application" : "Admission"}
+      >
         <div className="grid gap-3.5 sm:grid-cols-2">
           {/* Absent at a single-branch school: the dimension recedes there and
               the server fills it in, so asking would be a question with one
@@ -832,6 +838,7 @@ export default function EnrolStudent() {
               }
             >
               <input
+                data-guide="student-enrol.admission-number"
                 value={admissionNumber}
                 onChange={(e) => {
                   setNumberOwned(true);
@@ -863,7 +870,7 @@ export default function EnrolStudent() {
       )}
 
       {step === "details" && (<>
-      <Section title="Contact">
+      <Section data-guide="student-enrol.step-details" title="Contact">
         <div className="grid gap-3.5 sm:grid-cols-2">
           <AccessField access={access} name="address" creating>
             <Field label="Home address">
@@ -938,7 +945,11 @@ export default function EnrolStudent() {
       </>)}
 
       {step === "guardians" && (
-        <Panel as="section" className="px-5.5 py-5">
+        <Panel
+          as="section"
+          data-guide="student-enrol.step-guardians"
+          className="px-5.5 py-5"
+        >
         <GuardianRows
           rows={guardians}
           onChange={setGuardians}
@@ -950,6 +961,7 @@ export default function EnrolStudent() {
       {step === "review" && (
         <Review
           form={form}
+          admissionNumber={body({}).student_number ?? ""}
           hidden={(name) => access.isHidden(name, CREATING)}
           guardians={guardians}
           asApplicant={asApplicant}
@@ -992,7 +1004,11 @@ export default function EnrolStudent() {
               </span>
             }
           >
-            <Button onClick={() => submit()} disabled={isLoading}>
+            <Button
+              data-guide="student-enrol.save"
+              onClick={() => submit()}
+              disabled={isLoading}
+            >
               {isLoading
                 ? "Saving…"
                 : asApplicant
@@ -1003,7 +1019,11 @@ export default function EnrolStudent() {
             </Button>
           </PermissionGate>
         ) : (
-          <Button onClick={next} disabled={isLoading}>
+          <Button
+            data-guide="student-enrol.next"
+            onClick={next}
+            disabled={isLoading}
+          >
             {STEPS[index].optional ? "Skip" : "Next"}
           </Button>
         )}
@@ -1029,17 +1049,18 @@ function Section({
   title,
   note,
   children,
+  ...rest
 }: {
   title: string;
   note?: string;
   children: React.ReactNode;
-}) {
+} & React.HTMLAttributes<HTMLElement>) {
   return (
     // On a surface, like every other panel in the app. The sections rendered
     // bare on the page background, so a form of twenty-one fields read as
     // labels floating in space with nothing holding them together - no edge
     // saying where one group of questions ends and the next begins.
-    <Panel as="section" className="px-5.5 py-5">
+    <Panel as="section" className="px-5.5 py-5" {...rest}>
       <h3 className="text-sm font-semibold text-black-01">{title}</h3>
       {note && <p className="mt-0.5 text-xs text-gray-05">{note}</p>}
       {/* A rule under the heading, so the heading reads as a heading rather
@@ -1058,9 +1079,14 @@ function Section({
  * all, and - the one that matters - which guardian the school will actually
  * ring. Each block jumps back to the step that owns it, because spotting a
  * mistake here and having to hunt for the field is how it gets left in.
+ *
+ * The admission number is taken from the body the save sends, not from the
+ * typed field: an untouched field sends the school's suggested number, and a
+ * field the registrar may not write sends none.
  */
-function Review({
+export function Review({
   form,
+  admissionNumber,
   hidden,
   guardians,
   asApplicant,
@@ -1070,6 +1096,8 @@ function Review({
   onJump,
 }: {
   form: Record<string, string>;
+  /** The admission number the save will send, blank when none is sent. */
+  admissionNumber: string;
   /** Field Access on this Add form: a field it does not offer is not summarised either. */
   hidden: (name: string) => boolean;
   guardians: GuardianDraft[];
@@ -1093,7 +1121,7 @@ function Review({
   ].some(Boolean);
 
   return (
-    <div className="grid gap-4">
+    <div data-guide="student-enrol.step-review" className="grid gap-4">
       <Block title="Student" onEdit={() => onJump("student")}>
         <Line label="Name" value={fullName || "Not given"} />
         <Line label="Date of birth" value={form.date_of_birth || "Not given"} />
@@ -1124,7 +1152,7 @@ function Review({
         <Line
           label="Admission number"
           value={
-            form.student_number.trim() ||
+            admissionNumber.trim() ||
             "Not issued - it can be added later from the record"
           }
         />

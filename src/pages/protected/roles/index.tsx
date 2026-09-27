@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, ShieldCheck } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import PageAccessDenied from "@/components/custom/page-access-denied";
@@ -9,10 +9,12 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import { useGetAllMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import { useGetFieldAccessRolesQuery } from "@/redux/services/roles/roles-api";
+import { routesPath } from "@/routes/routesPath";
 import type { SchoolRole } from "@/redux/services/roles/roles-types";
 import { roleDetailPath } from "./role-paths";
 
@@ -22,6 +24,10 @@ import { roleDetailPath } from "./role-paths";
  * The list walks every API page so a role does not disappear after the first
  * hundred. Each row opens a full-page record where granted permissions can be
  * read without first entering an edit form.
+ *
+ * A list that fails to load replaces the page with a retry, rather than
+ * rendering as a school with no roles: an administrator who reads "No school
+ * roles are available" goes off to create roles that already exist.
  */
 export default function Roles() {
   const navigate = useNavigate();
@@ -55,6 +61,20 @@ export default function Roles() {
 
   if (!canView) return <PageAccessDenied />;
 
+  if (roles.isError) {
+    return (
+      <PageShell>
+        <OutlinedNotice
+          icon={ShieldCheck}
+          title="We could not load your roles"
+          body="Something went wrong on our side. Try again in a moment."
+          actionLabel="Try again"
+          onAction={() => void roles.refetch()}
+        />
+      </PageShell>
+    );
+  }
+
   return (
     <PageShell className="content-start gap-5" grid>
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
@@ -62,16 +82,16 @@ export default function Roles() {
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">Roles &amp; Permissions</h1>
           <p className="mt-1 text-sm text-gray-01">See who can do what across your school. Open a role to review its permissions, people and branch reach.</p>
         </div>
-        <PermissionGate permission={P.CREATE_ROLE}><Button onClick={() => navigate("/roles/new")}><Plus /> Create role</Button></PermissionGate>
+        <PermissionGate permission={P.CREATE_ROLE}><Button data-guide="roles.new" onClick={() => navigate(routesPath.PROTECTED.ROLES.NEW)}><Plus /> Create role</Button></PermissionGate>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+      <div data-guide="roles.summary" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-white p-4 sm:p-5"><p className="text-xs font-medium text-gray-05">Total roles</p><p className="mt-1 text-2xl font-semibold text-black-01">{all.length}</p></div>
         <div className="rounded-xl border border-border bg-white p-4 sm:p-5"><p className="text-xs font-medium text-gray-05">Custom roles</p><p className="mt-1 text-2xl font-semibold text-black-01">{all.filter((role) => !role.is_system_role).length}</p></div>
         <div className="col-span-2 rounded-xl border border-border bg-white p-4 sm:p-5 lg:col-span-1"><p className="text-xs font-medium text-gray-05">Active role assignments</p><p className="mt-1 text-2xl font-semibold text-black-01">{totalPeople}</p></div>
       </div>
 
-      <section className="min-w-0 space-y-4">
+      <section data-guide="roles.directory" className="min-w-0 space-y-4">
         <div className="flex min-w-0 flex-wrap items-end justify-between gap-3 rounded-xl border border-border bg-white p-3.5 sm:p-4">
           <div><h2 className="text-base font-semibold text-black-01">Role directory</h2><p className="mt-1 text-xs text-gray-05">Choose a role to see every permission it holds.</p></div>
           <div className="relative w-full sm:max-w-72"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-05" /><Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search roles" aria-label="Search roles" className="pl-9" /></div>

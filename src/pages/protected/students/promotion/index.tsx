@@ -211,7 +211,7 @@ function PromotionWorkflow({
 
       {step === 0 && (
         <section className="grid gap-4" aria-labelledby="sessions-heading">
-          <Panel className="p-4 sm:p-6">
+          <Panel data-guide="promotion.sessions" className="p-4 sm:p-6">
             <h2 id="sessions-heading" className="text-base font-semibold text-black-01">
               Sessions
             </h2>
@@ -268,6 +268,7 @@ function PromotionWorkflow({
 
           <div>
             <Button
+              data-guide="promotion.review-open"
               onClick={() => void toReview()}
               disabled={!plan || previewing || nothingToMove}
             >
@@ -277,7 +278,7 @@ function PromotionWorkflow({
           </div>
 
           {nothingToMove && (
-            <p className="text-sm text-gray-05">
+            <p data-guide="promotion.nothing-to-move" className="text-sm text-gray-05">
               Nobody in {plan?.from_session} is a candidate for promotion.
             </p>
           )}
@@ -294,7 +295,10 @@ function PromotionWorkflow({
             </p>
           )}
 
-          <div className="flex min-w-0 flex-wrap items-end gap-3">
+          <div
+            data-guide="promotion.review-summary"
+            className="flex min-w-0 flex-wrap items-end gap-3"
+          >
             <div className="w-full sm:w-52">
               <label htmlFor="class-filter" className="sr-only">
                 Filter review by class
@@ -333,7 +337,7 @@ function PromotionWorkflow({
 
       {step === 2 && counts && plan && (
         <section className="grid gap-4" aria-labelledby="confirm-heading">
-          <Panel className="p-4 sm:p-5">
+          <Panel data-guide="promotion.confirm" className="p-4 sm:p-5">
             <h2 id="confirm-heading" className="text-base font-semibold text-black-01">
               Confirm this promotion
             </h2>
@@ -410,7 +414,11 @@ function PromotionWorkflow({
             Back
           </Button>
           {step === 1 && (
-            <Button onClick={() => void toConfirm()} disabled={previewing}>
+            <Button
+              data-guide="promotion.confirm-open"
+              onClick={() => void toConfirm()}
+              disabled={previewing}
+            >
               {previewing ? "Recalculating..." : "Preview and confirm"}
             </Button>
           )}
@@ -425,6 +433,7 @@ function PromotionWorkflow({
               }
             >
               <Button
+                data-guide="promotion.run"
                 onClick={() => setConfirming(true)}
                 disabled={running || counts?.candidates === 0}
               >
@@ -465,7 +474,7 @@ function SessionField({ label, value }: { label: string; value: string }) {
 
 function LevelMapping({ plan }: { plan: PromotionPlan }) {
   return (
-    <div className="mt-6 border-t border-white-02 pt-5">
+    <div data-guide="promotion.level-mapping" className="mt-6 border-t border-white-02 pt-5">
       <h2 className="text-base font-semibold text-black-01">Level mapping</h2>
       <p className="mt-1 text-sm text-gray-05">
         Targets come from the class structure in Academic Structure. Terminal
@@ -523,7 +532,7 @@ function Exceptions({ plan }: { plan: PromotionPlan }) {
   if (total === 0) return null;
 
   return (
-    <Panel as="section" className="p-4 sm:p-5">
+    <Panel as="section" data-guide="promotion.exceptions" className="p-4 sm:p-5">
       <h2 className="text-base font-semibold text-black-01">
         {total} {total === 1 ? "exception" : "exceptions"}
       </h2>

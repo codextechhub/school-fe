@@ -62,7 +62,10 @@ export function StudentCards({
               label={`Open ${s.full_name}'s record`}
               className="flex w-full min-w-0 flex-col gap-3 rounded-xl p-4 text-left"
             >
-              <div className="flex min-w-0 items-start justify-between gap-2">
+              <div
+                data-guide="students-directory.row"
+                className="flex min-w-0 items-start justify-between gap-2"
+              >
                 <div className="flex min-w-0 items-center gap-3">
                   <PersonAvatar
                     name={s.full_name}
