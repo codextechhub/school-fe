@@ -1,4 +1,4 @@
-import type { ElementType, ReactNode } from "react";
+import { useEffect, useRef, type ElementType, type ReactNode } from "react";
 import { ArrowRight, CheckCircle2, CircleDashed, History, LockKeyhole } from "lucide-react";
 import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,22 @@ export function ConsoleSettingsLayout({
   guideTargetPrefix?: string;
   children: ReactNode;
 }) {
+  const railRef = useRef<HTMLDivElement>(null);
+
+  // Below xl the sections are a row that scrolls sideways, and a deep link
+  // can land on a section whose pill is off the right edge. Bring it into
+  // view by moving the row itself, never the page.
+  useEffect(() => {
+    const rail = railRef.current;
+    const active = rail?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!rail || !active || rail.scrollWidth <= rail.clientWidth) return;
+    const left = active.offsetLeft - rail.offsetLeft;
+    const right = left + active.offsetWidth;
+    if (left < rail.scrollLeft || right > rail.scrollLeft + rail.clientWidth) {
+      rail.scrollLeft = Math.max(0, left - 16);
+    }
+  }, [activeSection]);
+
   return (
     <main className="min-w-0 space-y-5 px-4.5 pb-6 pt-14 text-black-01 sm:py-6">
       <div data-guide={guideTargetPrefix ? `${guideTargetPrefix}.heading` : undefined} className="flex flex-wrap items-start justify-between gap-3">
@@ -67,7 +83,7 @@ export function ConsoleSettingsLayout({
 
       <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[220px_minmax(0,1fr)]">
         <nav data-guide={guideTargetPrefix ? `${guideTargetPrefix}.sections` : undefined} aria-label={`${title} sections`} className="min-w-0">
-          <div className="flex max-w-full gap-2 overflow-x-auto pb-1 xl:sticky xl:top-4 xl:block xl:space-y-1 xl:overflow-visible xl:rounded-xl xl:border xl:border-white-02 xl:bg-white xl:p-2">
+          <div ref={railRef} className="flex max-w-full gap-2 overflow-x-auto pb-1 xl:sticky xl:top-4 xl:block xl:space-y-1 xl:overflow-visible xl:rounded-xl xl:border xl:border-white-02 xl:bg-white xl:p-2">
             {sections.map((section) => {
               const Icon = section.icon;
               const active = section.key === activeSection;
