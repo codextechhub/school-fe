@@ -138,6 +138,55 @@ const messageTime = (value: string): string => {
   });
 };
 
+/** The time a message was sent, in the small grey type the thread uses. */
+function MessageTime({ value, className }: { value: string; className?: string }) {
+  return (
+    <time
+      dateTime={value}
+      className={cn("shrink-0 whitespace-nowrap text-[11px] leading-5 text-gray-01", className)}
+    >
+      {messageTime(value)}
+    </time>
+  );
+}
+
+/**
+ * A message's text with its time on the right-hand end of the last line.
+ *
+ * The time is pinned to the bottom-right corner, and an invisible spacer the
+ * width of the time trails the text. When the last line has room, the spacer
+ * sits beside the words and the time lines up with them; when the last line is
+ * full, the spacer wraps and the time drops onto a short line of its own
+ * underneath, so it never covers the text.
+ */
+function TimedText({ text, time }: { text: string; time: string }) {
+  return (
+    <div className="relative">
+      <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black-01">
+        {text}
+        <span aria-hidden="true" className="inline-block w-12" />
+      </p>
+      <MessageTime value={time} className="absolute bottom-0 right-0" />
+    </div>
+  );
+}
+
+/**
+ * Files at the foot of a message, with its time level with the last file.
+ */
+function TimedFiles({ files, time }: { files: TicketAttachment[]; time: string }) {
+  return (
+    <div className="flex items-end gap-2">
+      <div className="min-w-0 flex-1">
+        {files.map((file) => (
+          <AttachmentCard key={file.id} file={file} compact />
+        ))}
+      </div>
+      <MessageTime value={time} />
+    </div>
+  );
+}
+
 const isPrimaryEnter = (event: React.KeyboardEvent) =>
   event.key === "Enter" && (event.metaKey || event.ctrlKey);
 
@@ -343,11 +392,13 @@ export default function SupportTicketDetail() {
   const isSending = replying || uploading;
 
   /**
-   * Post the reply, then the file bound to it.
+   * Post the reply, then the file bound to it, and confirm it went.
    *
    * The two are separate calls, so the file can fail after the words landed.
    * That is said plainly and the file stays picked, rather than reporting the
-   * whole reply as failed when most of it went through.
+   * whole reply as failed when most of it went through. The success message
+   * matches the Console's: "Reply sent", or "Attachment uploaded" for a file
+   * sent without words.
    */
   const send = async () => {
     if (!canSend || sendingRef.current) return;
@@ -375,8 +426,10 @@ export default function SupportTicketDetail() {
               "Your reply was posted, but the file could not be uploaded. Try the file again.",
             ),
           );
+          return;
         }
       }
+      toast.success(text ? "Reply sent" : "Attachment uploaded");
     } catch (error) {
       toast.error(apiErrorMessage(error, "We could not post your reply."));
     } finally {
@@ -529,9 +582,6 @@ export default function SupportTicketDetail() {
                                   XVS
                                 </span>
                               )}
-                              <time className="ml-auto shrink-0 text-[11px] text-gray-01">
-                                {messageTime(group.items.at(-1)?.createdAt ?? "")}
-                              </time>
                             </div>
 
                             <div className="space-y-1">
@@ -545,17 +595,20 @@ export default function SupportTicketDetail() {
                                       : "border-white-02 bg-white",
                                   )}
                                 >
-                                  {item.kind === "comment" ? (
+                                  {item.kind === "attachment" ? (
+                                    <TimedFiles files={[item.attachment]} time={item.createdAt} />
+                                  ) : item.comment.attachments?.length ? (
                                     <>
                                       <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black-01">
                                         {item.comment.body}
                                       </p>
-                                      {item.comment.attachments?.map((file) => (
-                                        <AttachmentCard key={file.id} file={file} compact />
-                                      ))}
+                                      <TimedFiles
+                                        files={item.comment.attachments}
+                                        time={item.createdAt}
+                                      />
                                     </>
                                   ) : (
-                                    <AttachmentCard file={item.attachment} compact />
+                                    <TimedText text={item.comment.body} time={item.createdAt} />
                                   )}
                                 </div>
                               ))}
