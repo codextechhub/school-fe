@@ -13,6 +13,21 @@ import {
   routePatternFor,
   screenTicketContext,
 } from "./ticket-context";
+import { Navigate } from "react-router";
+import { protectedRoutes } from "@/routes/protected";
+
+type RouteNode = {
+  path?: string;
+  element?: { type?: unknown };
+  children?: readonly RouteNode[];
+};
+
+/** Every absolute screen path the router declares; redirects are not screens. */
+const mountedPaths = (routes: readonly RouteNode[]): string[] =>
+  routes.flatMap((route) => [
+    ...(route.path?.startsWith("/") && route.element?.type !== Navigate ? [route.path] : []),
+    ...mountedPaths(route.children ?? []),
+  ]);
 import { routesPath } from "@/routes/routesPath";
 
 // TicketContextSerializer.route_pattern, both halves: the regex, and the
@@ -121,6 +136,12 @@ describe("the product area", () => {
 
   it("says nothing about a screen it does not know", () => {
     expect(productAreaFor("/somewhere-new")).toBeUndefined();
+  });
+
+  it("names an area for every screen the router mounts", () => {
+    const unrouted = mountedPaths(protectedRoutes as readonly RouteNode[])
+      .filter((path) => productAreaFor(path) === undefined);
+    expect(unrouted, "mounted screens whose tickets would carry no product area").toEqual([]);
   });
 });
 

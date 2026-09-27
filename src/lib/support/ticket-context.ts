@@ -64,6 +64,9 @@ export type ProductArea =
  * Onboarding: somebody stuck on who-may-do-what needs the people who own roles,
  * not the people who own setup.
  *
+ * Every mounted screen resolves to an area; ticket-context.test.ts walks the
+ * router and names any screen that does not.
+ *
  * Only areas this app actually mounts are listed. The server's vocabulary is
  * platform-wide and includes areas that belong to the console (Platform health,
  * Organogram); claiming one of those from a school would be a lie in the field
@@ -82,6 +85,12 @@ const AREA_BY_PREFIX: [prefix: string, area: ProductArea][] = [
   ["/academic-calendar", "School management"],
   ["/timetables", "School management"],
   ["/overview", "School management"],
+  ["/staff", "School management"],
+  ["/roles", "Roles"],
+  ["/workflow", "Workflow"],
+  ["/data-imports", "Data imports"],
+  ["/export", "Exports"],
+  ["/support", "Support"],
 ];
 
 /** The server's rule for `route_pattern`, mirrored so nothing invalid is sent. */
