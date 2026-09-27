@@ -51,8 +51,8 @@ const packageAlias: { find: string; replacement: string }[] = [
   { find: "@/utils/money", replacement: pkg("src/utils/money.ts") },
   { find: "@/utils/posting-window", replacement: pkg("src/utils/posting-window.ts") },
   { find: "@/utils/quantity", replacement: pkg("src/utils/quantity.ts") },
-  { find: "@/utils/finance-export", replacement: path.resolve(__dirname, "./src/xvs-host/finance-export.ts") },
-  { find: "@/utils/finance-documents", replacement: path.resolve(__dirname, "./src/xvs-host/finance-documents.ts") },
+  { find: "@/utils/finance-export", replacement: pkg("src/utils/finance-export.ts") },
+  { find: "@/utils/finance-documents", replacement: pkg("src/utils/finance-documents.ts") },
   { find: "@/utils/chart-of-accounts", replacement: pkg("src/utils/chart-of-accounts.ts") },
   { find: "@/hooks/use-action-param", replacement: pkg("src/hooks/use-action-param.ts") },
   { find: "@/lib/source-document-route", replacement: pkg("src/lib/source-document-route.ts") },
@@ -151,20 +151,6 @@ const vendorChunk = (id: string): string | undefined => {
   return undefined
 }
 
-const authBoundaryPlugin = () => ({
-  name: "xvs-auth-boundary",
-  enforce: "pre" as const,
-  resolveId(source: string, importer?: string) {
-    if (
-      importer?.includes("/pages/data-imports/batches/")
-      && (source === "./batch-utils" || source === "./components/batch-utils")
-    ) {
-      return path.resolve(__dirname, "./src/xvs-host/import-batch-utils.ts")
-    }
-    return null
-  },
-})
-
 /**
  * How every `@/…` specifier resolves, for the dev server, the build AND the
  * test runner.
@@ -230,7 +216,6 @@ export default defineConfig({
     },
   },
   plugins: [
-    authBoundaryPlugin(),
     react({
       babel: {
         plugins: [['babel-plugin-react-compiler']],
