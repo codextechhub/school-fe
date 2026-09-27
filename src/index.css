@@ -729,3 +729,82 @@ button:focus-visible .school-mark__pen {
 .loading-dot {
   animation: dot-fade 1.4s ease-in-out infinite both;
 }
+
+/* Organogram: the pulse on a card the search box jumps to. */
+@keyframes pulseHL {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.45); }
+  70% { box-shadow: 0 0 0 10px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+/* Organogram chart: top-down connectors drawn in CSS. Each <li> draws the two
+   half-width rails above it and a drop into its card; each child <ul> draws the
+   drop from its parent. A closed branch simply renders no <ul>. */
+.org-chart ul {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+  position: relative;
+}
+.org-chart > ul {
+  padding-top: 0;
+}
+.org-chart li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 24px 8px 0;
+}
+.org-chart li::before,
+.org-chart li::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 50%;
+  width: 50%;
+  height: 24px;
+  border-top: 1px solid #cbd5e1;
+}
+.org-chart li::after {
+  right: auto;
+  left: 50%;
+  border-left: 1px solid #cbd5e1;
+}
+.org-chart li:only-child::before,
+.org-chart li:only-child::after {
+  display: none;
+}
+.org-chart li:first-child::before,
+.org-chart li:last-child::after {
+  border-top: 0 none;
+}
+.org-chart li:last-child::before {
+  border-right: 1px solid #cbd5e1;
+  border-radius: 0 6px 0 0;
+}
+.org-chart li:first-child::after {
+  border-radius: 6px 0 0 0;
+}
+/* vertical drop from a parent card into its children row */
+.org-chart ul ul::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 24px;
+  border-left: 1px solid #cbd5e1;
+}
+/* an only child still needs the drop line from its parent */
+.org-chart ul ul > li:only-child {
+  padding-top: 0;
+}
+/* top-level roots have no parent - no rails, no drop */
+.org-chart > ul > li::before,
+.org-chart > ul > li::after {
+  display: none;
+}
+.org-chart > ul > li {
+  padding-top: 0;
+}

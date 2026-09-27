@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router";
 import { toast } from "sonner";
 import {
   AlertTriangle,
@@ -28,6 +28,7 @@ import { AsAtContext, useAsAt, useAsAtParam } from "@/lib/as-at";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
+import { routesPath } from "@/routes/routesPath";
 import { useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { useAppSelector } from "@/redux/store";
@@ -118,6 +119,7 @@ export default function StaffProfile() {
   const [accountAction, { isLoading: actingOnAccount }] =
     useStaffAccountActionMutation();
   const canChangeEmail = useCanChangeStaffEmail(person);
+  const canSeeChart = usePermissions().hasPermission(P.VIEW_SCHOOL_ORGANOGRAM);
 
   if (isError && asAt) {
     return (
@@ -236,6 +238,29 @@ export default function StaffProfile() {
                       </>
                     )}
                   </div>
+                  {person.organogram && (
+                    <p className="mt-1.5 text-[13px] text-gray-01">
+                      {person.organogram.is_acting ? "Acting " : ""}
+                      {person.organogram.position.title}
+                      {person.organogram.line_manager && (
+                        <>
+                          <span className="text-gray-05"> · reports to </span>
+                          {person.organogram.line_manager.full_name}
+                        </>
+                      )}
+                      {canSeeChart && (
+                        <>
+                          {" "}
+                          <Link
+                            to={routesPath.PROTECTED.STAFF.ORGANOGRAM}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            View on organogram
+                          </Link>
+                        </>
+                      )}
+                    </p>
+                  )}
                   {/* Both status labels remain visible when their values match.
                     "Active" for most people at most schools, and two identical
                     chips are otherwise ambiguous. */}

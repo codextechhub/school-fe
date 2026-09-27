@@ -11,6 +11,8 @@ const AddStaff = lazy(() => import("@/pages/protected/staff/add"));
 const StaffInvitations = lazy(() => import("@/pages/protected/staff/invitations"));
 const StaffPosting = lazy(() => import("@/pages/protected/staff/posting"));
 const TeachingDuties = lazy(() => import("@/pages/protected/staff/teaching"));
+const Organogram = lazy(() => import("@/pages/protected/staff/organogram"));
+const OrganogramManage = lazy(() => import("@/pages/protected/staff/organogram/manage"));
 
 const S = routesPath.PROTECTED.STAFF;
 
@@ -95,6 +97,27 @@ export const staffRoutes = [
       // scopes a branch-tied reader itself but has no interactive branch or
       // year filter, so a lens here would promise to change data that it does
       // not send to the server.
+      lenses: "none",
+    } satisfies DashboardHandle,
+  },
+  {
+    // Closed before go-live with the rest of the module's daily screens: a
+    // chart of who reports to whom is drawn once the school is running.
+    path: S.ORGANOGRAM,
+    Component: Organogram,
+    handle: {
+      title: "Organogram",
+      // The whole school's chart for every reader; a branch lens would
+      // promise to narrow a response the server never narrows.
+      lenses: "none",
+    } satisfies DashboardHandle,
+  },
+  {
+    path: S.ORGANOGRAM_MANAGE,
+    Component: OrganogramManage,
+    handle: {
+      title: "Manage organogram",
+      hasBack: true,
       lenses: "none",
     } satisfies DashboardHandle,
   },

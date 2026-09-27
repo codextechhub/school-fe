@@ -16,6 +16,8 @@ import type { Envelope, Pagination } from "../onboarding/onboarding-types";
  * own read policy per file.
  */
 
+import type { StaffOrganogramPlacement } from "./organogram-types";
+
 // ── Vocabularies ───────────────────────────────────────────────────────────
 
 /** Does this person still work here. Set only by a logged transition. */
@@ -226,6 +228,12 @@ export interface StaffDetail extends StaffListRow {
     leave_requests: number;
   };
   created_by: StaffActor | null;
+  /**
+   * Their place on the organogram, from their current primary appointment:
+   * the post, its unit and the person holding the post above. Null when they
+   * hold no post, and absent on a record read as at an earlier day.
+   */
+  organogram?: StaffOrganogramPlacement | null;
   /** The first day this record can be read as at; null before it is first recorded. */
   history_starts: string | null;
   /** Present only on a record read as at an earlier day. */

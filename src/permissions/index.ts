@@ -94,6 +94,17 @@ const REGISTRY: Record<string, string> = {
   "101101": "school.staff_records.view",
   "101103": "school.staff_records.update",
 
+  // ── school / organogram  (MM=10, RR=15) ────────────────────────────────────
+  // The school's own org chart: units, posts, appointments and dotted lines.
+  // `.view` reaches every prebuilt role, teachers included, because every
+  // member of staff reads the chart. The writes reach the two admin roles, and
+  // a branch administrator's are narrowed by the server to their own branch.
+  "101501": "school.organogram.view",
+  "101502": "school.organogram.create",
+  "101503": "school.organogram.update",
+  "101504": "school.organogram.delete",
+  "101511": "school.organogram.assign",
+
   // ── school / staff leave  (MM=10, RR=10) ───────────────────────────────────
   // A resource of its own rather than more teacher verbs, because who is off
   // sick is not something every colleague may read: `.view` reaches the two
@@ -407,6 +418,15 @@ export const P = {
   // contract.
   VIEW_STAFF_RECORDS:      "101101",  // read a colleague's employment record
   UPDATE_STAFF_RECORD:     "101103",  // correct a record or attach a document
+
+  // ── Organogram ─────────────────────────────────────────────────────────────
+  // The school's chart, not Codex's: VIEW_ORGANOGRAM below is the console's key
+  // and no school role holds it.
+  VIEW_SCHOOL_ORGANOGRAM:  "101501",  // read the chart, as every member of staff may
+  CREATE_ORG_STRUCTURE:    "101502",  // add a unit, a post or a dotted line
+  UPDATE_ORG_STRUCTURE:    "101503",  // rename, move or deactivate one
+  DELETE_ORG_STRUCTURE:    "101504",  // remove one nothing depends on
+  APPOINT_TO_POST:         "101511",  // appoint somebody to a post, or end it
 
   // ── Staff Leave ────────────────────────────────────────────────────────────
   VIEW_LEAVE:              "101001",  // read somebody else's leave

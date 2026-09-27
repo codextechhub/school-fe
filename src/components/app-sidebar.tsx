@@ -27,6 +27,7 @@ import {
   Briefcase,
   Headset,
   MailCheck,
+  Network,
   CalendarClock,
   ShoppingCart,
   Wallet,
@@ -501,6 +502,19 @@ export function AppSidebar({
       : []),
   ];
 
+  // Every member of staff reads the chart, so it hangs beside the directory
+  // rather than under it: a teacher with no directory key still has it. Absent
+  // before go-live, when its endpoints answer `TENANT_NOT_LIVE`.
+  const organogramDoor: NavItem = {
+    title: "Organogram",
+    capability: "teachers",
+    url: routesPath.PROTECTED.STAFF.ORGANOGRAM,
+    icon: Network,
+    isActive: location.startsWith(routesPath.PROTECTED.STAFF.ORGANOGRAM),
+    childActive: false,
+    permission: P.VIEW_SCHOOL_ORGANOGRAM,
+  };
+
   const staffDoor: NavItem = {
     // The people who work here: the bursar and the registrar as much as the
     // teacher, which is why the item says Staff and not Teachers. The backend
@@ -510,7 +524,7 @@ export function AppSidebar({
     capability: "teachers",
     url: routesPath.PROTECTED.STAFF.INDEX,
     icon: Briefcase,
-    isActive: owns(routesPath.PROTECTED.STAFF.INDEX, staffDoors),
+    isActive: owns(routesPath.PROTECTED.STAFF.INDEX, [...staffDoors, organogramDoor]),
     childActive: false,
     permission: P.BROWSE_TEACHERS,
   };
@@ -586,7 +600,12 @@ export function AppSidebar({
     // worklists somebody is asked to empty - which is also where every live
     // count in the nav ends up, so the badges sit together instead of being
     // scattered through a list of directories.
-    people: [studentsDoor, staffDoor, ...studentDoors.filter(isGuardians)],
+    people: [
+      studentsDoor,
+      staffDoor,
+      ...(onboarding ? [] : [organogramDoor]),
+      ...studentDoors.filter(isGuardians),
+    ],
     duties: [
       ...studentDoors.filter((door) => !isGuardians(door)),
       ...staffDoors,

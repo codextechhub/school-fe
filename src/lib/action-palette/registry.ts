@@ -229,6 +229,52 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.STAFF.POSTING },
   },
   {
+    // Every member of staff reads the chart, so the gate is the chart's own
+    // key and not the directory's: a teacher looking for her line manager
+    // holds this and not `school.teachers.view`.
+    id: "view-organogram",
+    label: "View organogram",
+    aliases: [
+      "org chart", "organisation chart", "who reports to whom", "reporting line",
+      "line manager", "my manager", "structure", "hierarchy",
+    ],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    gate: { perm: P.VIEW_SCHOOL_ORGANOGRAM },
+    run: { to: R.STAFF.ORGANOGRAM },
+  },
+  {
+    // The same expression the Manage page admits on.
+    id: "manage-organogram",
+    label: "Manage organogram",
+    aliases: [
+      "org units", "posts", "positions", "departments and teams",
+      "appoint somebody", "dotted lines", "vacancies",
+    ],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    gate: {
+      any: [
+        P.CREATE_ORG_STRUCTURE, P.UPDATE_ORG_STRUCTURE,
+        P.DELETE_ORG_STRUCTURE, P.APPOINT_TO_POST,
+      ],
+    },
+    run: { to: R.STAFF.ORGANOGRAM_MANAGE },
+  },
+  {
+    // The Posts tab's New post form, gated on the key its button checks.
+    id: "add-organogram-post",
+    label: "Add a post to the organogram",
+    aliases: ["new position", "create a post", "new seat", "head of department"],
+    section: "People",
+    group: "Staff",
+    kind: "do",
+    gate: { perm: P.CREATE_ORG_STRUCTURE },
+    run: { to: `${R.STAFF.ORGANOGRAM_MANAGE}?action=new` },
+  },
+  {
     // Named apart from the onboarding action of nearly the same words, which is
     // a CHECKLIST STEP on a screen that disappears at go-live. This is the
     // module's permanent door, it is gated on the staff key rather than the
@@ -1013,23 +1059,34 @@ const PENDING_SURFACE_PREFIXES: readonly string[] = [
 /**
  * Screens under a pending-surface prefix that are nonetheless closed.
  *
- * One entry, and it earns its exception: every other staff screen is open
- * before go-live, so excluding the module wholesale would hide four working
- * doors to spare one. Teaching duties needs an academic year, which a school
- * being set up has not started, and its route handle says the same.
+ * Each earns its exception: most staff screens are open before go-live, so
+ * excluding the module wholesale would hide working doors to spare these.
+ * Teaching duties needs an academic year, which a school being set up has not
+ * started. The organogram is drawn once a school is running, and its
+ * endpoints answer 403 `TENANT_NOT_LIVE` until then. Their route handles say
+ * the same.
  *
  * Subtracted HERE rather than in the action filter below, because this is the
  * one function that answers "does this path open before go-live" - and the
  * test that checks the answer against every route handle reads it too. Applied
  * anywhere else, the two directions would disagree.
  */
-const LIVE_ONLY_PATHS: readonly string[] = ["/staff/teaching"];
+const LIVE_ONLY_PATHS: readonly string[] = [
+  "/staff/teaching",
+  "/staff/organogram",
+  "/staff/organogram/manage",
+];
 
-export const pathOpensBeforeGoLive = (to: string): boolean =>
-  !LIVE_ONLY_PATHS.includes(to) &&
-  PENDING_SURFACE_PREFIXES.some(
-    (prefix) => to === prefix || to.startsWith(`${prefix}/`),
+export const pathOpensBeforeGoLive = (to: string): boolean => {
+  // Judged on the path alone: `?action=new` opens a form on the same screen.
+  const path = to.split(/[?#]/)[0];
+  return (
+    !LIVE_ONLY_PATHS.includes(path) &&
+    PENDING_SURFACE_PREFIXES.some(
+      (prefix) => path === prefix || path.startsWith(`${prefix}/`),
+    )
   );
+};
 
 /** A command has no destination to close, and none of the three are closed. */
 const opensBeforeGoLive = (run: ActionRun): boolean =>

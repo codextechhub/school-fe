@@ -273,6 +273,10 @@ export const routesPath = {
       INVITATIONS: "/staff/invitations",
       POSTING: "/staff/posting",
       TEACHING: "/staff/teaching",
+      // The chart every member of staff reads, and the units, posts and
+      // dotted lines behind it that an administrator maintains.
+      ORGANOGRAM: "/staff/organogram",
+      ORGANOGRAM_MANAGE: "/staff/organogram/manage",
       PROFILE: "/staff/:id",
       PROFILE_ID: (id: string | number) => `/staff/${id}`,
     },

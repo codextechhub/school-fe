@@ -521,6 +521,9 @@ export const baseApi = createApi({
     // Assignments and coverage are one tag because they are one dataset seen
     // two ways, and every write to a duty moves both.
     "StaffTeaching",
+    // Units, posts, appointments, dotted lines and the summary: one chart, and
+    // an appointment moves the tree, the vacancy and the counts together.
+    "Organogram",
     "PermissionCatalogue",
     "RoleFieldAccess",
     "UserFieldAccessOverrides",
