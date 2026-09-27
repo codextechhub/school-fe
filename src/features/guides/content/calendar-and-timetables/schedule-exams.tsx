@@ -37,7 +37,7 @@ export default function ScheduleExamsArticle() {
           <GuideStep title="Refused">A class sitting two papers at once is impossible, so it cannot be saved. Change the date or sitting.</GuideStep>
           <GuideStep title="Warned">A room used twice, or one invigilator in two rooms, can be real: two classes can sit in one hall. Tick the box to confirm you know, and the paper saves.</GuideStep>
         </GuideSteps>
-        <p>Every clash in the timetable is listed at the top. Clashes save, but they block publishing until they are resolved.</p>
+        <p>Every clash in the timetable is listed at the top. The warned kind saves and publishes, because a shared hall or an invigilator moving between rooms is often meant, so check each one is intended before you publish.</p>
       </GuideSection>
 
       <GuideSection id="board-and-list" title="Board, list and filters">
@@ -46,7 +46,7 @@ export default function ScheduleExamsArticle() {
       </GuideSection>
 
       <GuideSection id="publish-and-print" title="Publish and print">
-        <p>Select <strong>Publish</strong> when every paper is placed and no clashes remain. If anything stops it, the message says what to fix.</p>
+        <p>Select <strong>Publish</strong> when every paper is placed and each clash still listed is one you intend, such as two classes sharing a hall. If anything stops it, the message says what to fix.</p>
         <GuideCallout tone="danger" title="Publishing is final">Once published, the exam timetable can no longer be changed. Papers cannot be added, edited or removed, so check it carefully first.</GuideCallout>
         <p><strong>Print</strong> prints the list with the exam period&apos;s name and dates at the top, whichever view you are on. <strong>Export</strong> gives a spreadsheet, where your role allows exports.</p>
       </GuideSection>
@@ -62,7 +62,7 @@ export default function ScheduleExamsArticle() {
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="You are done when">Every class has a paper for each subject it sits, no clashes are listed, and the exam period reads Published.</GuideCallout>
+        <GuideCallout tone="tip" title="You are done when">Every class has a paper for each subject it sits, every clash still listed is one you meant, and the exam period reads Published.</GuideCallout>
       </GuideSection>
     </div>
   );
