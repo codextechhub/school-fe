@@ -7,13 +7,14 @@
  * it. Posting anyway is legitimate - a bursar should not be stuck because
  * nobody has built the ladder yet - but it is a decision somebody makes.
  *
- * Why it lives here rather than on the screens. The finance documents this
- * guards - credit notes, refunds, write-offs, concessions - are rendered by
- * @xvs/finance, and their posting buttons are that package's. Handling the
- * refusal in each of them would mean four copies in a package this app only
- * consumes, and a fifth the day another document type is gated. Every request
- * from every package already passes through one interceptor, so the question is
- * asked there and answered once.
+ * Why it lives here rather than on the screens. The documents this guards -
+ * journals, direct entries, expense claims, credit notes, refunds, write-offs,
+ * concessions - are rendered by @xvs/finance, and their posting buttons are
+ * that package's. Handling the refusal in each of them would mean a copy per
+ * screen in a package this app only consumes, and another the day a further
+ * document type is gated. Every request from every package already passes
+ * through one interceptor, so the question is asked there and answered once.
+ * The console asks it the same way.
  *
  * The original mutation's promise is what carries the retry's result, so a
  * screen that knows nothing about any of this simply sees its post succeed.
