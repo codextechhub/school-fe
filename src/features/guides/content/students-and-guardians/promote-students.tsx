@@ -19,7 +19,7 @@ export default function PromoteStudentsArticle() {
       <GuideSection id="choose-the-year" title="Choose the year to promote into">
         <GuideSteps>
           <GuideStep title="Pick the year">Under <strong>Sessions</strong>, <strong>From</strong> shows the running year. In <strong>Into</strong>, choose the year to move students into.</GuideStep>
-          <GuideStep title="Check the level mapping">The <strong>Level mapping</strong> lists each class and where it goes. A final level is marked <strong>Terminal</strong> and shows <strong>Graduates</strong>. A class with nowhere to go is shown in amber with the reason, such as <strong>No class there yet</strong> or <strong>No target set for this level</strong>.</GuideStep>
+          <GuideStep title="Check the level mapping">The <strong>Level mapping</strong> lists each class and where it goes. A final level is marked <strong>Terminal</strong> and shows <strong>Graduates</strong>. A class with nowhere to go is shown in amber with the reason, such as <strong>No class there yet</strong> or <strong>No target set for this level</strong>. Where your school spreads year groups across the arms, a class&apos;s destination reads, for example, <strong>Spread: JSS2 A, JSS2 B, JSS2 C</strong>; move anyone who belongs elsewhere after the run.</GuideStep>
           <GuideStep title="Go on">Under the mapping, a line says how many students are candidates. Select <strong>Review students</strong>.</GuideStep>
         </GuideSteps>
       </GuideSection>
@@ -27,6 +27,7 @@ export default function PromoteStudentsArticle() {
       <GuideSection id="review-students" title="Review students">
         <p>Students are grouped by class. Open a class to see each student and choose <strong>Promote</strong>, <strong>Repeat</strong>, <strong>Graduate</strong> or <strong>Hold</strong> for them. To set a whole class at once, use <strong>All up</strong> (or <strong>All graduate</strong> for a final class) and <strong>All held</strong>.</p>
         <p>Filter the review to one class with the class selector. The line beside it keeps a running count of students promoted, repeating, graduating and held.</p>
+        <p>Your school&apos;s promotion rules in <strong>Settings</strong> decide whether suspended students and students not yet attending move up. A student moving up while suspended shows a <strong>Suspended</strong> tag.</p>
         <GuideCallout tone="info" title="Hold is not repeat">A held student stays where they are and is not moved into next year. A student who repeats moves into next year in a class at the same level.</GuideCallout>
       </GuideSection>
 
@@ -43,7 +44,7 @@ export default function PromoteStudentsArticle() {
         <GuideSteps>
           <GuideStep title="Preview">Select <strong>Preview and confirm</strong>. The school recalculates the plan with your choices.</GuideStep>
           <GuideStep title="Read the totals">Under <strong>Confirm this promotion</strong>, check the Promote, Repeat, Graduate and Hold counts and the sentence saying how many students move and how many stay.</GuideStep>
-          <GuideStep title="Check class capacity">If the run would put any class over capacity, the confirm step lists each one with its seats and how far over it would go. Move students elsewhere and preview again, or tick <strong>Go ahead and put these classes over capacity</strong>. The tick clears whenever you preview again. At a school that never goes over capacity there is no tick: the step reads <strong>This school does not put classes over capacity.</strong> Raise the class capacity, add an arm, or hold some pupils back, then preview again.</GuideStep>
+          <GuideStep title="Check class capacity">If the run would put any class over capacity, the confirm step lists each one with its seats and how far over it would go. Move students elsewhere and preview again, or tick <strong>Go ahead and put these classes over capacity</strong>. The tick clears whenever you preview again. Where your school&apos;s promotion rule never goes over capacity there is no tick: the step reads <strong>This school does not put classes over capacity.</strong> Raise the class capacity, add an arm, or hold some pupils back, then preview again.</GuideStep>
           <GuideStep title="Run it">Select <strong>Run promotion</strong>, read the confirmation, and select <strong>Run promotion</strong> again.</GuideStep>
           <GuideStep title="Read the result">The page shows <strong>Promotion complete</strong> with the numbers promoted, repeated, graduated and held, and how many could not be written. Every move is recorded in each student&apos;s history.</GuideStep>
         </GuideSteps>

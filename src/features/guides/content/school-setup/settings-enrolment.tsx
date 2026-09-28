@@ -23,7 +23,7 @@ const DETAILS = [
 
 const MODES = [
   ["Warn, then allow", "A full class says so, and the person enrolling can go ahead anyway. This is what a school has until it chooses."],
-  ["Never over capacity", "A full class takes nobody else, whether the child is being enrolled, moved or promoted into it."],
+  ["Never over capacity", "A full class takes nobody else when a child is enrolled or moved. Promotion follows this unless its own rule says otherwise."],
   ["Don't check", "Capacity is shown for information only and never stops anybody."],
 ] as const;
 
@@ -76,7 +76,7 @@ export default function SettingsEnrolmentArticle() {
           ))}
         </div>
         <p><strong>Capacity of a new class</strong> is the size a class gets when it, or a set of arms, is created without one. Leave it blank for no limit. Existing classes keep the capacity they have.</p>
-        <GuideCallout tone="warning" title="Never over capacity applies to promotion too">Under <strong>Never over capacity</strong>, a promotion that would overfill a class cannot be run until the class is made bigger, an arm is added, or some pupils are held back. Choose it only if every class has a capacity you are happy to be held to.</GuideCallout>
+        <GuideCallout tone="info" title="Promotion can follow its own rule">Promotion follows this choice unless <strong>Full classes during promotion</strong> in <strong>Settings</strong>, under <strong>Promotion</strong>, says otherwise. A school can refuse full classes for new admissions and still let a year group move up together.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="save-the-rules" title="Save the rules">

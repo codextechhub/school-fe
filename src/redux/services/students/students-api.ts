@@ -10,6 +10,8 @@ import type {
   GuardianRulesUpdate,
   AdmissionRules,
   AdmissionRulesUpdate,
+  PromotionRules,
+  PromotionRulesUpdate,
   BulkResultRow,
   ClassSeats,
   PromotionBatch,
@@ -717,6 +719,17 @@ export const studentsApi = baseApi.injectEndpoints({
       invalidatesTags: ["Students"],
     }),
 
+    getPromotionRules: builder.query<Envelope<PromotionRules>, void>({
+      query: () => ({ url: `/students/promotion-rules/`, method: "GET" }),
+      providesTags: ["Students"],
+    }),
+
+    updatePromotionRules: builder.mutation<Envelope<PromotionRules>, PromotionRulesUpdate>({
+      query: (body) => ({ url: `/students/promotion-rules/`, method: "PUT", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
     /** Move an applicant between the school's stages, or extend an offer. */
     moveApplicantStage: builder.mutation<
       Envelope<StudentRow>,
@@ -771,6 +784,8 @@ export const {
   useGetAdmissionRulesQuery,
   useUpdateAdmissionRulesMutation,
   useMoveApplicantStageMutation,
+  useGetPromotionRulesQuery,
+  useUpdatePromotionRulesMutation,
   useGetClassSeatsQuery,
   usePreviewPromotionMutation,
   useRunPromotionMutation,

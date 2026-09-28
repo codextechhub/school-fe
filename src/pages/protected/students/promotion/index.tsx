@@ -521,6 +521,8 @@ function LevelMapping({ plan }: { plan: PromotionPlan }) {
       <p className="mt-1 text-sm text-gray-05">
         Targets come from the class structure in Academic Structure. Terminal
         levels leave the roll as graduates.
+        {plan.rules?.arms === "SPREAD" &&
+          " Your school spreads each year group evenly across the next level's classes, so move anyone who belongs elsewhere afterwards."}
       </p>
       <ul className="mt-4 grid gap-2">
         {plan.level_map.map((row) => {

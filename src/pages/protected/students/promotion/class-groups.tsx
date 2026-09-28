@@ -140,8 +140,13 @@ export function ClassGroups({
                       >
                         <PersonAvatar name={student.name} className="size-9" textClassName="text-[11px]" />
                         <div className="min-w-0 flex-1 basis-44">
-                          <p className="truncate text-sm font-medium text-black-01">
-                            {student.name}
+                          <p className="flex min-w-0 items-center gap-2 text-sm font-medium text-black-01">
+                            <span className="truncate">{student.name}</span>
+                            {student.suspended && (
+                              <span className="shrink-0 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                                Suspended
+                              </span>
+                            )}
                           </p>
                           <p className="truncate text-xs text-gray-05">
                             {student.student_number || "No admission number"}

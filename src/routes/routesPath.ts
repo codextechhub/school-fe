@@ -158,6 +158,7 @@ export const routesPath = {
       ENROLMENT: "/settings/enrolment",
       GUARDIANS: "/settings/guardians",
       ADMISSIONS: "/settings/admissions",
+      PROMOTION: "/settings/promotion",
       ADMISSION_NUMBERS: "/settings/admission-numbers",
       PAYROLL: "/settings/payroll",
       STAFF_PROFILES: "/settings/staff-profiles",

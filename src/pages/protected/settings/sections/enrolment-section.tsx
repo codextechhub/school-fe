@@ -30,7 +30,7 @@ const CAPACITY_MODES: { value: CapacityMode; label: string; description: string 
   {
     value: "HARD",
     label: "Never over capacity",
-    description: "A full class takes nobody else, for enrolment, moves and promotion alike.",
+    description: "A full class takes nobody else when a child is enrolled or moved. Promotion follows this unless its own rule says otherwise.",
   },
   {
     value: "OFF",

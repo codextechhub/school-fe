@@ -356,9 +356,17 @@ export interface PromotionPlan {
     from_id: number;
     to: string | null;
     to_id: number | null;
+    /**
+     * The classes receiving this class's promoted pupils, with how many each.
+     * One under "same arm"; several when the school spreads a year group.
+     * Absent from a server older than the promotion rules.
+     */
+    to_classes?: { id: number; name: string; students: number }[];
     terminal: boolean;
     students: number;
   }[];
+  /** The school's promotion rules this plan was worked out under. */
+  rules?: Pick<PromotionRules, "suspended" | "not_placed" | "arms">;
   /**
    * Target classes the run would fill past their capacity. The run refuses
    * them (PROMOTION_OVER_CAPACITY) until it is sent `allow_over_capacity`.
@@ -403,6 +411,8 @@ export interface PromotionPlan {
     from_class_id: number;
     to_class: string | null;
     outcome: PromotionOutcome;
+    /** Moving with the year group while suspended, under the school's rule. */
+    suspended?: boolean;
   }[];
 }
 
@@ -556,6 +566,37 @@ export interface AdmissionRulesUpdate {
   required_documents_to_confirm: string[];
   reason?: string;
 }
+
+/**
+ * The school's promotion rules (`/v1/students/promotion-rules/`).
+ *
+ * `capacity_mode` is promotion's own rule; `FOLLOW_ENROLMENT` means promotion
+ * treats a full class exactly as enrolment does, and `effective_capacity_mode`
+ * is what that resolves to today.
+ */
+export interface PromotionRules {
+  suspended: PromotionHoldOrMove;
+  not_placed: PromotionHoldOrMove;
+  arms: PromotionArms;
+  capacity_mode: PromotionCapacityMode;
+  effective_capacity_mode: CapacityMode;
+  enrolment_capacity_mode: CapacityMode;
+  options: {
+    suspended: LabelledOption[];
+    not_placed: LabelledOption[];
+    arms: LabelledOption[];
+    capacity_mode: LabelledOption[];
+  };
+}
+
+export type PromotionHoldOrMove = "HOLD" | "PROMOTE";
+export type PromotionArms = "SAME_ARM" | "SPREAD";
+export type PromotionCapacityMode = "FOLLOW_ENROLMENT" | CapacityMode;
+
+export type PromotionRulesUpdate = Pick<
+  PromotionRules,
+  "suspended" | "not_placed" | "arms" | "capacity_mode"
+> & { reason?: string };
 
 export type GuardianRulesUpdate = Pick<
   GuardianRules,

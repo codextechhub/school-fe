@@ -63,11 +63,26 @@ const CAUSE_LABEL: Record<string, string> = {
  *
  * Shared by the class map and the review headers, because two screens deriving
  * this separately is how they came to disagree in the first place.
+ *
+ * Under the school's "spread across the arms" rule one class lands in several,
+ * and the label names them all; each student's own line says which one.
  */
 export function destinationOf(
   plan: PromotionPlan,
-  row: { to: string | null; terminal: boolean; from_id: number },
+  row: {
+    to: string | null;
+    to_classes?: { name: string }[];
+    terminal: boolean;
+    from_id: number;
+  },
 ): { label: string; tone: string } {
+  // A school that spreads a year group sends one class into several.
+  if (row.to_classes && row.to_classes.length > 1) {
+    return {
+      label: `Spread: ${row.to_classes.map((c) => c.name).join(", ")}`,
+      tone: "text-black-01",
+    };
+  }
   if (row.to) return { label: row.to, tone: "text-black-01" };
   if (row.terminal) return { label: "Graduates", tone: "text-primary" };
   const cause = plan.exceptions.by_class.find((e) => e.class === row.from_id);

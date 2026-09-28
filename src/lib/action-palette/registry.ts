@@ -813,6 +813,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.SETTINGS.ADMISSIONS },
   },
   {
+    id: "view-promotion-settings",
+    label: "View promotion rules",
+    aliases: [
+      "promotion settings", "re-stream", "restream", "spread arms", "same arm",
+      "suspended at promotion", "promotion capacity",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.promotion.anyOf },
+    run: { to: R.SETTINGS.PROMOTION },
+  },
+  {
     id: "view-admission-number-settings",
     label: "View admission number rule",
     aliases: ["admission numbers", "admission number format", "numbering"],

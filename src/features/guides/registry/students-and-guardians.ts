@@ -276,6 +276,7 @@ export const STUDENTS_AND_GUARDIANS_GUIDES = [
       "school.students.place-and-transfer",
       "school.students.change-status",
       "school.setup.settings-enrolment",
+      "school.setup.settings-promotion",
     ],
     estimatedMinutes: 8,
     owner: OWNER,

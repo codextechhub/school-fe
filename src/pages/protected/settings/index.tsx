@@ -2,6 +2,7 @@ import type { ElementType } from "react";
 import {
   BellRing,
   ClipboardList,
+  GraduationCap,
   Hash,
   LayoutGrid,
   Landmark,
@@ -33,6 +34,7 @@ import { AdmissionNumbersSection } from "./sections/admission-numbers-section";
 import { EnrolmentSection } from "./sections/enrolment-section";
 import { GuardiansSection } from "./sections/guardians-section";
 import { AdmissionsSection } from "./sections/admissions-section";
+import { PromotionSection } from "./sections/promotion-section";
 import { MoreSection } from "./sections/more-section";
 import { useSettingsDoors } from "./use-settings-doors";
 import { NotificationsSection } from "./sections/notifications-section";
@@ -54,6 +56,7 @@ const SECTION_META: Record<
   enrolment: { title: "Enrolment", description: "Ages, documents, classes", icon: UserPlus },
   guardians: { title: "Guardians", description: "Contacts and siblings", icon: Users },
   admissions: { title: "Admissions", description: "Steps and offers", icon: ClipboardList },
+  promotion: { title: "Promotion", description: "Arms, holds and full classes", icon: GraduationCap },
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash },
   payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark },
   "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog },
@@ -67,6 +70,7 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   enrolment: EnrolmentSection,
   guardians: GuardiansSection,
   admissions: AdmissionsSection,
+  promotion: PromotionSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
   "staff-profiles": StaffProfilesSection,
@@ -152,6 +156,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   enrolment: "How old a new pupil may be, which documents and details are required, and how full a class may get.",
   guardians: "How many guardians a child needs, whether their email is required, how siblings are recognised, and your own relationship words.",
   admissions: "Your school's own admission steps, how long an offer stays open, and the documents needed before an applicant is enrolled.",
+  promotion: "Who moves up at the end of the year, whether a year group keeps its arms or is spread across classes, and what a full class does.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
   "staff-profiles": "How much of a colleague's profile their line managers and other colleagues see.",

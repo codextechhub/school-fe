@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { PromotionPlan } from "@/redux/services/students/students-types";
 
+import { destinationOf } from "./outcome";
 import { outcomeFor, reviewCounts } from "./promotion-model";
 
 const plan = {
@@ -26,5 +27,24 @@ describe("promotion review model", () => {
       graduate: 1,
       hold: 0,
     });
+  });
+});
+
+describe("destinationOf", () => {
+  const empty = { exceptions: { by_class: [], by_student: [] } } as unknown as PromotionPlan;
+
+  it("names every class a spread year group lands in", () => {
+    const row = {
+      from_id: 1,
+      to: "JSS2 A, JSS2 B, JSS2 C",
+      to_classes: [{ name: "JSS2 A" }, { name: "JSS2 B" }, { name: "JSS2 C" }],
+      terminal: false,
+    };
+    expect(destinationOf(empty, row).label).toBe("Spread: JSS2 A, JSS2 B, JSS2 C");
+  });
+
+  it("names the one class when the arm is kept", () => {
+    const row = { from_id: 1, to: "JSS2 B", to_classes: [{ name: "JSS2 B" }], terminal: false };
+    expect(destinationOf(empty, row).label).toBe("JSS2 B");
   });
 });
