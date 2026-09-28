@@ -1,6 +1,7 @@
 import { CircleAlert, ShieldOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { readOnlySentence, type ReadOnlyReason, type ReadOnlyWording } from "../use-settings-write";
 
 /** A section's placeholder while its first request is in flight. */
 export function SectionLoading({ label }: { label: string }) {
@@ -44,5 +45,16 @@ export function SectionLoadError({
         </Button>
       )}
     </div>
+  );
+}
+
+/** {@link readOnlySentence} as the line under a form, or nothing when the reader may change it. */
+export function ReadOnlyNote({
+  reason,
+  ...wording
+}: ReadOnlyWording & { reason: ReadOnlyReason | null }) {
+  if (!reason) return null;
+  return (
+    <p className="font-mont text-xs leading-5 text-gray-05">{readOnlySentence(reason, wording)}</p>
   );
 }

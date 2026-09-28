@@ -8,7 +8,6 @@ import {
   SettingsRow,
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
-import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import {
   useGetPayrollScopeQuery,
@@ -16,7 +15,8 @@ import {
 } from "@/redux/services/school/school-settings-api";
 import type { PayrollScope } from "@/redux/services/school/school-settings-types";
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
-import { SectionLoadError, SectionLoading } from "./shared";
+import { useSettingsWrite } from "../use-settings-write";
+import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 const ICONS: Record<PayrollScope, typeof Landmark> = {
   CENTRAL: Landmark,
@@ -34,8 +34,7 @@ const ICONS: Record<PayrollScope, typeof Landmark> = {
  * go and act on.
  */
 export function PayrollSection() {
-  const { hasPermission } = usePermissions();
-  const canSave = hasPermission(P.UPDATE_SETTINGS);
+  const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
   const query = useGetPayrollScopeQuery();
   const [save, { isLoading: saving }] = useUpdatePayrollScopeMutation();
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -110,6 +109,8 @@ export function PayrollSection() {
           />
         ))}
       </SettingsPanel>
+
+      <ReadOnlyNote reason={reason} subject="the payroll settings" />
     </div>
   );
 }

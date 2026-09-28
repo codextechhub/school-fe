@@ -7,7 +7,6 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { SettingsPanel, SettingsSectionHeader } from "@/components/settings/settings-layout";
-import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import {
   useGetStaffProfileVisibilityQuery,
@@ -17,7 +16,8 @@ import {
 } from "@/redux/services/school/staff-profile-visibility-api";
 import type { StaffProfileSection } from "@/redux/services/staff/staff-types";
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
-import { SectionLoadError, SectionLoading } from "./shared";
+import { useSettingsWrite } from "../use-settings-write";
+import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 /**
  * How much of a colleague's staff profile each relationship sees.
@@ -32,8 +32,7 @@ import { SectionLoadError, SectionLoading } from "./shared";
  * still hide a field whatever the grid says.
  */
 export function StaffProfilesSection() {
-  const { hasPermission } = usePermissions();
-  const canSave = hasPermission(P.UPDATE_FIELD_ACCESS);
+  const { canSave, reason } = useSettingsWrite(P.UPDATE_FIELD_ACCESS);
   const query = useGetStaffProfileVisibilityQuery();
   const [save, { isLoading: saving }] = useUpdateStaffProfileVisibilityMutation();
   const data = query.data?.data;
@@ -175,11 +174,12 @@ export function StaffProfilesSection() {
         ))}
       </div>
 
-      {!canSave && (
+      {reason === "permission" && (
         <p className="font-mont text-xs text-gray-05">
           Only somebody who may change field access can change these rules.
         </p>
       )}
+      {reason === "reach" && <ReadOnlyNote reason={reason} />}
     </div>
   );
 }

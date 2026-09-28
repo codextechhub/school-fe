@@ -9,7 +9,6 @@ import {
   SettingsPanel,
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
-import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import {
   useGetAdmissionRulesQuery,
@@ -17,7 +16,8 @@ import {
 } from "@/redux/services/students/students-api";
 import type { AdmissionRules } from "@/redux/services/students/students-types";
 import { fieldErrors, parseApiError, writeErrorMessage } from "@/utils/api-error";
-import { SectionLoadError, SectionLoading } from "./shared";
+import { useSettingsWrite } from "../use-settings-write";
+import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 const MAX_STAGES = 12;
 
@@ -82,8 +82,7 @@ function toDraft(rules: AdmissionRules): DraftStage[] {
 }
 
 function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
-  const { hasPermission } = usePermissions();
-  const canSave = hasPermission(P.UPDATE_SETTINGS);
+  const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
   const [save, { isLoading: saving }] = useUpdateAdmissionRulesMutation();
   const [stages, setStages] = useState<DraftStage[]>(() => toDraft(rules));
   const [documents, setDocuments] = useState<string[]>(rules.required_documents_to_confirm);
@@ -276,9 +275,7 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
           </Button>
         </div>
       ) : (
-        <p className="font-mont text-xs text-gray-05">
-          You can read these rules. Changing them is the school administrator's to do.
-        </p>
+        <ReadOnlyNote reason={reason} />
       )}
     </div>
   );

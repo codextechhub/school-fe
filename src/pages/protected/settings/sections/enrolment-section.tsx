@@ -7,7 +7,6 @@ import {
   SettingsPanel,
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
-import { usePermissions } from "@/hooks/use-permissions";
 import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import {
@@ -19,7 +18,8 @@ import type {
   EnrolmentRules,
 } from "@/redux/services/students/students-types";
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
-import { SectionLoadError, SectionLoading } from "./shared";
+import { useSettingsWrite } from "../use-settings-write";
+import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 const CAPACITY_MODES: { value: CapacityMode; label: string; description: string }[] = [
   {
@@ -83,8 +83,7 @@ export function EnrolmentSection() {
 }
 
 function EnrolmentForm({ rules }: { rules: EnrolmentRules }) {
-  const { hasPermission } = usePermissions();
-  const canSave = hasPermission(P.UPDATE_SETTINGS);
+  const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
   const [save, { isLoading: saving }] = useUpdateEnrolmentRulesMutation();
 
   const [minAge, setMinAge] = useState(String(rules.min_age_years));
@@ -257,9 +256,7 @@ function EnrolmentForm({ rules }: { rules: EnrolmentRules }) {
           </Button>
         </div>
       ) : (
-        <p className="font-mont text-xs text-gray-05">
-          You can read these rules. Changing them is the school administrator's to do.
-        </p>
+        <ReadOnlyNote reason={reason} />
       )}
     </div>
   );

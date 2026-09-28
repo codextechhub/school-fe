@@ -34,11 +34,14 @@ export function SchoolProfileForm({
   profile,
   canEdit,
   footer,
+  readOnlyText = "You can read your school's profile. Changing it is the school administrator's to do.",
 }: {
   profile: SchoolProfile;
   canEdit: boolean;
   /** Extra actions beside Save, such as a way back to the checklist. */
   footer?: ReactNode;
+  /** Why a reader who may not edit is only reading. */
+  readOnlyText?: string;
 }) {
   const [update, { isLoading }] = useUpdateSchoolProfileMutation();
   const editable = new Set(profile.editable_fields);
@@ -184,7 +187,7 @@ export function SchoolProfileForm({
       <p className="text-xs text-gray-05">
         {canEdit
           ? "Every save here is recorded against your school."
-          : "You can read your school's profile. Changing it is the school administrator's to do."}
+          : readOnlyText}
       </p>
     </form>
   );

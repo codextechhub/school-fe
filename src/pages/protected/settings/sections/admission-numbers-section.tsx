@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,10 +14,12 @@ import {
   useResetBranchAdmissionPolicyMutation,
   useUpdateAdmissionPolicyMutation,
 } from "@/redux/services/students/students-api";
+import { P } from "@/permissions";
 import type { AdmissionPolicy } from "@/redux/services/students/students-types";
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
-import { SectionLoadError, SectionLoading } from "./shared";
+import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 import { useSettingsBranches } from "../use-settings-branches";
+import { useSettingsWrite } from "../use-settings-write";
 
 type Mode = "none" | "simple" | "custom";
 
@@ -56,12 +58,18 @@ function compiles(pattern: string) {
  * A branch may keep its own rule (Lekki numbers `LK/`, the Annex `AX/`). A
  * branch without one follows the school's, and a number is unique across the
  * whole school whichever rule it follows. The picker offers only the branches
- * the reader reaches, and is absent at a single-branch school.
+ * the reader reaches, and is absent at a single-branch school. A reader who
+ * covers only some branches opens on their own, and reads the school's rule
+ * without changing it (`useSettingsWrite`).
  */
 export function AdmissionNumbersSection() {
   const branches = useSettingsBranches();
-  const [branch, setBranch] = useState("");
-  const query = useGetAdmissionPolicyQuery(branch ? { branch } : undefined);
+  // A reader who cannot act for the whole school opens on their own branch.
+  const [picked, setPicked] = useState<string | null>(null);
+  const branch =
+    picked ?? (!branches.wholeSchool && branches.choices[0] ? String(branches.choices[0].id) : "");
+  const { canSave, reason } = useSettingsWrite(P.MODIFY_STUDENT, branch);
+  const query = useGetAdmissionPolicyQuery(branch ? { branch } : undefined, { skip: branches.isLoading });
   // currentData: while another branch loads, `data` still holds the last one's.
   const policy = query.currentData?.data;
   const branchName = branches.choices.find((b) => String(b.id) === branch)?.name;
@@ -80,7 +88,7 @@ export function AdmissionNumbersSection() {
               aria-label="Which rule to edit"
               value={branch}
               disabled={branches.isLoading}
-              onChange={(event) => setBranch(event.target.value)}
+              onChange={(event) => setPicked(event.target.value)}
             >
               <option value="">Whole school</option>
               {branches.choices.map((item) => (
@@ -104,6 +112,15 @@ export function AdmissionNumbersSection() {
           policy={policy}
           branch={branch}
           branchName={branchName}
+          canSave={canSave}
+          readOnly={
+            <ReadOnlyNote
+              reason={reason}
+              subject="this rule"
+              one
+              branchPicker={branches.applies && branches.choices.length > 0}
+            />
+          }
         />
       ) : query.isError ? (
         <SectionLoadError
@@ -121,10 +138,15 @@ function AdmissionForm({
   policy,
   branch,
   branchName,
+  canSave,
+  readOnly,
 }: {
   policy: AdmissionPolicy;
   branch: string;
   branchName?: string;
+  canSave: boolean;
+  /** Shown in place of the actions when the reader may not change this rule. */
+  readOnly: ReactNode;
 }) {
   const [save, { isLoading: saving }] = useUpdateAdmissionPolicyMutation();
   const [reset, { isLoading: resetting }] = useResetBranchAdmissionPolicyMutation();
@@ -184,27 +206,29 @@ function AdmissionForm({
               When on, a child cannot be enrolled without an admission number.
             </span>
           </span>
-          <Switch checked={required} onCheckedChange={setRequired} aria-label="Required at enrolment" />
+          <Switch checked={required} disabled={!canSave} onCheckedChange={setRequired} aria-label="Required at enrolment" />
         </label>
 
         <div className="space-y-3">
           <p className="font-mont text-sm font-medium text-gray-01">What a valid number looks like</p>
-          <SegmentedToggle<Mode>
-            value={mode}
-            onChange={setMode}
-            ariaLabel="What a valid number looks like"
-            options={[
-              { value: "none", label: "Any number" },
-              { value: "simple", label: "Prefix and digits" },
-              { value: "custom", label: "Custom pattern" },
-            ]}
-          />
+          <fieldset disabled={!canSave} className="min-w-0">
+            <SegmentedToggle<Mode>
+              value={mode}
+              onChange={setMode}
+              ariaLabel="What a valid number looks like"
+              options={[
+                { value: "none", label: "Any number" },
+                { value: "simple", label: "Prefix and digits" },
+                { value: "custom", label: "Custom pattern" },
+              ]}
+            />
+          </fieldset>
 
           {mode === "simple" ? (
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block min-w-0">
                 <span className="font-mont text-xs text-gray-01">Starts with</span>
-                <Input className="mt-1" value={prefix} placeholder="BSS/" onChange={(e) => setPrefix(e.target.value)} />
+                <Input className="mt-1" value={prefix} placeholder="BSS/" disabled={!canSave} onChange={(e) => setPrefix(e.target.value)} />
               </label>
               <label className="block min-w-0">
                 <span className="font-mont text-xs text-gray-01">Then this many digits</span>
@@ -215,6 +239,7 @@ function AdmissionForm({
                   min={1}
                   max={12}
                   value={digits}
+                  disabled={!canSave}
                   aria-invalid={digitsValid ? undefined : true}
                   onChange={(e) => setDigits(e.target.value)}
                 />
@@ -231,6 +256,7 @@ function AdmissionForm({
               <Input
                 className="mt-1 font-mono"
                 value={custom}
+                disabled={!canSave}
                 placeholder="^BSS/[0-9]{4}$"
                 aria-invalid={patternValid ? undefined : true}
                 onChange={(e) => setCustom(e.target.value)}
@@ -265,6 +291,7 @@ function AdmissionForm({
             className="mt-1"
             value={hint}
             maxLength={200}
+            disabled={!canSave}
             placeholder={example ? `For example ${example}` : "Optional"}
             onChange={(e) => setHint(e.target.value)}
           />
@@ -281,9 +308,10 @@ function AdmissionForm({
               that ends in digits, so the next number can be worked out.
             </span>
           </span>
-          <Switch checked={autoIssue} onCheckedChange={setAutoIssue} aria-label="Issue numbers automatically" />
+          <Switch checked={autoIssue} disabled={!canSave} onCheckedChange={setAutoIssue} aria-label="Issue numbers automatically" />
         </label>
 
+        {canSave ? (
         <div className="flex flex-wrap items-center justify-end gap-3">
           {branch && policy.source === "branch" ? (
             <Button
@@ -303,6 +331,9 @@ function AdmissionForm({
             Save rule
           </Button>
         </div>
+        ) : (
+          readOnly
+        )}
       </div>
     </SettingsPanel>
   );

@@ -10,7 +10,6 @@ import {
   SettingsRow,
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
-import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import {
   useGetSchoolSecuritySettingsQuery,
@@ -23,7 +22,8 @@ import type {
   SecuritySourceScope,
 } from "@/redux/services/school/school-settings-types";
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
-import { SectionLoadError, SectionLoading } from "./shared";
+import { useSettingsWrite, type ReadOnlyReason } from "../use-settings-write";
+import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 import { useSettingsBranches } from "../use-settings-branches";
 
 const FIELDS: Array<{
@@ -103,13 +103,20 @@ function boundText(compliance: SecurityCompliance | undefined, suffix: string) {
  *
  * The branch picker is absent for a school with one branch, because there is
  * nothing to choose between, and offers only the branches the reader reaches.
+ * A reader who covers only some branches opens on their own, and reads the
+ * school's rules without changing them (`useSettingsWrite`).
  */
 export function SecuritySection() {
-  const { hasPermission } = usePermissions();
-  const canSave = hasPermission(P.UPDATE_SETTINGS);
-  const [branch, setBranch] = useState("");
   const branches = useSettingsBranches();
-  const query = useGetSchoolSecuritySettingsQuery({ branch: branch || undefined });
+  // A reader who cannot act for the whole school opens on their own branch.
+  const [picked, setPicked] = useState<string | null>(null);
+  const branch =
+    picked ?? (!branches.wholeSchool && branches.choices[0] ? String(branches.choices[0].id) : "");
+  const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS, branch);
+  const query = useGetSchoolSecuritySettingsQuery(
+    { branch: branch || undefined },
+    { skip: branches.isLoading },
+  );
   // currentData, not data: while another branch loads, `data` still holds the
   // previous scope's values, and a save from that form would write them here.
   const data = query.currentData?.data;
@@ -131,7 +138,7 @@ export function SecuritySection() {
               aria-label="Which settings to edit"
               value={branch}
               disabled={branches.isLoading}
-              onChange={(event) => setBranch(event.target.value)}
+              onChange={(event) => setPicked(event.target.value)}
             >
               <option value="">Whole school</option>
               {branchList.map((item) => (
@@ -155,6 +162,8 @@ export function SecuritySection() {
           branch={branch}
           scopeName={branchName ?? "the whole school"}
           canSave={canSave}
+          reason={reason}
+          branchPicker={branches.applies && branchList.length > 0}
         />
       ) : query.isError ? (
         <SectionLoadError
@@ -173,11 +182,15 @@ function SecurityForm({
   branch,
   scopeName,
   canSave,
+  reason,
+  branchPicker,
 }: {
   data: SecuritySettingsData;
   branch: string;
   scopeName: string;
   canSave: boolean;
+  reason: ReadOnlyReason | null;
+  branchPicker: boolean;
 }) {
   const [save, { isLoading: saving }] = useUpdateSchoolSecuritySettingsMutation();
   const [draft, setDraft] = useState<Record<SecuritySettingKey, string>>(
@@ -284,9 +297,9 @@ function SecurityForm({
           </Button>
         </div>
       ) : (
-        <p className="px-4 py-3.5 font-mont text-xs text-gray-05 sm:px-5">
-          You can read these rules. Changing them is the school administrator's to do.
-        </p>
+        <div className="px-4 py-3.5 sm:px-5">
+          <ReadOnlyNote reason={reason} branchPicker={branchPicker} />
+        </div>
       )}
     </SettingsPanel>
   );

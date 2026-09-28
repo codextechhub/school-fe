@@ -2,10 +2,10 @@ import { Info } from "lucide-react";
 import { SettingsSectionHeader } from "@/components/settings/settings-layout";
 import { LogoField } from "@/components/school-profile/logo-field";
 import { SchoolProfileForm } from "@/components/school-profile/school-profile-form";
-import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import { useGetSchoolProfileQuery } from "@/redux/services/school/school-api";
 import { parseApiError } from "@/utils/api-error";
+import { readOnlySentence, useSettingsWrite } from "../use-settings-write";
 import { SectionLoadError, SectionLoading } from "./shared";
 
 /**
@@ -18,7 +18,7 @@ import { SectionLoadError, SectionLoading } from "./shared";
  * shows them locked.
  */
 export function ProfileSection() {
-  const { hasPermission } = usePermissions();
+  const { canSave: canEdit, reason } = useSettingsWrite(P.UPDATE_SCHOOL_PROFILE);
   const { data, isLoading, error, refetch } = useGetSchoolProfileQuery();
   const profile = data?.data;
 
@@ -31,8 +31,6 @@ export function ProfileSection() {
       />
     );
   }
-
-  const canEdit = hasPermission(P.UPDATE_SCHOOL_PROFILE);
 
   return (
     <div className="space-y-5">
@@ -57,7 +55,11 @@ export function ProfileSection() {
 
       <LogoField logoUrl={profile.logo} canEdit={canEdit} />
 
-      <SchoolProfileForm profile={profile} canEdit={canEdit} />
+      <SchoolProfileForm
+        profile={profile}
+        canEdit={canEdit}
+        readOnlyText={reason ? readOnlySentence(reason, { subject: "your school's profile", one: true }) : undefined}
+      />
     </div>
   );
 }

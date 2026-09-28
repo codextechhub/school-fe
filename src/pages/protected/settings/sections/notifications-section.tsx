@@ -24,8 +24,9 @@ import {
   useSetWorkflowNotificationSettingMutation,
 } from "@/redux/services/dashboard/workflow-api";
 import { parseApiError, writeErrorMessage } from "@/utils/api-error";
-import { SectionLoadError, SectionLoading } from "./shared";
+import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 import { useSettingsBranches } from "../use-settings-branches";
+import { useSettingsWrite } from "../use-settings-write";
 
 /** "vs_finance" reads as "Finance"; an unknown module still reads as words. */
 function moduleName(sourceModule: string) {
@@ -256,6 +257,7 @@ export function NotificationsSection() {
 function ApprovalEmails() {
   const { data, isLoading } = useGetWorkflowNotificationSettingQuery();
   const [save, { isLoading: saving }] = useSetWorkflowNotificationSettingMutation();
+  const { canSave, reason } = useSettingsWrite(P.UPDATE_WORKFLOW_TEMPLATE);
   // Notifying is what the engine does when a school has chosen nothing.
   const enabled = data?.enabled ?? true;
 
@@ -284,12 +286,17 @@ function ApprovalEmails() {
             <Switch
               aria-label="Approval notifications"
               checked={enabled}
-              disabled={isLoading || saving}
+              disabled={!canSave || isLoading || saving}
               onCheckedChange={choose}
             />
           </label>
         }
       />
+      {reason ? (
+        <div className="px-4 pb-3.5 sm:px-5">
+          <ReadOnlyNote reason={reason} subject="this switch" one />
+        </div>
+      ) : null}
     </SettingsPanel>
   );
 }
