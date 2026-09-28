@@ -55,7 +55,7 @@ export default function SettingsEnrolmentArticle() {
       <GuideSection id="documents-to-ask-for" title="Documents to ask for">
         <p>Under <strong>Documents to ask for</strong>, tick each document your school wants on file. Until you choose, only the birth certificate is asked for.</p>
         <GuideChecklist items={DOCUMENTS} />
-        <GuideCallout tone="info" title="A prompt, never a gate">A child missing a ticked document can still be enrolled. Their record shows as incomplete until the file is uploaded on their <strong>Documents</strong> tab, because a school registering a child on the day they arrive rarely has every paper in hand.</GuideCallout>
+        <GuideCallout tone="info" title="A prompt, never a gate">A child missing a ticked document can still be enrolled. Their record shows as incomplete until the file is uploaded on their <strong>Documents</strong> tab, because a school registering a child on the day they arrive rarely has every paper in hand. To keep a child off the roll until a document is in, tick it under <strong>Documents needed before enrolling</strong> in <strong>Admissions</strong> instead.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="details-required" title="Details required at enrolment">

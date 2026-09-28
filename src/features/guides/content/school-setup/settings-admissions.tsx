@@ -37,8 +37,13 @@ export default function SettingsAdmissionsArticle() {
 
       <GuideSection id="documents-before-enrolling" title="Documents needed before enrolling">
         <p>Under <strong>Documents needed before enrolling</strong>, tick each document an applicant must have on their record before they can be put on the roll. Leave them all unticked to allow it at once.</p>
-        <p>This checks applicants only. A child enrolled directly with the enrolment form, or brought in from a spreadsheet, is not held back.</p>
-        <GuideCallout tone="info" title="This is a gate, unlike enrolment's list">The documents under Enrolment are a prompt, and a child can be enrolled without them. The ones ticked here stop an applicant being put on the roll until each is uploaded on their record: <em>Tunde Bello cannot be confirmed until the birth certificate and transfer certificate are on their record.</em></GuideCallout>
+        <p>No child joins the roll without these. The rule reaches every way in:</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li><strong>An applicant</strong> is held until the documents are on their record: <em>Tunde Bello cannot be confirmed until the birth certificate and transfer certificate are on their record.</em></li>
+          <li><strong>A child enrolled directly</strong> on the enrolment form must have each one attached before saving.</li>
+          <li><strong>A spreadsheet import</strong> brings the children in as applicants, and each joins the roll once their documents are uploaded.</li>
+        </ul>
+        <GuideCallout tone="info" title="This is a gate, unlike enrolment's list">The documents under Enrolment are a prompt, and a child can be enrolled without them. The ones ticked here keep a child off the roll until each is on their record.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="save-the-rules" title="Save the rules">
