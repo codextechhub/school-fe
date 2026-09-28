@@ -46,8 +46,8 @@ for (const vp of VIEWPORTS) {
     // "left the login page" check must exclude both - checking only /login
     // passes instantly on the redirect without ever authenticating.
     await page.goto(`${BASE}/accounts`, { waitUntil: "networkidle" });
-    await page.getByPlaceholder("you@example.com or STF/0012").fill(EMAIL);
-    await page.getByPlaceholder("Enter your password").fill(PASSWORD);
+    await page.locator('input[autocomplete="username"]').fill(EMAIL);
+    await page.locator('input[type="password"]').fill(PASSWORD);
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL(
       (u) => !u.pathname.includes("/login") && !u.pathname.includes("/accounts"),
