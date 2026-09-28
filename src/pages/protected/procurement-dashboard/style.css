@@ -1,0 +1,188 @@
+.procurement-dashboard {
+  min-width: 0;
+}
+
+.procurement-dashboard .procurement-view-tabs {
+  display: inline-flex;
+  width: max-content;
+  height: 38px;
+  max-width: 100%;
+  border: 1px solid #e3e9f3;
+  border-radius: 999px;
+  background: white;
+  padding: 3px;
+}
+
+.procurement-dashboard .procurement-view-tabs > span {
+  border-radius: 999px;
+  background: #365fba;
+  box-shadow: 0 2px 7px rgb(35 74 145 / 14%);
+}
+
+.procurement-dashboard .procurement-view-tab {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: max-content;
+  padding-inline: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.procurement-dashboard .procurement-view-tab[data-active="true"] {
+  color: white;
+}
+
+.procurement-dashboard .procurement-view-tab[data-active="false"] {
+  color: #415b83;
+}
+
+.procurement-tab-viewport,
+.procurement-tab-panel {
+  position: relative;
+  min-width: 0;
+}
+
+.procurement-tab-viewport {
+  overflow-x: clip;
+}
+
+.procurement-kpi-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+
+.procurement-kpi {
+  --kpi-color: #365fba;
+  --kpi-soft: #eaf0fb;
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 130px;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid #e3e9f3;
+  border-radius: 14px;
+  background: white;
+  padding: 16px;
+  box-shadow: 0 4px 14px rgb(31 55 99 / 3%);
+}
+
+.procurement-kpi::after {
+  position: absolute;
+  right: 32%;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--kpi-color);
+  content: "";
+  opacity: 0.72;
+}
+
+.procurement-kpi--green { --kpi-color: #008d79; --kpi-soft: #e4f6f1; }
+.procurement-kpi--teal { --kpi-color: #007d8f; --kpi-soft: #e4f4f6; }
+.procurement-kpi--amber { --kpi-color: #bb7615; --kpi-soft: #fff2dc; }
+.procurement-kpi--red { --kpi-color: #c7464a; --kpi-soft: #fdebed; }
+.procurement-kpi--violet { --kpi-color: #6d54bf; --kpi-soft: #f0edfc; }
+
+.procurement-kpi-top {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 9px;
+}
+
+.procurement-kpi-icon {
+  display: inline-flex;
+  width: 38px;
+  height: 38px;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: var(--kpi-soft);
+  color: var(--kpi-color);
+}
+
+.procurement-kpi-label {
+  min-width: 0;
+  color: #344460;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.procurement-kpi-value {
+  margin-top: 14px;
+  color: #15234a;
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.procurement-kpi-badge {
+  display: inline-flex;
+  width: max-content;
+  max-width: 100%;
+  align-items: center;
+  gap: 2px;
+  margin-top: 7px;
+  border-radius: 6px;
+  background: var(--kpi-soft);
+  padding: 2px 5px;
+  color: var(--kpi-color);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.procurement-kpi-badge--good { background: #e4f6ed; color: #168154; }
+.procurement-kpi-badge--bad { background: #fdebed; color: #be4146; }
+
+.procurement-kpi-note {
+  min-width: 0;
+  margin-top: auto;
+  padding-top: 10px;
+  color: #697a99;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.procurement-shared-detail { margin-top: 20px; }
+.procurement-shared-detail--has-kpi > .space-y-5 > .grid:first-child { display: none; }
+.procurement-shared-detail--has-kpi > .space-y-5 > .grid:first-child + * { margin-top: 0; }
+
+.procurement-dashboard .procurement-tab-panel section.rounded-md.p-5 {
+  border-color: #e3e9f3;
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgb(31 55 99 / 3%);
+}
+
+.procurement-dashboard .procurement-tab-panel section.rounded-md.p-5 h2 {
+  color: #182950;
+  font-size: 14px;
+}
+
+.procurement-dashboard .procurement-tab-panel section.rounded-md.p-5 button.rounded-md.border {
+  border-color: #e3e9f3;
+  border-radius: 10px;
+  background: #fbfcff;
+}
+
+@media (min-width: 640px) {
+  .procurement-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (min-width: 1280px) {
+  .procurement-kpi-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .procurement-kpi { min-height: 165px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .procurement-dashboard .procurement-view-tabs > span { transition: none; }
+}

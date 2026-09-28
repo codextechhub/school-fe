@@ -8,9 +8,8 @@ import {
   VENDOR_SECTIONS,
 } from "@/pages/protected/procurement/console-sections";
 
-// The procurement screens come from @xvs/finance and are shared with the CodeX
-// console. Route-level code splitting: each area loads on first visit.
-const ProcurementDashboard = lazy(() => import("@/pages/protected/procurement/dashboard"));
+/** The school uses its own dashboard presentation and the shared detailed views. */
+const ProcurementDashboard = lazy(() => import("@/pages/protected/procurement-dashboard"));
 const Vendors = lazy(() => import("@/pages/protected/procurement/vendors"));
 const Requisitions = lazy(() => import("@/pages/protected/procurement/requisitions"));
 const PurchaseOrders = lazy(() => import("@/pages/protected/procurement/purchase-orders"));
