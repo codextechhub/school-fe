@@ -6,7 +6,14 @@
 // system Chrome via channel:"chrome" - no browser download). Override
 // EMAIL/PASSWORD with this app's seeded login; defaults below are console-fe's.
 //
-//   BASE_URL  frontend origin - required
+// The app reads which school it is from the address, so BASE_URL carries the
+// school's slug as a subdomain: http://lagoon-view.localhost:5174, not
+// http://localhost:5174. A bare localhost shows the "This address does not
+// belong to a school" page instead of a login form (unless VITE_DEV_SCHOOL_SLUG
+// is set), and the script stops there saying so. The slug, EMAIL and the
+// school the account belongs to must all name the same school.
+//
+//   BASE_URL  frontend origin with the school's subdomain - required
 //   ROUTES    space/comma-separated paths - required
 //   EMAIL / PASSWORD  seeded super-admin (defaults as drive.mjs)
 
@@ -46,12 +53,20 @@ for (const vp of VIEWPORTS) {
     // "left the login page" check must exclude both - checking only /login
     // passes instantly on the redirect without ever authenticating.
     await page.goto(`${BASE}/accounts`, { waitUntil: "networkidle" });
+    if (await page.getByText("This address does not belong to a school").isVisible()) {
+      console.error(
+        `${BASE} names no school. Put the school's slug in front of localhost, ` +
+          `for example BASE_URL=http://lagoon-view.localhost:5174`,
+      );
+      process.exit(1);
+    }
     await page.locator('input[autocomplete="username"]').fill(EMAIL);
     await page.locator('input[type="password"]').fill(PASSWORD);
     await page.getByRole("button", { name: "Sign in" }).click();
     await page.waitForURL(
       (u) => !u.pathname.includes("/login") && !u.pathname.includes("/accounts"),
-      { timeout: 20000 },
+      // A sign-in is a client-side route change, which never fires "load".
+      { timeout: 20000, waitUntil: "commit" },
     );
     console.log(`[${vp.name}] logged in`);
   } catch (e) {

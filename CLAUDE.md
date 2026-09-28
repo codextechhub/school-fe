@@ -208,10 +208,15 @@ are kept in step - a fix to one of them belongs in both:
   silently stops working.
 
 **Verify, don't assume.** After any screen work run the overflow probe:
-`cd .claude && BASE_URL=<vite-url> ROUTES="/your/routes" node ./mobile-audit.mjs`
-(one-time: `cd .claude && npm init -y && npm i playwright`). **Pass EMAIL and
-PASSWORD**: the script's defaults are console-fe's seeded operator, so without
-them it fails at the login form on this app and reports nothing. It drives each route logged-in at 390px (phone)
+`cd .claude && BASE_URL=http://<school-slug>.localhost:<port> EMAIL=... PASSWORD=... ROUTES="/your/routes" node ./mobile-audit.mjs`
+(one-time: `cd .claude && npm init -y && npm i playwright`). **BASE_URL names
+the school**: the app reads which school it is from the address, so a bare
+`http://localhost:5174` shows "This address does not belong to a school" instead
+of a login form, and the script stops there. Use the school's slug as a
+subdomain, for example `http://lagoon-view.localhost:5174`. **Pass EMAIL and
+PASSWORD** for an account at that same school: the script's defaults are
+console-fe's seeded operator, so without them it fails at the login form on
+this app and reports nothing. It drives each route logged-in at 390px (phone)
 and 820px (tablet), screenshots both to `/tmp/verify-design/shots-responsive/`,
 and reports page-level horizontal overflow with the offending elements. **Look
 at the phone screenshots** - zero overflow with a crushed side-by-side layout
