@@ -12,7 +12,12 @@ import { useBranchLens } from "@/hooks/use-branch-lens";
 import { cn } from "@/lib/utils";
 import { AccessField, useFieldAccess } from "@/components/finance-ui";
 import { CREATING, FIELD_RESOURCE } from "@/lib/field-resources";
-import { writeErrorMessage, fieldErrors, parseApiError } from "@/utils/api-error";
+import {
+  writeErrorMessage,
+  fieldErrors,
+  isOverridableCapacity,
+  parseApiError,
+} from "@/utils/api-error";
 import {
   useEnrolStudentMutation,
   useGetAdmissionPolicyQuery,
@@ -493,7 +498,7 @@ export default function EnrolStudent() {
         setConfirmDuplicate(message);
         return;
       }
-      if (/capacit/i.test(message) && !allowOverCapacity) {
+      if (isOverridableCapacity(error) && !allowOverCapacity) {
         setAllowOverCapacity(true);
         toast.warning(`${message} Save again to go ahead anyway.`);
         return;

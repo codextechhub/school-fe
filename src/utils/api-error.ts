@@ -165,3 +165,15 @@ export function fieldErrorsFor(
   for (const field of fields) if (all[field]) out[field] = all[field];
   return out;
 }
+
+/**
+ * A full class the caller may still fill by saying so (CLASS_AT_CAPACITY).
+ *
+ * Asked by code, never by the words: a school that does not put classes over
+ * capacity refuses with CLASS_FULL, whose sentence also mentions capacity, and
+ * offering "go ahead anyway" there invites a second refusal.
+ */
+export function isOverridableCapacity(error: unknown): boolean {
+  return isApiCode(error, "CLASS_AT_CAPACITY");
+}
+

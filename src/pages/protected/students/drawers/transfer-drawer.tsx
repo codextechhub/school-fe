@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { NativeSelect } from "@/components/ui/native-select";
-import { writeErrorMessage } from "@/utils/api-error";
+import { isOverridableCapacity, writeErrorMessage } from "@/utils/api-error";
 import {
   useAssignClassMutation,
   useGetClassSeatsQuery,
@@ -118,7 +118,7 @@ export function TransferDrawer({
       // The server refuses an over-capacity placement until it is acknowledged.
       // Rather than translating its refusal into our own guess, offer the
       // acknowledgement and let the next attempt carry it.
-      if (/capacit/i.test(message) && !override) {
+      if (isOverridableCapacity(error) && !override) {
         setOverride(true);
         toast.warning(`${message} Save again to go ahead anyway.`);
         return;

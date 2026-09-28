@@ -24,7 +24,7 @@ import {
 } from "@/redux/services/students/students-api";
 import type { BulkResultRow, ClassSeats, StudentRow } from "@/redux/services/students/students-types";
 import { routesPath } from "@/routes/routesPath";
-import { writeErrorMessage } from "@/utils/api-error";
+import { isOverridableCapacity, writeErrorMessage } from "@/utils/api-error";
 
 import { EmptyRing } from "../empty-ring";
 import { formatDate } from "../format";
@@ -168,7 +168,7 @@ export default function ClassesAndTransfers() {
       }
     } catch (error) {
       const message = writeErrorMessage(error, "We could not assign those students.");
-      if (/capacit/i.test(message) && !allowOver) {
+      if (isOverridableCapacity(error) && !allowOver) {
         setAcknowledged(true);
         toast.warning(`${message} Press Assign again to go ahead anyway.`);
         return;
