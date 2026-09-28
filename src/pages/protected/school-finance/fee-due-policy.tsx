@@ -31,7 +31,8 @@ import {
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
 import { cn } from "@/lib/utils";
-import { usePermissions } from "@/hooks/use-permissions";
+import { useSettingsWrite } from "@/pages/protected/settings/use-settings-write";
+import { ReadOnlyNote } from "@/pages/protected/settings/sections/shared";
 import { P } from "@/permissions";
 import {
   useGetFeeDuePolicyQuery,
@@ -59,7 +60,8 @@ function formatDue(iso: string) {
  */
 function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
   const [save, { isLoading: isSaving }] = useUpdateFeeDuePolicyMutation();
-  const canEdit = usePermissions().hasPermission(P.UPDATE_FEES);
+  // One rule for every branch, so a branch-bound reader only reads it.
+  const { canSave: canEdit, reason } = useSettingsWrite(P.UPDATE_FEES);
   const [basis, setBasis] = useState<FeeDueBasis>(policy.basis);
   const [days, setDays] = useState(String(policy.days_after));
 
@@ -100,6 +102,8 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
           ) : undefined
         }
       />
+
+      <ReadOnlyNote reason={reason} subject="this rule" one />
 
       <SettingsPanel
         title="Rule"
