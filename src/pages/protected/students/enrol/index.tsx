@@ -23,6 +23,7 @@ import {
   useGetAdmissionPolicyQuery,
   useGetEnrolmentRulesQuery,
   useGetGuardianRulesQuery,
+  useGetAdmissionRulesQuery,
   useGetClassSeatsQuery,
 } from "@/redux/services/students/students-api";
 import {
@@ -103,7 +104,7 @@ const STEPS: readonly Step[] = [
     hint: "Contact and medical.",
     fields: [
       "address", "phone", "email", "blood_group", "allergies", "conditions",
-      "emergency_contact_name", "emergency_contact_phone",
+      "emergency_contact_name", "emergency_contact_phone", "documents",
     ],
     optional: true,
   },
@@ -252,6 +253,21 @@ export default function EnrolStudent() {
   );
   const { data: rulesData } = useGetEnrolmentRulesQuery();
   const guardianRules = useGetGuardianRulesQuery().data?.data;
+  const admissionRules = useGetAdmissionRulesQuery().data?.data;
+  // The documents a direct enrolment must carry; an applicant needs none yet.
+  const requiredDocs = useMemo(
+    () => (asApplicant ? [] : (admissionRules?.required_documents_to_confirm ?? [])),
+    [asApplicant, admissionRules],
+  );
+  const docLabels = useMemo(
+    () =>
+      Object.fromEntries(
+        (admissionRules?.document_types ?? []).map((d) => [d.value, d.label]),
+      ) as Record<string, string>,
+    [admissionRules],
+  );
+  const docLabel = (type: string) => docLabels[type] ?? type;
+  const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const rules = rulesData?.data;
   const requiredFields = useMemo(
     () => new Set(rules?.required_fields ?? []),
@@ -372,6 +388,13 @@ export default function EnrolStudent() {
         ? Boolean(g.guardianId)
         : g.first_name.trim() && g.last_name.trim() && g.phone.trim(),
     );
+    const missingDocs = requiredDocs.filter((type) => !docFiles[type]);
+    if (missingDocs.length > 0) {
+      out.documents = `Attach the ${missingDocs
+        .map((t) => (docLabels[t] ?? t).toLowerCase())
+        .join(" and ")} before enrolling. Save as an applicant instead to add them later.`;
+    }
+
     const minimum = guardianRules?.min_per_student ?? 1;
     if (filled.length === 0) {
       out.guardians = "Link at least one guardian.";
@@ -400,6 +423,9 @@ export default function EnrolStudent() {
     requiredFields,
     classes,
     guardianRules,
+    requiredDocs,
+    docFiles,
+    docLabels,
   ]);
 
   const valid = Object.keys(problems).length === 0;
@@ -419,7 +445,9 @@ export default function EnrolStudent() {
   };
   // A step is skippable only while the school requires nothing in it.
   const stepIsOptional = (s: Step) =>
-    Boolean(s.optional) && !s.fields.some((f) => requiredFields.has(f));
+    Boolean(s.optional) &&
+    !s.fields.some((f) => requiredFields.has(f)) &&
+    !(s.fields.includes("documents") && requiredDocs.length > 0);
   const missingIn = (key: StepKey) =>
     ownedBy(key).filter((f) => problems[f]).length;
 
@@ -524,7 +552,10 @@ export default function EnrolStudent() {
       return;
     }
     try {
-      const created = await enrol(body(extra)).unwrap();
+      const created = await enrol({
+        body: body(extra),
+        files: asApplicant ? undefined : docFiles,
+      }).unwrap();
       toast.success(created.message || "Student saved.");
       navigate(
         asApplicant
@@ -929,6 +960,33 @@ export default function EnrolStudent() {
       )}
 
       {step === "details" && (<>
+      {requiredDocs.length > 0 && (
+        <Section
+          title="Documents"
+          note="Your school needs these before a child is enrolled. They are attached when you save."
+        >
+          <div className="grid gap-3">
+            {requiredDocs.map((type) => (
+              <DocumentPick
+                key={type}
+                label={docLabel(type)}
+                file={docFiles[type]}
+                onPick={(file) =>
+                  setDocFiles((current) => {
+                    const next = { ...current };
+                    if (file) next[type] = file;
+                    else delete next[type];
+                    return next;
+                  })
+                }
+              />
+            ))}
+            {err("documents") && (
+              <p role="alert" className="text-xs text-error-text">{err("documents")}</p>
+            )}
+          </div>
+        </Section>
+      )}
       <Section data-guide="student-enrol.step-details" title="Contact">
         <div className="grid gap-3.5 sm:grid-cols-2">
           <AccessField access={access} name="address" creating>
@@ -1316,3 +1374,51 @@ function Line({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+/**
+ * One document chosen for the save: pick a file, see its name, clear it.
+ *
+ * The file is held in the form and sent with the enrolment, not uploaded on
+ * its own, because a document can only belong to a child who exists.
+ */
+function DocumentPick({
+  label,
+  file,
+  onPick,
+}: {
+  label: string;
+  file?: File;
+  onPick: (file: File | null) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-white px-3.5 py-3">
+      <div className="min-w-0">
+        <p className="text-sm font-medium text-black-01">
+          {label} <span className="text-error-text">*</span>
+        </p>
+        <p className="mt-0.5 truncate text-xs text-gray-05">
+          {file ? file.name : "Not attached yet"}
+        </p>
+      </div>
+      <div className="flex shrink-0 items-center gap-2">
+        <label className="inline-flex h-8 cursor-pointer items-center rounded-md border border-border px-3 text-sm font-medium hover:bg-accent">
+          {file ? "Replace" : "Attach"}
+          <input
+            type="file"
+            className="sr-only"
+            onChange={(e) => {
+              onPick(e.target.files?.[0] ?? null);
+              e.target.value = "";
+            }}
+          />
+        </label>
+        {file && (
+          <Button size="sm" variant="ghost" onClick={() => onPick(null)}>
+            Remove
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+

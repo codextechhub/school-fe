@@ -512,8 +512,26 @@ export const studentsApi = baseApi.injectEndpoints({
      * registrar - "is this a different child with the same name and birthday?"
      * is not ours to answer.
      */
-    enrolStudent: builder.mutation<Envelope<StudentDetail>, EnrolWrite>({
-      query: (body) => ({ url: `/students/`, method: "POST", body }),
+    /**
+     * Enrol, or save an applicant.
+     *
+     * With `files`, the save is multipart: the body travels as a JSON string in
+     * `payload` and each document as `document_<TYPE>`, so a school that needs
+     * documents before enrolling gets them in the same save that creates the
+     * child. Without files it is the plain JSON it always was.
+     */
+    enrolStudent: builder.mutation<
+      Envelope<StudentDetail>,
+      { body: EnrolWrite; files?: Record<string, File> }
+    >({
+      query: ({ body, files }) => {
+        const entries = Object.entries(files ?? {});
+        if (entries.length === 0) return { url: `/students/`, method: "POST", body };
+        const form = new FormData();
+        form.append("payload", JSON.stringify(body));
+        for (const [type, file] of entries) form.append(`document_${type}`, file);
+        return { url: `/students/`, method: "POST", body: form };
+      },
       extraOptions: { silent: true },
       invalidatesTags: ["Students", "Guardians"],
     }),

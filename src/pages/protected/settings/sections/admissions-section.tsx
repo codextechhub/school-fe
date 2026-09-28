@@ -246,7 +246,7 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
 
       <SettingsPanel
         title="Documents needed before enrolling"
-        description="An applicant cannot be put on the roll until these are on their record. This checks applicants only: a child enrolled directly, or from a spreadsheet, is not held back. Leave all unticked to allow it at once."
+        description="No child joins the roll without these. An applicant is held until they are on their record, a child enrolled directly must have them attached, and a spreadsheet brings children in as applicants. Leave all unticked to enrol at once."
       >
         <div className="grid grid-cols-1 gap-2.5 px-4 py-4 sm:grid-cols-2 sm:px-5">
           {rules.document_types.map((doc) => (
