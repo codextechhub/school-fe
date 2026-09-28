@@ -8,6 +8,8 @@ import type {
   EnrolmentRulesUpdate,
   GuardianRules,
   GuardianRulesUpdate,
+  AdmissionRules,
+  AdmissionRulesUpdate,
   BulkResultRow,
   ClassSeats,
   PromotionBatch,
@@ -686,6 +688,31 @@ export const studentsApi = baseApi.injectEndpoints({
       invalidatesTags: ["Students"],
     }),
 
+    getAdmissionRules: builder.query<Envelope<AdmissionRules>, void>({
+      query: () => ({ url: `/students/admission-rules/`, method: "GET" }),
+      providesTags: ["Students"],
+    }),
+
+    updateAdmissionRules: builder.mutation<Envelope<AdmissionRules>, AdmissionRulesUpdate>({
+      query: (body) => ({ url: `/students/admission-rules/`, method: "PUT", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    /** Move an applicant between the school's stages, or extend an offer. */
+    moveApplicantStage: builder.mutation<
+      Envelope<StudentRow>,
+      { id: number; stage: number | null; offer_expires_on?: string; reason?: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/stage/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
     updateEnrolmentRules: builder.mutation<
       Envelope<EnrolmentRules>,
       EnrolmentRulesUpdate
@@ -723,6 +750,9 @@ export const {
   useUpdateEnrolmentRulesMutation,
   useGetGuardianRulesQuery,
   useUpdateGuardianRulesMutation,
+  useGetAdmissionRulesQuery,
+  useUpdateAdmissionRulesMutation,
+  useMoveApplicantStageMutation,
   useGetClassSeatsQuery,
   usePreviewPromotionMutation,
   useRunPromotionMutation,

@@ -1,6 +1,7 @@
 import type { ElementType } from "react";
 import {
   BellRing,
+  ClipboardList,
   Hash,
   LayoutGrid,
   Landmark,
@@ -31,6 +32,7 @@ import {
 import { AdmissionNumbersSection } from "./sections/admission-numbers-section";
 import { EnrolmentSection } from "./sections/enrolment-section";
 import { GuardiansSection } from "./sections/guardians-section";
+import { AdmissionsSection } from "./sections/admissions-section";
 import { MoreSection } from "./sections/more-section";
 import { useSettingsDoors } from "./use-settings-doors";
 import { NotificationsSection } from "./sections/notifications-section";
@@ -51,6 +53,7 @@ const SECTION_META: Record<
   notifications: { title: "Notifications", description: "Which events send email", icon: BellRing },
   enrolment: { title: "Enrolment", description: "Ages, documents, classes", icon: UserPlus },
   guardians: { title: "Guardians", description: "Contacts and siblings", icon: Users },
+  admissions: { title: "Admissions", description: "Steps and offers", icon: ClipboardList },
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash },
   payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark },
   "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog },
@@ -63,6 +66,7 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   notifications: NotificationsSection,
   enrolment: EnrolmentSection,
   guardians: GuardiansSection,
+  admissions: AdmissionsSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
   "staff-profiles": StaffProfilesSection,
@@ -147,6 +151,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   notifications: "Which events also send an email to the people they concern.",
   enrolment: "How old a new pupil may be, which documents and details are required, and how full a class may get.",
   guardians: "How many guardians a child needs, whether their email is required, how siblings are recognised, and your own relationship words.",
+  admissions: "Your school's own admission steps, how long an offer stays open, and the documents needed before an applicant is enrolled.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
   "staff-profiles": "How much of a colleague's profile their line managers and other colleagues see.",

@@ -6,6 +6,7 @@ const AREAS = [
   ["Notifications", "Which events also send an email to the people they concern, and whether approvals email anybody."],
   ["Enrolment", "How old a new pupil may be, which documents and details are required, and how full a class may get."],
   ["Guardians", "How many guardians each child needs, whether a new guardian needs an email, how siblings are recognised, and your own relationship words."],
+  ["Admissions", "The steps an applicant goes through, which of them is an offer and for how long, and the documents needed before enrolling."],
   ["Admission numbers", "Whether every child needs an admission number, and what a valid one looks like."],
   ["Payroll", "Whether the whole school is paid in one run, or each branch runs its own."],
   ["Staff profiles", "How much of a colleague's profile their line managers and other colleagues see."],
@@ -14,7 +15,7 @@ const AREAS = [
 
 const PROBLEMS = [
   ["There is no Settings in the sidebar", "Your role holds none of the keys any settings area checks. Ask your school administrator if you need one."],
-  ["An area you expect is missing", "Only the areas your role can open are shown. Some areas also depend on your school's plan: Enrolment, Guardians and Admission numbers need the students module, Notifications needs email alerts, and Payroll needs the advanced finance band."],
+  ["An area you expect is missing", "Only the areas your role can open are shown. Some areas also depend on your school's plan: Enrolment, Guardians, Admissions and Admission numbers need the students module, Notifications needs email alerts, and Payroll needs the advanced finance band."],
   ["A link to an area opens the overview instead", "The address is right, but that area is not open to your role, so XVS shows the overview rather than an error."],
   ["An area says it is not open to your account", "Your role changed while the page was open, or your school's plan did. Ask your school administrator."],
 ] as const;

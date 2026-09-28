@@ -28,10 +28,16 @@ import { writeErrorMessage } from "@/utils/api-error";
 import {
   useConfirmApplicantMutation,
   useGetAdmissionPolicyQuery,
+  useGetAdmissionRulesQuery,
   useGetStudentsQuery,
+  useMoveApplicantStageMutation,
   useRejectApplicantMutation,
 } from "@/redux/services/students/students-api";
-import type { StudentRow } from "@/redux/services/students/students-types";
+import type {
+  AdmissionStage,
+  StudentRow,
+} from "@/redux/services/students/students-types";
+import { NativeSelect } from "@/components/ui/native-select";
 
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { DrawerShell, Field, inputClass } from "../drawers/drawer-shell";
@@ -76,9 +82,13 @@ export default function Applicants() {
     closed: 1,
   });
 
+  // The school's own admission steps; none means it admits on the spot.
+  const stages = useGetAdmissionRulesQuery().data?.data.stages ?? [];
+  const [stageFilter, setStageFilter] = useState<number | "none" | undefined>();
   const waiting = useGetStudentsQuery({
     ...lens,
     status: "APPLICANT",
+    stage: stageFilter,
     page: pages.waiting,
   });
   const placement = useGetStudentsQuery({
@@ -141,6 +151,17 @@ export default function Applicants() {
         onChange={setStage}
       />
 
+      {stage === "waiting" && stages.length > 0 && (
+        <StageFilter
+          stages={stages}
+          value={stageFilter}
+          onChange={(next) => {
+            setStageFilter(next);
+            setPage("waiting", 1);
+          }}
+        />
+      )}
+
       {stage === "waiting" && (
         <StagePanel
           title="Waiting on a decision"
@@ -156,9 +177,11 @@ export default function Applicants() {
           page={waiting.data?.pagination.currentPage ?? 1}
           totalPages={waiting.data?.pagination.totalPages ?? 1}
           onPageChange={(page) => setPage("waiting", page)}
+          details={stages.length > 0 ? (student) => <StageLine student={student} /> : undefined}
           actions={(student) => (
             // Confirm and close are record updates on the server, not transitions.
             <PermissionGate permission={P.MODIFY_STUDENT}>
+              {stages.length > 0 && <StageControls student={student} stages={stages} />}
               <Button size="sm" onClick={() => setEnrolling(student)}>
                 Put on the roll
               </Button>
@@ -352,6 +375,7 @@ function StagePanel({
   emptyBody,
   tone,
   actions,
+  details,
   onOpen,
   page,
   totalPages,
@@ -368,6 +392,8 @@ function StagePanel({
   emptyBody: string;
   tone: "amber" | "green" | "gray";
   actions?: (student: StudentRow) => React.ReactNode;
+  /** Extra lines on each card, such as the admission step and its offer. */
+  details?: (student: StudentRow) => React.ReactNode;
   onOpen: (id: number) => void;
   page: number;
   totalPages: number;
@@ -468,6 +494,7 @@ function StagePanel({
                     <CardRow label="Guardian">
                       {s.primary_guardian || "Nobody linked"}
                     </CardRow>
+                    {details?.(s)}
                     <p className="mt-1 text-xs font-medium text-gray-01">
                       {waitingLine(s)}
                     </p>
@@ -697,3 +724,139 @@ function CloseApplication({
     </>
   );
 }
+
+/**
+ * Narrow the waiting list to one admission step.
+ *
+ * "Not started" is an applicant no step has been given yet. Counts are the
+ * server's, per step, in the reader's branches.
+ */
+function StageFilter({
+  stages,
+  value,
+  onChange,
+}: {
+  stages: AdmissionStage[];
+  value: number | "none" | undefined;
+  onChange: (next: number | "none" | undefined) => void;
+}) {
+  const chips: { key: string; label: string; value: number | "none" | undefined; count?: number }[] = [
+    { key: "all", label: "All steps", value: undefined },
+    { key: "none", label: "Not started", value: "none" },
+    ...[...stages]
+      .sort((a, b) => a.position - b.position)
+      .map((s) => ({ key: String(s.id), label: s.name, value: s.id as number, count: s.applicants })),
+  ];
+  return (
+    <div className="flex max-w-full gap-2 overflow-x-auto pb-1" role="group" aria-label="Admission step">
+      {chips.map((chip) => {
+        const active = chip.value === value;
+        return (
+          <button
+            key={chip.key}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(chip.value)}
+            className={cn(
+              "shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+              active ? "border-primary bg-primary/5 text-primary" : "border-border bg-white text-gray-01 hover:border-primary/40",
+            )}
+          >
+            {chip.label}
+            {chip.count != null ? <span className="ml-1.5 text-gray-05">{chip.count}</span> : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The step an applicant is at, and where an offer stands. */
+function StageLine({ student }: { student: StudentRow }) {
+  return (
+    <>
+      <CardRow label="Step">{student.admission_stage_name || "Not started"}</CardRow>
+      {student.offer_expires_on ? (
+        <p
+          className={cn(
+            "text-xs",
+            student.offer_expired ? "font-medium text-amber-700" : "text-gray-05",
+          )}
+        >
+          {student.offer_expired
+            ? `Offer expired on ${formatDate(student.offer_expires_on)}. Extend it, move them on, or close the application.`
+            : `Offer open until ${formatDate(student.offer_expires_on)}.`}
+        </p>
+      ) : null}
+    </>
+  );
+}
+
+/**
+ * Move an applicant to another step, or give an expired offer seven more days.
+ *
+ * Entering an offer step starts its window on the server, from the school's
+ * own day; extending sets a new last day explicitly.
+ */
+function StageControls({
+  student,
+  stages,
+}: {
+  student: StudentRow;
+  stages: AdmissionStage[];
+}) {
+  const [move, { isLoading }] = useMoveApplicantStageMutation();
+  const ordered = [...stages].sort((a, b) => a.position - b.position);
+
+  const send = (stage: number | null, offerExpiresOn?: string, done?: string) =>
+    move({ id: student.id, stage, ...(offerExpiresOn ? { offer_expires_on: offerExpiresOn } : {}) })
+      .unwrap()
+      .then(() => toast.success(done ?? `${student.full_name} moved.`))
+      .catch((error) => toast.error(writeErrorMessage(error, "That move could not be made.")));
+
+  const extend = () => {
+    const next = new Date();
+    next.setDate(next.getDate() + 7);
+    const iso = [
+      next.getFullYear(),
+      String(next.getMonth() + 1).padStart(2, "0"),
+      String(next.getDate()).padStart(2, "0"),
+    ].join("-");
+    return send(
+      student.admission_stage ?? null,
+      iso,
+      `${student.full_name}'s offer is open until ${formatDate(iso)}.`,
+    );
+  };
+
+  return (
+    <>
+      {/* The select's own wrapper is full width; this box sets its size. */}
+      <div className="w-40">
+      <NativeSelect
+        size="sm"
+        aria-label={`Move ${student.full_name} to a step`}
+        value={student.admission_stage == null ? "" : String(student.admission_stage)}
+        disabled={isLoading}
+        onChange={(event) => {
+          const value = event.target.value;
+          const stage = value === "" ? null : Number(value);
+          const name = ordered.find((s) => s.id === stage)?.name ?? "Not started";
+          send(stage, undefined, `${student.full_name} moved to ${name}.`);
+        }}
+      >
+        <option value="">Not started</option>
+        {ordered.map((s) => (
+          <option key={s.id} value={String(s.id)}>{s.name}</option>
+        ))}
+      </NativeSelect>
+      </div>
+      {student.offer_expired ? (
+        <Button size="sm" variant="outline" disabled={isLoading} onClick={extend}>
+          Extend 7 days
+        </Button>
+      ) : null}
+    </>
+  );
+}
+

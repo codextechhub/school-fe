@@ -26,6 +26,7 @@ export const SCHOOL_SETTINGS_SECTIONS = [
   "notifications",
   "enrolment",
   "guardians",
+  "admissions",
   "admission-numbers",
   "payroll",
   "staff-profiles",
@@ -78,6 +79,7 @@ export const SECTION_GATES: Record<
   },
   enrolment: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   guardians: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
+  admissions: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   "admission-numbers": { anyOf: [P.MODIFY_STUDENT], capability: "students" },
   payroll: { anyOf: [P.VIEW_SETTINGS], capability: "finance_advanced" },
   // Read on the settings key; saved on the Field Access key inside the section.

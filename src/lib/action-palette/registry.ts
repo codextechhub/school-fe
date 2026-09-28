@@ -800,6 +800,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.SETTINGS.GUARDIANS },
   },
   {
+    id: "view-admission-settings",
+    label: "View admission steps",
+    aliases: [
+      "admission stages", "entrance exam", "interview", "offer expiry",
+      "documents before enrolling", "admissions settings",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.admissions.anyOf },
+    run: { to: R.SETTINGS.ADMISSIONS },
+  },
+  {
     id: "view-admission-number-settings",
     label: "View admission number rule",
     aliases: ["admission numbers", "admission number format", "numbering"],

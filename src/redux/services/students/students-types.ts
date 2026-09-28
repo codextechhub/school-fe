@@ -66,6 +66,14 @@ export interface StudentRow extends StudentScoped {
    * would have been a request per applicant.
    */
   applied_on: string | null;
+  /** The school's own admission stage an applicant is at; null before any. */
+  admission_stage?: number | null;
+  admission_stage_name?: string;
+  stage_entered_on?: string | null;
+  /** Set while the applicant sits at an offer stage. */
+  offer_expires_on?: string | null;
+  /** The offer's window has passed and nobody has acted: a person decides. */
+  offer_expired?: boolean;
 }
 
 /**
@@ -519,6 +527,36 @@ export interface GuardianRules {
   relationships: LabelledOption[];
 }
 
+/** One step of a school's own admissions, in its order. */
+export interface AdmissionStage {
+  id: number;
+  name: string;
+  position: number;
+  /** An offer the family has `offer_valid_days` to accept. */
+  is_offer: boolean;
+  offer_valid_days: number | null;
+  /** Applicants at this stage now, in the reader's branches. */
+  applicants: number;
+}
+
+/**
+ * The school's admission rules: `/v1/students/admission-rules/`.
+ *
+ * No stages means a school admits on the spot, as it always could.
+ */
+export interface AdmissionRules {
+  stages: AdmissionStage[];
+  required_documents_to_confirm: string[];
+  document_types: LabelledOption[];
+}
+
+export interface AdmissionRulesUpdate {
+  /** The whole ordered list; a stage left out is removed. */
+  stages: { id?: number; name: string; is_offer: boolean; offer_valid_days: number | null }[];
+  required_documents_to_confirm: string[];
+  reason?: string;
+}
+
 export type GuardianRulesUpdate = Pick<
   GuardianRules,
   "min_per_student" | "email_required" | "matching" | "extra_relationships"
@@ -680,5 +718,7 @@ export interface StudentListArgs {
    * flags that back as `status_is_current`.
    */
   session?: number;
+  /** An admission stage id, or "none" for applicants at no stage yet. */
+  stage?: number | "none";
   page?: number;
 }
