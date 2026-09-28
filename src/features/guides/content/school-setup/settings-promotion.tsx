@@ -7,7 +7,7 @@ const CHOICES = {
   ],
   notAttending: [
     ["Hold them where they are", "The default. A student confirmed and placed but not yet marked as attending waits for a person to decide."],
-    ["Move them up too", "They go up with the class they were placed in, like everybody else."],
+    ["Move them up too", "They go up with the class they were placed in and are marked as attending, as when a class is given by hand."],
   ],
   arms: [
     ["Keep each arm", "The default. JSS1 B moves into JSS2 B. Where that arm does not exist next year, the first class at that level takes them."],

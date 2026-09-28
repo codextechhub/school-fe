@@ -50,7 +50,7 @@ const NOT_PLACED: Choice<PromotionHoldOrMove>[] = [
   {
     value: "PROMOTE",
     label: "Move them up too",
-    description: "They go up with the class they were placed in, like everybody else.",
+    description: "They go up with the class they were placed in and are marked as attending, as when a class is given by hand.",
   },
 ];
 
