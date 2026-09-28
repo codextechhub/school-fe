@@ -175,7 +175,7 @@ export const ACADEMICS_GUIDES = [
     ],
     estimatedMinutes: 6,
     owner: OWNER,
-    reviewedAt: "2026-09-27",
+    reviewedAt: "2026-09-28",
     risk: "medium",
     status: "published",
     relatedGuideIds: [

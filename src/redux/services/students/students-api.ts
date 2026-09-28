@@ -4,6 +4,8 @@ import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import type {
   AdmissionPolicy,
+  EnrolmentRules,
+  EnrolmentRulesUpdate,
   BulkResultRow,
   ClassSeats,
   PromotionBatch,
@@ -623,8 +625,15 @@ export const studentsApi = baseApi.injectEndpoints({
     }),
 
     /** Read with `view`, so the enrolment form can render the rule's hint. */
-    getAdmissionPolicy: builder.query<Envelope<AdmissionPolicy>, void>({
-      query: () => ({ url: `/students/admission-number-policy/`, method: "GET" }),
+    getAdmissionPolicy: builder.query<
+      Envelope<AdmissionPolicy>,
+      { branch?: string } | void
+    >({
+      query: (arg) => ({
+        url: `/students/admission-number-policy/`,
+        method: "GET",
+        params: arg && arg.branch ? { branch: arg.branch } : undefined,
+      }),
       providesTags: ["Students"],
     }),
 
@@ -634,13 +643,40 @@ export const studentsApi = baseApi.injectEndpoints({
      */
     updateAdmissionPolicy: builder.mutation<
       Envelope<Omit<AdmissionPolicy, "suggestion">>,
-      Omit<AdmissionPolicy, "suggestion">
+      Omit<AdmissionPolicy, "suggestion" | "source"> & { branch?: string }
     >({
-      query: (body) => ({
+      query: ({ branch, ...body }) => ({
         url: `/students/admission-number-policy/`,
         method: "PUT",
+        params: branch ? { branch } : undefined,
         body,
       }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    /** A branch goes back to following the school's rule. */
+    resetBranchAdmissionPolicy: builder.mutation<Envelope<AdmissionPolicy>, string>({
+      query: (branch) => ({
+        url: `/students/admission-number-policy/`,
+        method: "DELETE",
+        params: { branch },
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
+    /** Read by every form that enrols or edits a child. */
+    getEnrolmentRules: builder.query<Envelope<EnrolmentRules>, void>({
+      query: () => ({ url: `/students/enrolment-rules/`, method: "GET" }),
+      providesTags: ["Students"],
+    }),
+
+    updateEnrolmentRules: builder.mutation<
+      Envelope<EnrolmentRules>,
+      EnrolmentRulesUpdate
+    >({
+      query: (body) => ({ url: `/students/enrolment-rules/`, method: "PUT", body }),
       extraOptions: { silent: true },
       invalidatesTags: ["Students"],
     }),
@@ -668,6 +704,9 @@ export const {
   useDeleteGuardianPhotoMutation,
   useGetAdmissionPolicyQuery,
   useUpdateAdmissionPolicyMutation,
+  useResetBranchAdmissionPolicyMutation,
+  useGetEnrolmentRulesQuery,
+  useUpdateEnrolmentRulesMutation,
   useGetClassSeatsQuery,
   usePreviewPromotionMutation,
   useRunPromotionMutation,

@@ -155,6 +155,7 @@ export const routesPath = {
       PROFILE: "/settings/profile",
       SECURITY: "/settings/security",
       NOTIFICATIONS: "/settings/notifications",
+      ENROLMENT: "/settings/enrolment",
       ADMISSION_NUMBERS: "/settings/admission-numbers",
       PAYROLL: "/settings/payroll",
       MORE: "/settings/more",

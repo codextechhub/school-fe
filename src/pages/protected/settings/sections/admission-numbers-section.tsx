@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import {
@@ -10,11 +11,13 @@ import {
 } from "@/components/settings/settings-layout";
 import {
   useGetAdmissionPolicyQuery,
+  useResetBranchAdmissionPolicyMutation,
   useUpdateAdmissionPolicyMutation,
 } from "@/redux/services/students/students-api";
 import type { AdmissionPolicy } from "@/redux/services/students/students-types";
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { SectionLoadError, SectionLoading } from "./shared";
+import { useSettingsBranches } from "../use-settings-branches";
 
 type Mode = "none" | "simple" | "custom";
 
@@ -49,20 +52,19 @@ function compiles(pattern: string) {
  *
  * The hint is what the enrolment form prints under the field, so it is what a
  * clerk actually reads.
+ *
+ * A branch may keep its own rule (Lekki numbers `LK/`, the Annex `AX/`). A
+ * branch without one follows the school's, and a number is unique across the
+ * whole school whichever rule it follows. The picker offers only the branches
+ * the reader reaches, and is absent at a single-branch school.
  */
 export function AdmissionNumbersSection() {
-  const query = useGetAdmissionPolicyQuery();
-  const policy = query.data?.data;
-
-  if (query.isLoading) return <SectionLoading label="Loading the admission number rule…" />;
-  if (query.isError || !policy) {
-    return (
-      <SectionLoadError
-        forbidden={parseApiError(query.error).status === 403}
-        retry={query.refetch}
-      />
-    );
-  }
+  const branches = useSettingsBranches();
+  const [branch, setBranch] = useState("");
+  const query = useGetAdmissionPolicyQuery(branch ? { branch } : undefined);
+  // currentData: while another branch loads, `data` still holds the last one's.
+  const policy = query.currentData?.data;
+  const branchName = branches.choices.find((b) => String(b.id) === branch)?.name;
 
   return (
     <div className="space-y-5">
@@ -70,13 +72,63 @@ export function AdmissionNumbersSection() {
         title="Admission numbers"
         description="Whether every child must have an admission number when they are enrolled, and what a valid one looks like at your school."
       />
-      <AdmissionForm key={JSON.stringify(policy)} policy={policy} />
+
+      {branches.applies && branches.choices.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white-02 bg-white p-4">
+          <div className="w-full sm:w-60">
+            <NativeSelect
+              aria-label="Which rule to edit"
+              value={branch}
+              disabled={branches.isLoading}
+              onChange={(event) => setBranch(event.target.value)}
+            >
+              <option value="">Whole school</option>
+              {branches.choices.map((item) => (
+                <option key={item.id} value={String(item.id)}>{item.name}</option>
+              ))}
+            </NativeSelect>
+          </div>
+          <p className="min-w-0 flex-1 font-mont text-xs leading-5 text-gray-05">
+            {branchName
+              ? policy?.source === "branch"
+                ? `${branchName} has its own rule.`
+                : `${branchName} follows the school's rule. Saving here gives it its own.`
+              : "The school's rule, followed by every branch that has not set its own."}
+          </p>
+        </div>
+      ) : null}
+
+      {policy ? (
+        <AdmissionForm
+          key={`${branch}:${JSON.stringify(policy)}`}
+          policy={policy}
+          branch={branch}
+          branchName={branchName}
+        />
+      ) : query.isError ? (
+        <SectionLoadError
+          forbidden={parseApiError(query.error).status === 403}
+          retry={query.refetch}
+        />
+      ) : (
+        <SectionLoading label="Loading the admission number rule…" />
+      )}
     </div>
   );
 }
 
-function AdmissionForm({ policy }: { policy: AdmissionPolicy }) {
+function AdmissionForm({
+  policy,
+  branch,
+  branchName,
+}: {
+  policy: AdmissionPolicy;
+  branch: string;
+  branchName?: string;
+}) {
   const [save, { isLoading: saving }] = useUpdateAdmissionPolicyMutation();
+  const [reset, { isLoading: resetting }] = useResetBranchAdmissionPolicyMutation();
+  const [autoIssue, setAutoIssue] = useState(policy.auto_issue ?? false);
   const simple = parseSimple(policy.pattern);
   const [required, setRequired] = useState(policy.required);
   const [mode, setMode] = useState<Mode>(!policy.pattern ? "none" : simple ? "simple" : "custom");
@@ -94,15 +146,25 @@ function AdmissionForm({ policy }: { policy: AdmissionPolicy }) {
   const patternValid = mode === "none" || (pattern !== "" && compiles(pattern));
   const example = mode === "simple" && digitsValid ? `${prefix}${"0".repeat(digitsNumber - 1)}1` : "";
 
-  const changed = required !== policy.required || pattern !== policy.pattern || hint !== policy.hint;
+  const changed =
+    required !== policy.required ||
+    pattern !== policy.pattern ||
+    hint !== policy.hint ||
+    autoIssue !== (policy.auto_issue ?? false);
   const sampleResult = sample && patternValid && pattern ? new RegExp(pattern).test(sample) : null;
 
   const onSave = async () => {
     if (!changed || !patternValid) return;
     setErrors({});
     try {
-      await save({ required, pattern, hint: hint.trim() }).unwrap();
-      toast.success("Admission number rule saved.");
+      await save({
+        required,
+        pattern,
+        hint: hint.trim(),
+        auto_issue: autoIssue,
+        branch: branch || undefined,
+      }).unwrap();
+      toast.success(branchName ? `Rule saved for ${branchName}.` : "Admission number rule saved.");
     } catch (error) {
       const byField = fieldErrorsFor(error, ["required", "pattern", "hint"]);
       setErrors(byField);
@@ -211,7 +273,32 @@ function AdmissionForm({ policy }: { policy: AdmissionPolicy }) {
           ) : null}
         </label>
 
+        <label className="flex items-start justify-between gap-4">
+          <span className="min-w-0">
+            <span className="block font-mont text-sm font-medium text-gray-01">Issue numbers automatically</span>
+            <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
+              When enrolment leaves the number blank, the next one in the series is given out. Needs a rule
+              that ends in digits, so the next number can be worked out.
+            </span>
+          </span>
+          <Switch checked={autoIssue} onCheckedChange={setAutoIssue} aria-label="Issue numbers automatically" />
+        </label>
+
         <div className="flex flex-wrap items-center justify-end gap-3">
+          {branch && policy.source === "branch" ? (
+            <Button
+              variant="outline"
+              disabled={resetting || saving}
+              onClick={() =>
+                reset(branch)
+                  .unwrap()
+                  .then(() => toast.success(`${branchName ?? "This branch"} now follows the school's rule.`))
+                  .catch((error) => toast.error(writeErrorMessage(error, "That could not be changed.")))
+              }
+            >
+              Use the school&apos;s rule
+            </Button>
+          ) : null}
           <Button onClick={onSave} loading={saving} disabled={!changed || !patternValid || saving}>
             Save rule
           </Button>

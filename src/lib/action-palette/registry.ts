@@ -750,6 +750,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.SETTINGS.NOTIFICATIONS },
   },
   {
+    id: "view-enrolment-settings",
+    label: "View enrolment rules",
+    aliases: [
+      "age range", "required documents", "required fields", "class capacity",
+      "hard cap", "enrolment settings",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.enrolment.anyOf },
+    run: { to: R.SETTINGS.ENROLMENT },
+  },
+  {
     id: "view-admission-number-settings",
     label: "View admission number rule",
     aliases: ["admission numbers", "admission number format", "numbering"],

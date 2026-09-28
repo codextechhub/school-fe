@@ -38,8 +38,13 @@ export default function PlaceAndTransferArticle() {
       </GuideSection>
 
       <GuideSection id="full-classes" title="When a class is full">
-        <p>A class at capacity is flagged before you save. If you go ahead and the school refuses because the class is full, the button changes to <strong>Move anyway</strong> in the drawer, or <strong>Assign anyway</strong> for a batch. Select it only when the class should run over its limit.</p>
-        <GuideCallout tone="warning" title="Over capacity is a decision, not a default">The school asks each time. A class shown as over capacity on the register is one somebody chose to fill past its limit.</GuideCallout>
+        <p>A class at capacity is flagged before you save. What happens next is your school&apos;s choice, set in <strong>Settings</strong> under <strong>Enrolment</strong>:</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>Usually the school refuses the first save because the class is full, and the button changes to <strong>Move anyway</strong> in the drawer, or <strong>Assign anyway</strong> for a batch. Select it only when the class should run over its limit.</li>
+          <li>At a school that never goes over capacity, the move is refused and there is no way past it. The message names the class and its seats, for example <em>JSS1 B holds 2 of 2 seats, and this school does not put classes over capacity.</em> For a batch it says how many more the class has room for. Pick another class, move fewer students, or have the class&apos;s capacity raised in Academic Structure.</li>
+          <li>At a school that does not check, nothing stops the move; the register still shows the class as over.</li>
+        </ul>
+        <GuideCallout tone="warning" title="Over capacity is a decision, not a default">Unless your school has turned the check off, a class shown as over capacity on the register is one somebody chose to fill past its limit.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">

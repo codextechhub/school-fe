@@ -43,7 +43,7 @@ export default function PromoteStudentsArticle() {
         <GuideSteps>
           <GuideStep title="Preview">Select <strong>Preview and confirm</strong>. The school recalculates the plan with your choices.</GuideStep>
           <GuideStep title="Read the totals">Under <strong>Confirm this promotion</strong>, check the Promote, Repeat, Graduate and Hold counts and the sentence saying how many students move and how many stay.</GuideStep>
-          <GuideStep title="Check class capacity">If the run would put any class over capacity, the confirm step lists each one with its seats and how far over it would go. Move students elsewhere and preview again, or tick <strong>Go ahead and put these classes over capacity</strong>. The tick clears whenever you preview again.</GuideStep>
+          <GuideStep title="Check class capacity">If the run would put any class over capacity, the confirm step lists each one with its seats and how far over it would go. Move students elsewhere and preview again, or tick <strong>Go ahead and put these classes over capacity</strong>. The tick clears whenever you preview again. At a school that never goes over capacity there is no tick: the step reads <strong>This school does not put classes over capacity.</strong> Raise the class capacity, add an arm, or hold some pupils back, then preview again.</GuideStep>
           <GuideStep title="Run it">Select <strong>Run promotion</strong>, read the confirmation, and select <strong>Run promotion</strong> again.</GuideStep>
           <GuideStep title="Read the result">The page shows <strong>Promotion complete</strong> with the numbers promoted, repeated, graduated and held, and how many could not be written. Every move is recorded in each student&apos;s history.</GuideStep>
         </GuideSteps>
@@ -54,7 +54,7 @@ export default function PromoteStudentsArticle() {
         <ProblemGrid items={[
           { title: "There is no year to promote into", body: "Next year has not been created, or it has already started. Select Go to Sessions, create the year, copy this year's classes into it, and come back." },
           { title: "Every student would be held", body: "Next year has no classes yet. Copy this year's classes forward in Academic Structure first." },
-          { title: "Run promotion stays greyed", body: "The confirm step lists classes the run would put over capacity. Move students, or tick Go ahead and put these classes over capacity." },
+          { title: "Run promotion stays greyed", body: "The confirm step lists classes the run would put over capacity. Move students, or tick Go ahead and put these classes over capacity. Where your school never goes over capacity, raise the class capacity, add an arm, or hold some pupils back, then preview again." },
           { title: "Run promotion is missing", body: "Running a promotion needs both the promotion and the class assignment permissions. The page says so where the button would be." },
           { title: "Some students could not be written", body: "They were left where they are. Open each one from the directory, fix the cause, and place them with Classes & Transfers." },
         ]} />

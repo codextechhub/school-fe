@@ -354,6 +354,8 @@ export interface PromotionPlan {
    * them (PROMOTION_OVER_CAPACITY) until it is sent `allow_over_capacity`.
    * Absent from a server older than that rule, so read it as optional.
    */
+  /** How this school treats a full class; HARD means no acknowledgement helps. */
+  capacity_mode?: CapacityMode;
   over_capacity?: {
     class: number;
     class_name: string;
@@ -440,11 +442,11 @@ export interface ClassSeats {
 }
 
 /**
- * The school's own admission-number rule.
+ * The school's own admission-number rule, or one branch's.
  *
- * Note what is NOT here: a suggested next number. The design pre-fills the
- * enrolment field with the next free number and offers a control to reset to
- * it, and nothing in the backend generates one. See the phase 3 backend ask.
+ * Read with `?branch=` it is that branch's rule: its own values where it has
+ * set them, the school's where it has not (`source` says which). A number is
+ * unique across the whole school whichever branch's rule it follows.
  */
 export interface AdmissionPolicy {
   required: boolean;
@@ -460,7 +462,50 @@ export interface AdmissionPolicy {
    * server's unique constraint is what prevents the collision.
    */
   suggestion: string;
+  /** Issue the next number automatically when enrolment leaves it blank. */
+  auto_issue?: boolean;
+  /** Where the rule read came from. Absent from an older server. */
+  source?: "branch" | "school" | "default";
 }
+
+/** A value and the words a school reads for it. */
+export interface LabelledOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * How full a class may get.
+ *
+ * WARN refuses a full class until the person enrolling says to go ahead; HARD
+ * refuses it outright; OFF never checks.
+ */
+export type CapacityMode = "WARN" | "HARD" | "OFF";
+
+/**
+ * The school's own rules for enrolling a child: `/v1/students/enrolment-rules/`.
+ *
+ * Read by every form that enrols or edits a child, so the browser refuses what
+ * the server will refuse, and set in Settings > Enrolment.
+ */
+export interface EnrolmentRules {
+  min_age_years: number;
+  max_age_years: number;
+  /** Document types a school is prompted for. A prompt, never a gate. */
+  required_documents: string[];
+  document_types: LabelledOption[];
+  /** Fields from `optional_fields` this school requires at enrolment. */
+  required_fields: string[];
+  optional_fields: LabelledOption[];
+  capacity_mode: CapacityMode;
+  /** Given to a new class created without a capacity; null means unlimited. */
+  default_capacity: number | null;
+}
+
+export type EnrolmentRulesUpdate = Omit<
+  EnrolmentRules,
+  "document_types" | "optional_fields"
+> & { reason?: string };
 
 /**
  * The editable half of a student record.

@@ -24,6 +24,7 @@ export const SCHOOL_SETTINGS_SECTIONS = [
   "profile",
   "security",
   "notifications",
+  "enrolment",
   "admission-numbers",
   "payroll",
   "more",
@@ -73,8 +74,10 @@ export const SECTION_GATES: Record<
       { anyOf: [P.UPDATE_WORKFLOW_TEMPLATE] },
     ],
   },
+  enrolment: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   "admission-numbers": { anyOf: [P.MODIFY_STUDENT], capability: "students" },
   payroll: { anyOf: [P.VIEW_SETTINGS], capability: "finance_advanced" },
+  // Read on the settings key; saved on the Field Access key inside the section.
 };
 
 export type SettingsPanelSection = keyof typeof SECTION_GATES;

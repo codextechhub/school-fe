@@ -28,7 +28,7 @@ export default function ClassesAndArmsArticle() {
         <GuideSteps>
           <GuideStep title="Open the form">Select <strong>Add class</strong>, or <strong>Edit</strong> on a class card.</GuideStep>
           <GuideStep title="Pick the level and arm">Search for the <strong>Level</strong>, then type the <strong>Arm or stream</strong>. Leave the arm blank if the level has only one class. The <strong>Class name</strong> and <strong>Code</strong> are built from these as you go, and you can type over either.</GuideStep>
-          <GuideStep title="Set the capacity">Enter how many pupils the class takes in <strong>Capacity</strong>, or leave it blank for no limit.</GuideStep>
+          <GuideStep title="Set the capacity">Enter how many pupils the class takes in <strong>Capacity</strong>. Left blank, the class gets your school&apos;s capacity for a new class, set in Settings under Enrolment, or no limit if the school has not set one.</GuideStep>
           <GuideStep title="Save">Select <strong>Create</strong>, or <strong>Save changes</strong> when editing.</GuideStep>
         </GuideSteps>
       </GuideSection>

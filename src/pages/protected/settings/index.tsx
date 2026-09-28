@@ -7,6 +7,7 @@ import {
   ListChecks,
   School,
   ShieldCheck,
+  UserPlus,
 } from "lucide-react";
 import {
   ConsoleSettingsLayout,
@@ -26,6 +27,7 @@ import {
   type SchoolSettingsSection,
 } from "./sections";
 import { AdmissionNumbersSection } from "./sections/admission-numbers-section";
+import { EnrolmentSection } from "./sections/enrolment-section";
 import { MoreSection } from "./sections/more-section";
 import { useSettingsDoors } from "./use-settings-doors";
 import { NotificationsSection } from "./sections/notifications-section";
@@ -43,6 +45,7 @@ const SECTION_META: Record<
   profile: { title: "School profile", description: "Crest, address and details", icon: School },
   security: { title: "Sign-in and security", description: "Lockouts and link lifetimes", icon: ShieldCheck },
   notifications: { title: "Notifications", description: "Which events send email", icon: BellRing },
+  enrolment: { title: "Enrolment", description: "Ages, documents, classes", icon: UserPlus },
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash },
   payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark },
   more: { title: "More settings", description: "Roles, approvals, finance", icon: ListChecks },
@@ -52,6 +55,7 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   profile: ProfileSection,
   security: SecuritySection,
   notifications: NotificationsSection,
+  enrolment: EnrolmentSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
   more: MoreSection,
@@ -133,6 +137,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   profile: "Your crest, address, website and motto, and the details XVS set up for you.",
   security: "How many wrong passwords lock an account, and how long reset links and invitations last.",
   notifications: "Which events also send an email to the people they concern.",
+  enrolment: "How old a new pupil may be, which documents and details are required, and how full a class may get.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
   more: "Roles, field access, approval paths, and the Finance and Procurement settings.",

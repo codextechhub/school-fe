@@ -21,6 +21,7 @@ import {
 import {
   useEnrolStudentMutation,
   useGetAdmissionPolicyQuery,
+  useGetEnrolmentRulesQuery,
   useGetClassSeatsQuery,
 } from "@/redux/services/students/students-api";
 import {
@@ -37,6 +38,7 @@ import { ChoiceButtons } from "./choice-buttons";
 import { StepRail } from "./step-rail";
 import { GuardianRows, type GuardianDraft } from "./guardian-rows";
 import { todayIso } from "@/lib/as-at";
+import { dobProblem } from "../date-of-birth";
 
 /** A new guardian's name as one line, from the parts typed so far. */
 function draftName(g: GuardianDraft): string {
@@ -51,16 +53,6 @@ function today() {
   return todayIso();
 }
 
-/** Under 2 or over 25 is a mistyped year, not a pupil. Mirrors the backend. */
-function dobProblem(value: string): string {
-  if (!value) return "A date of birth is required.";
-  const now = today();
-  if (value > now) return "That date is in the future.";
-  const years = Number(now.slice(0, 4)) - Number(value.slice(0, 4));
-  if (years < 2) return "That would make the student under 2 years old.";
-  if (years > 25) return "That would make the student over 25. Check the year.";
-  return "";
-}
 
 /**
  * The steps, and which fields each one owns.
@@ -86,7 +78,11 @@ const STEPS: readonly Step[] = [
     key: "student",
     label: "Student",
     hint: "Who they are.",
-    fields: ["first_name", "last_name", "date_of_birth", "gender"],
+    // The optional ones too, so a school that requires one routes its refusal here.
+    fields: [
+      "first_name", "last_name", "date_of_birth", "gender",
+      "middle_name", "nationality", "state_of_origin", "previous_school",
+    ],
   },
   {
     key: "placement",
@@ -103,8 +99,11 @@ const STEPS: readonly Step[] = [
   {
     key: "details",
     label: "Details",
-    hint: "Contact and medical. All optional.",
-    fields: [] as string[],
+    hint: "Contact and medical.",
+    fields: [
+      "address", "phone", "email", "blood_group", "allergies", "conditions",
+      "emergency_contact_name", "emergency_contact_phone",
+    ],
     optional: true,
   },
   { key: "review", label: "Review", hint: "Check, then save.", fields: [] },
@@ -245,7 +244,18 @@ export default function EnrolStudent() {
   // against a closed year. Offering last year's classes while somebody browses
   // last year would offer a seat that cannot be taken.
   const { data: classesData } = useGetClassSeatsQuery();
-  const { data: policyData } = useGetAdmissionPolicyQuery();
+  // The rule of the branch the child is joining, which is the one the server
+  // checks: Lekki may number LK/0042 where the school numbers BSS/0001.
+  const { data: policyData } = useGetAdmissionPolicyQuery(
+    branchLens.applies && branchValue ? { branch: branchValue } : undefined,
+  );
+  const { data: rulesData } = useGetEnrolmentRulesQuery();
+  const rules = rulesData?.data;
+  const requiredFields = useMemo(
+    () => new Set(rules?.required_fields ?? []),
+    [rules?.required_fields],
+  );
+  const isReq = (name: string) => requiredFields.has(name);
   const [enrol, { isLoading }] = useEnrolStudentMutation();
 
   const classes = useMemo(() => classesData?.data ?? [], [classesData]);
@@ -305,13 +315,27 @@ export default function EnrolStudent() {
     if (!form.first_name.trim()) out.first_name = "A first name is required.";
     if (!form.last_name.trim()) out.last_name = "A last name is required.";
     if (!form.gender) out.gender = "Pick a gender.";
-    const dob = dobProblem(form.date_of_birth);
+    const dob = dobProblem(form.date_of_birth, rules?.min_age_years, rules?.max_age_years);
     if (dob) out.date_of_birth = dob;
+
+    // The details this school requires on top of the fixed ones.
+    for (const field of rules?.optional_fields ?? []) {
+      const value = (form as unknown as Record<string, string>)[field.value];
+      if (requiredFields.has(field.value) && !(value ?? "").trim()) {
+        // Shown under the field itself, so it names no label of its own.
+        out[field.value] = "Required at this school.";
+      }
+    }
 
     if (asApplicant) {
       if (!form.applied_for) out.applied_for = "Say which level they applied for.";
     } else if (!form.school_class) {
       out.school_class = "Pick the class this student is joining.";
+    } else if (rules?.capacity_mode === "HARD") {
+      const picked = classes.find((c) => String(c.id) === form.school_class);
+      if (picked && picked.remaining != null && picked.remaining <= 0) {
+        out.school_class = `${picked.name} is full, and this school does not put classes over capacity.`;
+      }
     }
 
     // A student always has a branch. "The whole school" is not a place a child
@@ -322,7 +346,8 @@ export default function EnrolStudent() {
     }
 
     const number = admissionNumber.trim();
-    if (policy?.required && !number) {
+    // Blank is fine where the server issues the next number itself.
+    if (policy?.required && !number && !policy.auto_issue) {
       out.student_number =
         policy.hint || "This school requires an admission number.";
     } else if (number && policy?.pattern) {
@@ -361,6 +386,9 @@ export default function EnrolStudent() {
     policy,
     branchLens.applies,
     branchValue,
+    rules,
+    requiredFields,
+    classes,
   ]);
 
   const valid = Object.keys(problems).length === 0;
@@ -378,6 +406,9 @@ export default function EnrolStudent() {
       return true;
     });
   };
+  // A step is skippable only while the school requires nothing in it.
+  const stepIsOptional = (s: Step) =>
+    Boolean(s.optional) && !s.fields.some((f) => requiredFields.has(f));
   const missingIn = (key: StepKey) =>
     ownedBy(key).filter((f) => problems[f]).length;
 
@@ -608,7 +639,7 @@ export default function EnrolStudent() {
 
       <p className="-mt-3 text-xs text-gray-05">
         {STEPS[index].hint}
-        {STEPS[index].optional ? " You can skip this." : ""}
+        {stepIsOptional(STEPS[index]) ? " You can skip this." : ""}
       </p>
 
       {step === "student" && (
@@ -625,7 +656,11 @@ export default function EnrolStudent() {
             </Field>
           </AccessField>
           <AccessField access={access} name="middle_name" creating>
-            <Field label="Middle name (optional)">
+            <Field
+              label={isReq("middle_name") ? "Middle name" : "Middle name (optional)"}
+              error={err("middle_name")}
+              required={isReq("middle_name")}
+            >
               <input
                 value={form.middle_name}
                 onChange={(e) => set("middle_name", e.target.value)}
@@ -679,7 +714,7 @@ export default function EnrolStudent() {
             </Field>
           </AccessField>
           <AccessField access={access} name="nationality" creating>
-            <Field label="Nationality">
+            <Field label="Nationality" error={err("nationality")} required={isReq("nationality")}>
               <input
                 value={form.nationality}
                 onChange={(e) => set("nationality", e.target.value)}
@@ -688,7 +723,7 @@ export default function EnrolStudent() {
             </Field>
           </AccessField>
           <AccessField access={access} name="state_of_origin" creating>
-            <Field label="State of origin">
+            <Field label="State of origin" error={err("state_of_origin")} required={isReq("state_of_origin")}>
               <input
                 value={form.state_of_origin}
                 onChange={(e) => set("state_of_origin", e.target.value)}
@@ -697,7 +732,11 @@ export default function EnrolStudent() {
             </Field>
           </AccessField>
           <AccessField access={access} name="previous_school" creating>
-            <Field label="Previous school (optional)">
+            <Field
+              label={isReq("previous_school") ? "Previous school" : "Previous school (optional)"}
+              error={err("previous_school")}
+              required={isReq("previous_school")}
+            >
               <input
                 value={form.previous_school}
                 onChange={(e) => set("previous_school", e.target.value)}
@@ -869,7 +908,9 @@ export default function EnrolStudent() {
             {chosenClass.capacity == null
               ? `${chosenClass.name} has no capacity set. ${chosenClass.used} enrolled.`
               : chosenClass.remaining != null && chosenClass.remaining <= 0
-                ? `${chosenClass.name} is full at ${chosenClass.used} of ${chosenClass.capacity}. You can still enrol; the class will show as over capacity.`
+                ? rules?.capacity_mode === "HARD"
+                  ? `${chosenClass.name} is full at ${chosenClass.used} of ${chosenClass.capacity}, and this school does not put classes over capacity. Pick another class.`
+                  : `${chosenClass.name} is full at ${chosenClass.used} of ${chosenClass.capacity}. You can still enrol; the class will show as over capacity.`
                 : `Joining ${chosenClass.name} · ${chosenClass.used} of ${chosenClass.capacity} seats used, ${chosenClass.remaining} free.`}
           </p>
         )}
@@ -880,7 +921,7 @@ export default function EnrolStudent() {
       <Section data-guide="student-enrol.step-details" title="Contact">
         <div className="grid gap-3.5 sm:grid-cols-2">
           <AccessField access={access} name="address" creating>
-            <Field label="Home address">
+            <Field label="Home address" error={err("address")} required={isReq("address")}>
               <input
                 value={form.address}
                 onChange={(e) => set("address", e.target.value)}
@@ -889,7 +930,11 @@ export default function EnrolStudent() {
             </Field>
           </AccessField>
           <AccessField access={access} name="phone" creating>
-            <Field label="Student phone (optional)">
+            <Field
+              label={isReq("phone") ? "Student phone" : "Student phone (optional)"}
+              error={err("phone")}
+              required={isReq("phone")}
+            >
               <input
                 value={form.phone}
                 onChange={(e) => set("phone", e.target.value)}
@@ -898,7 +943,11 @@ export default function EnrolStudent() {
             </Field>
           </AccessField>
           <AccessField access={access} name="email" creating>
-            <Field label="Student email (optional)">
+            <Field
+              label={isReq("email") ? "Student email" : "Student email (optional)"}
+              error={err("email")}
+              required={isReq("email")}
+            >
               <input
                 type="email"
                 value={form.email}
@@ -910,17 +959,21 @@ export default function EnrolStudent() {
         </div>
       </Section>
 
-      {/* Contact and medical sit together: both are optional, and splitting
-          them would be two steps a registrar presses Next through. */}
+      {/* Contact and medical sit together: both are usually optional, and
+          splitting them would be two steps a registrar presses Next through. */}
 
       <Section
         title="Medical"
-        note="Optional. Your school decides which roles can read these back."
+        note={
+          MEDICAL_INPUTS.some(({ name }) => isReq(name))
+            ? "Your school decides which roles can read these back."
+            : "Optional. Your school decides which roles can read these back."
+        }
       >
         <div className="grid gap-3.5 sm:grid-cols-2">
           {MEDICAL_INPUTS.map(({ name, label }) => (
             <AccessField key={name} access={access} name={name} creating>
-              <Field label={label}>
+              <Field label={label} error={err(name)} required={isReq(name)}>
                 <input
                   value={form[name]}
                   onChange={(e) => set(name, e.target.value)}
@@ -930,7 +983,7 @@ export default function EnrolStudent() {
             </AccessField>
           ))}
           <AccessField access={access} name="emergency_contact_name" creating>
-            <Field label="Emergency contact">
+            <Field label="Emergency contact" error={err("emergency_contact_name")} required={isReq("emergency_contact_name")}>
               <input
                 value={form.emergency_contact_name}
                 onChange={(e) => set("emergency_contact_name", e.target.value)}
@@ -939,7 +992,7 @@ export default function EnrolStudent() {
             </Field>
           </AccessField>
           <AccessField access={access} name="emergency_contact_phone" creating>
-            <Field label="Emergency phone">
+            <Field label="Emergency phone" error={err("emergency_contact_phone")} required={isReq("emergency_contact_phone")}>
               <input
                 value={form.emergency_contact_phone}
                 onChange={(e) => set("emergency_contact_phone", e.target.value)}
@@ -1031,7 +1084,7 @@ export default function EnrolStudent() {
             onClick={next}
             disabled={isLoading}
           >
-            {STEPS[index].optional ? "Skip" : "Next"}
+            {stepIsOptional(STEPS[index]) ? "Skip" : "Next"}
           </Button>
         )}
       </div>

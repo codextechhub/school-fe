@@ -563,12 +563,18 @@ function ConfirmEnrolment({
   student: StudentRow;
   onClose: () => void;
 }) {
-  const { data: policyData } = useGetAdmissionPolicyQuery();
+  // The rule of the applicant's own branch, which is the one the server checks.
+  const { data: policyData } = useGetAdmissionPolicyQuery(
+    student.branch != null ? { branch: String(student.branch) } : undefined,
+  );
   const policy = policyData?.data;
   const [number, setNumber] = useState("");
   const [confirm, { isLoading }] = useConfirmApplicantMutation();
 
-  const required = Boolean(policy?.required);
+  // Blank is fine where the applicant already has a number, or where the
+  // server issues the next one itself.
+  const required =
+    Boolean(policy?.required) && !student.student_number && !policy?.auto_issue;
   const valid = !required || number.trim().length > 0;
 
   async function save() {

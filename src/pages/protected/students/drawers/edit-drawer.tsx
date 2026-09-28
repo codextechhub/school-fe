@@ -12,14 +12,17 @@ import {
   type FieldErrors,
 } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
-import { useUpdateStudentMutation } from "@/redux/services/students/students-api";
+import {
+  useGetEnrolmentRulesQuery,
+  useUpdateStudentMutation,
+} from "@/redux/services/students/students-api";
 import type {
   StudentDetail,
   StudentWrite,
 } from "@/redux/services/students/students-types";
 
 import { DrawerShell, Field, errorInputClass, inputClass } from "./drawer-shell";
-import { todayIso } from "@/lib/as-at";
+import { dobProblem } from "../date-of-birth";
 
 // The fields, grouped the way the design groups them, with the label used both
 // on the form and in the "what changed" line - so the two can never disagree.
@@ -62,16 +65,6 @@ const TABS: { value: EditSectionKey; label: string }[] = [
   { value: "medical", label: "Health" },
 ];
 
-/** Under 2 or over 25 is a typed year, not a pupil. Matches the backend's rule. */
-function dobProblem(value: string): string {
-  if (!value) return "A date of birth is required.";
-  const today = todayIso();
-  if (value > today) return "That date is in the future.";
-  const years = Number(today.slice(0, 4)) - Number(value.slice(0, 4));
-  if (years < 2) return "That would make the student under 2 years old.";
-  if (years > 25) return "That would make the student over 25. Check the year.";
-  return "";
-}
 
 /**
  * Edit a record.
@@ -116,6 +109,8 @@ export function EditDrawer({
 
   // Only a field the viewer may change can be wrong: one hidden from them or
   // greyed is not theirs to fill, and requiring it would block every save.
+  const rules = useGetEnrolmentRulesQuery().data?.data;
+
   const problems = useMemo(() => {
     const out: Partial<Record<FieldKey, string>> = {};
     const editable = (key: FieldKey) => !access.isReadOnly(key);
@@ -125,12 +120,27 @@ export function EditDrawer({
     if (editable("last_name") && !value("last_name").trim()) {
       out.last_name = "A last name is required.";
     }
-    const dob = editable("date_of_birth") ? dobProblem(value("date_of_birth")) : "";
+    const dob = editable("date_of_birth")
+      ? dobProblem(value("date_of_birth"), rules?.min_age_years, rules?.max_age_years)
+      : "";
     if (dob) out.date_of_birth = dob;
     if (editable("gender") && !value("gender")) out.gender = "Pick a gender.";
+    // A detail the school requires may not be emptied, but an old record that
+    // never had it is not blocked until somebody edits that detail.
+    for (const field of rules?.optional_fields ?? []) {
+      const key = field.value as FieldKey;
+      if (
+        rules?.required_fields.includes(field.value) &&
+        key in draft &&
+        editable(key) &&
+        !value(key).trim()
+      ) {
+        out[key] = "Required at this school.";
+      }
+    }
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft, student]);
+  }, [draft, student, rules]);
 
   // What actually changed, so the line names fields rather than saying "edited".
   const changed = useMemo(() => {

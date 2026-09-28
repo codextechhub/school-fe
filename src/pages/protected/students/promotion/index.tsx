@@ -169,7 +169,9 @@ function PromotionWorkflow({
 
   const counts = plan?.counts;
   const overCapacity = plan?.over_capacity ?? [];
-  const waitsForCapacity = overCapacity.length > 0 && !goOverCapacity;
+  // A school that never goes over capacity cannot be talked past it here.
+  const hardCap = plan?.capacity_mode === "HARD";
+  const waitsForCapacity = overCapacity.length > 0 && (hardCap || !goOverCapacity);
   const liveCounts = plan ? reviewCounts(plan, overrides) : null;
   const nothingToMove = plan != null && plan.counts.candidates === 0;
   const allHeld =
@@ -385,14 +387,21 @@ function PromotionWorkflow({
                   </li>
                 ))}
               </ul>
-              <label className="mt-3 flex items-start gap-2 pl-6 text-sm text-amber-900">
-                <Checkbox
-                  checked={goOverCapacity}
-                  onCheckedChange={(value) => setGoOverCapacity(value === true)}
-                  className="mt-0.5"
-                />
-                Go ahead and put {overCapacity.length === 1 ? "this class" : "these classes"} over capacity
-              </label>
+              {hardCap ? (
+                <p className="mt-3 pl-6 text-sm text-amber-900">
+                  This school does not put classes over capacity. Raise the class capacity, add an arm,
+                  or hold some pupils back, then preview again.
+                </p>
+              ) : (
+                <label className="mt-3 flex items-start gap-2 pl-6 text-sm text-amber-900">
+                  <Checkbox
+                    checked={goOverCapacity}
+                    onCheckedChange={(value) => setGoOverCapacity(value === true)}
+                    className="mt-0.5"
+                  />
+                  Go ahead and put {overCapacity.length === 1 ? "this class" : "these classes"} over capacity
+                </label>
+              )}
             </Panel>
           )}
           <Exceptions plan={plan} />
