@@ -9,9 +9,11 @@ import {
 } from "@/pages/protected/finance/console-sections";
 import { financeSettingsSections, setupSections } from "@/xvs-host-config";
 
-// The finance screens come from @xvs/finance and are shared with the CodeX
-// console. Route-level code splitting: each area loads on first visit.
-const FinanceDashboard = lazy(() => import("@/pages/protected/finance/dashboard"));
+/**
+ * The school keeps its dashboard presentation beside its routes, while the
+ * detailed finance views use the shared package. Screens load on first visit.
+ */
+const FinanceDashboard = lazy(() => import("@/pages/protected/finance-dashboard"));
 const GeneralLedger = lazy(() => import("@/pages/protected/finance/ledger"));
 const Receivables = lazy(() => import("@/pages/protected/finance/receivables"));
 const Collections = lazy(() => import("@/pages/protected/finance/collections"));
