@@ -24,9 +24,10 @@ const { CompleteStep } = await import("./wizard-steps");
 const { P } = await import("@/permissions");
 
 /**
- * The finished-import screen offers rollback only to a reader holding the
- * rollback key, promises no time limit the server does not impose, and shows
- * the caller's return label as given.
+ * The finished-import screen offers rollback only to a reader the server lets
+ * roll back, links to the batch page only for a reader that page admits,
+ * promises no time limit the server does not impose, and shows the caller's
+ * return label as given.
  */
 const partial = { id: 7, status: "import_partial" } as unknown as ImportBatch;
 
@@ -37,6 +38,7 @@ const render = (batch: ImportBatch = partial) =>
       batchId={7}
       jobId={3}
       onNewImport={() => {}}
+      onViewDetails={() => {}}
       onReturn={() => {}}
       returnLabel="Back to students"
     />,
@@ -74,5 +76,11 @@ describe("CompleteStep", () => {
     held.add(P.FIN_IMPORT_BANK);
     const roll = { ...partial, dataset_type: "students" } as ImportBatch;
     expect(render(roll)).not.toContain("Roll back import");
+  });
+
+  it("links to the batch page only for a reader it admits", () => {
+    expect(render()).not.toContain("View import details");
+    held.add(P.VIEW_IMPORT_BATCHES);
+    expect(render()).toContain("View import details");
   });
 });

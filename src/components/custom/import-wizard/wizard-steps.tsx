@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { formatBytes } from "@/utils/format-bytes";
 import { useFieldAccess } from "@/components/finance-ui/field-access";
 import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
 import { canRollBackImport } from "./import-access";
 import { toast } from "sonner";
 import {
@@ -1262,7 +1263,10 @@ export function CompleteStep({
   returnLabel?: string;
 }) {
   const latestJobId = jobId;
-  const canRollback = canRollBackImport(batch.dataset_type, usePermissions().hasPermission);
+  const { hasPermission } = usePermissions();
+  const canRollback = canRollBackImport(batch.dataset_type, hasPermission);
+  // The batch page refuses a reader without this key, so it is not offered.
+  const canViewDetails = hasPermission(P.VIEW_IMPORT_BATCHES);
 
   const { data: jobData } = useGetImportJobQuery(
     { batchId, jobId: latestJobId! },
@@ -1448,7 +1452,7 @@ export function CompleteStep({
 
       <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-white-02">
         <div className="flex flex-wrap gap-2.5">
-          {onViewDetails && (
+          {onViewDetails && canViewDetails && (
             <Button variant="white" onClick={() => onViewDetails(batchId)}>
               <ExternalLink className="size-3.5" /> View import details
             </Button>
