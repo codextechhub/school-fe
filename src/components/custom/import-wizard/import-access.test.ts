@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { P, resolvePermissionKey, type PermissionCode } from "@/permissions";
 
-import { canRunImport } from "./import-access";
+import { canRollBackImport, canRunImport } from "./import-access";
 
 /**
  * The wizard makes three server writes: upload, check and import. A button
@@ -47,5 +47,35 @@ describe("canRunImport", () => {
 
   it("resolves the staff import key the backend registers for the staff dataset", () => {
     expect(resolvePermissionKey(P.IMPORT_STAFF)).toBe("school.staff.import");
+  });
+});
+
+/**
+ * Rollback follows the server: the engine key rolls back any batch, and the
+ * bank-statement key rolls back a bank statement and nothing else.
+ */
+describe("canRollBackImport", () => {
+  it("lets the engine's rollback key roll back any dataset", () => {
+    expect(canRollBackImport("students", holding(P.RUN_IMPORT_ROLLBACK))).toBe(true);
+    expect(canRollBackImport("bank_statements", holding(P.RUN_IMPORT_ROLLBACK))).toBe(true);
+  });
+
+  it("lets the bank-statement import key roll back a bank statement", () => {
+    expect(canRollBackImport("bank_statements", holding(P.FIN_IMPORT_BANK))).toBe(true);
+  });
+
+  it("does not let the bank-statement key roll back another dataset", () => {
+    expect(canRollBackImport("students", holding(P.FIN_IMPORT_BANK))).toBe(false);
+    expect(canRollBackImport(undefined, holding(P.FIN_IMPORT_BANK))).toBe(false);
+  });
+
+  it("does not let a school dataset's own key roll back its batch", () => {
+    expect(canRollBackImport("students", holding(P.IMPORT_STUDENTS))).toBe(false);
+    expect(canRollBackImport("staff", holding(P.IMPORT_STAFF))).toBe(false);
+    expect(canRollBackImport("academic_structure", holding(P.IMPORT_STRUCTURE))).toBe(false);
+  });
+
+  it("resolves the bank-statement key the backend declares the rollback for", () => {
+    expect(resolvePermissionKey(P.FIN_IMPORT_BANK)).toBe("finance.bankaccount.import");
   });
 });

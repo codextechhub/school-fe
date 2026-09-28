@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { formatBytes } from "@/utils/format-bytes";
 import { useFieldAccess } from "@/components/finance-ui/field-access";
 import { usePermissions } from "@/hooks/use-permissions";
-import { P } from "@/permissions";
+import { canRollBackImport } from "./import-access";
 import { toast } from "sonner";
 import {
   useGetImportTemplatesQuery,
@@ -1000,7 +1000,7 @@ export function ConfirmStep({
   const summary = batch.validation_summary as Record<string, number> | null;
   const errorCount = summary?.error_count ?? batch.error_count;
   const rowsReady = errorCount === 0 ? batch.total_rows : 0;
-  const canRollback = usePermissions().hasPermission(P.RUN_IMPORT_ROLLBACK);
+  const canRollback = canRollBackImport(batch.dataset_type, usePermissions().hasPermission);
   // The parsed preview is a Field Access field: a viewer who may not read it gets no preview.
   const access = useFieldAccess("import.batches", batch);
   const previewRows = access.isHidden("preview_rows") ? [] : batch.preview_rows ?? [];
@@ -1233,11 +1233,13 @@ function CounterCard({ label, value, accent }: { label: string; value: number; a
 /**
  * The outcome of a finished import, and what to do about it.
  *
- * Rollback is offered only to a reader holding `import.rollbacks.run`, the key
- * the rollback endpoint names. No school role holds it by default: a school
- * corrects a bad load by importing a corrected file, so neither the button nor
- * the advice to use it appears for them. The server imposes no time limit on a
- * rollback, so none is promised here.
+ * Rollback is offered only to a reader the rollback endpoint accepts (see
+ * `canRollBackImport`): the holder of `import.rollbacks.run`, or, on a bank
+ * statement, the holder of the bank-statement import key. No school role holds
+ * either for a school dataset: a school corrects a bad load by importing a
+ * corrected file, so neither the button nor the advice to use it appears for
+ * them. The server imposes no time limit on a rollback, so none is promised
+ * here.
  *
  * `returnLabel` is the finish button's whole label, verb included
  * ("Back to students"), and is shown as given.
@@ -1260,7 +1262,7 @@ export function CompleteStep({
   returnLabel?: string;
 }) {
   const latestJobId = jobId;
-  const canRollback = usePermissions().hasPermission(P.RUN_IMPORT_ROLLBACK);
+  const canRollback = canRollBackImport(batch.dataset_type, usePermissions().hasPermission);
 
   const { data: jobData } = useGetImportJobQuery(
     { batchId, jobId: latestJobId! },

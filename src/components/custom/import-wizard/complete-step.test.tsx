@@ -30,10 +30,10 @@ const { P } = await import("@/permissions");
  */
 const partial = { id: 7, status: "import_partial" } as unknown as ImportBatch;
 
-const render = () =>
+const render = (batch: ImportBatch = partial) =>
   renderToStaticMarkup(
     <CompleteStep
-      batch={partial}
+      batch={batch}
       batchId={7}
       jobId={3}
       onNewImport={() => {}}
@@ -62,5 +62,17 @@ describe("CompleteStep", () => {
     const html = render();
     expect(html).toContain("Back to students");
     expect(html).not.toContain("Back to Back to");
+  });
+
+  it("offers rollback on a bank statement to the bank-statement key", () => {
+    held.add(P.FIN_IMPORT_BANK);
+    const statement = { ...partial, dataset_type: "bank_statements" } as ImportBatch;
+    expect(render(statement)).toContain("Roll back import");
+  });
+
+  it("does not offer rollback on a students batch to the bank-statement key", () => {
+    held.add(P.FIN_IMPORT_BANK);
+    const roll = { ...partial, dataset_type: "students" } as ImportBatch;
+    expect(render(roll)).not.toContain("Roll back import");
   });
 });
