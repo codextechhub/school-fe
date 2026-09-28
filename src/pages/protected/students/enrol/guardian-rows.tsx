@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { AccessField, useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE, canCreateGuardian } from "@/lib/field-resources";
 import { useGetGuardiansQuery } from "@/redux/services/students/students-api";
-import { RELATIONSHIPS } from "@/redux/services/students/students-types";
+import { useRelationshipOptions } from "../relationships";
 
 import { Field, inputClass } from "../drawers/drawer-shell";
 import { guardianMatchLine } from "../format";
@@ -61,11 +61,15 @@ export function GuardianRows({
   rows,
   onChange,
   error,
+  emailRequired = false,
 }: {
   rows: GuardianDraft[];
   onChange: (rows: GuardianDraft[]) => void;
   error?: string;
+  /** The school requires an email for a guardian it has not met before. */
+  emailRequired?: boolean;
 }) {
+  const relationshipOptions = useRelationshipOptions();
   const access = useFieldAccess(FIELD_RESOURCE.GUARDIANS);
   const canAddNew = canCreateGuardian(access);
 
@@ -210,7 +214,10 @@ export function GuardianRows({
                     </Field>
                   </AccessField>
                   <AccessField access={access} name="email" creating>
-                    <Field label="Email (optional)">
+                    <Field
+                      label={emailRequired ? "Email" : "Email (optional)"}
+                      required={emailRequired}
+                    >
                       <input
                         type="email"
                         value={row.email}
@@ -230,7 +237,7 @@ export function GuardianRows({
                     className="h-9"
                   >
                     <option value="">Select a relationship</option>
-                    {RELATIONSHIPS.map((r) => (
+                    {relationshipOptions.map((r) => (
                       <option key={r.value} value={r.value}>
                         {r.label}
                       </option>

@@ -37,6 +37,8 @@ vi.mock("@/redux/services/students/students-api", () => ({
   useGetGuardiansQuery: () => ({ data: { data: [] }, isFetching: false }),
   useGetStudentGuardiansQuery: () => ({ data: { data: [] } }),
   useLinkGuardianMutation: () => [link, { isLoading: false }],
+  // A school on the default guardian rules: one guardian, email optional.
+  useGetGuardianRulesQuery: () => ({ data: undefined }),
 }));
 vi.mock("./drawers/drawer-shell", async (importActual) => {
   const actual = await importActual<typeof import("./drawers/drawer-shell")>();

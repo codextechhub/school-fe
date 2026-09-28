@@ -8,6 +8,7 @@ import {
   School,
   ShieldCheck,
   UserPlus,
+  Users,
   UserRoundCog,
 } from "lucide-react";
 import {
@@ -29,6 +30,7 @@ import {
 } from "./sections";
 import { AdmissionNumbersSection } from "./sections/admission-numbers-section";
 import { EnrolmentSection } from "./sections/enrolment-section";
+import { GuardiansSection } from "./sections/guardians-section";
 import { MoreSection } from "./sections/more-section";
 import { useSettingsDoors } from "./use-settings-doors";
 import { NotificationsSection } from "./sections/notifications-section";
@@ -48,6 +50,7 @@ const SECTION_META: Record<
   security: { title: "Sign-in and security", description: "Lockouts and link lifetimes", icon: ShieldCheck },
   notifications: { title: "Notifications", description: "Which events send email", icon: BellRing },
   enrolment: { title: "Enrolment", description: "Ages, documents, classes", icon: UserPlus },
+  guardians: { title: "Guardians", description: "Contacts and siblings", icon: Users },
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash },
   payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark },
   "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog },
@@ -59,6 +62,7 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   security: SecuritySection,
   notifications: NotificationsSection,
   enrolment: EnrolmentSection,
+  guardians: GuardiansSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
   "staff-profiles": StaffProfilesSection,
@@ -142,6 +146,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   security: "How many wrong passwords lock an account, and how long reset links and invitations last.",
   notifications: "Which events also send an email to the people they concern.",
   enrolment: "How old a new pupil may be, which documents and details are required, and how full a class may get.",
+  guardians: "How many guardians a child needs, whether their email is required, how siblings are recognised, and your own relationship words.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
   "staff-profiles": "How much of a colleague's profile their line managers and other colleagues see.",

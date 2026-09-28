@@ -31,7 +31,6 @@ import {
   useUploadGuardianPhotoMutation,
 } from "@/redux/services/students/students-api";
 import {
-  RELATIONSHIPS,
   type GuardianDetail as GuardianRecord,
 } from "@/redux/services/students/students-types";
 import { routesPath } from "@/routes/routesPath";
@@ -46,13 +45,8 @@ import {
   getGuardianProfileCompleteness,
   type GuardianProfileGap,
 } from "./profile-completeness";
+import { relationshipLabel } from "../relationships";
 
-function relationshipLabel(code: string) {
-  return (
-    RELATIONSHIPS.find((relationship) => relationship.value === code)?.label ??
-    code
-  );
-}
 
 /**
  * One guardian and every student linked under that guardian.
@@ -606,7 +600,7 @@ function StudentLinkRow({
       <LinkFact label="Class" value={ward.class_name || "Unassigned"} />
       <LinkFact
         label="Relationship"
-        value={relationshipLabel(ward.relationship)}
+        value={relationshipLabel(ward.relationship, ward.relationship_label)}
       />
       <div className="min-w-0">
         <p className="text-[11px] text-gray-05">Status</p>
@@ -657,7 +651,7 @@ function StudentLinkCard({
         <LinkFact label="Class" value={ward.class_name || "Unassigned"} />
         <LinkFact
           label="Relationship"
-          value={relationshipLabel(ward.relationship)}
+          value={relationshipLabel(ward.relationship, ward.relationship_label)}
         />
       </div>
 

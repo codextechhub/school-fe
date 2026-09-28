@@ -41,11 +41,11 @@ export default function EnrolStudentArticle() {
       </GuideSection>
 
       <GuideSection id="add-guardians" title="Add guardians">
-        <p>Every student needs at least one guardian and exactly one primary contact.</p>
+        <p>Every student needs at least one guardian, or as many as your school asks for, and exactly one primary contact. A school that asks for two says so if you go on with one: <strong>This school asks for 2 guardians for every child.</strong></p>
         <GuideSteps>
           <GuideStep title="Look for them first">Select <strong>Find an existing guardian</strong> and type two or more letters in <strong>Search the school&apos;s guardians</strong>. A parent who already has a child at the school should be reused, not typed again.</GuideStep>
-          <GuideStep title="Or add them">If nobody matches, select <strong>Add a new one</strong> and enter the first name, last name and phone. Email is optional. This button appears only when your role may create guardian records.</GuideStep>
-          <GuideStep title="Set the relationship">Choose the <strong>Relationship</strong> for every guardian, such as Mother, Father or Legal guardian.</GuideStep>
+          <GuideStep title="Or add them">If nobody matches, select <strong>Add a new one</strong> and enter the first name, last name and phone. Email is optional unless your school requires it, in which case the label reads just <strong>Email</strong> and a new guardian without one is refused with <strong>A guardian email is required at this school.</strong> This button appears only when your role may create guardian records.</GuideStep>
+          <GuideStep title="Set the relationship">Choose the <strong>Relationship</strong> for every guardian, such as Mother, Father or Legal guardian, or one of the words your school has added, such as Sponsor.</GuideStep>
           <GuideStep title="Mark the primary contact">Choose <strong>Primary contact</strong> on the one guardian the school calls first.</GuideStep>
         </GuideSteps>
       </GuideSection>

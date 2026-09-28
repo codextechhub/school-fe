@@ -308,6 +308,8 @@ export interface GuardianDetail extends GuardianSummary {
     status_label: string;
     class_name: string;
     relationship: string;
+    /** The school's own word where it set one, otherwise the choice's label. */
+    relationship_label?: string;
     is_primary: boolean;
   }[];
 }
@@ -501,6 +503,26 @@ export interface EnrolmentRules {
   /** Given to a new class created without a capacity; null means unlimited. */
   default_capacity: number | null;
 }
+
+/**
+ * The school's own rules for guardians: `/v1/students/guardian-rules/`.
+ *
+ * `relationships` is the whole list a picker offers: the fixed ones, then the
+ * school's own (whose value is the word itself), then Other.
+ */
+export interface GuardianRules {
+  min_per_student: number;
+  email_required: boolean;
+  matching: "EMAIL_THEN_PHONE" | "EMAIL_ONLY";
+  matching_options: LabelledOption[];
+  extra_relationships: string[];
+  relationships: LabelledOption[];
+}
+
+export type GuardianRulesUpdate = Pick<
+  GuardianRules,
+  "min_per_student" | "email_required" | "matching" | "extra_relationships"
+> & { reason?: string };
 
 export type EnrolmentRulesUpdate = Omit<
   EnrolmentRules,

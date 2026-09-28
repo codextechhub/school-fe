@@ -44,6 +44,7 @@ export default function ImportStudentsArticle() {
           { title: "Import is missing from the directory", body: "Importing students needs its own permission. Ask whoever manages roles at your school." },
           { title: "No data rows detected", body: "The file has headers but no rows under them, or the rows are on another sheet. Check the file and upload it again." },
           { title: "Start import stays disabled", body: "At least one blocking error remains. Export the error data, fix the rows in your spreadsheet, and upload the file again." },
+          { title: "Rows warn that the school asks for more guardians", body: "Your school asks for more than one guardian per child and each row carries one. The students are still imported; add the other guardians on their records or with the guardians import." },
           { title: "Rows failed to import", body: "Select View import details on the last step to see why each row failed, fix those rows in the file and import them again." },
         ]} />
       </GuideSection>

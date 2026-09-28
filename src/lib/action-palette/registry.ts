@@ -787,6 +787,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.SETTINGS.ENROLMENT },
   },
   {
+    id: "view-guardian-settings",
+    label: "View guardian rules",
+    aliases: [
+      "guardians per child", "guardian email", "sibling matching",
+      "relationship types", "sponsor",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.guardians.anyOf },
+    run: { to: R.SETTINGS.GUARDIANS },
+  },
+  {
     id: "view-admission-number-settings",
     label: "View admission number rule",
     aliases: ["admission numbers", "admission number format", "numbering"],

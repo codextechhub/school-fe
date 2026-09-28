@@ -4,7 +4,10 @@ import { toast } from "sonner";
 import { writeErrorMessage, fieldErrors } from "@/utils/api-error";
 import { AccessField, fieldWriteErrors, useFieldAccess } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
-import { useUpdateGuardianMutation } from "@/redux/services/students/students-api";
+import {
+  useGetGuardianRulesQuery,
+  useUpdateGuardianMutation,
+} from "@/redux/services/students/students-api";
 import type { GuardianDetail } from "@/redux/services/students/students-types";
 
 import { DrawerShell, Field, errorInputClass, inputClass } from "../drawers/drawer-shell";
@@ -75,7 +78,12 @@ export function EditGuardianDrawer({
     guardian.name_needs_review && NAME_KEYS.some((key) => writable(key));
   const blank = (key: "first_name" | "last_name") =>
     writable(key) && !draft[key].trim();
-  const nameBlank = blank("first_name") || blank("last_name");
+  // A school that requires guardian emails does not let one be emptied, but
+  // an old record that never had one is not blocked until somebody edits it.
+  const emailRequired = useGetGuardianRulesQuery().data?.data.email_required ?? false;
+  const emailEmptied =
+    emailRequired && writable("email") && Boolean(guardian.email) && !draft.email.trim();
+  const nameBlank = blank("first_name") || blank("last_name") || emailEmptied;
   const sendable = confirming
     ? [...new Set([...changed.map((f) => f.key), ...NAME_KEYS.filter(writable)])]
     : changed.map((f) => f.key);

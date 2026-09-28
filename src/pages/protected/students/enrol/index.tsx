@@ -22,10 +22,10 @@ import {
   useEnrolStudentMutation,
   useGetAdmissionPolicyQuery,
   useGetEnrolmentRulesQuery,
+  useGetGuardianRulesQuery,
   useGetClassSeatsQuery,
 } from "@/redux/services/students/students-api";
 import {
-  RELATIONSHIPS,
   type EnrolWrite,
   type Gender,
 } from "@/redux/services/students/students-types";
@@ -39,6 +39,7 @@ import { StepRail } from "./step-rail";
 import { GuardianRows, type GuardianDraft } from "./guardian-rows";
 import { todayIso } from "@/lib/as-at";
 import { dobProblem } from "../date-of-birth";
+import { relationshipLabel } from "../relationships";
 
 /** A new guardian's name as one line, from the parts typed so far. */
 function draftName(g: GuardianDraft): string {
@@ -250,6 +251,7 @@ export default function EnrolStudent() {
     branchLens.applies && branchValue ? { branch: branchValue } : undefined,
   );
   const { data: rulesData } = useGetEnrolmentRulesQuery();
+  const guardianRules = useGetGuardianRulesQuery().data?.data;
   const rules = rulesData?.data;
   const requiredFields = useMemo(
     () => new Set(rules?.required_fields ?? []),
@@ -370,8 +372,16 @@ export default function EnrolStudent() {
         ? Boolean(g.guardianId)
         : g.first_name.trim() && g.last_name.trim() && g.phone.trim(),
     );
+    const minimum = guardianRules?.min_per_student ?? 1;
     if (filled.length === 0) {
       out.guardians = "Link at least one guardian.";
+    } else if (filled.length < minimum) {
+      out.guardians = `This school asks for ${minimum} guardians for every child.`;
+    } else if (
+      guardianRules?.email_required &&
+      filled.some((g) => g.kind !== "existing" && !g.email.trim())
+    ) {
+      out.guardians = "A guardian email is required at this school.";
     } else if (!filled.some((g) => g.is_primary)) {
       out.guardians = "Mark one guardian as the primary contact.";
     } else if (filled.some((g) => !g.relationship)) {
@@ -389,6 +399,7 @@ export default function EnrolStudent() {
     rules,
     requiredFields,
     classes,
+    guardianRules,
   ]);
 
   const valid = Object.keys(problems).length === 0;
@@ -1013,6 +1024,7 @@ export default function EnrolStudent() {
         <GuardianRows
           rows={guardians}
           onChange={setGuardians}
+          emailRequired={guardianRules?.email_required ?? false}
           error={touched.guardians ? problems.guardians : undefined}
         />
         </Panel>
@@ -1236,8 +1248,7 @@ export function Review({
                   {g.kind === "existing" ? g.guardianName : draftName(g)}
                 </span>
                 <span className="text-xs text-gray-05">
-                  {RELATIONSHIPS.find((r) => r.value === g.relationship)?.label ??
-                    "No relationship set"}
+                  {g.relationship ? relationshipLabel(g.relationship) : "No relationship set"}
                 </span>
                 {g.is_primary && (
                   <span className="rounded-full bg-white-03 px-2 py-0.5 text-xs text-primary">

@@ -6,6 +6,8 @@ import type {
   AdmissionPolicy,
   EnrolmentRules,
   EnrolmentRulesUpdate,
+  GuardianRules,
+  GuardianRulesUpdate,
   BulkResultRow,
   ClassSeats,
   PromotionBatch,
@@ -672,6 +674,18 @@ export const studentsApi = baseApi.injectEndpoints({
       providesTags: ["Students"],
     }),
 
+    /** Read by every picker that offers a relationship and every guardian form. */
+    getGuardianRules: builder.query<Envelope<GuardianRules>, void>({
+      query: () => ({ url: `/students/guardian-rules/`, method: "GET" }),
+      providesTags: ["Students"],
+    }),
+
+    updateGuardianRules: builder.mutation<Envelope<GuardianRules>, GuardianRulesUpdate>({
+      query: (body) => ({ url: `/students/guardian-rules/`, method: "PUT", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students"],
+    }),
+
     updateEnrolmentRules: builder.mutation<
       Envelope<EnrolmentRules>,
       EnrolmentRulesUpdate
@@ -707,6 +721,8 @@ export const {
   useResetBranchAdmissionPolicyMutation,
   useGetEnrolmentRulesQuery,
   useUpdateEnrolmentRulesMutation,
+  useGetGuardianRulesQuery,
+  useUpdateGuardianRulesMutation,
   useGetClassSeatsQuery,
   usePreviewPromotionMutation,
   useRunPromotionMutation,

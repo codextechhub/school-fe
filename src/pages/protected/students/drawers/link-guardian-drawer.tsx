@@ -6,12 +6,12 @@ import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { cn } from "@/lib/utils";
 import { writeErrorMessage } from "@/utils/api-error";
 import {
+  useGetGuardianRulesQuery,
   useGetGuardiansQuery,
   useGetStudentGuardiansQuery,
   useLinkGuardianMutation,
 } from "@/redux/services/students/students-api";
 import {
-  RELATIONSHIPS,
   type StudentDetail,
 } from "@/redux/services/students/students-types";
 
@@ -22,6 +22,7 @@ import { CREATING, FIELD_RESOURCE, canCreateGuardian } from "@/lib/field-resourc
 
 import { DrawerShell, Field, inputClass } from "./drawer-shell";
 import { guardianMatchLine } from "../format";
+import { useRelationshipOptions } from "../relationships";
 
 /**
  * Link a guardian to a student.
@@ -56,6 +57,7 @@ export function LinkGuardianDrawer({
   open: boolean;
   onClose: () => void;
 }) {
+  const relationshipOptions = useRelationshipOptions();
   const [mode, setMode] = useState<"search" | "new">("search");
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<number | null>(null);
@@ -83,6 +85,9 @@ export function LinkGuardianDrawer({
   const hasPrimary = existing.some((l) => l.is_primary);
 
   const [link, { isLoading }] = useLinkGuardianMutation();
+  // A new guardian needs an email where the school says so; linking one
+  // already on record never does.
+  const emailRequired = useGetGuardianRulesQuery().data?.data.email_required ?? false;
 
   const valid =
     mode === "search"
@@ -90,6 +95,7 @@ export function LinkGuardianDrawer({
       : firstName.trim().length > 0 &&
         lastName.trim().length > 0 &&
         phone.trim().length > 0 &&
+        (!emailRequired || email.trim().length > 0) &&
         Boolean(relationship);
 
   function reset() {
@@ -268,7 +274,10 @@ export function LinkGuardianDrawer({
               </Field>
             </AccessField>
             <AccessField access={access} name="email" creating>
-              <Field label="Email (optional)">
+              <Field
+                label={emailRequired ? "Email" : "Email (optional)"}
+                required={emailRequired}
+              >
                 <input
                   type="email"
                   value={email}
@@ -287,7 +296,7 @@ export function LinkGuardianDrawer({
             className="h-9"
           >
             <option value="">Select a relationship</option>
-            {RELATIONSHIPS.map((r) => (
+            {relationshipOptions.map((r) => (
               <option key={r.value} value={r.value}>
                 {r.label}
               </option>

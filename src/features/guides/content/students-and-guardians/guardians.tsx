@@ -41,8 +41,9 @@ export default function GuardiansArticle() {
         <p>You can link from either side.</p>
         <GuideSteps>
           <GuideStep title="From the guardian">Select <strong>Link another child</strong>. In <strong>Find the student</strong>, search by name or admission number and pick the child. Choose the <strong>Relationship</strong> and select <strong>Link child</strong>.</GuideStep>
-          <GuideStep title="From the student">On the student&apos;s profile, select <strong>Link guardian</strong>. Choose <strong>Find an existing guardian</strong> and search <strong>Search the school&apos;s guardians</strong>, or <strong>Add a new one</strong> with a first name, last name and phone. Choose the <strong>Relationship</strong> and select <strong>Link guardian</strong>.</GuideStep>
+          <GuideStep title="From the student">On the student&apos;s profile, select <strong>Link guardian</strong>. Choose <strong>Find an existing guardian</strong> and search <strong>Search the school&apos;s guardians</strong>, or <strong>Add a new one</strong> with a first name, last name and phone, and an email where your school requires one. Choose the <strong>Relationship</strong> and select <strong>Link guardian</strong>.</GuideStep>
         </GuideSteps>
+        <p>The <strong>Relationship</strong> list holds the fixed choices and any words your school has added in <strong>Settings</strong> under <strong>Guardians</strong>, such as Sponsor. A guardian already on record is linked without a new email, even at a school that requires one for a new guardian.</p>
         <GuideCallout tone="warning" title="Reuse a guardian rather than typing them again">A parent entered twice becomes two records that drift apart. Search first. A student already linked shows as already linked and cannot be picked twice.</GuideCallout>
       </GuideSection>
 
@@ -55,6 +56,8 @@ export default function GuardiansArticle() {
           { title: "Edit details is missing", body: "Changing a guardian needs permission to edit student records." },
           { title: "Add a new one is missing", body: "Your role may link existing guardians but not create them. Search for the guardian instead." },
           { title: "A contact detail is not shown", body: "Your school decides which roles may read each guardian field. A field you may not read is left off the page, which is different from Not recorded." },
+          { title: "A guardian cannot be removed from a child", body: "Your school asks for a number of guardians for every child, and the child has only that many. Link another guardian first." },
+          { title: "A relationship is refused", body: "It is not one your school records. Pick one from the list, or ask a school administrator to add it in Settings, under Guardians." },
           { title: "The guardian list looks short", body: "You are working in one branch, so only the guardians of that branch's students are listed. Choose All branches if your role allows it." },
         ]} />
       </GuideSection>

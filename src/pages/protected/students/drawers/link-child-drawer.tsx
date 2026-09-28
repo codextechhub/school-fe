@@ -7,7 +7,7 @@ import {
   useLinkGuardianMutation,
   useSearchStudentsQuery,
 } from "@/redux/services/students/students-api";
-import { RELATIONSHIPS } from "@/redux/services/students/students-types";
+import { useRelationshipOptions } from "../relationships";
 import { cn } from "@/lib/utils";
 
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,6 +42,7 @@ export function LinkChildDrawer({
   open: boolean;
   onClose: () => void;
 }) {
+  const relationshipOptions = useRelationshipOptions();
   const [search, setSearch] = useState("");
   const [picked, setPicked] = useState<{ id: number; label: string } | null>(null);
   const [relationship, setRelationship] = useState("");
@@ -175,7 +176,7 @@ export function LinkChildDrawer({
             className="h-9"
           >
             <option value="">Select a relationship</option>
-            {RELATIONSHIPS.map((r) => (
+            {relationshipOptions.map((r) => (
               <option key={r.value} value={r.value}>
                 {r.label}
               </option>
