@@ -629,14 +629,12 @@ export interface StaffRoles {
     note: string;
     branches: { id: number; name: string; via: string }[];
   };
-  overrides:
-    | {
-        permission: string;
-        mode: "ALLOW" | "DENY";
-        reason: string;
-        expires_at: string | null;
-      }[]
-    | null;
+  overrides?: {
+    permission: string;
+    mode: "ALLOW" | "DENY";
+    reason: string;
+    expires_at: string | null;
+  }[];
 }
 
 // ── Posting and reach ──────────────────────────────────────────────────────
