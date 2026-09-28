@@ -17,10 +17,9 @@ import type {
 // endpoints CodeX does; what differs is which rows come back, and the server
 // decides that - see visible_tickets_qs in vs_tickets.
 //
-// This used to be the create half alone, because before go-live a school could
-// file a ticket and nothing else. That is no longer the shape of the product:
-// the school is the first line now, so it needs the list, the thread and the
-// transitions as well.
+// The whole desk is open before go-live as well: a school being set up files,
+// reads, replies, triages and escalates the same way, since that is when it
+// most needs answers. Assigning a ticket stays with the XVS desk.
 //
 // `extraOptions: { silent: true }` where a screen renders its own error. The
 // base query toasts 400/403/404 globally, and a duplicate message beside an
