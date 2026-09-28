@@ -7,6 +7,7 @@ const AREAS = [
   ["Enrolment", "How old a new pupil may be, which documents and details are required, and how full a class may get."],
   ["Admission numbers", "Whether every child needs an admission number, and what a valid one looks like."],
   ["Payroll", "Whether the whole school is paid in one run, or each branch runs its own."],
+  ["Staff profiles", "How much of a colleague's profile their line managers and other colleagues see."],
   ["More settings", "Roles, field access, approval paths, and the Finance and Procurement settings."],
 ] as const;
 

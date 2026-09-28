@@ -20,7 +20,9 @@
  * post history are drawn for a reader who may edit staff records
  * (`school.teachers.update`), because leave and suspension counts and tenure
  * dates are an administrator's business. The directory key will not do: every
- * teacher holds it. The server refuses both to anyone else.
+ * teacher holds it. The server refuses both to anyone else. The strip's
+ * numbers follow the reader's branches the way the staff directory does,
+ * while the chart stays whole, so a caption says which branches they cover.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -55,6 +57,7 @@ import { OrgAvatar } from "./components/org-primitives";
 import { PositionsTree, type PositionsCtx } from "./components/positions-tree";
 import { PeopleTree, type PeopleCtx } from "./components/people-tree";
 import { DetailDrawer, type DetailTarget } from "./components/detail-drawer";
+import { useUnitBranchRules } from "./manage/unit-branch-rules";
 
 const LARGE = { page_size: 100 } as const;
 const MIN_ZOOM = 0.4;
@@ -92,6 +95,12 @@ export default function OrganogramPage() {
   const assignments = useMemo(() => asArray<CurrentOrganogramAssignment>(assignmentsRes?.data), [assignmentsRes]);
   const matrix = useMemo(() => asArray<MatrixReport>(matrixRes?.data), [matrixRes]);
   const summary = summaryRes?.data;
+  const branchRules = useUnitBranchRules();
+  // The strip counts only the reader's branches and the school-wide staff.
+  const summaryScope =
+    branchRules.applies && !branchRules.wholeSchool && branchRules.choices.length
+      ? `Figures for ${branchRules.choices.map((b) => b.name).join(", ")} and school-wide staff.`
+      : null;
 
   const posMap = useMemo(() => new Map(positions.map((p) => [p.id, p])), [positions]);
   const orgNodeMap = useMemo(() => buildOrgNodeMap(orgNodes), [orgNodes]);
@@ -361,15 +370,14 @@ export default function OrganogramPage() {
     setTimeout(() => scrollToNode(`[data-pid="${id}"]`), 90);
   };
 
-  const canBrowseStaff = hasPermission(P.BROWSE_TEACHERS);
   const drawerCtx = {
     posMap,
     matrixOut,
     matrixIn,
     openUser,
     openPosition,
-    // A reader always reaches their own record; anyone else's needs the directory key.
-    canOpenRecord: (u: StaffHolder) => canBrowseStaff || matchMe(u),
+    // Everyone at the school opens anyone's profile; the server decides how much.
+    canOpenRecord: () => true,
     canViewHistory: canViewSummary,
     actingSet,
   };
@@ -411,6 +419,9 @@ export default function OrganogramPage() {
             <Stat icon={PlaneTakeoff} label="On leave" value={summary.on_leave} accent="bg-amber-50 text-amber-500" />
             <Stat icon={Ban} label="Suspended" value={summary.suspended} accent="bg-rose-50 text-rose-500" />
           </div>
+        )}
+        {canViewSummary && summary && summaryScope && (
+          <p className="-mt-3 text-xs text-gray-05">{summaryScope}</p>
         )}
 
         <div className="space-y-3">

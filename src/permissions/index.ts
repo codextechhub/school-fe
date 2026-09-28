@@ -347,10 +347,8 @@ const REGISTRY: Record<string, string> = {
   "110301": "platform.team.view",
 
   // Codex's org chart, and the endpoint behind it answers to CX staff alone. No
-  // school role holds this, which is the point: an organogram-sourced approval
-  // stage cannot resolve an approver for a school, so the builder must not
-  // offer the source at all. A school's own organogram would be its own
-  // resource under a `school.organogram.*` key rather than this one.
+  // school role holds it. A school's approvals climb the school's own chart,
+  // which is its own resource under the `school.organogram.*` keys above.
   "110901": "platform.organogram.view",
 
   // ── workflow / templates  (MM=60, RR=01) ───────────────────────────────────

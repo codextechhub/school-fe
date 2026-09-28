@@ -5,12 +5,13 @@ import { WorkspaceToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "../app-sidebar";
 import { schoolFinanceNav, schoolProcurementNav } from "./console-nav-for-school";
-import { ChevronLeft, Headset, Loader2, LogOut, Search, Undo2, UsersRound } from "lucide-react";
+import { ChevronLeft, Headset, IdCard, Loader2, LogOut, Search, Undo2, UsersRound } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
 import useToggleModal from "@/hooks/use-toggle";
 import PromptModal from "@/components/modal/prompt-modal";
 import { Outlet, useLocation, useMatches, useNavigate } from "react-router";
+import { routesPath } from "@/routes/routesPath";
 import {
   DashboardHeaderContext,
   resolveHeaderTitle,
@@ -440,6 +441,11 @@ export default function DashboardLayout() {
                       )}
                     </>
                   )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate(routesPath.PROTECTED.STAFF.ME)}>
+                    <IdCard className="size-4" />
+                    My staff record
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={toggleLogout}>
                     <LogOut className="size-4" />

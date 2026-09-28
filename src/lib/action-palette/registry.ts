@@ -229,6 +229,30 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.STAFF.POSTING },
   },
   {
+    // Everybody's own record, and a teacher's only way to it: they hold no
+    // directory key. No gate, because the server answers it for any member of
+    // staff and refuses nobody else anything.
+    id: "view-my-staff-record",
+    label: "View my staff record",
+    aliases: ["my profile", "my record", "my details", "update my details", "update my phone", "change my photo", "my documents"],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    gate: null,
+    run: { to: R.STAFF.ME },
+  },
+  {
+    // Lands on the Leave tab of the reader's own record, where the form is.
+    id: "apply-for-leave",
+    label: "Apply for leave",
+    aliases: ["request leave", "time off", "sick leave", "annual leave", "day off"],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    gate: { perm: P.APPLY_FOR_LEAVE },
+    run: { to: `${R.STAFF.ME}?tab=leave` },
+  },
+  {
     // Every member of staff reads the chart, so the gate is the chart's own
     // key and not the directory's: a teacher looking for her line manager
     // holds this and not `school.teachers.view`.
@@ -781,6 +805,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: { any: SECTION_GATES.payroll.anyOf },
     run: { to: R.SETTINGS.PAYROLL },
+  },
+  {
+    id: "view-staff-profile-settings",
+    label: "View staff profile settings",
+    aliases: [
+      "who can see staff profiles", "profile visibility", "line manager access",
+      "colleague contact card", "staff privacy",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES["staff-profiles"].anyOf },
+    run: { to: R.SETTINGS.STAFF_PROFILES },
   },
 
   // ── Workflow ───────────────────────────────────────────────────────────────

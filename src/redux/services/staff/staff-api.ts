@@ -125,6 +125,17 @@ export const staffApi = baseApi.injectEndpoints({
      * The command palette's staff hits. Capped at ten, needs two characters,
      * and carries no email address.
      */
+    /**
+     * Which staff record is the caller's own. No key: every member of staff
+     * reaches their own record, and a teacher holds no directory key. 404 for
+     * an account with no staff record at this school.
+     */
+    getMyStaffRecord: builder.query<Envelope<{ id: number }>, void>({
+      query: () => ({ url: `/i/me/staff/mine/`, method: "GET" }),
+      extraOptions: { silent: true },
+      providesTags: ["SchoolStaff"],
+    }),
+
     searchStaff: builder.query<Envelope<StaffSearchHit[]>, string>({
       query: (q) => ({ url: `/i/me/staff/search/`, method: "GET", params: { q } }),
       extraOptions: { silent: true },
@@ -534,6 +545,7 @@ export const {
   useCreateStaffMutation,
   useUpdateStaffMutation,
   useSearchStaffQuery,
+  useGetMyStaffRecordQuery,
   useLazySearchStaffQuery,
   useResendStaffInvitationMutation,
   useRevokeStaffInvitationMutation,

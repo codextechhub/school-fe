@@ -158,6 +158,7 @@ export const routesPath = {
       ENROLMENT: "/settings/enrolment",
       ADMISSION_NUMBERS: "/settings/admission-numbers",
       PAYROLL: "/settings/payroll",
+      STAFF_PROFILES: "/settings/staff-profiles",
       MORE: "/settings/more",
     },
     // Who can do what, after go-live. The onboarding screen at
@@ -280,6 +281,8 @@ export const routesPath = {
       // dotted lines behind it that an administrator maintains.
       ORGANOGRAM: "/staff/organogram",
       ORGANOGRAM_MANAGE: "/staff/organogram/manage",
+      // The signed-in person's own record, whatever its id.
+      ME: "/staff/me",
       PROFILE: "/staff/:id",
       PROFILE_ID: (id: string | number) => `/staff/${id}`,
     },

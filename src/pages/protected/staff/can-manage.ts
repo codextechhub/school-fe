@@ -9,6 +9,6 @@ import type { StaffListRow } from "@/redux/services/staff/staff-types";
  * because they work there too, and their record is relied on by every other
  * branch that sees it. The rule is the app-wide one in `canManageRow`.
  */
-export function canManage(person: StaffListRow): boolean {
+export function canManage(person: Pick<StaffListRow, "can_manage">): boolean {
   return canManageRow(person);
 }

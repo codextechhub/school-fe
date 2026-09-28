@@ -6,7 +6,8 @@ const PROBLEMS = [
   ["A post you know exists is missing", "The chart shows posts that somebody holds. A vacant post is left off, and the people under it move up to the nearest filled post above."],
   ["Someone suspended still appears", "Suspension keeps a person in their post, so the chart still shows them, marked Suspended, and their seat still counts as filled. Approvals that would have gone to them go past them instead."],
   ["Nobody holds a post in this unit yet", "The unit filter is on a unit with no filled posts. Select Reset to see the whole school again."],
-  ["There is no Open staff profile", "You can always open your own record. Opening a colleague's needs access to the staff directory."],
+  ["A colleague's profile shows only a contact card", "Your school shows colleagues in your position only the contact card. What else you see is set in Settings, under Staff profiles."],
+  ["A leaver's profile does not open", "Only people who work at the school now are colleagues. The profile of somebody who has left, or who has not accepted their invitation, opens only for people whose role reaches staff records."],
 ] as const;
 
 export default function ReadOrganogramArticle() {
@@ -31,7 +32,7 @@ export default function ReadOrganogramArticle() {
         </div>
         <p>Both tabs show the school as it is staffed: a post nobody holds is left off, and the people under it move up to the nearest filled post above.</p>
         <p>A suspended member of staff keeps their post, and their seat still counts as filled. On <strong>People</strong> their card is greyed with a red <strong>Suspended</strong> badge; on <strong>Posts</strong> their face is faded, and pointing at it reads their name followed by &quot;(suspended)&quot;. The person panel shows the same badge. Suspended covers a suspended job or a suspended sign-in, and while it lasts they are passed over as an approver.</p>
-        <p>If your role can edit staff records, a strip above the tabs counts <strong>Active staff</strong>, <strong>Departments</strong>, <strong>Acting</strong>, <strong>On leave</strong> and <strong>Suspended</strong>.</p>
+        <p>If your role can edit staff records, a strip above the tabs counts <strong>Active staff</strong>, <strong>Departments</strong>, <strong>Acting</strong>, <strong>On leave</strong> and <strong>Suspended</strong>. If you work in some branches rather than the whole school, the strip counts only your branches and the school-wide staff, and a line under it names them. The chart itself stays whole.</p>
       </GuideSection>
 
       <GuideSection id="find-someone" title="Find somebody or a post">
@@ -61,7 +62,7 @@ export default function ReadOrganogramArticle() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div className="rounded-2xl border border-gray-200 bg-white p-4">
             <p className="text-sm font-semibold text-black-01">Person</p>
-            <p className="mt-1 text-xs leading-5 text-gray-01">Their <strong>Post</strong>, <strong>Unit</strong> and <strong>Branch</strong>, and their <strong>Reporting line</strong> up to the top of the school. Select any name in the line to open that person. With access to the staff directory you also see <strong>Open staff profile</strong>, and if your role can edit staff records, <strong>Post history</strong>.</p>
+            <p className="mt-1 text-xs leading-5 text-gray-01">Their <strong>Post</strong>, <strong>Unit</strong> and <strong>Branch</strong>, and their <strong>Reporting line</strong> up to the top of the school. Select any name in the line to open that person. <strong>Open staff profile</strong> takes you to their profile, and if your role can edit staff records you also see <strong>Post history</strong>.</p>
           </div>
           <div className="rounded-2xl border border-gray-200 bg-white p-4">
             <p className="text-sm font-semibold text-black-01">Post</p>
@@ -69,6 +70,17 @@ export default function ReadOrganogramArticle() {
           </div>
         </div>
         <p>A post with no branch reads <strong>School-wide</strong>.</p>
+      </GuideSection>
+
+      <GuideSection id="open-a-profile" title="Open a colleague's profile">
+        <p>Anyone at the school can select <strong>Open staff profile</strong> on anybody&apos;s person panel, at any branch. How much of the profile you then see depends on how you stand to that person, and your school sets it in <strong>Settings</strong>, under <strong>Staff profiles</strong>:</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>You always see their <strong>contact card</strong>: name, photograph, post, branch, sign-in email and phone number.</li>
+          <li>If you are above them on the chart, at any level and including through an acting post or a dotted line, you see what your school shows line managers. By default that adds their employment details, leave and teaching duties.</li>
+          <li>Otherwise you see what your school shows colleagues, which by default is the contact card alone.</li>
+          <li>If your role reaches staff records at their branch, you see what your role allows, as the staff directory shows it.</li>
+        </ul>
+        <p>A profile opened this way cannot be changed, and it has no <strong>As at</strong> control. A line under the details reads <strong>You see what your school shows colleagues in your position. An administrator sees the full record.</strong></p>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">
@@ -83,7 +95,7 @@ export default function ReadOrganogramArticle() {
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="You are done when">You can find your own place on the chart, see who you report to and who reports to you, and open anybody&apos;s card to read their post and reporting line.</GuideCallout>
+        <GuideCallout tone="tip" title="You are done when">You can find your own place on the chart, see who you report to and who reports to you, and open anybody&apos;s card to read their post and reporting line, and their profile to read what your school shows you.</GuideCallout>
       </GuideSection>
     </div>
   );

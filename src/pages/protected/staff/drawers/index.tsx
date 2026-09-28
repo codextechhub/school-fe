@@ -11,6 +11,7 @@ import { LeaveDrawer } from "./leave-drawer";
 import { PostingDrawer } from "./posting-drawer";
 import { RoleDrawer } from "./role-drawer";
 import { RolePreviewDrawer } from "./role-preview-drawer";
+import { SelfEditDrawer } from "./self-edit-drawer";
 import { StatusDrawer } from "./status-drawer";
 
 /**
@@ -22,6 +23,7 @@ import { StatusDrawer } from "./status-drawer";
 export type StaffDrawerRequest =
   | { kind: "status"; staffId: number }
   | { kind: "edit"; staffId: number }
+  | { kind: "selfEdit"; staffId: number }
   | { kind: "email"; staffId: number }
   | { kind: "role"; staffId: number }
   | { kind: "leave"; staffId: number; personName: string; isSelf: boolean }
@@ -80,7 +82,10 @@ export function StaffDrawers({
   const [previewRole, setPreviewRole] = useState<string | null>(null);
 
   const needsRecord =
-    request?.kind === "edit" || request?.kind === "email" || request?.kind === "role";
+    request?.kind === "edit" ||
+    request?.kind === "selfEdit" ||
+    request?.kind === "email" ||
+    request?.kind === "role";
   const { data } = useGetStaffMemberQuery(
     request && "staffId" in request ? request.staffId : 0,
     { skip: !needsRecord },
@@ -165,6 +170,9 @@ export function StaffDrawers({
         onChangeEmail={() => onRequest({ kind: "email", staffId: person.id })}
       />
     );
+  }
+  if (request.kind === "selfEdit") {
+    return <SelfEditDrawer key={`self-edit-${person.id}`} person={person} onClose={onClose} />;
   }
   if (request.kind === "email") {
     return <EmailDrawer key={`email-${person.id}`} person={person} onClose={onClose} />;

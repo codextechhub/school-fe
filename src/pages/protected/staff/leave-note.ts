@@ -14,8 +14,8 @@ import { formatDate } from "../students/format";
  * date would be worse than none, and the badge is correct without it.
  */
 export function leaveNote(person: {
-  display_employment_status: EmploymentStatus;
-  on_leave_until: string | null;
+  display_employment_status?: EmploymentStatus;
+  on_leave_until?: string | null;
 }): string | undefined {
   if (person.display_employment_status !== "ON_LEAVE") return undefined;
   if (!person.on_leave_until) return undefined;

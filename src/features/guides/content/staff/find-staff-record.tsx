@@ -53,6 +53,7 @@ export default function FindStaffRecordArticle() {
           ))}
         </div>
         <p>The <strong>As at</strong> control shows the record and every tab as they stood at the end of an earlier day, with every button that changes the record hidden.</p>
+        <GuideCallout tone="info" title="Not everybody sees every tab">Your school decides in <strong>Settings</strong>, under <strong>Staff profiles</strong>, how much of a profile each person sees. Somebody whose role does not reach a colleague&apos;s record, such as a teacher opening a colleague from the organogram, gets a contact card with the colleague&apos;s name, photograph, post, branch, sign-in email and phone number, plus only the tabs your school shows them. That view changes nothing and has no <strong>As at</strong>. The same setting decides which tabs a member of staff sees on their own profile when their role holds no key for them.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="fix-the-record" title="Fix the record">
@@ -79,7 +80,8 @@ export default function FindStaffRecordArticle() {
           { title: "Somebody I expect is missing", body: "Check the branch in the sidebar and clear every filter chip. A person posted to another branch appears only when that branch or All branches is chosen." },
           { title: "The row menu has only View profile", body: "Either your role cannot change staff, or the person works beyond your branch and only a school-wide administrator can change them." },
           { title: "The Teaching or Leave tab says it opens at go-live", body: "Teaching duties and leave belong to a running school year. They open once the school goes live." },
-          { title: "Apply for leave is missing", body: "You are looking at somebody else's record, or looking at an earlier day. Open your own record on today's date." },
+          { title: "Apply for leave is missing", body: "You are looking at somebody else's record, or looking at an earlier day. Open your own record on today's date: select your picture at the top right, then My staff record. If your own profile has no Leave tab, your school does not show leave to staff on their own profile; ask your school administrator." },
+          { title: "A colleague's profile has fewer tabs than mine", body: "Your role does not reach their record, so you see what your school shows people in your position. Your school sets it in Settings, under Staff profiles." },
         ]} />
       </GuideSection>
 

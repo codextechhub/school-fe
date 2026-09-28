@@ -4,8 +4,10 @@
  * Every member of staff reads it, so it carries what the chart carries (name,
  * post, unit, branch, reporting line) and nothing a colleague may not read.
  * Contact details, pay and leave stay on the staff record, which the person
- * panel links to for a viewer who may open it. Appointment history, with its
- * dates, is drawn only for a viewer who may edit staff records.
+ * panel links to. Any colleague may open it and reads what the school's
+ * staff-profile setting shows their relationship to that person. Appointment
+ * history, with its dates, is drawn only for a viewer who may edit staff
+ * records.
  */
 
 import { useMemo } from "react";

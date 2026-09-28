@@ -63,7 +63,7 @@ export function InvitationSent({
 
         <dl className="mt-5 grid max-w-md gap-2.5">
           {person.email && <Row label="Sent to" value={person.email} />}
-          <Row label="Role" value={roleLabel || person.roles.join(", ") || "-"} />
+          <Row label="Role" value={roleLabel || person.roles?.join(", ") || "-"} />
           {person.staff_number && (
             <Row label="Staff ID" value={person.staff_number} />
           )}

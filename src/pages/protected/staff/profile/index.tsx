@@ -45,7 +45,11 @@ import {
   useResendStaffInvitationMutation,
   useStaffAccountActionMutation,
 } from "@/redux/services/staff/staff-api";
-import type { StaffDetail } from "@/redux/services/staff/staff-types";
+import type {
+  StaffDetail,
+  StaffProfileSection,
+  StaffRestrictedDetail,
+} from "@/redux/services/staff/staff-types";
 
 import { AccountBadge, EmploymentBadge } from "../badges";
 import { canManage } from "../can-manage";
@@ -53,6 +57,8 @@ import { leaveNote } from "../leave-note";
 import { PersonAvatar } from "../../students/person-avatar";
 import { formatDate } from "../../students/format";
 import { Lifecycle } from "./lifecycle";
+import { tabsFor } from "./profile-sections";
+import { RestrictedStaffProfile } from "./restricted-profile";
 import {
   AccessTab,
   DocumentsTab,
@@ -69,16 +75,6 @@ import {
   getStaffProfileCompleteness,
   type StaffProfileGap,
 } from "../profile-completeness";
-
-const TABS = [
-  { label: "Overview", value: "overview" },
-  { label: "Teaching", value: "teaching" },
-  { label: "Access", value: "access" },
-  { label: "Qualifications", value: "qualifications" },
-  { label: "Documents", value: "documents" },
-  { label: "Leave", value: "leave" },
-  { label: "History", value: "history" },
-];
 
 /**
  * One person's record.
@@ -119,7 +115,9 @@ export default function StaffProfile() {
   const [accountAction, { isLoading: actingOnAccount }] =
     useStaffAccountActionMutation();
   const canChangeEmail = useCanChangeStaffEmail(person);
-  const canSeeChart = usePermissions().hasPermission(P.VIEW_SCHOOL_ORGANOGRAM);
+  const { hasPermission } = usePermissions();
+  const canSeeChart = hasPermission(P.VIEW_SCHOOL_ORGANOGRAM);
+  const signedInUserId = useAppSelector(selectUser)?.id;
 
   if (isError && asAt) {
     return (
@@ -178,8 +176,31 @@ export default function StaffProfile() {
     }
   }
 
+  // A line manager or a colleague reads the parts the school's setting gives them.
+  if (person?.profile_view === "restricted") {
+    return (
+      <PageShell className="content-start gap-5" grid>
+        <RestrictedStaffProfile
+          person={person as unknown as StaffRestrictedDetail}
+          tab={tab}
+          canSeeChart={canSeeChart}
+          renderTab={(current) => (
+            <TabBody tab={current} person={person} onOpenDrawer={setDrawer} />
+          )}
+        />
+        <StaffDrawers request={drawer} onClose={() => setDrawer(null)} onRequest={setDrawer} />
+      </PageShell>
+    );
+  }
+
   // Readable is not changeable: a branch administrator reads school-wide staff.
   const manageable = person ? canManage(person) : false;
+  // Somebody without the update key still corrects their own contact details.
+  const editsOwnDetailsOnly =
+    !!person &&
+    signedInUserId != null &&
+    signedInUserId === person.user_id &&
+    !(manageable && hasPermission(P.MODIFY_TEACHER));
 
   return (
     <AsAtContext.Provider value={asAt}>
@@ -210,17 +231,21 @@ export default function StaffProfile() {
                     {person.full_name}
                   </h1>
                   <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[13px]">
-                    <span
-                      className={
-                        person.staff_number ? "text-gray-01" : "text-gray-02"
-                      }
-                    >
-                      {person.staff_number || "No staff ID"}
-                    </span>
-                    <Dot />
-                    <span className="text-gray-01">
-                      {person.job_title || "No job title"}
-                    </span>
+                    {(!person.visible_sections || person.visible_sections.includes("employment")) && (
+                      <>
+                        <span
+                          className={
+                            person.staff_number ? "text-gray-01" : "text-gray-02"
+                          }
+                        >
+                          {person.staff_number || "No staff ID"}
+                        </span>
+                        <Dot />
+                        <span className="text-gray-01">
+                          {person.job_title || "No job title"}
+                        </span>
+                      </>
+                    )}
                     {person.branch_name && (
                       <>
                         <Dot />
@@ -229,11 +254,11 @@ export default function StaffProfile() {
                         </span>
                       </>
                     )}
-                    {person.roles.length > 0 && (
+                    {(person.roles?.length ?? 0) > 0 && (
                       <>
                         <Dot />
                         <span className="text-gray-05">
-                          {person.roles.join(", ")}
+                          {person.roles?.join(", ")}
                         </span>
                       </>
                     )}
@@ -265,14 +290,16 @@ export default function StaffProfile() {
                     "Active" for most people at most schools, and two identical
                     chips are otherwise ambiguous. */}
                   <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-                    <span className="inline-flex items-center gap-2">
-                      <span className="text-xs text-gray-05">Employment</span>
-                      <EmploymentBadge
-                        status={person.display_employment_status}
-                        label={person.display_employment_status_label}
-                        note={leaveNote(person)}
-                      />
-                    </span>
+                    {person.display_employment_status && (
+                      <span className="inline-flex items-center gap-2">
+                        <span className="text-xs text-gray-05">Employment</span>
+                        <EmploymentBadge
+                          status={person.display_employment_status}
+                          label={person.display_employment_status_label}
+                          note={leaveNote(person)}
+                        />
+                      </span>
+                    )}
                     <span className="inline-flex items-center gap-2">
                       <span className="text-xs text-gray-05">Account</span>
                       <AccountBadge
@@ -304,6 +331,14 @@ export default function StaffProfile() {
                     Edit staff
                   </Button>
                 </PermissionGate>
+                {editsOwnDetailsOnly && (
+                  <Button
+                    size="sm"
+                    onClick={() => setDrawer({ kind: "selfEdit", staffId: person.id })}
+                  >
+                    Update my details
+                  </Button>
+                )}
                 <PermissionGate permission={P.TRANSITION_TEACHER} disabled={!manageable}>
                   <Button
                     size="sm"
@@ -373,7 +408,7 @@ export default function StaffProfile() {
                   </p>
                 )}
               </div>
-              <Lifecycle lifecycle={person.lifecycle} />
+              {person.lifecycle && <Lifecycle lifecycle={person.lifecycle} />}
             </div>
 
             {/* The date control sits on the completeness card, one panel beside the person. */}
@@ -390,7 +425,7 @@ export default function StaffProfile() {
       </Surface>
 
       <div className="max-w-full overflow-x-auto">
-        <Tabs tabKey="tab" tabs={TABS} />
+        <Tabs tabKey="tab" tabs={tabsFor(person?.visible_sections)} />
       </div>
 
       {person ? (
@@ -560,6 +595,10 @@ function OverviewTab({
   // read is not listed.
   const access = useFieldAccess(FIELD_RESOURCE.STAFF, person);
   const asAt = useAsAt();
+  // A section this reader may not see is left out, never shown with a default.
+  const shows = (section: StaffProfileSection) =>
+    !person.visible_sections || person.visible_sections.includes(section);
+  const PERSONAL_ONLY = new Set(["middle_name", "gender", "date_of_birth"]);
   const personal = [
     { label: "Full name", value: person.full_name || "Hidden" },
     { name: "middle_name", label: "Middle name", value: person.middle_name || "-" },
@@ -567,7 +606,11 @@ function OverviewTab({
     { name: "date_of_birth", label: "Date of birth", value: formatDate(person.date_of_birth ?? null) },
     { name: "email", label: "Email", value: person.email || "Not recorded" },
     { name: "phone", label: "Phone", value: person.phone || "Not recorded" },
-  ].filter((row) => !row.name || !access.isHidden(row.name));
+  ].filter(
+    (row) =>
+      (!row.name || !access.isHidden(row.name)) &&
+      (!row.name || !PERSONAL_ONLY.has(row.name) || shows("personal")),
+  );
   const employment = [
     { name: "staff_number", label: "Staff ID", value: person.staff_number || "Not issued" },
     { name: "job_title", label: "Job title", value: person.job_title || "Not recorded" },
@@ -584,10 +627,12 @@ function OverviewTab({
           label: "Posting",
           value: person.posted_school_wide ? "School-wide" : person.branch_name ?? "",
         }]),
-    {
-      label: "Roles",
-      value: person.roles.length ? person.roles.join(", ") : "No role assigned",
-    },
+    ...(person.roles === undefined
+      ? []
+      : [{
+          label: "Roles",
+          value: person.roles.length ? person.roles.join(", ") : "No role assigned",
+        }]),
     {
       label: "Length of service",
       value: person.tenure
@@ -613,44 +658,48 @@ function OverviewTab({
           <DetailGrid rows={personal} />
         </ProfilePanel>
 
-        <ProfilePanel title="Employment" icon={BriefcaseBusiness}>
-          <DetailGrid rows={employment} />
-        </ProfilePanel>
+        {shows("employment") && (
+          <ProfilePanel title="Employment" icon={BriefcaseBusiness}>
+            <DetailGrid rows={employment} />
+          </ProfilePanel>
+        )}
 
+        {/* One card per count the record carries: a section the reader may
+            not open sends no count, and gets no card. */}
         <div className="grid gap-4 sm:grid-cols-3">
-          <SnapshotCard
-            icon={BookOpen}
-            title="Teaching"
-            value={person.counts.teaching_assignments}
-            label={
-              person.counts.teaching_assignments === 1
-                ? "assignment"
-                : "assignments"
-            }
-            action="View teaching"
-            onOpen={() => onOpenTab("teaching")}
-            tone="bg-violet-50 text-violet-800"
-          />
-          <SnapshotCard
-            icon={ShieldCheck}
-            title="Qualifications"
-            value={person.counts.qualifications}
-            label={
-              person.counts.qualifications === 1 ? "record" : "records"
-            }
-            action="View qualifications"
-            onOpen={() => onOpenTab("qualifications")}
-            tone="bg-blue-50 text-blue-800"
-          />
-          <SnapshotCard
-            icon={FileText}
-            title="Documents"
-            value={person.counts.documents}
-            label={person.counts.documents === 1 ? "file" : "files"}
-            action="View documents"
-            onOpen={() => onOpenTab("documents")}
-            tone="bg-emerald-50 text-emerald-800"
-          />
+          {person.counts?.teaching_assignments != null && (
+            <SnapshotCard
+              icon={BookOpen}
+              title="Teaching"
+              value={person.counts.teaching_assignments}
+              label={person.counts.teaching_assignments === 1 ? "assignment" : "assignments"}
+              action="View teaching"
+              onOpen={() => onOpenTab("teaching")}
+              tone="bg-violet-50 text-violet-800"
+            />
+          )}
+          {person.counts?.qualifications != null && (
+            <SnapshotCard
+              icon={ShieldCheck}
+              title="Qualifications"
+              value={person.counts.qualifications}
+              label={person.counts.qualifications === 1 ? "record" : "records"}
+              action="View qualifications"
+              onOpen={() => onOpenTab("qualifications")}
+              tone="bg-blue-50 text-blue-800"
+            />
+          )}
+          {person.counts?.documents != null && (
+            <SnapshotCard
+              icon={FileText}
+              title="Documents"
+              value={person.counts.documents}
+              label={person.counts.documents === 1 ? "file" : "files"}
+              action="View documents"
+              onOpen={() => onOpenTab("documents")}
+              tone="bg-emerald-50 text-emerald-800"
+            />
+          )}
         </div>
       </div>
 
@@ -681,12 +730,12 @@ function OverviewTab({
           <DetailList
             rows={[
               { label: "Account", value: person.account.label },
-              {
-                label: "Roles",
-                value: person.roles.length
-                  ? person.roles.join(", ")
-                  : "No role assigned",
-              },
+              ...(person.roles === undefined
+                ? []
+                : [{
+                    label: "Roles",
+                    value: person.roles.length ? person.roles.join(", ") : "No role assigned",
+                  }]),
               ...(person.posted_school_wide == null
                 ? []
                 : [{
@@ -697,6 +746,7 @@ function OverviewTab({
           />
         </ProfilePanel>
 
+        {shows("leave") && (
         <ProfilePanel
           title="Leave snapshot"
           icon={CalendarClock}
@@ -724,14 +774,15 @@ function OverviewTab({
                 ? "Available that day"
                 : "Available today"}
           </p>
-          <p className="mt-1 text-xs text-gray-05">
-            {person.counts.leave_requests}{" "}
-            {person.counts.leave_requests === 1
-              ? "leave request"
-              : "leave requests"}{" "}
-            on record
-          </p>
+          {person.counts?.leave_requests != null && (
+            <p className="mt-1 text-xs text-gray-05">
+              {person.counts.leave_requests}{" "}
+              {person.counts.leave_requests === 1 ? "leave request" : "leave requests"}{" "}
+              on record
+            </p>
+          )}
         </ProfilePanel>
+        )}
 
         <ProfilePanel title="Recent activity" icon={Clock3}>
           <ol className="grid gap-3">

@@ -8,6 +8,7 @@ import {
   School,
   ShieldCheck,
   UserPlus,
+  UserRoundCog,
 } from "lucide-react";
 import {
   ConsoleSettingsLayout,
@@ -34,6 +35,7 @@ import { NotificationsSection } from "./sections/notifications-section";
 import { PayrollSection } from "./sections/payroll-section";
 import { ProfileSection } from "./sections/profile-section";
 import { SecuritySection } from "./sections/security-section";
+import { StaffProfilesSection } from "./sections/staff-profiles-section";
 
 const BASE = routesPath.PROTECTED.SETTINGS.INDEX;
 
@@ -48,6 +50,7 @@ const SECTION_META: Record<
   enrolment: { title: "Enrolment", description: "Ages, documents, classes", icon: UserPlus },
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash },
   payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark },
+  "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog },
   more: { title: "More settings", description: "Roles, approvals, finance", icon: ListChecks },
 };
 
@@ -58,6 +61,7 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   enrolment: EnrolmentSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
+  "staff-profiles": StaffProfilesSection,
   more: MoreSection,
 };
 
@@ -140,5 +144,6 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   enrolment: "How old a new pupil may be, which documents and details are required, and how full a class may get.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
+  "staff-profiles": "How much of a colleague's profile their line managers and other colleagues see.",
   more: "Roles, field access, approval paths, and the Finance and Procurement settings.",
 };

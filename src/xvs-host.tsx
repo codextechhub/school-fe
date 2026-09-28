@@ -23,6 +23,9 @@ import { returnInitial } from "@/utils/helpers";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
+import { useGetOrgPositionsQuery } from "@/redux/services/staff/organogram-api";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { SchoolMark } from "@/components/school-mark";
 
@@ -77,18 +80,32 @@ export function useRoles(): HostQueryResult<HostRole> {
   return { data: rows, isLoading, isError };
 }
 
-/** A school has no organogram, so there are no seats to approve through.
+/** The posts on the school's own organogram, to route an approval to.
  *
- *  The organogram is CodeX's own reporting structure - platform-scoped, with no
- *  tenant column and a platform key on its endpoint - so there is no version of
- *  it a school could be shown. Answering with an empty list is the real answer
- *  rather than a gap: the approver picker drops its Positions tab instead of
- *  offering one that could never list anything, which is what it did while the
- *  package queried the console's endpoint directly and answered every school
- *  administrator 403.
+ *  A stage or an approver group names a post by its code, and the server
+ *  resolves the code inside this school's chart, so "every purchase over the
+ *  limit goes to whoever holds Bursar" keeps working when the Bursar changes.
+ *  `holders` counts the people in the post today, suspended ones included,
+ *  which is how the picker warns about a post that currently reaches nobody.
+ *
+ *  Read under the chart's own key. A caller without it gets no list rather
+ *  than a refusal, and the picker then leaves its Positions choice out.
  */
 export function usePositions(): HostQueryResult<HostPosition> {
-  return { data: [], isLoading: false, isError: false };
+  const { hasPermission } = usePermissions();
+  const canRead = hasPermission(P.VIEW_SCHOOL_ORGANOGRAM);
+  const { data, isLoading, isError } = useGetOrgPositionsQuery(
+    { page_size: 100 },
+    { skip: !canRead },
+  );
+  if (!canRead) return { data: [], isLoading: false, isError: false };
+  const rows = Array.isArray(data?.data)
+    ? data.data.map((p) => ({
+        code: p.code, title: p.title, is_active: p.is_active,
+        holders: p.current_holders.length,
+      }))
+    : undefined;
+  return { data: rows, isLoading, isError };
 }
 
 /** This app keeps no recently-opened trail, so noting one is a no-op.

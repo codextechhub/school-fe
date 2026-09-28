@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, type ReactNode } from "react";
 import { Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -17,7 +17,10 @@ import { PersonAvatar } from "./person-avatar";
  * clicks away, so the circle carries the button. One component for students,
  * guardians and staff because they are the same gesture on the same shape, and
  * copies would drift. `permission` is the key the caller's photo endpoint
- * enforces, which differs by record, so every caller names it.
+ * enforces, which differs by record, so every caller names it. `null` is for
+ * the one endpoint that admits the record's owner without any key: a member of
+ * staff changing their own photograph. The caller has already decided, and
+ * `editable` carries the answer.
  *
  * A photograph is optional on all of them. Nothing gates on one being set, and
  * a student or guardian record is not marked incomplete without it: a school
@@ -52,10 +55,18 @@ export function PhotoPicker({
   size?: string;
   textClassName?: string;
   editable?: boolean;
-  /** The key the photo endpoint enforces for this record. */
-  permission: PermissionCode;
+  /** The key the photo endpoint enforces for this record, or null for the owner's own. */
+  permission: PermissionCode | null;
 }) {
   const input = useRef<HTMLInputElement>(null);
+  const control = (children: ReactNode) =>
+    permission === null ? (
+      editable ? <>{children}</> : null
+    ) : (
+      <PermissionGate permission={permission} disabled={!editable}>
+        {children}
+      </PermissionGate>
+    );
 
   async function choose(file: File | undefined) {
     if (!file) return;
@@ -75,7 +86,7 @@ export function PhotoPicker({
         className={size}
         textClassName={textClassName}
       />
-      <PermissionGate permission={permission} disabled={!editable}>
+      {control(<>
         <input
           ref={input}
           type="file"
@@ -110,7 +121,7 @@ export function PhotoPicker({
             <Camera className="size-3.5" />
           )}
         </button>
-      </PermissionGate>
+      </>)}
     </div>
   );
 }

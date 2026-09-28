@@ -13,6 +13,7 @@ const StaffPosting = lazy(() => import("@/pages/protected/staff/posting"));
 const TeachingDuties = lazy(() => import("@/pages/protected/staff/teaching"));
 const Organogram = lazy(() => import("@/pages/protected/staff/organogram"));
 const OrganogramManage = lazy(() => import("@/pages/protected/staff/organogram/manage"));
+const MyStaffRecord = lazy(() => import("@/pages/protected/staff/my-record"));
 
 const S = routesPath.PROTECTED.STAFF;
 
@@ -119,6 +120,17 @@ export const staffRoutes = [
       title: "Manage organogram",
       hasBack: true,
       lenses: "none",
+    } satisfies DashboardHandle,
+  },
+  {
+    // Everybody's own record, including a teacher with no directory key. Open
+    // before go-live, as the record itself is.
+    path: S.ME,
+    Component: MyStaffRecord,
+    handle: {
+      title: "My staff record",
+      lenses: "none",
+      pendingSurface: true,
     } satisfies DashboardHandle,
   },
   {

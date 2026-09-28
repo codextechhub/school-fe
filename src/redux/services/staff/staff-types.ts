@@ -207,7 +207,23 @@ export interface StaffTenure {
  * `school.teachers`, absent when the viewer may not read it. Read as at an
  * earlier day, the record carries `as_at`.
  */
-export interface StaffDetail extends StaffListRow {
+/**
+ * The directory-row fields a staff record may leave out.
+ *
+ * A record carries only the sections its reader may see (the school's
+ * staff-profile setting, and the reader's keys), so even a full record can
+ * lack the employment block or the roles: a teacher reading their own record
+ * sees no roles unless the school shows people their own. List rows are never
+ * trimmed and keep these required.
+ */
+type SectionedRowFields =
+  | "on_roll" | "employment_status" | "employment_status_label"
+  | "display_employment_status" | "display_employment_status_label"
+  | "roles" | "teaching_load" | "on_leave_today" | "on_leave_until" | "hire_date";
+
+export interface StaffDetail
+  extends Omit<StaffListRow, SectionedRowFields>,
+    Partial<Pick<StaffListRow, SectionedRowFields>> {
   account: StaffAccountState;
   first_name?: string;
   middle_name?: string;
@@ -219,9 +235,9 @@ export interface StaffDetail extends StaffListRow {
   _read_only_fields?: string[];
   photo_url?: string | null;
   exit_date?: string | null;
-  tenure: StaffTenure | null;
-  lifecycle: StaffLifecycle;
-  counts: {
+  tenure?: StaffTenure | null;
+  lifecycle?: StaffLifecycle;
+  counts?: {
     qualifications: number;
     documents: number;
     teaching_assignments: number;
@@ -234,10 +250,65 @@ export interface StaffDetail extends StaffListRow {
    * hold no post, and absent on a record read as at an earlier day.
    */
   organogram?: StaffOrganogramPlacement | null;
+  /**
+   * How much of this record the reader was given. `full` for the person
+   * themselves and for a reader whose keys reach them; `restricted` for a line
+   * manager or a colleague, who gets only what the school's staff-profile
+   * setting shows their relationship. A restricted record lacks every field
+   * outside `visible_sections`, and several a full one always carries.
+   */
+  profile_view?: StaffProfileView;
+  /** The parts of the profile this reader may open, in the setting's order. */
+  visible_sections?: StaffProfileSection[];
   /** The first day this record can be read as at; null before it is first recorded. */
   history_starts: string | null;
   /** Present only on a record read as at an earlier day. */
   as_at?: AsAtMeta;
+}
+
+// ── Profile visibility ─────────────────────────────────────────────────────
+
+export type StaffProfileView = "full" | "restricted";
+
+/** A part of a staff profile the school's visibility setting switches. */
+export type StaffProfileSection =
+  | "contact" | "employment" | "personal" | "records" | "leave"
+  | "teaching" | "history" | "roles";
+
+/**
+ * A colleague's profile as a line manager or another colleague reads it.
+ *
+ * The contact card is always there; everything else arrives only when its
+ * section is in `visible_sections`.
+ */
+export interface StaffRestrictedDetail {
+  id: number;
+  user_id: number;
+  profile_view: "restricted";
+  visible_sections: StaffProfileSection[];
+  full_name: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  photo_url?: string | null;
+  branch_name?: string | null;
+  posted_school_wide?: boolean | null;
+  organogram?: StaffOrganogramPlacement | null;
+  staff_number?: string;
+  job_title?: string;
+  employment_type?: EmploymentType | "";
+  hire_date?: string | null;
+  exit_date?: string | null;
+  display_employment_status?: EmploymentStatus;
+  display_employment_status_label?: string;
+  on_leave_today?: boolean;
+  on_leave_until?: string | null;
+  middle_name?: string;
+  date_of_birth?: string | null;
+  gender?: string;
+  roles?: string[];
+  counts?: Partial<StaffDetail["counts"]>;
 }
 
 // ── The directory page ─────────────────────────────────────────────────────
