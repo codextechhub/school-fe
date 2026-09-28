@@ -8,7 +8,7 @@ import * as Yup from "yup";
  */
 const identifierField = Yup.string()
   .trim()
-  .required("Enter your email or staff ID")
+  .required("Enter your ID")
   .test(
     "email-if-address",
     "Invalid email address",

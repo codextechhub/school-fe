@@ -1,0 +1,39 @@
+.school-auth-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.school-auth-backdrop__dots {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(#9bbbf1 1px, transparent 1px);
+  background-size: 30px 30px;
+  opacity: 0.19;
+  -webkit-mask-image: linear-gradient(to bottom, #000 8%, transparent 84%);
+  mask-image: linear-gradient(to bottom, #000 8%, transparent 84%);
+}
+
+.school-auth-backdrop__rings {
+  position: absolute;
+  left: 50%;
+  top: 47%;
+  width: 600px;
+  height: 600px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgb(255 255 255 / 5.5%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 105px rgb(255 255 255 / 1.4%),
+    0 0 0 205px rgb(255 255 255 / 1%);
+  animation: school-auth-ring-glow 14s ease-in-out infinite;
+}
+
+@keyframes school-auth-ring-glow {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .school-auth-backdrop__rings { animation: none; }
+}

@@ -14,6 +14,13 @@ import { toast } from "sonner";
 import NoSchoolNotice from "@/components/auth/no-school-notice";
 import { currentSchoolSlug } from "@/utils/school-host";
 
+/**
+ * Password recovery for the school named by the current address.
+ *
+ * The form requires a school from the address. An ID-based request never
+ * reveals the email address on the account. The confirmation names only the
+ * ID the visitor entered, while an email request may repeat the address.
+ */
 export default function ForgotPassword() {
   const [schoolSlug] = useState(() => currentSchoolSlug());
   const [submitted, setSubmitted] = useState(false);
@@ -39,8 +46,6 @@ export default function ForgotPassword() {
     },
   });
 
-  // A reset is scoped to one school, so an address that names none has nothing
-  // to reset against.
   if (!schoolSlug) return <NoSchoolNotice action="reset your password" />;
 
   return (
@@ -65,18 +70,18 @@ export default function ForgotPassword() {
                 Forgot Password
               </h4>
               <p className="text-sm font-medium text-gray-01 font-mont">
-                Enter your email or staff ID and we will email you a reset link
+                Enter the ID or email linked to your account. We will email you a reset link.
               </p>
             </div>
 
             <div className="mt-4 mb-9">
               <CustomInput
-                label="Email or staff ID"
+                label="ID"
                 id="identifier"
                 autoComplete="username"
                 autoCapitalize="none"
                 spellCheck={false}
-                placeholder="you@example.com or STF/0012"
+                placeholder="Enter your ID"
                 className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
                 {...formik.getFieldProps("identifier")}
                 error={formik.touched.identifier ? formik.errors.identifier : ""}
@@ -110,7 +115,6 @@ export default function ForgotPassword() {
               <h4 className="font-semibold text-2xl text-black-01">
                 Check your Email!
               </h4>
-              {/* A staff ID never reveals the address it belongs to. */}
               <p className="text-sm font-medium text-gray-01 font-mont max-w-61.25 mx-auto">
                 {sentTo.includes("@") ? (
                   <>
@@ -120,8 +124,8 @@ export default function ForgotPassword() {
                 ) : (
                   <>
                     If <span className="text-black-01 font-semibold">{sentTo}</span>{" "}
-                    is your staff ID, we've sent a reset link to the email
-                    address on your account.
+                    matches an account, we've sent a reset link to its email
+                    address.
                   </>
                 )}
               </p>

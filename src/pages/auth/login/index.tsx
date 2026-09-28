@@ -89,18 +89,18 @@ export default function Login() {
           Sign in to your school
         </h4>
         <p className="text-sm font-medium text-gray-01 font-mont">
-          Staff can use their email address or staff ID.
+          Enter your details to access your account.
         </p>
       </div>
 
       <form onSubmit={formik.handleSubmit} className="mt-4 space-y-4">
         <CustomInput
-          label="Email or staff ID"
+          label="ID"
           id="identifier"
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="you@example.com or STF/0012"
+          placeholder="Enter your ID"
           className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
           {...formik.getFieldProps("identifier")}
           onChange={(e) => {

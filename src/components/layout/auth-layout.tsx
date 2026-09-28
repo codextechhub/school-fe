@@ -1,18 +1,33 @@
 import { useEffect, useState } from "react";
 import { Outlet } from "react-router";
-import ArrangingShapes from "@/components/auth/arranging-shapes";
 import SignInMark from "@/components/auth/sign-in-mark";
 import { AuthToaster } from "@/components/ui/sonner";
 import { useBrandFavicon } from "@/hooks/use-brand-favicon";
+import { useSchoolName } from "@/hooks/use-school-name";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { schoolLogoUrl } from "@/utils/school-brand";
+import "./auth-backdrop.css";
 
+function AuthBackdrop() {
+  return (
+    <div className="school-auth-backdrop" aria-hidden="true">
+      <div className="school-auth-backdrop__dots" />
+      <div className="school-auth-backdrop__rings" />
+    </div>
+  );
+}
+
+/**
+ * Shared school account layout.
+ *
+ * The address determines the school before a session exists. Its crest sits
+ * above the form on phones and above the form content on desktop, with the XVS
+ * mark as the existing fallback. A tall account form grows the page rather than
+ * being clipped by vertical centering on a short screen.
+ */
 export default function AuthLayout() {
-  // Read once per mount: the address cannot change without a page load.
   const [slug] = useState(() => currentSchoolSlug());
-  // The tab matched the page until the page grew a crest. A school signing in
-  // at its own address should not find the product's mark in the tab strip
-  // while its own badge sits on the form.
+  const schoolName = useSchoolName(slug);
   useBrandFavicon(schoolLogoUrl(slug));
 
   useEffect(() => {
@@ -20,37 +35,47 @@ export default function AuthLayout() {
   }, []);
 
   return (
-    <main className="w-screen h-screen flex bg-white">
-      {/* There is no sidebar here, so the toasts centre on the viewport and
-          clear only the top edge. */}
+    <>
       <AuthToaster />
-      {/* Left 45% - the calm, premium blue panel (desktop only). */}
-      <div className="w-[45%] hidden lg:block relative bg-[#0b1f4a] bg-[radial-gradient(120%_120%_at_50%_28%,#11264f_0%,#0b1f4a_45%,#081530_100%)]">
-        {/* Subtle texture layered under the shapes. */}
-        <div className="absolute inset-0 size-full bg-[url(/image/authBg.png)] bg-cover bg-center opacity-[0.06] z-0" />
-        <ArrangingShapes />
-      </div>
-
-      {/* Right 55% - white form column, centered. */}
-      {/* Scroll container: a flex column that is at least the full viewport
-          tall. The content block uses `m-auto` so it sits vertically centered
-          when it fits, and - unlike `justify-center`, which clips the top of
-          overflowing flex children - falls back to scrolling naturally from the
-          top when the content is taller than the viewport (reset-password's 4
-          fields on a short phone). `100dvh` accounts for mobile browser chrome. */}
-      <div className="w-full flex-1 relative px-6 hide-scrollbar overflow-y-auto flex flex-col min-h-[100dvh]">
-        <div className="w-full m-auto max-w-107.5 py-6 shrink-0">
-          {/* The school's own crest when the address names one, the XVS mark
-              otherwise, turning over on hover to write the wordmark. See
-              components/auth/sign-in-mark. */}
-          {/* Mobile-only - part of the centered block below lg. The blue
-              panel carries the mark on desktop, so this is hidden there. */}
-          <SignInMark size={32} className="lg:hidden mb-6" />
-          {/* Desktop-only (blue panel is shown alongside). */}
-          <SignInMark size={48} className="hidden lg:flex mb-6" />
-          <Outlet />
+      <main className="relative grid min-h-[100dvh] w-full grid-cols-1 overflow-hidden bg-[#0b1f4a] bg-[radial-gradient(105%_80%_at_50%_20%,#17396f_0%,#102957_46%,#081a3c_100%)] lg:grid-cols-[45%_55%] lg:bg-white lg:bg-none">
+        <div className="lg:hidden"><AuthBackdrop /></div>
+        <div className="relative hidden min-h-[100dvh] overflow-hidden bg-[#0b1f4a] bg-[radial-gradient(95%_75%_at_48%_38%,#1b3c77_0%,#102958_54%,#081a3c_100%)] lg:flex">
+          <AuthBackdrop />
+          <div className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-175 flex-col px-[clamp(30px,5vw,78px)] py-10 text-white">
+            <div className="mt-auto">
+              {slug && (
+                <p className="mb-3 min-h-8 font-serif text-[clamp(20px,2.1vw,29px)] italic leading-tight text-[#c2d7ff]">
+                  {schoolName}
+                </p>
+              )}
+              <h2 className="max-w-130 text-[clamp(37px,3.7vw,53px)] font-semibold leading-[1.08] tracking-[-0.05em]">
+                Everything in <span className="text-[#bdd3ff]">one place.</span>
+              </h2>
+              <img
+                src="/svg/school-one-system.svg"
+                alt=""
+                aria-hidden="true"
+                className="mt-7 w-full max-w-137.5"
+              />
+            </div>
+            <p className="mt-auto pt-5 text-xs text-[#afc4e7]">
+              One school. One clear view of what is happening.
+            </p>
+          </div>
         </div>
-      </div>
-    </main>
+        <div className="relative flex min-h-[100dvh] min-w-0 flex-col px-4 py-8 sm:px-6 lg:px-8">
+          <div className="mx-auto my-auto w-full max-w-107.5 shrink-0">
+            <SignInMark size={32} className="mb-6 lg:hidden" />
+            <div className="rounded-2xl bg-white px-5 py-8 shadow-[0_22px_55px_#03132e55] sm:px-7 lg:rounded-none lg:px-0 lg:py-0 lg:shadow-none">
+              <SignInMark size={48} className="mb-6 hidden lg:flex" />
+              <Outlet />
+            </div>
+          </div>
+          <p className="mx-auto w-full max-w-107.5 pt-5 text-center text-xs text-[#afc4e7] lg:text-[#8f9bb0]">
+            Stuck here? Contact Administrator
+          </p>
+        </div>
+      </main>
+    </>
   );
 }

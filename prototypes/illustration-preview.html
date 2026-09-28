@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>School illustration preview</title>
+    <link rel="stylesheet" href="/src/components/layout/auth-backdrop.css" />
+    <style>
+      @font-face { font-family: Geist; src: url("/node_modules/@fontsource-variable/geist/files/geist-latin-wght-normal.woff2") format("woff2"); font-weight: 100 900; font-display: swap; }
+      * { box-sizing: border-box; }
+      body { position: relative; margin: 0; min-height: 100dvh; display: grid; place-items: center; overflow: hidden; background: radial-gradient(95% 75% at 48% 38%, #1b3c77 0%, #102958 54%, #081a3c 100%); color: white; font-family: Geist, Arial, sans-serif; }
+      main { position: relative; width: min(100%, 660px); padding: 26px 20px 34px; }
+      .school { margin: 0 0 6px; color: #c2d7ff; font: italic clamp(21px, 4vw, 28px)/1.2 Georgia, serif; }
+      h1 { margin: 0 0 14px; font-size: clamp(31px, 6vw, 50px); line-height: 1.08; letter-spacing: -.05em; }
+      h1 span { color: #bdd3ff; }
+      img { display: block; width: 100%; height: auto; }
+      .note { margin: 8px 0 0; color: #a9c2e9; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="school-auth-backdrop" aria-hidden="true"><div class="school-auth-backdrop__dots"></div><div class="school-auth-backdrop__rings"></div></div>
+    <main>
+      <p class="school">Bright Star School</p>
+      <h1>Everything in <span>one place.</span></h1>
+      <img src="/svg/school-one-system.svg" alt="Ada's attendance and Femi's payment flow into Bisi's school view" />
+      <p class="note">Animated illustration preview. The figures and numbers are examples.</p>
+    </main>
+  </body>
+</html>

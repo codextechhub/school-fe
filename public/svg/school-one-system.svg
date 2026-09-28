@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 550 390">
+  <style>
+    text { font-family: Arial, sans-serif; }
+    .connector { fill: none; stroke: #91b4ec; stroke-opacity: .5; stroke-width: 2; stroke-dasharray: 5 7; stroke-linecap: round; }
+    .role-card { fill: url(#roleFill); stroke: #a9c8fc; stroke-opacity: .34; }
+    .principal-card { fill: url(#principalFill); stroke: #c2d7ff; stroke-opacity: .48; }
+    .card-shine { fill: none; stroke: white; stroke-opacity: .11; }
+    .role-name { fill: #f4f8ff; font-size: 15px; font-weight: 700; }
+    .role-title { fill: #a8c2ee; font-size: 11px; font-weight: 500; }
+    .action-label { fill: #a9c2eb; font-size: 10px; font-weight: 700; letter-spacing: .09em; }
+    .action-number { fill: white; font-size: 20px; font-weight: 700; letter-spacing: -.035em; }
+    .data-label { fill: #a9c2eb; font-size: 10px; font-weight: 600; }
+    .data-value { fill: white; font-size: 16px; font-weight: 700; }
+    .teacher-action { animation: teacher-glow 9s ease-in-out infinite; }
+    .bursar-action { animation: bursar-glow 9s ease-in-out infinite; }
+    .principal-action { animation: principal-glow 9s ease-in-out infinite; }
+    .teacher-signal { animation: teacher-flow 9s ease-in-out infinite; }
+    .bursar-signal { animation: bursar-flow 9s ease-in-out infinite; }
+    .principal-bars rect { transform-box: fill-box; transform-origin: center bottom; animation: bars-grow 9s ease-in-out infinite; }
+    .principal-bars rect:nth-child(2) { animation-delay: .13s; }
+    .principal-bars rect:nth-child(3) { animation-delay: .25s; }
+    @keyframes teacher-glow { 0%, 10%, 43%, 100% { filter: brightness(1); } 17%, 36% { filter: brightness(1.22); } }
+    @keyframes bursar-glow { 0%, 42%, 76%, 100% { filter: brightness(1); } 49%, 68% { filter: brightness(1.22); } }
+    @keyframes principal-glow { 0%, 68%, 100% { filter: brightness(1); } 81%, 94% { filter: brightness(1.18); } }
+    @keyframes teacher-flow { 0%, 20% { opacity: 0; transform: translate(0, 0); } 25% { opacity: 1; } 42% { opacity: 1; transform: translate(108px, 44px); } 47%, 100% { opacity: 0; transform: translate(108px, 44px); } }
+    @keyframes bursar-flow { 0%, 51% { opacity: 0; transform: translate(0, 0); } 56% { opacity: 1; } 73% { opacity: 1; transform: translate(108px, -57px); } 78%, 100% { opacity: 0; transform: translate(108px, -57px); } }
+    @keyframes bars-grow { 0%, 70%, 100% { transform: scaleY(.45); } 82%, 94% { transform: scaleY(1); } }
+    @media (prefers-reduced-motion: reduce) { .teacher-action, .bursar-action, .principal-action, .principal-bars rect { animation: none; } .teacher-signal, .bursar-signal { display: none; } }
+  </style>
+  <defs>
+    <linearGradient id="roleFill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#385f9a" stop-opacity=".85" /><stop offset="1" stop-color="#173366" stop-opacity=".89" /></linearGradient>
+    <linearGradient id="principalFill" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#426aa5" stop-opacity=".96" /><stop offset="1" stop-color="#183669" stop-opacity=".97" /></linearGradient>
+    <filter id="signalGlow"><feGaussianBlur stdDeviation="5" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+  </defs>
+  <path class="connector" d="M 224 110 C 270 110, 268 155, 320 155" />
+  <path class="connector" d="M 224 288 C 274 288, 270 231, 320 231" />
+  <g class="teacher-action">
+    <rect class="role-card" x="5" y="37" width="220" height="143" rx="23" />
+    <rect class="card-shine" x="11" y="43" width="208" height="131" rx="19" />
+    <circle cx="52" cy="83" r="17" fill="#e6b59a" />
+    <path d="M35 80 C35 58 69 57 69 78 C61 76 56 70 50 70 C44 76 40 79 35 80" fill="#142547" />
+    <path d="M25 127 C26 103 78 102 80 127" fill="#9cc2ff" />
+    <rect x="65" y="105" width="22" height="28" rx="3" fill="#f6f9ff" transform="rotate(-11 65 105)" />
+    <path d="m72 116 4 4 7-9" fill="none" stroke="#3f7ac8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" />
+    <text class="role-name" x="102" y="77">Ada</text>
+    <text class="role-title" x="102" y="94">Teacher</text>
+    <text class="action-label" x="27" y="153">ATTENDANCE</text>
+    <text class="action-number" x="124" y="155">28 / 30</text>
+  </g>
+  <g class="bursar-action">
+    <rect class="role-card" x="5" y="213" width="220" height="143" rx="23" />
+    <rect class="card-shine" x="11" y="219" width="208" height="131" rx="19" />
+    <circle cx="52" cy="259" r="17" fill="#a66c4f" />
+    <path d="M35 258 C37 236 67 236 69 258 L65 253 Q50 257 39 251 Z" fill="#1c2949" />
+    <path d="M25 303 C26 279 78 278 80 303" fill="#e2ad83" />
+    <circle cx="79" cy="306" r="15" fill="#fbd380" stroke="#f7e5b2" stroke-width="2" />
+    <text x="79" y="311" fill="#805c21" font-size="15" font-weight="700" text-anchor="middle">₦</text>
+    <text class="role-name" x="102" y="253">Femi</text>
+    <text class="role-title" x="102" y="270">Bursar</text>
+    <text class="action-label" x="27" y="329">PAYMENT</text>
+    <text class="action-number" x="124" y="331">₦450k</text>
+  </g>
+  <g>
+    <rect class="principal-card" x="320" y="64" width="225" height="277" rx="25" />
+    <rect class="card-shine" x="326" y="70" width="213" height="265" rx="21" />
+    <circle cx="360" cy="111" r="17" fill="#b87557" />
+    <path d="M343 109 C344 90 375 87 377 111 C366 102 356 103 343 109" fill="#1a294a" />
+    <path d="M336 147 C337 123 383 123 384 147" fill="#a9c6ee" />
+    <text class="role-name" x="397" y="107">Bisi</text>
+    <text class="role-title" x="397" y="125">Principal</text>
+    <g class="principal-action">
+      <rect x="337" y="168" width="191" height="150" rx="15" fill="#0e2854" stroke="#8bb5f0" stroke-opacity=".4" />
+      <text class="action-label" x="352" y="189">ONE SCHOOL VIEW</text>
+      <rect x="350" y="200" width="80" height="51" rx="8" fill="#2b5189" />
+      <text class="data-label" x="359" y="216">Attendance</text>
+      <text class="data-value" x="359" y="238">28 / 30</text>
+      <rect x="438" y="200" width="78" height="51" rx="8" fill="#2b5189" />
+      <text class="data-label" x="447" y="216">Payments</text>
+      <text class="data-value" x="447" y="238">₦450k</text>
+      <text class="data-label" x="351" y="273">SCHOOL ACTIVITY</text>
+      <g class="principal-bars" fill="#9dc1fb"><rect x="454" y="287" width="12" height="16" rx="2" /><rect x="473" y="278" width="12" height="25" rx="2" /><rect x="492" y="266" width="12" height="37" rx="2" fill="#fbd380" /></g>
+      <path d="M351 300 C369 291 380 296 392 282 S417 288 434 277" fill="none" stroke="#fbd380" stroke-width="2.5" stroke-linecap="round" />
+    </g>
+  </g>
+  <g class="teacher-signal" filter="url(#signalGlow)"><circle cx="225" cy="110" r="8" fill="#9fc4ff" /><path d="m221 110 3 3 5-6" fill="none" stroke="#143a75" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+  <g class="bursar-signal" filter="url(#signalGlow)"><circle cx="225" cy="288" r="9" fill="#fbd380" /><text x="225" y="292" fill="#7d5a1e" font-size="12" font-weight="700" text-anchor="middle">₦</text></g>
+</svg>
