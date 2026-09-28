@@ -123,7 +123,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
                   className={cn(
                     "rounded-xl border p-3.5 text-left transition-colors",
                     active
-                      ? "border-primary-01 bg-primary-01/5"
+                      ? "border-primary bg-primary/5"
                       : "border-white-02 bg-white hover:border-gray-04",
                   )}
                 >
@@ -131,7 +131,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
                     <CalendarClock
                       className={cn(
                         "mt-0.5 size-4 shrink-0",
-                        active ? "text-primary-01" : "text-gray-05",
+                        active ? "text-primary" : "text-gray-05",
                       )}
                     />
                     <span className="min-w-0">
