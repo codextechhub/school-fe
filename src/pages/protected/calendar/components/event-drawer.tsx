@@ -34,7 +34,7 @@ import type {
   CalendarEvent,
   CalendarEventWrite,
 } from "@/redux/services/calendar/calendar-types";
-import { EVENT_KINDS, eventVariant } from "./event-kind";
+import { eventKindsIn, eventVariant } from "./event-kind";
 import { formatRange } from "./dates";
 import { AudiencePicker } from "./audience-picker";
 import type { EventDraft } from "./event-draft";
@@ -104,6 +104,7 @@ export function EventDrawer({
     branches,
     label: tiedLabel,
   } = useBranchLens();
+  const kinds = eventKindsIn(useSchoolWords());
 
   const [draft, setDraft] = useState<EventDraft>(initial);
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
@@ -248,7 +249,7 @@ export function EventDrawer({
           <div className="mt-4">
             <Field label="Type *">
               <div className="flex flex-wrap gap-1.5">
-                {EVENT_KINDS.map((kind) => {
+                {kinds.map((kind) => {
                   const on = draft.event_type === kind.value;
                   return (
                     <button

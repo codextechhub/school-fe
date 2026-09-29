@@ -10,7 +10,7 @@ import {
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { cn } from "@/lib/utils";
 import type { TimelineTerm } from "@/redux/services/calendar/calendar-types";
-import { EVENT_KINDS } from "../components/event-kind";
+import { eventKindsIn } from "../components/event-kind";
 import { BLANK_FACETS, type EventFacets } from "./event-facets";
 import { useSchoolWords } from "@/hooks/use-school-words";
 
@@ -40,6 +40,7 @@ export function EventFilters({
 }) {
   const { branches } = useBranchLens();
   const words = useSchoolWords();
+  const kinds = eventKindsIn(words);
   const [open, setOpen] = useState(false);
 
   // Search is on the toolbar and has its own visible box, so it is not counted
@@ -54,7 +55,7 @@ export function EventFilters({
   if (facets.type !== "all") {
     chips.push({
       label:
-        EVENT_KINDS.find((k) => k.value === facets.type)?.label ?? facets.type,
+        kinds.find((k) => k.value === facets.type)?.label ?? facets.type,
       clear: () => onChange({ ...facets, type: "all" }),
     });
   }
@@ -98,7 +99,7 @@ export function EventFilters({
               className="h-9 w-full rounded-lg border border-white-02 bg-white px-2.5 text-sm outline-none focus:border-primary"
             >
               <option value="all">All types</option>
-              {EVENT_KINDS.map((kind) => (
+              {kinds.map((kind) => (
                 <option key={kind.value} value={kind.value}>
                   {kind.label}
                 </option>

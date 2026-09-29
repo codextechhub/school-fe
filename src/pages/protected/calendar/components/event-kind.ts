@@ -1,3 +1,4 @@
+import { labelInSchoolWords, type TermWords } from "@/lib/school-words";
 import type { EventType } from "@/redux/services/calendar/calendar-types";
 
 /**
@@ -28,6 +29,16 @@ export const EVENT_KINDS: {
 ];
 
 const BY_VALUE = new Map(EVENT_KINDS.map((k) => [k.value, k]));
+
+/**
+ * The kinds in the school's word, for the type picker and the type filter.
+ *
+ * A semester school's server already labels its rows "Mid-semester break"; a
+ * picker or filter reading the fixed list above would still say "Mid-term".
+ */
+export function eventKindsIn(words: TermWords): typeof EVENT_KINDS {
+  return EVENT_KINDS.map((kind) => ({ ...kind, label: labelInSchoolWords(kind.label, words) }));
+}
 
 /**
  * The badge colour for a type.
