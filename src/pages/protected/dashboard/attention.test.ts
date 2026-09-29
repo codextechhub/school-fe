@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { buildAttention } from "./attention";
+import { termWordsFor } from "@/lib/school-words";
 import type { CalendarAlert } from "@/redux/services/calendar/calendar-types";
 import type { OnboardingState } from "@/redux/services/onboarding/onboarding-types";
 import type { StudentSummary } from "@/redux/services/students/students-types";
@@ -80,6 +81,21 @@ describe("buildAttention", () => {
     const [info] = buildAttention({ alerts: [alert("EVENT_OUTSIDE_ANY_TERM")] });
     expect(blocking.tone).toBe("blocking");
     expect(info.tone).toBe("info");
+  });
+
+  it("titles the calendar alerts in the school's word for a term", () => {
+    const alerts = [alert("SESSION_HAS_NO_TERMS"), alert("TERM_DATES_OVERLAP")];
+
+    const [missing, overlap] = buildAttention({
+      alerts,
+      words: termWordsFor("SEMESTER"),
+    });
+    expect(missing.title).toBe("The year has no semesters");
+    expect(missing.action).toBe("Add semesters");
+    expect(overlap.title).toBe("Semesters overlap");
+
+    const [termMissing] = buildAttention({ alerts });
+    expect(termMissing.title).toBe("The year has no terms");
   });
 
   it("names a branch that is in no year at all", () => {

@@ -40,6 +40,7 @@ import {
   type FeeDueBasis,
   type FeeDuePolicy,
 } from "@/redux/services/school-finance/fee-due-policy-api";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /** 12 December 2026, from the API's ISO date. */
 function formatDue(iso: string) {
@@ -64,6 +65,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
   const { canSave: canEdit, reason } = useSettingsWrite(P.UPDATE_FEES);
   const [basis, setBasis] = useState<FeeDueBasis>(policy.basis);
   const [days, setDays] = useState(String(policy.days_after));
+  const words = useSchoolWords();
 
   const daysNumber = Number(days);
   const daysValid =
@@ -110,7 +112,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
         description={
           session
             ? `Dates below are worked out against ${term ? `${term}, ` : ""}${session}.`
-            : "This school has no active academic session yet, so term and session dates cannot be worked out. The rules that need them will start resolving once the calendar is set up."
+            : `This school has no active academic session yet, so ${words.term} and session dates cannot be worked out. The rules that need them will start resolving once the calendar is set up.`
         }
       >
         <div className="p-4 sm:p-5">

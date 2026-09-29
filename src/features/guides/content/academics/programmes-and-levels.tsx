@@ -1,12 +1,14 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function ProgrammesAndLevelsArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
         <p>A programme is a stage of schooling, such as Nursery, Primary or Junior Secondary. Its levels are the rungs pupils climb inside it, such as JSS1, JSS2 and JSS3. Classes sit at a level, so levels must exist before classes can. Open <strong>Academic Structure</strong>, then <strong>Programmes &amp; Levels</strong>.</p>
         <GuideChecklist items={[
-          "The school year you are setting up exists on Sessions & Terms.",
+          `The school year you are setting up exists on Sessions & ${w.Terms}.`,
           "The year selector at the foot of the sidebar shows that year.",
           "You have the list of levels in each programme, in order.",
           "Departments are added, if you want to group programmes under them.",

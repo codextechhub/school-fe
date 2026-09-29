@@ -58,7 +58,7 @@ const ARMS: Choice<PromotionArms>[] = [
   {
     value: "SAME_ARM",
     label: "Keep each arm",
-    description: "JSS1 B moves into JSS2 B. Where the arm does not exist next year, the first class at that level takes them.",
+    description: "JSS1 B moves into JSS2 B. Where next year has no class with that arm, its students are shared across the next level's classes.",
   },
   {
     value: "SPREAD",

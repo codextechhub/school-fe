@@ -5,6 +5,7 @@ import {
   GuideStep,
   GuideSteps,
 } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 const PROBLEMS = [
   { title: "New plan is missing", body: "Creating a plan also starts it, so you need both the create and the activate permission for payment plans." },
@@ -14,10 +15,11 @@ const PROBLEMS = [
 ] as const;
 
 export default function PaymentPlansArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>A payment plan spreads one invoice&apos;s balance into dated installments, for a parent who has agreed to pay the term&apos;s fees in parts. The invoice stays the debt; the plan only tracks when each part is due.</p>
+        <p>A payment plan spreads one invoice&apos;s balance into dated installments, for a parent who has agreed to pay the {w.term}&apos;s fees in parts. The invoice stays the debt; the plan only tracks when each part is due.</p>
         <GuideChecklist items={[
           "The invoice is posted and still has a balance.",
           "You have agreed the number of installments and how often with the parent.",

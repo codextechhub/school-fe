@@ -18,6 +18,8 @@ import type {
   Level,
   SchoolClass,
 } from "@/redux/services/academics/academics-types";
+import { useSchoolWords } from "@/hooks/use-school-words";
+import { armsFieldText } from "@/lib/school-words";
 
 /**
  * One class per arm, for a level: JSS1 A, JSS1 B, JSS1 C.
@@ -45,7 +47,10 @@ export function GenerateArmsDrawer({
   onClose: () => void;
 }) {
   const [levelId, setLevelId] = useState<number | null>(null);
-  const [arms, setArms] = useState("A, B, C");
+  // The school's default arms, typed in ready to generate or edit.
+  const { defaultArms } = useSchoolWords();
+  const armsText = armsFieldText(defaultArms);
+  const [arms, setArms] = useState(armsText);
   const [branch, setBranch] = useState<number | null>(null);
   const [generate, { isLoading }] = useGenerateArmsMutation();
   const {
@@ -55,14 +60,16 @@ export function GenerateArmsDrawer({
     branches,
   } = useBranchLens();
 
-  const key = open ? "open" : "shut";
+  // The arms are part of the key because the school's rules can arrive after
+  // the drawer opens.
+  const key = open ? `open:${armsText}` : "shut";
   const [lastKey, setLastKey] = useState(key);
   if (key !== lastKey) {
     setLastKey(key);
     if (open) {
       const first = levels[0] ?? null;
       setLevelId(first?.id ?? null);
-      setArms("A, B, C");
+      setArms(armsText);
       setBranch(defaultBranch(first));
     }
   }
@@ -192,7 +199,7 @@ export function GenerateArmsDrawer({
             <input
               value={arms}
               onChange={(e) => setArms(e.target.value)}
-              placeholder="A, B, C"
+              placeholder={armsText}
               className="w-full rounded-lg border border-white-02 px-3 py-2.5 text-sm outline-none focus:border-primary"
             />
             <p className="mt-1 text-xs text-gray-05">

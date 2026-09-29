@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import type { TimelineTerm } from "@/redux/services/calendar/calendar-types";
 import { EVENT_KINDS } from "../components/event-kind";
 import { BLANK_FACETS, type EventFacets } from "./event-facets";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * The three facets that do not fit on the toolbar: type, term and scope.
@@ -38,6 +39,7 @@ export function EventFilters({
   onChange: (next: EventFacets) => void;
 }) {
   const { branches } = useBranchLens();
+  const words = useSchoolWords();
   const [open, setOpen] = useState(false);
 
   // Search is on the toolbar and has its own visible box, so it is not counted
@@ -58,7 +60,7 @@ export function EventFilters({
   }
   if (facets.term !== "all") {
     chips.push({
-      label: terms.find((t) => t.id === facets.term)?.name ?? "Term",
+      label: terms.find((t) => t.id === facets.term)?.name ?? words.Term,
       clear: () => onChange({ ...facets, term: "all" }),
     });
   }
@@ -104,7 +106,7 @@ export function EventFilters({
             </select>
           </Facet>
 
-          <Facet label="Term">
+          <Facet label={words.Term}>
             <select
               value={String(facets.term)}
               onChange={(e) =>
@@ -113,10 +115,10 @@ export function EventFilters({
                   term: e.target.value === "all" ? "all" : Number(e.target.value),
                 })
               }
-              aria-label="Term"
+              aria-label={words.Term}
               className="h-9 w-full rounded-lg border border-white-02 bg-white px-2.5 text-sm outline-none focus:border-primary"
             >
-              <option value="all">Every term</option>
+              <option value="all">Every {words.term}</option>
               {terms.map((term) => (
                 <option key={term.id} value={term.id}>
                   {term.name}

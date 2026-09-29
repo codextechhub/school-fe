@@ -32,6 +32,7 @@ import {
 import { PageShell } from "@/components/layout/page-shell";
 import { canManageRow } from "@/lib/can-manage";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * One school year and the ordered terms inside it.
@@ -43,6 +44,7 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
 export default function SessionDetails() {
   const { id } = useParams();
   const { multiBranch } = useAcademicsLens();
+  const words = useSchoolWords();
   const [editing, setEditing] = useState(false);
 
   const sessionId = Number(id);
@@ -126,7 +128,7 @@ export default function SessionDetails() {
         <Panel className="flex items-start gap-2.5 bg-white-05 px-4 py-3 text-xs text-gray-05">
           <Lock className="mt-0.5 size-3.5 shrink-0" />
           <p className="text-pretty">
-            This session is archived and read-only. Make it active before changing its dates or terms.
+            This session is archived and read-only. Make it active before changing its dates or {words.terms}.
           </p>
         </Panel>
       )}
@@ -139,8 +141,8 @@ export default function SessionDetails() {
         />
         <SummaryItem
           icon={BookOpenCheck}
-          label="Terms"
-          value={`${session.term_count} ${session.term_count === 1 ? "term" : "terms"}`}
+          label={words.Terms}
+          value={`${session.term_count} ${session.term_count === 1 ? words.term : words.terms}`}
         />
       </Panel>
 
@@ -159,7 +161,7 @@ export default function SessionDetails() {
       <section className="grid gap-3" aria-labelledby="terms-heading">
         <div>
           <h2 id="terms-heading" className="font-semibold text-black-01">
-            Terms
+            {words.Terms}
           </h2>
           <p className="mt-0.5 text-xs text-gray-05">
             Dates and teaching weeks for this session.
@@ -174,7 +176,7 @@ export default function SessionDetails() {
           </div>
         ) : (
           <Panel className="px-4 py-6 text-center text-sm text-gray-05">
-            This session has no terms yet. Edit it to add them.
+            This session has no {words.terms} yet. Edit it to add them.
           </Panel>
         )}
       </section>
@@ -211,10 +213,11 @@ function SummaryItem({
 }
 
 function SessionProgress({ terms }: { terms: Term[] }) {
+  const words = useSchoolWords();
   if (!terms.length) {
     return (
       <p className="px-5 py-8 text-sm text-gray-05">
-        Add terms to build the session timeline.
+        Add {words.terms} to build the session timeline.
       </p>
     );
   }

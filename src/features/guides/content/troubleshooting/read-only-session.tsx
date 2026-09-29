@@ -1,6 +1,8 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function ReadOnlySessionArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
@@ -28,7 +30,7 @@ export default function ReadOnlySessionArticle() {
         <ul className="list-disc space-y-2 pl-5">
           <li>There is no session selector: the school has only one session, or this screen does not follow the session. Neither case is read-only.</li>
           <li>A record from an archived session needs correcting: these screens cannot change it. Raise a ticket from the headset in the header and describe the correction.</li>
-          <li>No session is marked active: the school has not started its current session yet. Whoever manages <strong>Sessions &amp; Terms</strong> sets it up.</li>
+          <li>No session is marked active: the school has not started its current session yet. Whoever manages <strong>Sessions &amp; {w.Terms}</strong> sets it up.</li>
         </ul>
       </GuideSection>
 

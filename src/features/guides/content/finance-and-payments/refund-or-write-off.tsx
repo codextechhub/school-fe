@@ -5,6 +5,7 @@ import {
   GuideStep,
   GuideSteps,
 } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 const PROBLEMS = [
   { title: "The pupil is not in the refund list", body: "Only customers with credit on the refund date are offered. Money received after that date cannot fund an earlier refund, so try a later date." },
@@ -14,6 +15,7 @@ const PROBLEMS = [
 ] as const;
 
 export default function RefundOrWriteOffArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
@@ -27,7 +29,7 @@ export default function RefundOrWriteOffArticle() {
 
       <GuideSection id="refund-or-write-off" title="Refund or write-off?">
         <GuideSteps>
-          <GuideStep title="Refund to bank">Pays back money the parent overpaid or paid in advance: a pupil who left mid-term with credit on the account. Cash leaves the school&apos;s bank.</GuideStep>
+          <GuideStep title="Refund to bank">Pays back money the parent overpaid or paid in advance: a pupil who left mid-{w.term} with credit on the account. Cash leaves the school&apos;s bank.</GuideStep>
           <GuideStep title="Write off to expense">Clears fees the school has agreed it will never collect, recording them as a bad-debt cost. No money moves.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="info" title="Reducing fees is not a write-off">

@@ -18,7 +18,7 @@ export default function ClassesAndArmsArticle() {
         <GuideSteps>
           <GuideStep title="Open Generate arms">Select <strong>Generate arms</strong> in the toolbar.</GuideStep>
           <GuideStep title="Pick the level">Choose the <strong>Level</strong>. Each option shows its programme beside it.</GuideStep>
-          <GuideStep title="List the arms">Under <strong>Arms</strong>, type the arms separated by commas, such as <em>A, B, C</em>. Names like Science or Commercial work too.</GuideStep>
+          <GuideStep title="List the arms"><strong>Arms</strong> opens with your school&apos;s default arms from <strong>Academic structure</strong> in <strong>Settings</strong>, which are <em>A, B, C</em> until your school sets its own. Edit the list, separating the arms with commas. Names like Science or Commercial work too.</GuideStep>
           <GuideStep title="Choose the branch">When your school runs more than one branch, choose where the classes <strong>Runs at</strong>. A class is normally run by one branch, even where its level is shared.</GuideStep>
           <GuideStep title="Check and create">Under <strong>What will be created</strong>, each class is marked <strong>New</strong> or <strong>Already there</strong>. Classes already there are skipped, so typing <em>A, B, C, D</em> for a level that already has A, B and C creates one class. Select <strong>Create class</strong> or <strong>Create 3 classes</strong>.</GuideStep>
         </GuideSteps>

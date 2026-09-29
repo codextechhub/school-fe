@@ -27,6 +27,7 @@ import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { Panel } from "@/components/custom/surface";
 import { StructureTree } from "./structure-tree";
 import { PageShell } from "@/components/layout/page-shell";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * Academic Structure - the overview.
@@ -157,6 +158,7 @@ function SessionHero({
   session: OverviewSession | null;
   departments: number;
 }) {
+  const words = useSchoolWords();
   if (!session) {
     return (
       <OutlinedNotice
@@ -226,7 +228,7 @@ function SessionHero({
                 TERM_TONE[term.state],
               )}
             >
-              {term.name.replace(" Term", "")}
+              {term.name.replace(/ (Term|Semester)$/, "")}
               {term.state === "ongoing" && " · ongoing"}
             </span>
           ))}
@@ -255,7 +257,7 @@ function SessionHero({
           to={routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS}
           className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
         >
-          Sessions &amp; Terms
+          Sessions &amp; {words.Terms}
           <ChevronRight className="size-3.5" />
         </Link>
       </div>
@@ -334,6 +336,7 @@ function SpineList({
   branch: number | "all";
 }) {
   const P = routesPath.PROTECTED.ACADEMIC_STRUCTURE;
+  const words = useSchoolWords();
   const scoped = multiBranch && branch !== "all" ? " in this branch" : "";
 
   const rows: {
@@ -344,8 +347,8 @@ function SpineList({
     to?: string;
   }[] = [
     {
-      title: "Sessions & Terms",
-      body: "The school year and the terms inside it.",
+      title: `Sessions & ${words.Terms}`,
+      body: `The school year and the ${words.terms} inside it.`,
       count: `${counts.sessions} ${counts.sessions === 1 ? "session" : "sessions"}`,
       icon: CalendarRange,
       to: P.SESSIONS,

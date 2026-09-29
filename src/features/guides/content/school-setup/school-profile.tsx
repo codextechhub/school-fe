@@ -15,7 +15,7 @@ export default function SchoolProfileArticle() {
         <p>The school profile holds the details XVS uses across every module. Most of it was filled in when your school was created; the rest is yours to confirm. Open it from the profile card in the control room with <strong>Open profile</strong>.</p>
         <GuideChecklist items={[
           "You know how the school is owned.",
-          "You know how your year is divided into terms.",
+          "You know how your year is divided: into terms or into semesters.",
           "You know the currency your school charges in.",
           "You have your logo as an image file, if you want one.",
         ]} />

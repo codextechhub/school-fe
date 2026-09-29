@@ -1,18 +1,20 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function TermViewArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>Term view shows the same events as the Events list, drawn as a year and a month rather than as rows. Use it to answer &quot;where are we in the year&quot; and &quot;what is happening in November&quot;. Open <strong>Calendar</strong>, then <strong>Term view</strong>.</p>
+        <p>{w.Term} view shows the same events as the Events list, drawn as a year and a month rather than as rows. Use it to answer &quot;where are we in the year&quot; and &quot;what is happening in November&quot;. Open <strong>Calendar</strong>, then <strong>{w.Term} view</strong>.</p>
         <GuideChecklist items={[
-          "The school year and its terms exist on Sessions & Terms.",
+          `The school year and its ${w.terms} exist on Sessions & ${w.Terms}.`,
           "The year selector at the foot of the sidebar shows the year you want to see.",
         ]} />
       </GuideSection>
 
       <GuideSection id="read-the-timeline" title="Read the school year timeline">
-        <p><strong>School year timeline</strong> draws the year from its first day to its last, with each term as a block and today marked on it. Breaks appear as spaces between terms. A past year carries a <strong>Read-only year</strong> badge.</p>
+        <p><strong>School year timeline</strong> draws the year from its first day to its last, with each {w.term} as a block and today marked on it. Breaks appear as spaces between {w.terms}. A past year carries a <strong>Read-only year</strong> badge.</p>
       </GuideSection>
 
       <GuideSection id="use-the-month-grid" title="Use the month calendar">
@@ -31,7 +33,7 @@ export default function TermViewArticle() {
 
       <GuideSection id="common-problems" title="Common problems">
         <GuideSteps>
-          <GuideStep title="The page says No school year yet">Create a year on Sessions &amp; Terms first. The timeline and the month grid both need one.</GuideStep>
+          <GuideStep title="The page says No school year yet">Create a year on Sessions &amp; {w.Terms} first. The timeline and the month grid both need one.</GuideStep>
           <GuideStep title="Selecting an empty day does nothing">You are looking at an archived year, or your role cannot add events.</GuideStep>
           <GuideStep title="An event is missing from the grid">Check the branch selector in the sidebar. An event for another branch is not shown while you look at one branch.</GuideStep>
         </GuideSteps>

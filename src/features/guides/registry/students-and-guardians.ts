@@ -280,7 +280,7 @@ export const STUDENTS_AND_GUARDIANS_GUIDES = [
     ],
     estimatedMinutes: 8,
     owner: OWNER,
-    reviewedAt: "2026-09-28",
+    reviewedAt: "2026-09-29",
     risk: "high",
     status: "published",
     article: () => import("../content/students-and-guardians/promote-students"),

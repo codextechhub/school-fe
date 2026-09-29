@@ -16,6 +16,7 @@ import { formatRange } from "../components/dates";
 import { eventVariant } from "../components/event-kind";
 import { RowActions } from "../components/row-actions";
 import { canManageRow } from "@/lib/can-manage";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * A date-led directory of calendar events.
@@ -47,6 +48,7 @@ export function EventList({
   onDelete: (event: CalendarEvent) => void;
   onPageChange: (page: number) => void;
 }) {
+  const words = useSchoolWords();
   return (
     <>
       <ul className="grid min-w-0 gap-2.5">
@@ -84,8 +86,8 @@ export function EventList({
                       value={formatRange(event.start_date, event.end_date)}
                     />
                     <EventFact
-                      label="School term"
-                      value={event.term?.name ?? "Outside every term"}
+                      label={`School ${words.term}`}
+                      value={event.term?.name ?? `Outside every ${words.term}`}
                       muted={!event.term}
                     />
                     {multiBranch && (

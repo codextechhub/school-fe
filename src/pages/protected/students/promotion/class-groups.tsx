@@ -106,6 +106,11 @@ export function ClassGroups({
               <span className="ml-7 text-xs text-gray-05 sm:ml-0">
                 {tallyLine} · {group.students.length} {group.students.length === 1 ? "student" : "students"}
               </span>
+              {destination.note && (
+                <span className="ml-7 basis-full text-xs text-amber-700 text-pretty">
+                  {destination.note}
+                </span>
+              )}
             </button>
 
             {isOpen && (

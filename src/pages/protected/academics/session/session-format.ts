@@ -2,8 +2,10 @@ import type {
   AcademicSession,
   SessionStatus,
   TermState,
+  TermWrite,
 } from "@/redux/services/academics/academics-types";
 import { todayIso } from "@/lib/as-at";
+import { TERM_WORDS } from "@/lib/school-words";
 
 /**
  * The bits of a session both the list and the detail screen print, spelled once
@@ -95,6 +97,24 @@ export function dayAfter(iso: string): string {
   return new Date(Date.UTC(y, m - 1, d + 1)).toISOString().slice(0, 10);
 }
 
+/**
+ * The rows a new year starts with: one per name in the school's term names,
+ * in that order, undated.
+ *
+ * The names come from the school's academic rules (three terms, two semesters,
+ * or whatever it has set), so a school is handed its own shape rather than
+ * made to rename and delete its way to it. Only the starting point: the server
+ * accepts any number of terms with any names.
+ */
+export function blankTerms(names: readonly string[]): TermWrite[] {
+  return names.map((name, i) => ({
+    name,
+    order_index: i + 1,
+    start_date: "",
+    end_date: "",
+  }));
+}
+
 interface TermDraft {
   name: string;
   start_date: string;
@@ -111,8 +131,9 @@ export interface TermWindow {
   max?: string;
 }
 
-const termLabel = (term: TermDraft, index: number) =>
-  term.name.trim() || `Term ${index + 1}`;
+/** The row's name, or "Term 2" / "Semester 2" for a row not yet named. */
+const termLabel = (term: TermDraft, index: number, Term: string) =>
+  term.name.trim() || `${Term} ${index + 1}`;
 
 /**
  * The days each term's calendar may offer, in the order the terms are listed.
@@ -124,16 +145,18 @@ const termLabel = (term: TermDraft, index: number) =>
  * that ends on the day it starts. Every day stays inside the session.
  *
  * The same rule serves three terms and two semesters: it reads the rows it is
- * given and never assumes a count.
+ * given and never assumes a count. `Term` is the school's word, for naming a
+ * row that has no name yet.
  */
 export function termWindows(
   terms: TermDraft[],
   session: { start: string; end: string },
+  Term: string = TERM_WORDS.Term,
 ): TermWindow[] {
   return terms.map((term, i) => {
     const previous = i > 0 ? terms[i - 1] : null;
     if (previous && !previous.end_date) {
-      return { waitingOn: termLabel(previous, i - 1), follows: null };
+      return { waitingOn: termLabel(previous, i - 1, Term), follows: null };
     }
     const afterPrevious = previous ? dayAfter(previous.end_date) : "";
     const startMin =
@@ -141,7 +164,7 @@ export function termWindows(
     return {
       waitingOn: null,
       follows: previous
-        ? { name: termLabel(previous, i - 1), end: previous.end_date }
+        ? { name: termLabel(previous, i - 1, Term), end: previous.end_date }
         : null,
       startMin,
       endMin: term.start_date ? dayAfter(term.start_date) : startMin,
@@ -156,14 +179,16 @@ export function termWindows(
  * Mirrors the server's rules so a refusal is seen before Save. The overlap
  * check still earns its place with the calendar bounded: shortening the term
  * before, after this one is filled in, leaves this one starting too early.
+ * `Term` is the school's word, for naming a row that has no name yet.
  */
 export function termProblem(
   terms: TermDraft[],
   index: number,
   session: { start: string; end: string },
+  Term: string = TERM_WORDS.Term,
 ): string {
   const term = terms[index];
-  const label = termLabel(term, index);
+  const label = termLabel(term, index, Term);
   const previous = index > 0 ? terms[index - 1] : null;
   if (term.start_date && term.end_date && term.end_date <= term.start_date) {
     return `${label} ends on or before it starts.`;
@@ -177,7 +202,7 @@ export function termProblem(
     return `${label} falls outside the session dates.`;
   }
   if (previous?.end_date && term.start_date && term.start_date <= previous.end_date) {
-    return `${label} starts before ${termLabel(previous, index - 1)} ends.`;
+    return `${label} starts before ${termLabel(previous, index - 1, Term)} ends.`;
   }
   return "";
 }

@@ -15,9 +15,13 @@ import { Input } from "@/components/ui/input";
 import { MultiSelect } from "@/components/ui/multi-select";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { parseApiError } from "@/utils/api-error";
-import { dayLabel, termProblem, termWindows } from "./session-format";
+import {
+  blankTerms,
+  dayLabel,
+  termProblem,
+  termWindows,
+} from "./session-format";
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
-import { useGetSchoolProfileQuery } from "@/redux/services/school/school-api";
 import {
   useCreateSessionMutation,
   useUpdateSessionMutation,
@@ -26,6 +30,7 @@ import type {
   AcademicSession,
   TermWrite,
 } from "@/redux/services/academics/academics-types";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * Create or edit a school year, with its terms and its branches, in ONE save.
@@ -50,43 +55,16 @@ interface Draft {
   schoolWide: boolean;
 }
 
-/**
- * The rows a new year starts with, from the school's own calendar.
- *
- * A school states its term structure during onboarding - three terms or two
- * semesters - and until now nothing read it back: every school got three boxes
- * labelled "Term", including the ones that had just said they run semesters.
- * They were free to rename and delete their way to the right shape, but being
- * handed the wrong one and made to correct it is not the same as being asked.
- *
- * Only the DEFAULT. The server accepts any number of terms with any names, so a
- * school that runs something else still can - this is where it starts, not what
- * it is held to.
- */
-const ORDINALS = ["First", "Second", "Third", "Fourth"];
-
-function blankTerms(structure?: string): TermWrite[] {
-  const semesters = structure === "2_SEMESTERS";
-  const word = semesters ? "Semester" : "Term";
-  const count = semesters ? 2 : 3;
-  return Array.from({ length: count }, (_, i) => ({
-    name: `${ORDINALS[i]} ${word}`,
-    order_index: i + 1,
-    start_date: "",
-    end_date: "",
-  }));
-}
-
 function draftFrom(
   session: AcademicSession | null,
-  termStructure?: string,
+  termNames: string[],
 ): Draft {
   if (!session) {
     return {
       name: "",
       start: "",
       end: "",
-      terms: blankTerms(termStructure),
+      terms: blankTerms(termNames),
       branchIds: [],
       schoolWide: true,
     };
@@ -118,12 +96,12 @@ export function SessionDrawer({
   session: AcademicSession | null;
   onClose: () => void;
 }) {
-  // The school's own calendar shape, so a new year opens on the right rows.
-  const { data: profile } = useGetSchoolProfileQuery();
-  const termStructure = profile?.data?.term_structure;
+  // The school's own term names, so a new year opens on the right rows.
+  const words = useSchoolWords();
+  const namesKey = words.termNames.join("\n");
 
   const [draft, setDraft] = useState<Draft>(() =>
-    draftFrom(session, termStructure),
+    draftFrom(session, words.termNames),
   );
   /**
    * Whether the name is owed a message yet.
@@ -151,18 +129,18 @@ export function SessionDrawer({
   const saving = creating || updating;
 
   // Reset on a different year, during render rather than in an effect: an
-  // effect paints the previous year's dates for a frame first. The structure
-  // is part of the key because it arrives after the drawer can open.
+  // effect paints the previous year's dates for a frame first. The term names
+  // are part of the key because they can arrive after the drawer opens.
   const openedFor = open
     ? session
       ? `s${session.id}`
-      : `new:${termStructure ?? ""}`
+      : `new:${namesKey}`
     : "shut";
   const [lastOpenedFor, setLastOpenedFor] = useState(openedFor);
   if (openedFor !== lastOpenedFor) {
     setLastOpenedFor(openedFor);
     if (open) {
-      setDraft(draftFrom(session, termStructure));
+      setDraft(draftFrom(session, words.termNames));
       setTouchedName(false);
       setEditedName(false);
       setRefusal(null);
@@ -183,9 +161,9 @@ export function SessionDrawer({
   // Per-row, because the message belongs under the term that is wrong.
   const sessionDates = { start: draft.start, end: draft.end };
   const termErrors = draft.terms.map((_, i) =>
-    termProblem(draft.terms, i, sessionDates),
+    termProblem(draft.terms, i, sessionDates, words.Term),
   );
-  const windows = termWindows(draft.terms, sessionDates);
+  const windows = termWindows(draft.terms, sessionDates, words.Term);
 
   const datesBackwards =
     !!draft.start && !!draft.end && draft.end <= draft.start;
@@ -203,8 +181,8 @@ export function SessionDrawer({
     !noBranchPicked;
 
   const initial = useMemo(
-    () => JSON.stringify(draftFrom(session, termStructure)),
-    [session, termStructure],
+    () => JSON.stringify(draftFrom(session, words.termNames)),
+    [session, words.termNames],
   );
   const dirty = JSON.stringify(draft) !== initial;
 
@@ -372,7 +350,7 @@ export function SessionDrawer({
               )}
               <p className="mt-2 text-xs text-gray-05 text-pretty">
                 The dates above apply everywhere this session runs. A branch
-                cannot keep its own term dates.
+                cannot keep its own {words.term} dates.
               </p>
             </div>
           )}
@@ -380,7 +358,7 @@ export function SessionDrawer({
           <div data-guide="session-drawer.terms" className="mt-5 border-t border-white-02 pt-4">
             <div className="mb-2 flex items-center justify-between">
               <p className="text-[13px] font-medium text-gray-06">
-                {termStructure === "2_SEMESTERS" ? "Semesters" : "Terms"}
+                {words.Terms}
               </p>
               <Button
                 size="sm"
@@ -402,7 +380,7 @@ export function SessionDrawer({
                 }
               >
                 <Plus className="size-4" />
-                Add {termStructure === "2_SEMESTERS" ? "semester" : "term"}
+                Add {words.term}
               </Button>
             </div>
 
@@ -419,12 +397,12 @@ export function SessionDrawer({
                     <Input
                       value={term.name}
                       onChange={(e) => setTerm(i, { name: e.target.value })}
-                      placeholder="Term name"
+                      placeholder={`${words.Term} name`}
                       className="h-9.5 min-w-0 flex-1"
                     />
                     <button
                       type="button"
-                      aria-label={`Remove ${term.name || `term ${i + 1}`}`}
+                      aria-label={`Remove ${term.name || `${words.term} ${i + 1}`}`}
                       onClick={() =>
                         setDraft((d) => ({
                           ...d,
@@ -440,7 +418,7 @@ export function SessionDrawer({
                     {/* Bounded by the session and the term before, so the
                         calendar cannot offer a day the form would reject. */}
                     <DatePickerInput
-                      aria-label={`${term.name || `Term ${i + 1}`} start date`}
+                      aria-label={`${term.name || `${words.Term} ${i + 1}`} start date`}
                       value={term.start_date}
                       disabled={!!windows[i].waitingOn}
                       min={windows[i].startMin}
@@ -454,7 +432,7 @@ export function SessionDrawer({
                       )}
                     />
                     <DatePickerInput
-                      aria-label={`${term.name || `Term ${i + 1}`} end date`}
+                      aria-label={`${term.name || `${words.Term} ${i + 1}`} end date`}
                       value={term.end_date}
                       disabled={!!windows[i].waitingOn}
                       min={windows[i].endMin}
@@ -491,7 +469,7 @@ export function SessionDrawer({
             {draft.terms.length === 0 && (
               <p className="mt-1 inline-flex items-center gap-1.5 text-xs text-error-text">
                 <TriangleAlert className="size-3.5" />A session needs at least
-                one term.
+                one {words.term}.
               </p>
             )}
           </div>

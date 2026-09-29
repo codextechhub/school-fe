@@ -62,6 +62,7 @@ import { useActionParam } from "@/hooks/use-action-param";
 import { canManageRow } from "@/lib/can-manage";
 import { useReaderReach } from "@/hooks/use-reader-reach";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * The school years this school has defined.
@@ -82,6 +83,7 @@ export default function AcademicSessions() {
   const { branch } = useBranchLens();
   // Where a year applies is only said to a reader who works across branches.
   const { multiBranch } = useAcademicsLens();
+  const words = useSchoolWords();
   const { hasPermission } = usePermissions();
 
   const [search, setSearch] = useState("");
@@ -275,7 +277,7 @@ export default function AcademicSessions() {
       ) : (
         <CustomTable
           tableHeaderList={[
-            "Session", "Starts", "Ends", "Terms",
+            "Session", "Starts", "Ends", words.Terms,
             ...(multiBranch ? ["Scope"] : []),
             "Status",
           ]}
@@ -286,7 +288,7 @@ export default function AcademicSessions() {
             Session: s.name,
             Starts: formatMonthYearShort(s.start_date),
             Ends: formatMonthYearShort(s.end_date),
-            Terms: String(s.term_count),
+            [words.Terms]: String(s.term_count),
             ...(multiBranch ? { Scope: scopeOf(s) } : {}),
             Status: statusOf(s.status).label,
           }))}
@@ -369,6 +371,7 @@ function SessionSummary({
   session?: OverviewSession | null;
   loading: boolean;
 }) {
+  const words = useSchoolWords();
   if (loading) {
     return (
       <div className="grid gap-3 sm:grid-cols-3">
@@ -391,7 +394,7 @@ function SessionSummary({
       marker: !!session,
     },
     {
-      label: "Terms running",
+      label: `${words.Terms} running`,
       value: `${ongoing} of ${terms}`,
       icon: BookOpenCheck,
       tone: "bg-sky-100 text-sky-700",
@@ -488,6 +491,7 @@ function SessionCard({
   const mine = canManageRow(session);
   const { wholeSchool } = useReaderReach();
   const { multiBranch } = useAcademicsLens();
+  const words = useSchoolWords();
   const weeks = teachingWeeks(session.terms);
   // An archived year is read-only on the server, so its Edit is not offered
   // rather than offered and refused.
@@ -564,7 +568,7 @@ function SessionCard({
         </CardActions>
       </div>
 
-      <div className="mt-4 grid gap-2" aria-label={`${session.name} terms`}>
+      <div className="mt-4 grid gap-2" aria-label={`${session.name} ${words.terms}`}>
         <div className="flex items-center justify-between gap-2">
           {session.terms.map((term, index) => {
             const state = termState(term);
@@ -581,7 +585,8 @@ function SessionCard({
                   {state === "completed" ? <Check className="size-3" /> : index + 1}
                 </span>
                 <span className="truncate text-[11px] font-medium text-gray-06">
-                  T{index + 1}
+                  {words.Term.charAt(0)}
+                  {index + 1}
                 </span>
               </div>
             );

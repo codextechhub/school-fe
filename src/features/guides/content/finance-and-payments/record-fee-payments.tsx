@@ -5,6 +5,7 @@ import {
   GuideStep,
   GuideSteps,
 } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 const PROBLEMS = [
   { title: "The payment date is refused", body: "The date must fall in an open fiscal period. Use the real date the money arrived, and ask whoever runs period close if that period is shut." },
@@ -16,6 +17,7 @@ const PROBLEMS = [
 ] as const;
 
 export default function RecordFeePaymentsArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
@@ -52,7 +54,7 @@ export default function RecordFeePaymentsArticle() {
         <p>Under <strong>Apply to open items</strong> you see the pupil&apos;s unpaid invoices and debit notes, each with its balance.</p>
         <GuideSteps>
           <GuideStep title="Let it split automatically">With <strong>Auto-allocate</strong> ticked, choose <strong>oldest first</strong> (the usual choice) or <strong>largest first</strong>, and the amounts fill in.</GuideStep>
-          <GuideStep title="Or split it yourself">Untick Auto-allocate to type the amount for each bill, for example when a parent says the money is for this term only.</GuideStep>
+          <GuideStep title="Or split it yourself">Untick Auto-allocate to type the amount for each bill, for example when a parent says the money is for this {w.term} only.</GuideStep>
           <GuideStep title="Check the summary">The <strong>Allocation summary</strong> shows the Receipt amount, what is Allocated and the Remainder. A remainder stays as credit on the pupil&apos;s account.</GuideStep>
           <GuideStep title="Select Apply allocation">The bills&apos; balances drop and their status changes to Partially Paid or Paid.</GuideStep>
         </GuideSteps>

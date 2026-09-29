@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { taskMeta } from "./task-catalog";
+import { termWordsFor } from "@/lib/school-words";
 
 describe("taskMeta", () => {
+  it("names the academic structure step's parts in the school's word", () => {
+    expect(taskMeta("ACADEMIC_STRUCTURE").description).toContain("Sessions, terms,");
+    expect(
+      taskMeta("ACADEMIC_STRUCTURE", termWordsFor("SEMESTER")).description,
+    ).toContain("Sessions, semesters,");
+  });
+
   it("marks academic structure as the step nobody can verify", () => {
     const meta = taskMeta("ACADEMIC_STRUCTURE");
     expect(meta.attested).toBe(true);

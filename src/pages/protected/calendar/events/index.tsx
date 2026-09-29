@@ -37,6 +37,7 @@ import { BLANK_FACETS, type EventFacets } from "./event-facets";
 import { EventList } from "./event-list";
 import { useActionParam } from "@/hooks/use-action-param";
 import { canManageRow } from "@/lib/can-manage";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * Holidays, breaks, exam periods and school events, each dated inside a term.
@@ -61,6 +62,7 @@ export default function CalendarEvents() {
   const { lens, branch, multiBranch, readOnlyYear, sessionName } =
     useAcademicsLens();
   const { hasPermission } = usePermissions();
+  const words = useSchoolWords();
 
   const [facets, setFacets] = useState<EventFacets>(BLANK_FACETS);
   const [page, setPage] = useState(1);
@@ -237,7 +239,7 @@ export default function CalendarEvents() {
           title={filtered ? "No events match these filters" : "No events yet"}
           body={
             filtered
-              ? "Try a different search, or clear the type, term and scope filters."
+              ? `Try a different search, or clear the type, ${words.term} and scope filters.`
               : sessionName
                 ? `${sessionName} has nothing dated on it yet. Holidays, breaks and exam periods all start here.`
                 : "Holidays, breaks, exam periods and school events all start here."

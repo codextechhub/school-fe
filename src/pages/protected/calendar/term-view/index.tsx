@@ -59,6 +59,7 @@ import {
 } from "../components/dates";
 import { monthWindow } from "./month-window";
 import { canManageRow } from "@/lib/can-manage";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * The same events as the list, read as a shape instead of as rows.
@@ -81,6 +82,7 @@ import { canManageRow } from "@/lib/can-manage";
 export default function TermView() {
   const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
+  const words = useSchoolWords();
 
   const { data: yearData, isLoading, isError, refetch } =
     useGetCalendarYearQuery({ session: lens.session });
@@ -198,7 +200,7 @@ export default function TermView() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            Term view
+            {words.Term} view
           </h1>
           <p className="mt-1 text-sm text-gray-01">
             See the shape of {session.name} and open any day to manage its events.
@@ -230,7 +232,7 @@ export default function TermView() {
         </div>
 
         <p className="mt-4 text-xs text-gray-05">
-          Breaks appear as spaces between terms.
+          Breaks appear as spaces between {words.terms}.
         </p>
         <Timeline
           start={session.start_date}
@@ -575,6 +577,7 @@ function Timeline({
   // year's calendar in March would otherwise get a marker pinned to one end,
   // which reads as "we are at the start of this year" and is false.
   const showToday = !!today && today >= start && today <= end;
+  const words = useSchoolWords();
 
   const byDate = [...terms].sort((a, b) => (a.start_date < b.start_date ? -1 : 1));
 
@@ -617,7 +620,7 @@ function Timeline({
                 />
               </TooltipTrigger>
               <TooltipContent side="top">
-                <p className="font-medium">Not in any term</p>
+                <p className="font-medium">Not in any {words.term}</p>
                 <p className="text-[11px] opacity-90">
                   {formatRange(gap.from, gap.to)} · {days}{" "}
                   {days === 1 ? "day" : "days"}

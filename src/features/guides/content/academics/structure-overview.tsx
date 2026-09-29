@@ -1,10 +1,12 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function StructureOverviewArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>The academic structure is everything a school year is built from: the year and its terms, departments, programmes and their levels, classes and subjects. <strong>Overview</strong>, the first item under <strong>Academic Structure</strong> in the sidebar, shows all of it on one page and tells you what is still missing.</p>
+        <p>The academic structure is everything a school year is built from: the year and its {w.terms}, departments, programmes and their levels, classes and subjects. <strong>Overview</strong>, the first item under <strong>Academic Structure</strong> in the sidebar, shows all of it on one page and tells you what is still missing.</p>
         <GuideChecklist items={[
           "You can see Academic Structure in the sidebar.",
           "You know which branch and which school year you want to look at.",
@@ -13,15 +15,15 @@ export default function StructureOverviewArticle() {
       </GuideSection>
 
       <GuideSection id="read-the-year" title="Read the year at the top">
-        <p>The top panel names the year you are looking at, such as <em>2026/2027 Academic Session</em>, with a badge reading <strong>Active</strong>, <strong>Draft</strong> or <strong>Archived</strong>. Under the name you see the year&apos;s dates and where it stands: which term is underway, which term is next, or <strong>Session complete</strong>.</p>
-        <p>Each term appears as a pill on the right, and the bar underneath shows how much of the year has passed. The foot of the panel counts departments and links to <strong>Sessions &amp; Terms</strong>.</p>
+        <p>The top panel names the year you are looking at, such as <em>2026/2027 Academic Session</em>, with a badge reading <strong>Active</strong>, <strong>Draft</strong> or <strong>Archived</strong>. Under the name you see the year&apos;s dates and where it stands: which {w.term} is underway, which {w.term} is next, or <strong>Session complete</strong>.</p>
+        <p>Each {w.term} appears as a pill on the right, and the bar underneath shows how much of the year has passed. The foot of the panel counts departments and links to <strong>Sessions &amp; {w.Terms}</strong>.</p>
         <GuideCallout tone="info" title="No year yet">If the panel reads <strong>No active academic session</strong>, the school has not set one up. Use <strong>Go to sessions</strong> to create a year and make it active. Everything else on this page counts against a year.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="browse-the-structure" title="Browse the structure">
         <p>Four cards count the <strong>Programmes</strong>, <strong>Levels</strong>, <strong>Classes</strong> and <strong>Subjects</strong> in the year you are looking at. Below them, <strong>The structure</strong> has two views.</p>
         <GuideSteps>
-          <GuideStep title="List">One row each for Sessions &amp; Terms, Departments, Programmes &amp; Levels, Classes &amp; Arms, and Subjects. Select a row to open that screen. On a wider screen each row also shows its count.</GuideStep>
+          <GuideStep title="List">One row each for Sessions &amp; {w.Terms}, Departments, Programmes &amp; Levels, Classes &amp; Arms, and Subjects. Select a row to open that screen. On a wider screen each row also shows its count.</GuideStep>
           <GuideStep title="Tree">Shows how the pieces connect, from the year down through programmes and levels. Open a level to see its classes and subjects, or use <strong>Expand all</strong> to open everything at once.</GuideStep>
         </GuideSteps>
       </GuideSection>
@@ -42,7 +44,7 @@ export default function StructureOverviewArticle() {
       <GuideSection id="setup-order" title="Build it in order">
         <p>Each piece depends on the one before it, so set the structure up in this order:</p>
         <GuideSteps>
-          <GuideStep title="Sessions & Terms">Create the school year, add its terms, and make it active.</GuideStep>
+          <GuideStep title={`Sessions & ${w.Terms}`}>Create the school year, add its {w.terms}, and make it active.</GuideStep>
           <GuideStep title="Departments">Optional, but programmes and subjects can be grouped under them.</GuideStep>
           <GuideStep title="Programmes & Levels">Add each programme and the levels pupils move through inside it.</GuideStep>
           <GuideStep title="Classes & Arms">A class sits at a level, so levels must exist first.</GuideStep>

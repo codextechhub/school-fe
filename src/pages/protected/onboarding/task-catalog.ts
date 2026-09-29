@@ -9,6 +9,7 @@ import {
 import type { TaskKey } from "@/redux/services/onboarding/onboarding-types";
 import { P, type PermissionCode } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
+import { TERM_WORDS, type TermWords } from "@/lib/school-words";
 
 /**
  * The presentation half of a checklist step.
@@ -79,7 +80,7 @@ const CATALOG: Record<string, TaskMeta> = {
   ACADEMIC_STRUCTURE: {
     icon: GraduationCap,
     description:
-      "Sessions, terms, departments, programmes, levels and classes for your school year.",
+      "Sessions, {terms}, departments, programmes, levels and classes for your school year.",
     // Still attested: no backend can judge whether a school's structure is
     // FINISHED, so the tick is the school's word. But the work itself is open -
     // every academics view declares `pending_tenant_surface`, deliberately,
@@ -121,12 +122,17 @@ const CATALOG: Record<string, TaskMeta> = {
  * The catalog is a server constant: a step added there ships before this file
  * knows about it, and the school must still see a usable card rather than an
  * empty one or a crash.
+ *
+ * A description may name `{terms}`, which is filled with the school's own word
+ * (terms or semesters) from `words`.
  */
-export function taskMeta(key: TaskKey): TaskMeta {
-  return (
-    CATALOG[key] ?? {
-      icon: School,
-      description: "One of the steps XVS needs before your school can go live.",
-    }
-  );
+export function taskMeta(key: TaskKey, words: TermWords = TERM_WORDS): TaskMeta {
+  const meta = CATALOG[key] ?? {
+    icon: School,
+    description: "One of the steps XVS needs before your school can go live.",
+  };
+  return {
+    ...meta,
+    description: meta.description.replace("{terms}", words.terms),
+  };
 }

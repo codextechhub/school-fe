@@ -14,6 +14,7 @@ import {
 } from "@/redux/services/calendar/calendar-api";
 
 import { CalendarOverviewLayout } from "./overview-layout";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * Loads the calendar overview for the selected branch and school year.
@@ -25,6 +26,7 @@ export default function CalendarOverview() {
   const { lens, sessionName } = useAcademicsLens();
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
+  const words = useSchoolWords();
 
   const { data, isLoading, isError, refetch } =
     useGetCalendarOverviewQuery(lens);
@@ -71,8 +73,8 @@ export default function CalendarOverview() {
         <OutlinedNotice
           icon={CalendarRange}
           title="No school year yet"
-          body="A calendar hangs off a school year: every holiday, break and exam period is dated inside one. Start a year on Sessions & Terms and this fills in."
-          actionLabel="Go to Sessions & Terms"
+          body={`A calendar hangs off a school year: every holiday, break and exam period is dated inside one. Start a year on Sessions & ${words.Terms} and this fills in.`}
+          actionLabel={`Go to Sessions & ${words.Terms}`}
           onAction={() =>
             navigate(routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS)
           }

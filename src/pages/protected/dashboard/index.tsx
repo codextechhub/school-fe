@@ -38,6 +38,7 @@ import { useGetPendingApprovalsQuery } from "@/redux/services/dashboard/workflow
 import { buildAttention } from "./attention";
 import { HeroBuildings } from "./hero-buildings";
 import { FocusPanel } from "./focus-panel";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 const R = routesPath.PROTECTED;
 
@@ -164,6 +165,7 @@ function SectionHeading({
 }
 
 function ProgressRing({ percent }: { percent: number }) {
+  const words = useSchoolWords();
   const safePercent = Math.min(100, Math.max(0, percent));
 
   return (
@@ -173,7 +175,7 @@ function ProgressRing({ percent }: { percent: number }) {
         background: `conic-gradient(rgba(255,255,255,.96) ${safePercent}%, rgba(255,255,255,.16) ${safePercent}% 100%)`,
       }}
       role="img"
-      aria-label={`${safePercent}% of the term completed`}
+      aria-label={`${safePercent}% of the ${words.term} completed`}
     >
       <div className="grid size-17 place-items-center rounded-full bg-[#173D4A] text-center shadow-inner">
         <span className="font-mont text-xl font-semibold leading-none tabular-nums">
@@ -194,6 +196,7 @@ export default function Dashboard() {
   const consoleDoors = useConsoleDoors();
   const { lens, sessionName } = useAcademicsLens();
   const studentLens = useStudentsLens();
+  const words = useSchoolWords();
 
   const canSeeCalendar = hasPermission(P.BROWSE_CALENDAR);
   const canSeeStructure = hasPermission(P.BROWSE_STRUCTURE);
@@ -262,6 +265,7 @@ export default function Dashboard() {
     students: studentSummary,
     staff: staffCounts,
     pendingApprovals,
+    words,
   });
 
   const term = cal?.term ?? null;
@@ -386,7 +390,7 @@ export default function Dashboard() {
     },
     {
       label: "Calendar",
-      description: "Terms, events and key dates",
+      description: `${words.Terms}, events and key dates`,
       to: R.ACADEMIC_CALENDAR.INDEX,
       icon: CalendarRange,
       tone: "bg-[#F3EEFF] text-[#7755B7]",
@@ -470,7 +474,7 @@ export default function Dashboard() {
                 : term
                 ? `${term.name} of ${sessionName ?? "this year"} is underway. You have taught ${taught} of ${teachable} teaching days.`
                 : sessionName
-                  ? `${sessionName} is selected. No term covers today, so nothing is being taught right now.`
+                  ? `${sessionName} is selected. No ${words.term} covers today, so nothing is being taught right now.`
                   : "No academic year is set up yet, so there is nothing to teach into."}
             </p>
             {heroActions.length > 0 && (
@@ -507,10 +511,10 @@ export default function Dashboard() {
               )}
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">
-                  Term progress
+                  {words.Term} progress
                 </p>
                 <p className="mt-1.5 truncate text-sm font-semibold text-white">
-                  {calendar.isError ? "Unavailable" : term?.name ?? "Between terms"}
+                  {calendar.isError ? "Unavailable" : term?.name ?? `Between ${words.terms}`}
                 </p>
                 <p className="mt-1 text-[11px] leading-4 text-white/60">
                   {calendar.isError
@@ -579,14 +583,14 @@ export default function Dashboard() {
             <div className="min-w-0 rounded-3xl border border-white-02 bg-white p-4.5 shadow-[0_10px_30px_rgba(29,43,68,0.04)] sm:p-5">
               <SectionHeading
                 eyebrow="Academic year"
-                title={term?.name ?? "Between terms"}
-                action={{ label: "Term view", to: R.ACADEMIC_CALENDAR.TERM_VIEW }}
+                title={term?.name ?? `Between ${words.terms}`}
+                action={{ label: `${words.Term} view`, to: R.ACADEMIC_CALENDAR.TERM_VIEW }}
               />
               {academicLoading ? (
                 <Shimmer className="mt-5 h-28" />
               ) : calendar.isError ? (
                 <p className="mt-4 text-[13px] leading-5 text-gray-05 text-pretty">
-                  The term summary is unavailable right now. Refresh the page to try again.
+                  The {words.term} summary is unavailable right now. Refresh the page to try again.
                 </p>
               ) : term ? (
                 <>
@@ -630,7 +634,7 @@ export default function Dashboard() {
                 </>
               ) : (
                 <p className="mt-4 text-[13px] leading-5 text-gray-05 text-pretty">
-                  No term covers today. The calendar is ready for the next dated period.
+                  No {words.term} covers today. The calendar is ready for the next dated period.
                 </p>
               )}
             </div>

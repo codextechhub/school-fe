@@ -39,6 +39,7 @@ import {
   relativeDays,
   toIso,
 } from "../components/dates";
+import { useSchoolWords, type TermWords } from "@/hooks/use-school-words";
 
 const C = routesPath.PROTECTED.ACADEMIC_CALENDAR;
 const T = routesPath.PROTECTED.TIMETABLES;
@@ -69,6 +70,7 @@ export function CalendarOverviewLayout({
   canCreateEvent: boolean;
 }) {
   const [monthOffset, setMonthOffset] = useState(0);
+  const words = useSchoolWords();
   const term = overview.term ?? null;
   const counts = overview.counts;
   const nextUp = overview.next_up ?? [];
@@ -97,7 +99,7 @@ export function CalendarOverviewLayout({
               </h2>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <span className="text-sm font-semibold text-black-01">
-                  {term?.name ?? "Between terms"}
+                  {term?.name ?? `Between ${words.terms}`}
                 </span>
                 <span className="text-xs text-gray-05">
                   {overview.session.name}
@@ -148,7 +150,7 @@ export function CalendarOverviewLayout({
             </div>
           ) : (
             <p className="mt-7 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-sm text-gray-05">
-              No term covers today.
+              No {words.term} covers today.
             </p>
           )}
 
@@ -187,7 +189,7 @@ export function CalendarOverviewLayout({
           <MetricCard
             icon={CalendarRange}
             value={counts.terms}
-            label="Terms"
+            label={words.Terms}
             to={canSeeSessions ? S.SESSIONS : undefined}
           />
           <MetricCard
@@ -227,7 +229,7 @@ export function CalendarOverviewLayout({
             <h3 className="text-[15px] font-semibold text-black-01">Quick links</h3>
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
               <QuickLink to={C.EVENTS} icon={CalendarDays} label="Events" description="Create and manage dates" />
-              <QuickLink to={C.TERM_VIEW} icon={LayoutGrid} label="Term view" description="Browse the school year" />
+              <QuickLink to={C.TERM_VIEW} icon={LayoutGrid} label={`${words.Term} view`} description="Browse the school year" />
               {canSeeTimetables && (
                 <>
                   <QuickLink to={T.ROOMS} icon={DoorOpen} label="Rooms" description="Manage teaching spaces" />
@@ -290,6 +292,7 @@ function MiniMonth({ anchor, monthOffset, events, onMove }: {
   const leading = leadingDays(visible);
   const daysInMonth = new Date(year, month, 0).getDate();
   const cellCount = Math.ceil((leading + daysInMonth) / 7) * 7;
+  const words = useSchoolWords();
 
   return (
     <Panel as="section" className="p-5">
@@ -326,7 +329,7 @@ function MiniMonth({ anchor, monthOffset, events, onMove }: {
         })}
       </div>
       <Link to={C.TERM_VIEW} className="mt-4 flex items-center justify-between gap-2 border-t border-white-02 pt-3 text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-        Open term view <ArrowRight className="size-3.5" />
+        Open {words.term} view <ArrowRight className="size-3.5" />
       </Link>
     </Panel>
   );
@@ -413,6 +416,8 @@ function AttentionPanel({ alerts, sessionName, canSeeSessions, canSeeTimetables 
   canSeeSessions: boolean;
   canSeeTimetables: boolean;
 }) {
+  const words = useSchoolWords();
+  const titles = alertTitles(words);
   return (
     <Panel as="section" className="p-5">
       <div className="flex items-center justify-between gap-2 border-b border-white-02 pb-4">
@@ -428,7 +433,7 @@ function AttentionPanel({ alerts, sessionName, canSeeSessions, canSeeTimetables 
             const content = <>
               <span className="grid size-9 shrink-0 place-content-center rounded-full bg-yellow-01/10 text-yellow-01-text"><AlertTriangle className="size-4" /></span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[13px] font-semibold text-black-01">{ALERT_TITLES[alert.code]}</span>
+                <span className="block text-[13px] font-semibold text-black-01">{titles[alert.code]}</span>
                 <span className="mt-0.5 block text-xs text-gray-05">{alert.detail}</span>
               </span>
               {to && <ArrowRight className="size-4 shrink-0 text-gray-02 transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />}
@@ -473,11 +478,12 @@ function alertDestination(code: AlertCode, canSeeSessions: boolean, canSeeTimeta
   return canSeeTimetables ? T.CLASSES : undefined;
 }
 
-const ALERT_TITLES: Record<AlertCode, string> = {
-  SESSION_HAS_NO_TERMS: "This year has no terms",
-  EVENT_OUTSIDE_ANY_TERM: "Events outside every term",
-  TERM_OUTSIDE_SESSION: "A term falls outside the year",
-  TERM_DATES_OVERLAP: "Two terms overlap",
+/** Each alert's title, in the school's word for a term. */
+const alertTitles = (words: TermWords): Record<AlertCode, string> => ({
+  SESSION_HAS_NO_TERMS: `This year has no ${words.terms}`,
+  EVENT_OUTSIDE_ANY_TERM: `Events outside every ${words.term}`,
+  TERM_OUTSIDE_SESSION: `A ${words.term} falls outside the year`,
+  TERM_DATES_OVERLAP: `Two ${words.terms} overlap`,
   TIMETABLE_HAS_CLASHES: "Unresolved timetable clashes",
   CLASS_HAS_NO_TIMETABLE: "Classes with no timetable",
-};
+});

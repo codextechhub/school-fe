@@ -5,6 +5,7 @@ import {
   GuideStep,
   GuideSteps,
 } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 const PROBLEMS = [
   { title: "Everything is greyed out", body: "You can read settings but not change them. The page says You have read-only access; changing needs the finance settings update permission." },
@@ -14,6 +15,7 @@ const PROBLEMS = [
 ] as const;
 
 export default function FinanceSettingsArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
@@ -51,7 +53,7 @@ export default function FinanceSettingsArticle() {
         <GuideSteps>
           <GuideStep title="Default invoice due days">The due date given to an invoice raised without one, including invoices generated from a fee structure.</GuideStep>
           <GuideStep title="Primary collection account">The bank account printed on invoices and receipts as the place to pay.</GuideStep>
-          <GuideStep title="Term collection target (%)">The share of a term&apos;s fees you aim to have collected by its end. It is drawn as the target on the dashboard&apos;s collection curve.</GuideStep>
+          <GuideStep title="Term collection target (%)">The share of a {w.term}&apos;s fees you aim to have collected by its end. It is drawn as the target on the dashboard&apos;s collection curve.</GuideStep>
           <GuideStep title="Default invoice narration, and two switches">The narration pre-fills manual invoices. <strong>Post manual invoices immediately</strong> decides whether a manual invoice posts or waits as a draft. <strong>Allow customer opening balances</strong> decides whether a customer can be created with an amount already owed.</GuideStep>
         </GuideSteps>
         <p>Select <strong>Save document policy</strong>. The section also links to <strong>Fee structures</strong> and <strong>Dunning policies</strong>.</p>

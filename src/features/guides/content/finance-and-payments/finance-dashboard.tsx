@@ -4,6 +4,7 @@ import {
   GuideStep,
   GuideSteps,
 } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 const PROBLEMS = [
   { title: "Nothing to show here yet", body: "None of the figures are in your access. Your finance screens are still in the sidebar." },
@@ -12,6 +13,7 @@ const PROBLEMS = [
 ] as const;
 
 export default function FinanceDashboardArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
@@ -34,7 +36,7 @@ export default function FinanceDashboardArticle() {
       </GuideSection>
 
       <GuideSection id="collections" title="Follow fee collection">
-        <p>On <strong>Receivables &amp; collections</strong>, the <strong>Term collection curve</strong> shows the share of the term&apos;s fees collected week by week against the target set in Finance Settings, Documents. Cards for payment plans, reminders, concessions and <strong>Credit held</strong> show where money is waiting.</p>
+        <p>On <strong>Receivables &amp; collections</strong>, the <strong>Term collection curve</strong> shows the share of the {w.term}&apos;s fees collected week by week against the target set in Finance Settings, Documents. Cards for payment plans, reminders, concessions and <strong>Credit held</strong> show where money is waiting.</p>
       </GuideSection>
 
       <GuideSection id="quick-actions" title="Start work from the dashboard">

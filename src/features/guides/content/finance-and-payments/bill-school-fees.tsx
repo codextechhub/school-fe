@@ -5,27 +5,29 @@ import {
   GuideStep,
   GuideSteps,
 } from "../../article-components";
+import { useGuideWords, type TermWords } from "../../guide-words";
 
-const PROBLEMS = [
+const problems = (w: TermWords) => [
   { title: "Generate invoices is greyed out", body: "Only a structure whose Applies to is Customer can raise invoices. Edit the structure and check the setting, or ask for the generate permission if the button is missing altogether." },
-  { title: "It says the structure is not linked to a term", body: "Link it from the Generate invoices drawer. That needs permission to edit fee structures; without it, ask someone who has it. A structure bills one term, so next term needs its own structure." },
+  { title: `It says the structure is not linked to a ${w.term}`, body: `Link it from the Generate invoices drawer. That needs permission to edit fee structures; without it, ask someone who has it. A structure bills one ${w.term}, so next ${w.term} needs its own structure.` },
   { title: "No classes are offered", body: "The classes shown are those of the year the structure is linked to, at its branch if it has one. Set up that year's classes under Academics. If the drawer says your role cannot see the class lists, ask for access to students and classes." },
   { title: "A pupil was not billed", body: "The run bills pupils on the roll in the classes you chose (Enrolled, Active or Suspended), and leaves out anyone already billed from the same structure. Check the pupil is in one of those classes this year and has not been withdrawn." },
   { title: "Somebody was billed who should not be", body: "Void the invoice from its detail panel, then check the pupil's class and status before the next run." },
-  { title: "The due date is not what you expected", body: "Fee bills take their due date from Fee due dates in Finance Settings, worked out against the term the structure is linked to. The preview shows the date before anything is billed." },
+  { title: "The due date is not what you expected", body: `Fee bills take their due date from Fee due dates in Finance Settings, worked out against the ${w.term} the structure is linked to. The preview shows the date before anything is billed.` },
   { title: "The run is refused because the period is closed", body: "Bills are dated the day they are raised, so today's fiscal period must be open. Ask whoever runs period close to open it." },
   { title: "The fee structure is missing from Batch generate", body: "Batch generate lists active Customer structures only, and an inactive structure cannot be billed. Edit the structure and tick Active." },
 ] as const;
 
 export default function BillSchoolFeesArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>Fees are billed from <strong>Finance</strong>, in the <strong>Receivables</strong> part of the sidebar. A <strong>fee structure</strong> is the price list for a term. Generating invoices from it bills the pupils in the classes you choose, one bill each.</p>
+        <p>Fees are billed from <strong>Finance</strong>, in the <strong>Receivables</strong> part of the sidebar. A <strong>fee structure</strong> is the price list for a {w.term}. Generating invoices from it bills the pupils in the classes you choose, one bill each.</p>
         <GuideChecklist items={[
-          "The term's fees and amounts are approved.",
+          `The ${w.term}'s fees and amounts are approved.`,
           "You know which income account each fee belongs to, such as tuition or bus fees.",
-          "The term is set up under Academics, and each pupil is in their class for it.",
+          `The ${w.term} is set up under Academics, and each pupil is in their class for it.`,
           "Today's fiscal period is open, because bills are dated the day they are raised.",
         ]} />
         <GuideCallout tone="warning" title="A posted invoice is a real debt">
@@ -48,15 +50,15 @@ export default function BillSchoolFeesArticle() {
           <GuideStep title="Add a line per fee">Select <strong>Add line</strong> for each fee: <strong>Fee item</strong> (what the parent sees), <strong>GL account</strong> (the income account), <strong>Amount</strong> and, where it applies, <strong>Tax</strong>. Tick <strong>Optional</strong> for items such as bus fees that not every pupil takes.</GuideStep>
           <GuideStep title="Check the total and create">The drawer shows the <strong>Subtotal (net)</strong>. Select <strong>Create structure</strong>. Open it again from the list to see the lines, the tax and the <strong>Total per customer</strong>.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="tip" title="Next term, duplicate rather than retype">
-          <strong>Duplicate</strong> copies every line into an inactive copy. Change the amounts, then tick Active when it is ready to bill. The copy is not linked to a term: you link it the first time you generate from it.
+        <GuideCallout tone="tip" title={`Next ${w.term}, duplicate rather than retype`}>
+          <strong>Duplicate</strong> copies every line into an inactive copy. Change the amounts, then tick Active when it is ready to bill. The copy is not linked to a {w.term}: you link it the first time you generate from it.
         </GuideCallout>
       </GuideSection>
 
-      <GuideSection id="generate-invoices" title="Generate the term's invoices">
+      <GuideSection id="generate-invoices" title={`Generate the ${w.term}'s invoices`}>
         <GuideSteps>
           <GuideStep title="Open the structure and select Generate invoices">Or use <strong>Batch generate</strong> on the Customer Invoices screen, pick the structure and select <strong>Continue</strong>. Both open the same drawer.</GuideStep>
-          <GuideStep title="Check the term">The drawer says which term the structure bills, such as <em>Bills First Term, 2026/2027</em>. A structure that is not linked yet cannot bill anyone: choose the <strong>Academic year</strong> and <strong>Term</strong> and select <strong>Link to this term</strong>. Leave Term on <strong>The whole year</strong> for fees charged once a year.</GuideStep>
+          <GuideStep title={`Check the ${w.term}`}>The drawer says which {w.term} the structure bills, such as <em>Bills First Term, 2026/2027</em>. A structure that is not linked yet cannot bill anyone: choose the <strong>Academic year</strong> and <strong>{w.Term}</strong> and select <strong>Link to this {w.term}</strong>. Leave {w.Term} on <strong>The whole year</strong> for fees charged once a year.</GuideStep>
           <GuideStep title="Choose who to bill">Tick the classes this structure is for, or <strong>Every class</strong>. The classes offered are that year&apos;s. A structure that belongs to one branch offers only that branch&apos;s classes and pupils.</GuideStep>
           <GuideStep title="Select Preview">Nothing is billed yet. The preview shows how many pupils will be billed, the total with tax, the due date, and the list of names. Pupils already billed from this structure are counted separately and left alone.</GuideStep>
           <GuideStep title="Select Bill">The button names the number of pupils. The bills are dated today and fall due on the date the preview showed, from the school&apos;s <strong>Fee due dates</strong> rule. The structure&apos;s activity then reads <em>Used to generate</em> with the count.</GuideStep>
@@ -86,7 +88,7 @@ export default function BillSchoolFeesArticle() {
 
       <GuideSection id="common-problems" title="Common problems">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {PROBLEMS.map(({ title, body }) => (
+          {problems(w).map(({ title, body }) => (
             <div key={title} className="rounded-2xl border border-gray-200 bg-white p-4">
               <p className="text-sm font-semibold text-black-01">{title}</p>
               <p className="mt-1 text-xs leading-5 text-gray-01">{body}</p>
@@ -96,8 +98,8 @@ export default function BillSchoolFeesArticle() {
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="The term is billed when">
-          Every pupil who owes has one invoice for the term, the totals on Customer Invoices match the approved fee schedule, the due dates are the ones the preview showed, and no one who should not owe has a bill.
+        <GuideCallout tone="tip" title={`The ${w.term} is billed when`}>
+          Every pupil who owes has one invoice for the {w.term}, the totals on Customer Invoices match the approved fee schedule, the due dates are the ones the preview showed, and no one who should not owe has a bill.
         </GuideCallout>
       </GuideSection>
     </div>

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { useFormik } from "formik";
 import { toast } from "sonner";
+import { Link } from "react-router";
 import { LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CustomInput } from "@/components/custom/custom-input";
@@ -11,6 +12,7 @@ import type {
   SchoolProfileUpdate,
 } from "@/redux/services/school/school-types";
 import { requestSupportOpen } from "@/components/layout/support-open";
+import { routesPath } from "@/routes/routesPath";
 import { schoolProfileSchema } from "@/schema/onboarding";
 import { writeErrorMessage } from "@/utils/api-error";
 
@@ -29,6 +31,10 @@ type ProfileField = keyof SchoolProfileUpdate;
  * be re-read in another, and a term structure already carrying fees cannot be
  * re-cut. Those two are then shown locked with the reason, rather than offered
  * as a select whose Save the server refuses.
+ *
+ * Locked, the term structure is only where the school started: the word it
+ * uses (Term or Semester) and the parts of its year are its own to change in
+ * Settings, Academic structure, and the note under the field says so.
  */
 export function SchoolProfileForm({
   profile,
@@ -117,7 +123,7 @@ export function SchoolProfileForm({
             {...formik.getFieldProps("term_structure")}
             error={formik.touched.term_structure ? formik.errors.term_structure : ""}
           />
-          {lockNote("term_structure")}
+          {lockedByServer("term_structure") ? <TermStructureNote /> : null}
         </div>
         <div className="min-w-0">
           <CustomNativeSelect
@@ -190,6 +196,26 @@ export function SchoolProfileForm({
           : readOnlyText}
       </p>
     </form>
+  );
+}
+
+/** Under a locked term structure: where the school's terms are actually changed. */
+function TermStructureNote() {
+  return (
+    <p className="mt-1.5 flex items-start gap-1.5 text-xs text-gray-05 text-pretty">
+      <LockKeyhole className="mt-0.5 size-3.5 shrink-0" />
+      <span>
+        Where your school started. Change what you call the parts of your year, and how many
+        there are, in{" "}
+        <Link
+          to={routesPath.PROTECTED.SETTINGS.ACADEMICS}
+          className="font-medium text-primary underline-offset-2 hover:underline"
+        >
+          Academic structure
+        </Link>
+        .
+      </span>
+    </p>
   );
 }
 

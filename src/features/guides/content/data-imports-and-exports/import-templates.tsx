@@ -1,6 +1,8 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function ImportTemplatesArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
@@ -21,7 +23,7 @@ export default function ImportTemplatesArticle() {
 
       <GuideSection id="use-it-well" title="Use it well">
         <GuideChecklist items={[
-          "Download a fresh copy for each term's import rather than reusing an old one.",
+          `Download a fresh copy for each ${w.term}'s import rather than reusing an old one.`,
           "Keep the headings exactly as downloaded.",
           "Read each column's sample value to see the expected format, such as how dates are written.",
         ]} />

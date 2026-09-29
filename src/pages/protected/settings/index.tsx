@@ -3,6 +3,7 @@ import {
   BellRing,
   BadgeCheck,
   Briefcase,
+  CalendarRange,
   ClipboardList,
   GraduationCap,
   Hash,
@@ -38,6 +39,7 @@ import { EnrolmentSection } from "./sections/enrolment-section";
 import { GuardiansSection } from "./sections/guardians-section";
 import { AdmissionsSection } from "./sections/admissions-section";
 import { PromotionSection } from "./sections/promotion-section";
+import { AcademicsSection } from "./sections/academics-section";
 import { MoreSection } from "./sections/more-section";
 import { useSettingsDoors } from "./use-settings-doors";
 import { NotificationsSection } from "./sections/notifications-section";
@@ -75,6 +77,7 @@ const SECTION_META: Record<
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash, group: "students" },
   guardians: { title: "Guardians", description: "Contacts and siblings", icon: Users, group: "students" },
   promotion: { title: "Promotion", description: "Arms, holds and full classes", icon: GraduationCap, group: "students" },
+  academics: { title: "Academic structure", description: "The school year and arms", icon: CalendarRange },
   staff: { title: "Staff rules", description: "Starting role, leave, hiring", icon: Briefcase, group: "staff" },
   "staff-ids": { title: "Staff IDs", description: "The rule for staff numbers", icon: BadgeCheck, group: "staff" },
   "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog, group: "staff" },
@@ -90,6 +93,7 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   guardians: GuardiansSection,
   admissions: AdmissionsSection,
   promotion: PromotionSection,
+  academics: AcademicsSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
   staff: StaffSection,
@@ -195,6 +199,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   guardians: "How many guardians a child needs, whether their email is required, how siblings are recognised, and your own relationship words.",
   admissions: "Your school's own admission steps, how long an offer stays open, and the documents needed before an applicant is enrolled.",
   promotion: "Who moves up at the end of the year, whether a year group keeps its arms or is spread across classes, and what a full class does.",
+  academics: "Whether your school says Term or Semester, the ones every new year starts with, and the arms offered for new classes.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
   staff: "The role new staff start with, the documents kept on file, what staff change themselves, hire approval, and leave allowances.",

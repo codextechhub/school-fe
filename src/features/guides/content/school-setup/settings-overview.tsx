@@ -1,6 +1,8 @@
 import { GuideCallout, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords, type TermWords } from "../../guide-words";
 
-const GROUPS = [
+/** The overview's cards, under the headings the overview itself shows. */
+const groups = (w: TermWords) => [
   ["Your school", [
     ["School profile", "Your crest, address, website and motto, and the details XVS set up for you."],
     ["Sign-in and security", "How many wrong passwords lock an account, and how long reset links and invitations last."],
@@ -20,6 +22,7 @@ const GROUPS = [
     ["Payroll", "Whether the whole school is paid in one run, or each branch runs its own."],
   ]],
   ["Everything else", [
+    ["Academic structure", `Whether your school says Term or Semester, the ${w.terms} every new year starts with, and the arms offered for new classes.`],
     ["More settings", "Roles, field access, approval paths, and the Finance and Procurement settings."],
   ]],
 ] as const;
@@ -32,6 +35,7 @@ const PROBLEMS = [
 ] as const;
 
 export default function SettingsOverviewArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
@@ -42,13 +46,13 @@ export default function SettingsOverviewArticle() {
       <GuideSection id="open-settings" title="Open Settings">
         <GuideSteps>
           <GuideStep title="Select Settings">Select <strong>Settings</strong> in the sidebar, or type &quot;settings&quot; into the search box in the header. Your school&apos;s name shows at the top right, so you know whose settings you are changing.</GuideStep>
-          <GuideStep title="Pick an area">The areas are grouped under <strong>Your school</strong>, <strong>Students</strong> and <strong>Staff</strong>, with <strong>Overview</strong> and <strong>More settings</strong> on their own. On a wide screen the groups run down the left and open like sub-menus; the group holding the page you are on stays open. On a phone the groups are a row of buttons across the top, and the open group&apos;s areas appear as a second row beneath. Each area has its own address, so you can bookmark it or share the link with a colleague who holds the same access.</GuideStep>
+          <GuideStep title="Pick an area">The areas are grouped under <strong>Your school</strong>, <strong>Students</strong> and <strong>Staff</strong>, with <strong>Overview</strong>, <strong>Academic structure</strong> (between Students and Staff) and <strong>More settings</strong> on their own. On a wide screen the groups run down the left and open like sub-menus; the group holding the page you are on stays open. On a phone the groups are a row of buttons across the top, and the open group&apos;s areas appear as a second row beneath. Each area has its own address, so you can bookmark it or share the link with a colleague who holds the same access.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
       <GuideSection id="the-overview" title="Read the overview">
-        <p><strong>Overview</strong> shows a card for every area your role can open, under the same group headings as the list of areas. Select a card to go straight to it.</p>
-        {GROUPS.map(([group, areas]) => (
+        <p><strong>Overview</strong> shows a card for every area your role can open, under the same group headings as the list of areas, with the areas that stand on their own gathered under <strong>Everything else</strong>. Select a card to go straight to it.</p>
+        {groups(w).map(([group, areas]) => (
           <div key={group} className="space-y-2">
             <p className="text-sm font-semibold text-black-01">{group}</p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

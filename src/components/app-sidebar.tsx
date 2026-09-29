@@ -54,6 +54,7 @@ import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
+import { useSchoolWords } from "@/hooks/use-school-words";
 import { LensRail } from "./layout/lens-pills";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { SchoolMark } from "./school-mark";
@@ -193,6 +194,7 @@ export function AppSidebar({
   // The raw school.logo is an auth-gated /media/ URL a browser <img> can't load;
   // the hook fetches it with the token and returns a renderable blob: URL.
   const logoBlobUrl = useSchoolLogo();
+  const words = useSchoolWords();
 
   // A nav item is visible when the school's plan reaches it AND the reader's
   // role allows it. Both, because either alone offers a door that opens onto a
@@ -289,7 +291,7 @@ export function AppSidebar({
           perm: P.BROWSE_STRUCTURE,
         },
         {
-          title: "Sessions & Terms",
+          title: `Sessions & ${words.Terms}`,
           url: routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
           isActive: location.startsWith(
             routesPath.PROTECTED.ACADEMIC_STRUCTURE.SESSIONS,
@@ -649,7 +651,7 @@ export function AppSidebar({
             ),
           },
           {
-            title: "Term view",
+            title: `${words.Term} view`,
             url: routesPath.PROTECTED.ACADEMIC_CALENDAR.TERM_VIEW,
             isActive: location.startsWith(
               routesPath.PROTECTED.ACADEMIC_CALENDAR.TERM_VIEW,

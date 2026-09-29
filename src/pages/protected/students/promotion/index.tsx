@@ -542,6 +542,11 @@ function LevelMapping({ plan }: { plan: PromotionPlan }) {
                   Terminal
                 </span>
               )}
+              {destination.note && (
+                <p className="col-span-full text-xs text-amber-700 text-pretty">
+                  {destination.note}
+                </p>
+              )}
             </li>
           );
         })}

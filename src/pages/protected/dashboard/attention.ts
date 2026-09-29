@@ -3,6 +3,7 @@ import type { AlertCode, CalendarAlert } from "@/redux/services/calendar/calenda
 import type { OnboardingState } from "@/redux/services/onboarding/onboarding-types";
 import type { StudentSummary } from "@/redux/services/students/students-types";
 import type { StaffCounts } from "@/redux/services/staff/staff-types";
+import { TERM_WORDS, type TermWords } from "@/lib/school-words";
 
 const R = routesPath.PROTECTED;
 
@@ -77,24 +78,24 @@ const ALERT_TONE: Record<AlertCode, AttentionTone> = {
   EVENT_OUTSIDE_ANY_TERM: "info",
 };
 
-const ALERT_TARGET: Record<
-  AlertCode,
-  { to: string; action: string; title: string }
-> = {
+/** Where each alert sends the reader, with its title, in the school's word. */
+const alertTargets = (
+  words: TermWords,
+): Record<AlertCode, { to: string; action: string; title: string }> => ({
   SESSION_HAS_NO_TERMS: {
     to: R.ACADEMIC_STRUCTURE.SESSIONS,
-    action: "Add terms",
-    title: "The year has no terms",
+    action: `Add ${words.terms}`,
+    title: `The year has no ${words.terms}`,
   },
   TERM_DATES_OVERLAP: {
     to: R.ACADEMIC_STRUCTURE.SESSIONS,
     action: "Fix the dates",
-    title: "Terms overlap",
+    title: `${words.Terms} overlap`,
   },
   TERM_OUTSIDE_SESSION: {
     to: R.ACADEMIC_STRUCTURE.SESSIONS,
     action: "Fix the dates",
-    title: "A term falls outside the year",
+    title: `A ${words.term} falls outside the year`,
   },
   TIMETABLE_HAS_CLASHES: {
     to: R.TIMETABLES.CLASSES,
@@ -109,9 +110,9 @@ const ALERT_TARGET: Record<
   EVENT_OUTSIDE_ANY_TERM: {
     to: R.ACADEMIC_CALENDAR.EVENTS,
     action: "Review it",
-    title: "Dated outside every term",
+    title: `Dated outside every ${words.term}`,
   },
-};
+});
 
 export function buildAttention({
   alerts,
@@ -120,6 +121,7 @@ export function buildAttention({
   students,
   staff,
   pendingApprovals,
+  words = TERM_WORDS,
 }: {
   alerts?: CalendarAlert[];
   onboarding?: OnboardingState | null;
@@ -127,6 +129,8 @@ export function buildAttention({
   students?: StudentSummary;
   staff?: StaffCounts;
   pendingApprovals?: number;
+  /** The school's word for a term, for the alert titles. */
+  words?: TermWords;
 }): AttentionItem[] {
   const out: AttentionItem[] = [];
 
@@ -170,8 +174,9 @@ export function buildAttention({
     (a, b) => (ALERT_RANK[a.code] ?? 99) - (ALERT_RANK[b.code] ?? 99),
   );
   const notices: AttentionItem[] = [];
+  const targets = alertTargets(words);
   for (const alert of sorted) {
-    const target = ALERT_TARGET[alert.code];
+    const target = targets[alert.code];
     const tone = ALERT_TONE[alert.code] ?? "info";
     const item: AttentionItem = {
       id: `${alert.code}-${alert.ids.join("-") || "all"}`,

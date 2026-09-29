@@ -156,6 +156,17 @@ describe("walkthrough engine", () => {
     expect(issues).toContain(`Invalid search in ${sample.id}:bad-search`);
     expect(issues).toContain(`Invalid step route in ${sample.id}:bad-route`);
   });
+
+  it("accepts the school-word placeholders and refuses any other", () => {
+    const issues = validateWalkthroughs([{
+      ...sample,
+      steps: [
+        { id: "known", title: "Fill in each {term}", body: "{Terms} running counts the year's {terms}.", advance: "manual" },
+        { id: "typo", title: "x", body: "Add {semester}", advance: "manual" },
+      ],
+    }], new Set([sample.guideId]));
+    expect(issues).toEqual([`Unknown placeholder {semester} in ${sample.id}:typo`]);
+  });
 });
 
 describe("the walkthrough registry", () => {

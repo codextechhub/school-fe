@@ -28,6 +28,7 @@ export const SCHOOL_SETTINGS_SECTIONS = [
   "guardians",
   "admissions",
   "promotion",
+  "academics",
   "admission-numbers",
   "payroll",
   "staff",
@@ -90,6 +91,7 @@ export const SECTION_GATES: Record<
   guardians: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   admissions: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   promotion: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
+  academics: { anyOf: [P.VIEW_SETTINGS] },
   "admission-numbers": { anyOf: [P.MODIFY_STUDENT], capability: "students" },
   payroll: { anyOf: [P.VIEW_SETTINGS], capability: "finance_advanced" },
   // Their reads check the staff directory key.

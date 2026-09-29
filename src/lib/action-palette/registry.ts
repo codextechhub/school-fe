@@ -332,7 +332,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   {
     id: "view-academic-session",
     label: "View academic session",
-    aliases: ["sessions", "terms", "school year"],
+    aliases: ["sessions", "terms", "semesters", "school year"],
     section: "Academics",
     group: "Academic structure",
     kind: "view",
@@ -397,7 +397,10 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   {
     id: "view-calendar-events",
     label: "View events",
-    aliases: ["calendar events", "add an event", "term dates", "midterm"],
+    aliases: [
+      "calendar events", "add an event", "term dates", "semester dates",
+      "midterm", "mid-semester",
+    ],
     section: "Academics",
     group: "Academic calendar",
     kind: "view",
@@ -407,7 +410,12 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   {
     id: "view-term-calendar",
     label: "View term calendar",
-    aliases: ["term view", "this term", "by term"],
+    // Both words, whichever the school uses: the label is reworded to the
+    // school's own word on screen, but a person may type either.
+    aliases: [
+      "term view", "this term", "by term",
+      "semester view", "this semester", "by semester", "semester calendar",
+    ],
     section: "Academics",
     group: "Academic calendar",
     kind: "view",
@@ -527,7 +535,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   {
     id: "add-session",
     label: "Add a session",
-    aliases: ["new school year", "start a session", "new term"],
+    aliases: ["new school year", "start a session", "new term", "new semester"],
     section: "Academics",
     group: "Academic structure",
     kind: "do",
@@ -537,7 +545,10 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   {
     id: "add-event",
     label: "Add an event",
-    aliases: ["new holiday", "midterm break", "put a date on the calendar"],
+    aliases: [
+      "new holiday", "midterm break", "mid-semester break",
+      "put a date on the calendar",
+    ],
     section: "Academics",
     group: "Academic calendar",
     kind: "do",
@@ -824,6 +835,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: { any: SECTION_GATES.promotion.anyOf },
     run: { to: R.SETTINGS.PROMOTION },
+  },
+  {
+    id: "view-academic-structure-settings",
+    label: "View academic structure settings",
+    aliases: [
+      "term names", "semester names", "term or semester", "default arms",
+      "arm names", "streams", "academic settings",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.academics.anyOf },
+    run: { to: R.SETTINGS.ACADEMICS },
   },
   {
     id: "view-staff-settings",

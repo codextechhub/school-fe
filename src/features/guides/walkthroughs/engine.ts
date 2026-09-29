@@ -7,6 +7,7 @@ import type {
 } from "./types";
 import type { GuideRecord } from "../types";
 import { routePatternMatches } from "../route-pattern";
+import { TERM_TOKEN_PATTERN, TERM_TOKENS } from "../guide-words";
 import { routesPath } from "@/routes/routesPath";
 
 const STORAGE_PREFIX = "school-guide-walkthrough";
@@ -194,6 +195,15 @@ export function walkthroughCompletionRoute(
     : routesPath.PROTECTED.SUPPORT.GUIDES;
 }
 
+const KNOWN_TOKENS: ReadonlySet<string> = new Set(TERM_TOKENS);
+
+/**
+ * Every broken contract in the walkthroughs, as readable lines.
+ *
+ * A step's title and body may carry the school-word placeholders
+ * (`{term}`, `{Term}`, `{terms}`, `{Terms}`); any other `{...}` is a typo that
+ * would reach the reader as written.
+ */
 export function validateWalkthroughs(
   walkthroughs: readonly Walkthrough[],
   guideIds: ReadonlySet<string>,
@@ -219,6 +229,12 @@ export function validateWalkthroughs(
         issues.push(`Invalid search in ${walkthrough.id}:${step.id}`);
       } else if (step.route && !step.route.startsWith("/")) {
         issues.push(`Invalid step route in ${walkthrough.id}:${step.id}`);
+      }
+      if (step.kind !== "branch") {
+        const unknown = `${step.title} ${step.body}`
+          .match(TERM_TOKEN_PATTERN)
+          ?.filter((token) => !KNOWN_TOKENS.has(token));
+        if (unknown?.length) issues.push(`Unknown placeholder ${unknown[0]} in ${walkthrough.id}:${step.id}`);
       }
       if (step.target) {
         const contract = `${walkthrough.id}:${step.target}`;

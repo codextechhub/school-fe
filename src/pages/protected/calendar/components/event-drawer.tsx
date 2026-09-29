@@ -40,6 +40,7 @@ import { AudiencePicker } from "./audience-picker";
 import type { EventDraft } from "./event-draft";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * The event drawer: read one, or write one.
@@ -464,6 +465,7 @@ export function EventDetail({
   onClose: () => void;
   onEdit?: () => void;
 }) {
+  const words = useSchoolWords();
   return (
     <Sheet open={open && !!event} onOpenChange={(next) => !next && onClose()}>
       <SheetContent
@@ -513,8 +515,8 @@ export function EventDetail({
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
               <DetailFact
                 icon={BookOpen}
-                label="School term"
-                value={event.term?.name ?? "Outside every term"}
+                label={`School ${words.term}`}
+                value={event.term?.name ?? `Outside every ${words.term}`}
                 muted={!event.term}
               />
               {multiBranch && (

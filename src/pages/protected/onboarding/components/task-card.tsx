@@ -19,6 +19,7 @@ import type {
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
 import { taskMeta } from "../task-catalog";
 import { TaskStatusChip } from "./onboarding-chips";
+import { useSchoolWords } from "@/hooks/use-school-words";
 
 /**
  * One checklist step.
@@ -50,7 +51,8 @@ export function TaskCard({
 }) {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
-  const meta = taskMeta(task.key);
+  const words = useSchoolWords();
+  const meta = taskMeta(task.key, words);
   const Icon = meta.icon;
   const [transition, { isLoading }] = useTransitionOnboardingTaskMutation();
   const [refusal, setRefusal] = useState("");

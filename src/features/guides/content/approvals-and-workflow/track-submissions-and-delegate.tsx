@@ -1,10 +1,12 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function TrackSubmissionsAndDelegateArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>Two screens under <strong>Workflow</strong> are about your own requests and your own approvals. <strong>My Submissions</strong> lists what you sent for approval and are waiting on. <strong>Delegations</strong> lets a colleague approve for you while you are away, for example over a term break.</p>
+        <p>Two screens under <strong>Workflow</strong> are about your own requests and your own approvals. <strong>My Submissions</strong> lists what you sent for approval and are waiting on. <strong>Delegations</strong> lets a colleague approve for you while you are away, for example over a {w.term} break.</p>
         <GuideChecklist items={[
           "Only requests you raised appear in My Submissions.",
           "You can see and change only your own delegations.",

@@ -1,20 +1,22 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function PlanTheCalendarArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>The calendar holds the dates of the school year: public holidays, mid-term breaks, exam periods and school events. Every event is dated inside the school year you are looking at, and the term it falls in is worked out from its dates. Open <strong>Calendar</strong> in the sidebar.</p>
+        <p>The calendar holds the dates of the school year: public holidays, mid-term breaks, exam periods and school events. Every event is dated inside the school year you are looking at, and the {w.term} it falls in is worked out from its dates. Open <strong>Calendar</strong> in the sidebar.</p>
         <GuideChecklist items={[
-          "The school year and its terms exist on Sessions & Terms.",
+          `The school year and its ${w.terms} exist on Sessions & ${w.Terms}.`,
           "The year selector at the foot of the sidebar shows the year you are planning.",
           "You have the dates of the holidays, breaks and events to add.",
         ]} />
       </GuideSection>
 
       <GuideSection id="read-the-overview" title="Read the calendar overview">
-        <p><strong>Overview</strong> opens on <strong>Today at school</strong>: the date, the term you are in (or <em>Between terms</em>), how many teaching days of the term have passed, and the next event. School-closed days do not count as teaching days. A small month calendar beside it marks days that have events.</p>
-        <p>Below that are counts of <strong>Terms</strong>, events this term, <strong>Classes timetabled</strong> and <strong>Rooms</strong>; select a count to open its screen. <strong>Coming up</strong> lists the next dated events, and <strong>Needs attention</strong> lists problems with the year, such as a term that falls outside the year, two terms that overlap, events outside every term, or classes with no timetable.</p>
+        <p><strong>Overview</strong> opens on <strong>Today at school</strong>: the date, the {w.term} you are in (or <em>Between {w.terms}</em>), how many teaching days of the {w.term} have passed, and the next event. School-closed days do not count as teaching days. A small month calendar beside it marks days that have events.</p>
+        <p>Below that are counts of <strong>{w.Terms}</strong>, events this {w.term}, <strong>Classes timetabled</strong> and <strong>Rooms</strong>; select a count to open its screen. <strong>Coming up</strong> lists the next dated events, and <strong>Needs attention</strong> lists problems with the year, such as a {w.term} that falls outside the year, two {w.terms} that overlap, events outside every {w.term}, or classes with no timetable.</p>
       </GuideSection>
 
       <GuideSection id="add-an-event" title="Add an event">
@@ -40,7 +42,7 @@ export default function PlanTheCalendarArticle() {
       </GuideSection>
 
       <GuideSection id="find-and-change-events" title="Find and change events">
-        <p><strong>Events</strong> lists the year&apos;s entries with their dates, their <strong>School term</strong> (or <em>Outside every term</em>), where they apply, and who they cover. Search by name, or use <strong>Filters</strong> to narrow by event type, term and, at a school with several branches, scope.</p>
+        <p><strong>Events</strong> lists the year&apos;s entries with their dates, their <strong>School {w.term}</strong> (or <em>Outside every {w.term}</em>), where they apply, and who they cover. Search by name, or use <strong>Filters</strong> to narrow by event type, {w.term} and, at a school with several branches, scope.</p>
         <GuideSteps>
           <GuideStep title="Read an event">Select the event to open its details, including whether it is a teaching day.</GuideStep>
           <GuideStep title="Change an event">Choose <strong>Edit</strong> from the event&apos;s menu, or <strong>Edit event</strong> in its details.</GuideStep>
@@ -50,20 +52,20 @@ export default function PlanTheCalendarArticle() {
       </GuideSection>
 
       <GuideSection id="warnings-after-saving" title="Warnings after saving">
-        <p>An event that overlaps another, or falls outside every term, still saves. A warning then stays on screen for about ten seconds, explaining what it found. If you can edit events, the warning carries an <strong>Edit</strong> button that reopens the event so you can correct it straight away.</p>
+        <p>An event that overlaps another, or falls outside every {w.term}, still saves. A warning then stays on screen for about ten seconds, explaining what it found. If you can edit events, the warning carries an <strong>Edit</strong> button that reopens the event so you can correct it straight away.</p>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">
         <GuideSteps>
           <GuideStep title="Add event is greyed out or missing">The year you are looking at is archived and read-only, or your role cannot add events. Switch to the active year.</GuideStep>
-          <GuideStep title="The overview says No school year yet">Create a year on Sessions &amp; Terms first; the calendar hangs off it.</GuideStep>
-          <GuideStep title="An event says Outside every term">Its dates fall between terms or outside the year. Check the dates, or the term dates on Sessions &amp; Terms.</GuideStep>
+          <GuideStep title="The overview says No school year yet">Create a year on Sessions &amp; {w.Terms} first; the calendar hangs off it.</GuideStep>
+          <GuideStep title={`An event says Outside every ${w.term}`}>Its dates fall between {w.terms} or outside the year. Check the dates, or the {w.term} dates on Sessions &amp; {w.Terms}.</GuideStep>
           <GuideStep title="Edit or Delete is missing on one event">The event is school-wide and you work in one branch only, so you can read it but not change it.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="You are done when">Every holiday, break and exam period for the year is listed on Events inside the right term, closures are marked School closed, and Needs attention on the overview has nothing you have not accepted.</GuideCallout>
+        <GuideCallout tone="tip" title="You are done when">Every holiday, break and exam period for the year is listed on Events inside the right {w.term}, closures are marked School closed, and Needs attention on the overview has nothing you have not accepted.</GuideCallout>
       </GuideSection>
     </div>
   );

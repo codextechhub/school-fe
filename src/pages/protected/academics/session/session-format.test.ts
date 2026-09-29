@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  blankTerms,
   dayAfter,
   dayLabel,
   scopeOf,
@@ -157,6 +158,15 @@ describe("termWindows", () => {
     const windows = termWindows([term(""), term("Second Term")], year);
     expect(windows[1].waitingOn).toBe("Term 1");
   });
+
+  it("names an unnamed row in the school's own word", () => {
+    const windows = termWindows(
+      [term(""), term("Second Semester")],
+      year,
+      "Semester",
+    );
+    expect(windows[1].waitingOn).toBe("Semester 1");
+  });
 });
 
 describe("termProblem", () => {
@@ -181,12 +191,45 @@ describe("termProblem", () => {
     );
   });
 
+  it("names an unnamed semester in the school's word", () => {
+    const terms = [{ name: "", start_date: "2026-09-07", end_date: "2026-09-07" }];
+    expect(termProblem(terms, 0, year, "Semester")).toBe(
+      "Semester 1 ends on or before it starts.",
+    );
+  });
+
   it("accepts terms that follow one another", () => {
     const terms = [
       { name: "First Term", start_date: "2026-09-07", end_date: "2026-12-18" },
       { name: "Second Term", start_date: "2027-01-05", end_date: "2027-04-02" },
     ];
     expect(termProblem(terms, 1, year)).toBe("");
+  });
+});
+
+/**
+ * Greenfield Academy runs two semesters and names them itself; Bright Star
+ * School keeps the three terms every school starts with.
+ */
+describe("blankTerms", () => {
+  it("opens a new year on one undated row per school term name", () => {
+    expect(blankTerms(["Harmattan Semester", "Rain Semester"])).toEqual([
+      { name: "Harmattan Semester", order_index: 1, start_date: "", end_date: "" },
+      { name: "Rain Semester", order_index: 2, start_date: "", end_date: "" },
+    ]);
+  });
+
+  it("keeps the count and order of the names it is given", () => {
+    const rows = blankTerms(["First Term", "Second Term", "Third Term"]);
+    expect(rows.map((row) => [row.name, row.order_index])).toEqual([
+      ["First Term", 1],
+      ["Second Term", 2],
+      ["Third Term", 3],
+    ]);
+  });
+
+  it("opens with no rows when there are no names", () => {
+    expect(blankTerms([])).toEqual([]);
   });
 });
 

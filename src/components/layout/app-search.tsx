@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useCapabilities } from "@/hooks/use-capabilities";
+import { useSchoolWords } from "@/hooks/use-school-words";
 import { BookOpenText, ChevronRight, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
@@ -27,6 +28,7 @@ import {
 } from "@/redux/features/auth/auth-slice";
 import {
   ACTIONS,
+  inSchoolWords,
   loadFrecencyScores,
   loadPopularity,
   recordPick,
@@ -141,9 +143,16 @@ export function AppSearch({
   const user = useAppSelector(selectUser);
   const userId = user?.id == null ? undefined : String(user.id);
 
+  const words = useSchoolWords();
   const available = useMemo(
-    () => availableActions(ACTIONS, { permissions, actorPermissions }, tenantIsPending, hasCapability),
-    [permissions, actorPermissions, tenantIsPending, hasCapability],
+    () =>
+      availableActions(
+        inSchoolWords(ACTIONS, words),
+        { permissions, actorPermissions },
+        tenantIsPending,
+        hasCapability,
+      ),
+    [permissions, actorPermissions, tenantIsPending, hasCapability, words],
   );
 
   // Popularity is re-read while the dropdown is open rather than held in

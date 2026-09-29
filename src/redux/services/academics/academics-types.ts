@@ -410,3 +410,31 @@ export interface BulkLevelWrite {
   names: string[];
   branch?: number | null;
 }
+
+/** The school's word for a part of its year. */
+export type TermWord = "TERM" | "SEMESTER";
+
+/**
+ * The school's academic vocabulary and starting values, as
+ * `/v1/academics/rules/` returns them.
+ *
+ * Readable by anyone signed in at the school, because every screen that prints
+ * "term" needs the word. `term_names` and `default_arms` are only where a form
+ * starts: a new year opens with one row per name, and the generate-arms drawer
+ * opens with the arms typed in. Neither is a limit on what the school may save.
+ */
+export interface AcademicRules {
+  term_word: TermWord;
+  term_word_options: { value: TermWord; label: string }[];
+  term_names: string[];
+  default_arms: string[];
+}
+
+/** A change to the rules. Needs whole-school reach and settings rights. */
+export interface AcademicRulesUpdate {
+  term_word: TermWord;
+  term_names: string[];
+  default_arms: string[];
+  /** Kept on the audit record. */
+  reason?: string;
+}

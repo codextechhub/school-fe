@@ -364,6 +364,14 @@ export interface PromotionPlan {
     to_classes?: { id: number; name: string; students: number }[];
     terminal: boolean;
     students: number;
+    /**
+     * True when no class at the next level has this class's arm, so its
+     * promoted pupils are shared across that level's classes instead of moving
+     * up whole. Absent from a server that does not report it.
+     */
+    arm_fallback?: boolean;
+    /** The server's sentence for that case, printed as written when present. */
+    arm_note?: string | null;
   }[];
   /** The school's promotion rules this plan was worked out under. */
   rules?: Pick<PromotionRules, "suspended" | "not_placed" | "arms">;

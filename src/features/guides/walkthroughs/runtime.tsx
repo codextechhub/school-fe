@@ -11,6 +11,8 @@ import { routesPath } from "@/routes/routesPath";
 import { useRecordGuideAnalyticsMutation } from "@/redux/services/support/guide-analytics-api";
 
 import { GUIDE_REGISTRY } from "../registry";
+import { fillTermWords, useGuideWords } from "../guide-words";
+import { GuideWordsProvider } from "../guide-words-provider";
 import {
   consumeQueuedWalkthrough,
   followingContentStep,
@@ -47,6 +49,12 @@ function effectiveIdentityKey(userId: number | undefined, impersonationId: numbe
   return `${userId ?? "anonymous"}:${impersonationId == null ? "direct" : `proxy-${impersonationId}`}`;
 }
 
+/**
+ * Runs the interactive walkthroughs over the dashboard, and supplies the
+ * school's word for a part of its year to the guides below it (see
+ * `GuideWordsProvider`), since this is the one guide shell that wraps every
+ * screen an article or a coach card renders on.
+ */
 export function WalkthroughProvider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -293,21 +301,23 @@ export function WalkthroughProvider({ children }: { children: React.ReactNode })
   const runtime = useMemo(() => ({ start: activate, active: walkthrough != null }), [activate, walkthrough]);
 
   return (
-    <WalkthroughRuntimeContext value={runtime}>
-      {children}
-      {walkthrough && step && createPortal(
-        <WalkthroughCoach
-          walkthrough={walkthrough}
-          step={step}
-          missingTarget={missingTarget}
-          onBack={() => move(-1)}
-          onNext={() => move(1)}
-          onPause={() => pause(missingTarget ? "target_unavailable" : "paused")}
-          onReturnToGuide={() => pause("target_unavailable")}
-        />,
-        document.body,
-      )}
-    </WalkthroughRuntimeContext>
+    <GuideWordsProvider>
+      <WalkthroughRuntimeContext value={runtime}>
+        {children}
+        {walkthrough && step && createPortal(
+          <WalkthroughCoach
+            walkthrough={walkthrough}
+            step={step}
+            missingTarget={missingTarget}
+            onBack={() => move(-1)}
+            onNext={() => move(1)}
+            onPause={() => pause(missingTarget ? "target_unavailable" : "paused")}
+            onReturnToGuide={() => pause("target_unavailable")}
+          />,
+          document.body,
+        )}
+      </WalkthroughRuntimeContext>
+    </GuideWordsProvider>
   );
 }
 
@@ -336,6 +346,7 @@ function WalkthroughCoach({
   const stepIndex = contentSteps.findIndex((item) => item.id === step.id);
   const finalStep = stepIndex === contentSteps.length - 1;
   const requiresTargetClick = step.advance === "target-click" && !missingTarget;
+  const words = useGuideWords();
 
   useEffect(() => {
     let frame = 0;
@@ -459,9 +470,9 @@ function WalkthroughCoach({
         <div><p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">Interactive walkthrough</p><p className="mt-1 text-xs text-gray-400">Step {stepIndex + 1} of {contentSteps.length}</p></div>
         <button type="button" aria-label="Pause walkthrough" onClick={onPause} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100"><X className="size-4" /></button>
       </div>
-      <h2 id="walkthrough-title" className="mt-4 font-mont text-lg font-semibold">{missingTarget ? "This step is unavailable" : step.title}</h2>
+      <h2 id="walkthrough-title" className="mt-4 font-mont text-lg font-semibold">{missingTarget ? "This step is unavailable" : fillTermWords(step.title, words)}</h2>
       <p id="walkthrough-description" className="mt-2 text-sm leading-6 text-gray-01">
-        {missingTarget ? "The highlighted control is not available in your current layout or permission state. Return to the guide or continue safely." : step.body}
+        {missingTarget ? "The highlighted control is not available in your current layout or permission state. Return to the guide or continue safely." : fillTermWords(step.body, words)}
       </p>
       {missingTarget && guide?.status === "published" && (
         <Button asChild variant="outline" size="sm" className="mt-4 w-full"><a href={routesPath.PROTECTED.SUPPORT.GUIDE_DETAIL_SLUG(guide.slug)} onClick={onReturnToGuide}><BookOpenText className="size-4" /> Return to the guide</a></Button>

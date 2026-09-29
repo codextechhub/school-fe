@@ -502,6 +502,10 @@ export const baseApi = createApi({
     "AcademicStructure",
     "Subjects",
     "AcademicOverview",
+    // The school's word for a term and its starting names and arms. Apart from
+    // the structure tags because nearly every screen reads it and no structure
+    // write changes it.
+    "AcademicRules",
     "Fees",
     "Roles",
     "ProxySessions",

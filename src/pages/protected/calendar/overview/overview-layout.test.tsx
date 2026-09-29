@@ -1,13 +1,20 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { MemoryRouter } from "react-router";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type {
   CalendarOverview,
   CalendarYear,
 } from "@/redux/services/calendar/calendar-types";
 import { CalendarOverviewLayout } from "./overview-layout";
+
+// The school's word for a term is read from the store; these render without
+// one, so the hook answers as a school that has set nothing.
+vi.mock("@/hooks/use-school-words", async () => {
+  const { resolveSchoolWords } = await import("@/lib/school-words");
+  return { useSchoolWords: () => resolveSchoolWords({}) };
+});
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 

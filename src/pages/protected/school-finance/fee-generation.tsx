@@ -59,6 +59,7 @@ import { useGetClassSeatsQuery } from "@/redux/services/students/students-api";
 import type { ClassSeats } from "@/redux/services/students/students-types";
 import { apiErrorMessage } from "@/utils/api-errors";
 import { formatMoney } from "@/utils/money";
+import { useSchoolWords, type TermWords } from "@/hooks/use-school-words";
 
 /** The server takes at most this many pupils in one run. */
 const MAX_PUPILS = 2000;
@@ -92,11 +93,11 @@ function refusalCode(error: unknown): string {
  * The server's message is kept where it already says what to do; the codes
  * below are the ones whose message names internals a bursar cannot act on.
  */
-function refusalMessage(error: unknown): string {
+function refusalMessage(error: unknown, words: TermWords): string {
   const status = (error as { status?: unknown } | undefined)?.status;
   switch (refusalCode(error)) {
     case "TERM_NOT_LINKED":
-      return "This fee structure is not linked to a term yet, so it cannot bill anyone. Link it to a term above first.";
+      return `This fee structure is not linked to a ${words.term} yet, so it cannot bill anyone. Link it to a ${words.term} above first.`;
     case "ENTITY_NOT_PROVISIONED":
       return "This school's books are not set up yet, so nothing can be billed. Finish the finance setup first.";
     default:
@@ -140,6 +141,7 @@ function LinkTermForm({ structureId }: { structureId: number }) {
   const [session, setSession] = useState("");
   const [term, setTerm] = useState("");
   const [failure, setFailure] = useState("");
+  const words = useSchoolWords();
 
   const sessions = (data?.data ?? []).filter((s) => s.status !== "ARCHIVED");
   const chosen = sessions.find((s) => String(s.id) === session);
@@ -157,7 +159,7 @@ function LinkTermForm({ structureId }: { structureId: number }) {
   if (!isLoading && sessions.length === 0) {
     return (
       <Note>
-        This school has no academic year set up yet, so there is no term to link to. Set up the
+        This school has no academic year set up yet, so there is no {words.term} to link to. Set up the
         year under Academics, then come back.
       </Note>
     );
@@ -179,7 +181,7 @@ function LinkTermForm({ structureId }: { structureId: number }) {
           </select>
         </label>
         <label className="min-w-0">
-          <span className={labelCls}>Term</span>
+          <span className={labelCls}>{words.Term}</span>
           <select
             value={term}
             onChange={(e) => { setTerm(e.target.value); setFailure(""); }}
@@ -193,7 +195,7 @@ function LinkTermForm({ structureId }: { structureId: number }) {
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" onClick={submit} disabled={!session || linking}>
-          {linking ? "Linking…" : "Link to this term"}
+          {linking ? "Linking…" : `Link to this ${words.term}`}
         </Button>
       </div>
       {failure ? <Refusal title="Not linked">{failure}</Refusal> : null}
@@ -207,12 +209,13 @@ function TermSection({ structureId, term, loading, failed }: {
 }) {
   const { hasPermission } = usePermissions();
   const canLink = hasPermission(P.FIN_EDIT_FEE_STRUCTURE) && hasPermission(P.BROWSE_SESSIONS);
+  const words = useSchoolWords();
 
   let body: ReactNode;
   if (loading) {
     body = <p className="font-mont text-xs text-gray-05">Loading…</p>;
   } else if (failed || !term) {
-    body = <Refusal title="The term could not be read">Close this and try again.</Refusal>;
+    body = <Refusal title={`The ${words.term} could not be read`}>Close this and try again.</Refusal>;
   } else if (term.linked) {
     body = (
       <p className="flex items-center gap-2 font-mont text-sm text-gray-01">
@@ -226,14 +229,14 @@ function TermSection({ structureId, term, loading, failed }: {
     body = (
       <div className="space-y-3">
         <Note>
-          This fee structure is not linked to a term yet, so it cannot bill anyone. Every bill it
-          raises is filed against the term it names, and the pupils offered are that year's.
+          This fee structure is not linked to a {words.term} yet, so it cannot bill anyone. Every bill it
+          raises is filed against the {words.term} it names, and the pupils offered are that year's.
         </Note>
         {canLink ? (
           <LinkTermForm structureId={structureId} />
         ) : (
           <p className="font-mont text-xs text-gray-05">
-            Ask someone who can edit fee structures to link it to a term.
+            Ask someone who can edit fee structures to link it to a {words.term}.
           </p>
         )}
       </div>
@@ -242,7 +245,7 @@ function TermSection({ structureId, term, loading, failed }: {
 
   return (
     <section>
-      <p className={sectionTitleCls}>Term</p>
+      <p className={sectionTitleCls}>{words.Term}</p>
       {body}
     </section>
   );
@@ -369,6 +372,7 @@ export default function SchoolFeeGeneration({ structure, currency, onClose }: Ho
   const { hasPermission } = usePermissions();
   const canGenerate = hasPermission(P.FIN_GENERATE_FEE_STRUCTURE);
   const canReadRoll = hasPermission(P.BROWSE_STUDENTS) && hasPermission(P.BROWSE_CLASSES);
+  const words = useSchoolWords();
 
   const termQuery = useGetFeeStructureTermQuery(structure.id);
   const term = termQuery.data?.data;
@@ -431,7 +435,7 @@ export default function SchoolFeeGeneration({ structure, currency, onClose }: Ho
       const res = await runPreview({ id: structure.id, students: pupils.map((p) => String(p.id)) }).unwrap();
       setPreview({ result: res.data, pupils });
     } catch (error) {
-      setFailure(refusalMessage(error));
+      setFailure(refusalMessage(error, words));
     }
   };
 
@@ -451,7 +455,7 @@ export default function SchoolFeeGeneration({ structure, currency, onClose }: Ho
       );
       onClose();
     } catch (error) {
-      setFailure(refusalMessage(error));
+      setFailure(refusalMessage(error, words));
     }
   };
 

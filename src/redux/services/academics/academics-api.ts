@@ -2,6 +2,8 @@ import { baseApi } from "../base-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import type {
   AcademicOverview,
+  AcademicRules,
+  AcademicRulesUpdate,
   AcademicSession,
   BranchFilter,
   ClassListArgs,
@@ -48,6 +50,9 @@ function branchParam(branch: BranchFilter): Record<string, string | number> {
   if (branch === undefined || branch === "all") return {};
   return { branch };
 }
+
+/** The school's term word, term names and default arms: read and written here. */
+export const ACADEMIC_RULES_URL = `/academics/rules/`;
 
 function listParams(args: ListArgs = {}): Record<string, string | number> {
   const { branch, session, search, is_active, page } = args;
@@ -469,6 +474,31 @@ export const academicsApi = baseApi.injectEndpoints({
         "Subjects", "AcademicStructure", "AcademicOverview", "Classes",
       ],
     }),
+
+    // ── The school's academic vocabulary ───────────────────────────────────
+    /**
+     * The school's word for a term, its term names and its default arms.
+     *
+     * Read by nearly every screen through `useSchoolWords`, so it is held for
+     * an hour rather than refetched on each mount; a save here invalidates it,
+     * which is the only way it changes mid-session. `silent` because a failure
+     * must not raise a toast about a request the reader did not make: the hook
+     * falls back to the school's term structure, and the screen still reads.
+     */
+    getAcademicRules: builder.query<Envelope<AcademicRules>, void>({
+      query: () => ({ url: ACADEMIC_RULES_URL, method: "GET" }),
+      extraOptions: { silent: true },
+      keepUnusedDataFor: 3600,
+      providesTags: ["AcademicRules"],
+    }),
+
+    updateAcademicRules: builder.mutation<
+      Envelope<AcademicRules>,
+      AcademicRulesUpdate
+    >({
+      query: (body) => ({ url: ACADEMIC_RULES_URL, method: "PUT", body }),
+      invalidatesTags: ["AcademicRules"],
+    }),
   }),
 });
 
@@ -510,4 +540,6 @@ export const {
   useArchiveSubjectMutation,
   useRestoreSubjectMutation,
   useSetSubjectOfferingsMutation,
+  useGetAcademicRulesQuery,
+  useUpdateAcademicRulesMutation,
 } = academicsApi;

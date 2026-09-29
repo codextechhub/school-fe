@@ -1,28 +1,30 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function SessionsAndTermsArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>A session is one school year, such as 2026/2027, and the terms or semesters inside it. Levels, classes, subjects, calendar events and timetables all belong to a session, so the year comes first. Open <strong>Academic Structure</strong>, then <strong>Sessions &amp; Terms</strong>.</p>
+        <p>A session is one school year, such as 2026/2027, and the {w.terms} inside it. Levels, classes, subjects, calendar events and timetables all belong to a session, so the year comes first. Open <strong>Academic Structure</strong>, then <strong>Sessions &amp; {w.Terms}</strong>.</p>
         <GuideChecklist items={[
           "You know the first and last day of the school year.",
-          "You know the start and end date of every term.",
+          `You know the start and end date of every ${w.term}.`,
           "If your school runs several branches, you know which branches follow this year.",
           "You can see the New session button. If not, your role cannot create sessions.",
         ]} />
-        <p>The three cards at the top show the <strong>Active session</strong>, how many <strong>Terms running</strong>, and the year&apos;s <strong>Teaching weeks</strong>.</p>
+        <p>The three cards at the top show the <strong>Active session</strong>, how many <strong>{w.Terms} running</strong>, and the year&apos;s <strong>Teaching weeks</strong>.</p>
       </GuideSection>
 
-      <GuideSection id="create-a-session" title="Create a session and its terms">
+      <GuideSection id="create-a-session" title={`Create a session and its ${w.terms}`}>
         <GuideSteps>
           <GuideStep title="Open the form">Select <strong>New session</strong>. The <strong>Create session</strong> panel opens on the right.</GuideStep>
           <GuideStep title="Name the year">Type a <strong>Session name</strong>, for example <em>2026/2027</em>. Each session needs its own name.</GuideStep>
           <GuideStep title="Set the dates">Choose when the session <strong>Starts</strong> and <strong>Ends</strong>. The end must come after the start.</GuideStep>
-          <GuideStep title="Fill in the terms">The form opens with the rows your school chose during setup: three terms (First Term, Second Term, Third Term) or two semesters. Rename them if you like and give each a start and end date. Use <strong>Add term</strong> (or <strong>Add semester</strong>) for another row, and the cross beside a row to remove it.</GuideStep>
+          <GuideStep title={`Fill in the ${w.terms}`}>The form opens with one row per name your school lists under <strong>Academic structure</strong> in <strong>Settings</strong>, in that order. Until your school sets its own, that is three terms named First Term, Second Term and Third Term, or two semesters named First Semester and Second Semester. Rename them if you like and give each a start and end date. Use <strong>Add {w.term}</strong> for another row, and the cross beside a row to remove it.</GuideStep>
           <GuideStep title="Save">Select <strong>Create</strong>. The session appears as a card on the list. Make it active when the school is ready to run it.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="tip" title="Term dates follow each other">Each term&apos;s dates must fall inside the session and after the term before it, so the date picker only offers days that fit. If a term&apos;s dates are greyed out, the line under it says which earlier term needs its end date first.</GuideCallout>
+        <GuideCallout tone="tip" title={`${w.Term} dates follow each other`}>Each {w.term}&apos;s dates must fall inside the session and after the {w.term} before it, so the date picker only offers days that fit. If a {w.term}&apos;s dates are greyed out, the line under it says which earlier {w.term} needs its end date first.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="choose-branches" title="Choose where the session applies">
@@ -31,12 +33,12 @@ export default function SessionsAndTermsArticle() {
           <GuideStep title="The whole school">Covers every branch, including any branch opened while the year is running. Most schools choose this.</GuideStep>
           <GuideStep title="Selected branches">Type into the box to pick the branches that follow this year. Pick at least one.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="info" title="One set of dates">A session runs on the same dates everywhere it applies. A branch cannot keep its own term dates. A branch on a different calendar needs a session of its own.</GuideCallout>
+        <GuideCallout tone="info" title="One set of dates">A session runs on the same dates everywhere it applies. A branch cannot keep its own {w.term} dates. A branch on a different calendar needs a session of its own.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="read-a-session" title="Read a session">
-        <p>Each card shows the session&apos;s dates, its status, a marker per term (a tick once a term has ended), and the number of teaching weeks. Switch to <strong>Table</strong> for a compact list, or search and filter by status. Select a card, or <strong>View details</strong>, to open the session.</p>
-        <p>The session page shows <strong>Teaching weeks</strong>, the number of <strong>Terms</strong>, a <strong>Session progress</strong> timeline, and a card per term marked <strong>Completed</strong>, <strong>Ongoing</strong> or <strong>Not started</strong>. Use <strong>Edit session</strong> to change its name, dates, terms or branches.</p>
+        <p>Each card shows the session&apos;s dates, its status, a numbered marker per {w.term}, such as {w.Term.charAt(0)}1 and {w.Term.charAt(0)}2 (ticked once the {w.term} has ended), and the number of teaching weeks. Switch to <strong>Table</strong> for a compact list, or search and filter by status. Select a card, or <strong>View details</strong>, to open the session.</p>
+        <p>The session page shows <strong>Teaching weeks</strong>, the number of <strong>{w.Terms}</strong>, a <strong>Session progress</strong> timeline, and a card per {w.term} marked <strong>Completed</strong>, <strong>Ongoing</strong> or <strong>Not started</strong>. Use <strong>Edit session</strong> to change its name, dates, {w.terms} or branches.</p>
       </GuideSection>
 
       <GuideSection id="set-active" title="Make a session the active one">
@@ -67,7 +69,7 @@ export default function SessionsAndTermsArticle() {
 
       <GuideSection id="common-problems" title="Common problems">
         <GuideSteps>
-          <GuideStep title="Create or Save changes stays grey">Every field marked with an asterisk needs a value, the session must end after it starts, every term needs a name and both dates, and there must be at least one term. When editing, the button wakes up only once you change something.</GuideStep>
+          <GuideStep title="Create or Save changes stays grey">Every field marked with an asterisk needs a value, the session must end after it starts, every {w.term} needs a name and both dates, and there must be at least one {w.term}. When editing, the button wakes up only once you change something.</GuideStep>
           <GuideStep title="The name is refused">Another session already uses that name. The message appears under the field. Choose a different name.</GuideStep>
           <GuideStep title="Edit session is missing or greyed out">The session is archived, your role cannot edit sessions, or the session also covers branches outside your own.</GuideStep>
           <GuideStep title="Copy structure in is refused">A year that already has levels, classes or subjects cannot be copied into. The message says what the year already holds.</GuideStep>
@@ -75,7 +77,7 @@ export default function SessionsAndTermsArticle() {
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="You are done when">The year you run is marked Active, each term card shows the right dates and teaching weeks, and the Academic Structure overview names this year at the top.</GuideCallout>
+        <GuideCallout tone="tip" title="You are done when">The year you run is marked Active, each {w.term} card shows the right dates and teaching weeks, and the Academic Structure overview names this year at the top.</GuideCallout>
       </GuideSection>
     </div>
   );

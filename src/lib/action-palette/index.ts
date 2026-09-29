@@ -6,6 +6,7 @@
  */
 export { ACTIONS, LIVE_ONLY_ACTION_IDS, PENDING_ONLY_ACTION_IDS } from "./registry";
 export { consoleActions, consoleActionId } from "./console-actions";
+export { inSchoolWords } from "./school-words";
 export type { ConsoleSource } from "./console-actions";
 
 export { scoreAction, TIER } from "./match";

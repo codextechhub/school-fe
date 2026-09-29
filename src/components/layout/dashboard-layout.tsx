@@ -47,6 +47,8 @@ import type { EscalationPrefill } from "@/components/custom/support-ticket-form"
 import { ProxySessionBanner } from "@/components/proxy-session-banner";
 import { P, resolvePermissionKey } from "@/permissions";
 import { exitProxySession } from "@/utils/proxy-session";
+import { useSchoolWords } from "@/hooks/use-school-words";
+import { labelInSchoolWords } from "@/lib/school-words";
 
 const AppSearch = lazy(() =>
   import("./app-search").then((module) => ({ default: module.AppSearch })),
@@ -198,7 +200,12 @@ export default function DashboardLayout() {
     [location.key],
   );
   const headerApi = useMemo(() => ({ setTitle, setBack }), [setTitle, setBack]);
-  const title = resolveHeaderTitle(handleTitle, override, location.key);
+  const words = useSchoolWords();
+  const title = resolveHeaderTitle(
+    handleTitle && labelInSchoolWords(handleTitle, words),
+    override,
+    location.key,
+  );
   // `hasBack` is the older spelling and means history-back, which is what
   // `back: true` means, so the two fold into one resolved destination.
   const back = resolveHeaderBack(
