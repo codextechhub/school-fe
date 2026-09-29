@@ -3,18 +3,17 @@ import { useRef, useState } from "react";
 /**
  * Why a form will not save, said out loud.
  *
- * Every drawer in this module used to disable its save button until the draft
- * was valid, which is a common pattern and a bad one: a greyed-out button is a
- * refusal with the reason removed. The state that showed it up is worth writing
- * down, because it is not an edge case at all.
+ * The drawers in this module never disable their save button until the draft
+ * is valid. It is a common pattern and a bad one: a greyed-out button is a
+ * refusal with the reason removed, and the state that shows it up is not an
+ * edge case at all.
  *
- * A school adds a period, types "Period 1", sets the start to 08:00, and starts
- * the end time by typing 8. A native time input reports NOTHING until every
- * segment is filled, so `end_time` is still the empty string while the box on
- * screen reads 08:30 AM. The form is invalid, the button is grey, no field is
- * marked, and the school is looking at a screen where everything appears filled
- * in and the only control that matters cannot be pressed. There is no way from
- * there to the answer.
+ * A school adds a period, types "Period 1", sets the start to 08:00, and types
+ * 25 into the end time. The box holds text, but not a time, so `end_time` is
+ * still the empty string. Were the button greyed out, the form would be
+ * invalid, no field marked, and the school would be looking at a screen where
+ * everything appears filled in and the only control that matters cannot be
+ * pressed. There is no way from there to the answer.
  *
  * So: **the button stays live, and pressing it is what asks the question.**
  * Press it with something missing and the form says which fields, marks them,

@@ -36,6 +36,8 @@ export default defineConfig([
       // dates in the reader's system format, so a raw one sits on a form beside
       // the house calendar as a stranger. `Input` and `CustomInput` route
       // `type="date"` to the picker themselves; only a bare `<input>` escapes.
+      // The native time box has the same fault with the clock: it writes
+      // "8:00 AM" or "08:00" by the reader's device, not the school's setting.
       'no-restricted-syntax': [
         'error',
         {
@@ -43,6 +45,12 @@ export default defineConfig([
             "JSXOpeningElement[name.name='input'] > JSXAttribute[name.name='type'][value.value=/^(date|datetime-local|month|week)$/]",
           message:
             'Use DatePickerInput (@/components/ui/date-picker-input) or <Input type="date">, not the browser\'s native date box.',
+        },
+        {
+          selector:
+            "JSXOpeningElement[name.name='input'] > JSXAttribute[name.name='type'][value.value='time']",
+          message:
+            'Use TimeInput (@/components/ui/time-input) or <Input type="time">, not the browser\'s native time box: it follows the device clock, not the school\'s.',
         },
       ],
     },

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Loader2, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { TimeInput } from "@/components/ui/time-input";
 import {
   Sheet,
   SheetContent,
@@ -34,6 +34,7 @@ import type {
   Subject,
 } from "@/redux/services/academics/academics-types";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 
 /**
  * One paper: which class sits which subject, when, where, supervised by whom.
@@ -125,7 +126,11 @@ export function PaperDrawer({
 }) {
   // Rooms are only named with their branch for a reader who works across branches.
   const { multiBranch } = useAcademicsLens();
+  const { formatTime } = useSchoolDisplay();
   const [values, setValues] = useState<PaperValues>(initial);
+  // Time boxes holding text that is not a time: the value is empty meanwhile,
+  // and an optional time must not quietly save as none.
+  const [unreadable, setUnreadable] = useState({ start_time: false, end_time: false });
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
     null,
   );
@@ -145,12 +150,21 @@ export function PaperDrawer({
       field: "exam_date",
       message: "The date must fall inside the exam period.",
     },
+    unreadable.start_time && {
+      field: "start_time",
+      message: `The start time does not read as a time. Type hours and minutes, like ${formatTime("09:00")}, or leave it empty.`,
+    },
+    unreadable.end_time && {
+      field: "end_time",
+      message: `The end time does not read as a time. Type hours and minutes, like ${formatTime("11:00")}, or leave it empty.`,
+    },
     timesBackwards && {
       field: "end_time",
       message: "The end time must be after the start time.",
     },
   );
-  const { attempt, errorFor, invalid, showing, reset } = useFormProblems(problems);
+  const { register, attempt, errorFor, invalid, showing, reset } =
+    useFormProblems(problems);
 
   // Asked once the paper is placed. A room or an invigilator can collide, and
   // so can the class itself - two papers in one sitting is refused outright,
@@ -374,20 +388,27 @@ export function PaperDrawer({
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <Field label="Start time">
-              <Input
-                type="time"
+            <Field label="Start time" error={unreadable.start_time ? errorFor("start_time") : ""}>
+              <TimeInput
+                ref={register("start_time")}
+                aria-label="Start time"
                 value={values.start_time}
-                onChange={(e) => patch({ start_time: e.target.value })}
+                onChange={(start) => patch({ start_time: start })}
+                onInvalidChange={(bad) =>
+                  setUnreadable((u) => (u.start_time === bad ? u : { ...u, start_time: bad }))
+                }
               />
             </Field>
-            <Field label="End time">
-              <Input
-                type="time"
+            <Field label="End time" error={unreadable.end_time ? errorFor("end_time") : ""}>
+              <TimeInput
+                ref={register("end_time")}
+                aria-label="End time"
                 value={values.end_time}
-                onChange={(e) => patch({ end_time: e.target.value })}
+                onChange={(end) => patch({ end_time: end })}
+                onInvalidChange={(bad) =>
+                  setUnreadable((u) => (u.end_time === bad ? u : { ...u, end_time: bad }))
+                }
                 aria-invalid={timesBackwards || undefined}
-                
               />
             </Field>
           </div>

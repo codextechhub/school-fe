@@ -34,7 +34,7 @@ export function blankPeriod(branch: number | "all"): PeriodDraft {
 export function periodDraftFrom(period: Period): PeriodDraft {
   return {
     label: period.label,
-    // The API sends HH:MM:SS; a time input takes HH:MM and rejects the rest.
+    // The API sends HH:MM:SS; the form keeps HH:MM.
     start_time: (period.start_time ?? "").slice(0, 5),
     end_time: (period.end_time ?? "").slice(0, 5),
     period_type: period.period_type,

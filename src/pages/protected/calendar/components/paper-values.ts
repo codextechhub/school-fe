@@ -46,7 +46,7 @@ export function paperValuesFrom(slot: ExamSlot): PaperValues {
     subject: slot.subject,
     exam_date: slot.exam_date,
     sitting: slot.sitting,
-    // The API sends HH:MM:SS; a time input takes HH:MM and rejects the rest.
+    // The API sends HH:MM:SS; the form keeps HH:MM.
     start_time: (slot.start_time ?? "").slice(0, 5),
     end_time: (slot.end_time ?? "").slice(0, 5),
     room: slot.room,

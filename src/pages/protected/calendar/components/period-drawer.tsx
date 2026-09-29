@@ -3,6 +3,7 @@ import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { TimeInput } from "@/components/ui/time-input";
 import {
   Sheet,
   SheetContent,
@@ -16,6 +17,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import type {
   DayOfWeek,
   PeriodType,
@@ -92,9 +94,12 @@ export function PeriodDrawer({
     label: tiedLabel,
   } = useBranchLens();
 
+  const { formatTime } = useSchoolDisplay();
   const [draft, setDraft] = useState<PeriodDraft>(initial);
   // Set once the person types an end, so the start stops moving it.
   const [endChosen, setEndChosen] = useState(false);
+  // Time boxes holding text that is not a time.
+  const [unreadable, setUnreadable] = useState({ start_time: false, end_time: false });
   const days = weekdayChoices(teachingDays, weekStartsOn, [
     initial.day_of_week,
     draft.day_of_week,
@@ -120,21 +125,28 @@ export function PeriodDrawer({
     !!draft.start_time && !!draft.end_time && draft.end_time <= draft.start_time;
 
   // In the reading order of the form, because the first one is where the cursor
-  // goes. A time box says "hour and minutes" rather than "required": the state
-  // a school actually reaches is a half-typed time, where the box reads 08:30
-  // and the value is still empty.
+  // goes. A box holding text that is not a time says so, rather than calling
+  // the time missing while the reader can see something typed in it.
   const problems = problemsOf(
     !draft.label.trim() && {
       field: "label",
       message: "Give the period a label, for example Period 1.",
     },
-    !draft.start_time && {
+    unreadable.start_time && {
       field: "start_time",
-      message: "Set a start time. It needs an hour and minutes, like 08:00.",
+      message: `The start time does not read as a time. Type hours and minutes, like ${formatTime("08:00")}.`,
     },
-    !draft.end_time && {
+    !unreadable.start_time && !draft.start_time && {
+      field: "start_time",
+      message: `Set a start time. It needs an hour and minutes, like ${formatTime("08:00")}.`,
+    },
+    unreadable.end_time && {
       field: "end_time",
-      message: "Set an end time. It needs an hour and minutes, like 08:45.",
+      message: `The end time does not read as a time. Type hours and minutes, like ${formatTime("08:45")}.`,
+    },
+    !unreadable.end_time && !draft.end_time && {
+      field: "end_time",
+      message: `Set an end time. It needs an hour and minutes, like ${formatTime("08:45")}.`,
     },
     endsBeforeStart && {
       field: "end_time",
@@ -237,13 +249,17 @@ export function PeriodDrawer({
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <Field label="Start time *" error={errorFor("start_time")}>
-              <Input
+              <TimeInput
                 ref={register("start_time")}
-                type="time"
+                aria-label="Start time"
+                required
                 value={draft.start_time}
-                onChange={(e) => {
+                onInvalidChange={(bad) =>
+                  setUnreadable((u) => (u.start_time === bad ? u : { ...u, start_time: bad }))
+                }
+                onChange={(start) => {
                   setDraft((d) =>
-                    withStartTime(d, e.target.value, {
+                    withStartTime(d, start, {
                       minutes: defaultPeriodMinutes,
                       endChosen,
                       editing,
@@ -256,13 +272,17 @@ export function PeriodDrawer({
               />
             </Field>
             <Field label="End time *" error={errorFor("end_time")}>
-              <Input
+              <TimeInput
                 ref={register("end_time")}
-                type="time"
+                aria-label="End time"
+                required
                 value={draft.end_time}
-                onChange={(e) => {
-                  setEndChosen(!!e.target.value);
-                  patch({ end_time: e.target.value });
+                onInvalidChange={(bad) =>
+                  setUnreadable((u) => (u.end_time === bad ? u : { ...u, end_time: bad }))
+                }
+                onChange={(end) => {
+                  setEndChosen(!!end);
+                  patch({ end_time: end });
                 }}
                 onBlur={leave("end_time")}
                 aria-invalid={invalid("end_time")}

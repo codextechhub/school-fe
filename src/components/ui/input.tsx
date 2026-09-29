@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { NativeTimeInput } from "@/components/ui/time-input";
 
 /**
  * The app's text input.
@@ -11,10 +12,17 @@ import { DatePickerInput } from "@/components/ui/date-picker-input";
  * and shows dates in the reader's operating-system format. The shared finance
  * screens rely on this: they write `<Input type="date">` and expect the house
  * calendar, as console-fe's `Input` gives them.
+ *
+ * `type="time"` renders the house time box (`TimeInput`) for the same reason:
+ * the browser's own box writes times on the reader's device clock, and this one
+ * follows the school's 12- or 24-hour setting. The value is still `HH:MM`.
  */
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   if (type === "date") {
     return <DatePickerInput className={className} {...props} />;
+  }
+  if (type === "time") {
+    return <NativeTimeInput className={className} {...props} />;
   }
 
   return (
