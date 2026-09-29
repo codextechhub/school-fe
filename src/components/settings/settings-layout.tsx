@@ -181,8 +181,11 @@ export function ConsoleSettingsLayout({
 
   const hrefOf = (key: string) => (key === "overview" ? basePath : `${basePath}/${key}`);
 
+  // The frame belongs to whatever holds the rail: the scroll box when fitted,
+  // so it stays put while the rail scrolls inside it.
+  const frame = "rounded-xl border border-white-02 bg-white";
   const rail = (
-    <div className="hidden space-y-1 rounded-xl border border-white-02 bg-white p-2 xl:block">
+    <div className={cn("hidden space-y-1 p-2 xl:block", !fitted && frame)}>
       {entries.map((entry) => {
         if (entry.kind === "section") {
           return <RailLink key={entry.section.key} section={entry.section} to={hrefOf(entry.section.key)} active={entry.section.key === activeSection} />;
@@ -305,7 +308,12 @@ export function ConsoleSettingsLayout({
       <div
         ref={boxRef}
         style={fitted ? { height: fittedHeight } : undefined}
-        className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[240px_minmax(0,1fr)]"
+        // Fitted, the one row is held to the box's height; an `auto` row grows
+        // to the taller of the rail and the section and pushes the page long.
+        className={cn(
+          "grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[240px_minmax(0,1fr)]",
+          fitted && "grid-rows-[minmax(0,1fr)]",
+        )}
       >
         <nav
           data-guide={guideTargetPrefix ? `${guideTargetPrefix}.sections` : undefined}
@@ -314,7 +322,9 @@ export function ConsoleSettingsLayout({
         >
           {pills}
           {fitted ? (
-            <ScrollArea className="hidden h-full xl:block">{rail}</ScrollArea>
+            // `xl:flex`, not `xl:block`: the scroll box is a flex column, and
+            // as a block its viewport grows to the rail instead of scrolling.
+            <ScrollArea className={cn("hidden h-full overflow-hidden xl:flex", frame)}>{rail}</ScrollArea>
           ) : (
             <div className="xl:sticky xl:top-4">{rail}</div>
           )}
