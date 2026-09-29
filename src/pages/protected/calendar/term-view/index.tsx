@@ -51,7 +51,7 @@ import {
   daysBetween,
   formatDate,
   formatRange,
-  GRID_WEEKDAYS,
+  gridWeekdays,
   localDate,
   monthLabel,
   parts,
@@ -60,6 +60,7 @@ import {
 import { monthWindow } from "./month-window";
 import { canManageRow } from "@/lib/can-manage";
 import { useSchoolWords } from "@/hooks/use-school-words";
+import { useSchoolWeek } from "@/hooks/use-school-week";
 
 /**
  * The same events as the list, read as a shape instead of as rows.
@@ -83,6 +84,7 @@ export default function TermView() {
   const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
   const words = useSchoolWords();
+  const { weekStartsOn } = useSchoolWeek();
 
   const { data: yearData, isLoading, isError, refetch } =
     useGetCalendarYearQuery({ session: lens.session });
@@ -143,7 +145,7 @@ export default function TermView() {
   // neighbouring months that share its first and last weeks. Six Date
   // constructions, so it is computed rather than memoised - a memo keyed on an
   // object rebuilt every render costs more than the sum it is caching.
-  const window = view ? monthWindow(view.y, view.m) : null;
+  const window = view ? monthWindow(view.y, view.m, weekStartsOn) : null;
 
   const { data: eventData, isFetching } = useGetCalendarEventsQuery(
     window
@@ -306,7 +308,7 @@ export default function TermView() {
         <div className="mt-4 min-w-0">
           <div className="min-w-0">
             <div className="grid grid-cols-7 gap-1.5">
-              {GRID_WEEKDAYS.map((d) => (
+              {gridWeekdays(weekStartsOn).map((d) => (
                 <p
                   key={d}
                   className="pb-1 text-center text-[11px] font-medium uppercase tracking-wide text-gray-05"

@@ -43,3 +43,40 @@ export function periodDraftFrom(period: Period): PeriodDraft {
     is_active: period.is_active,
   };
 }
+
+/**
+ * The end time a new period starts with: `start` plus the school's default
+ * period length, as "HH:MM".
+ *
+ * Empty when there is nothing to add (no default length, or a half-typed
+ * start), and when the sum would run past midnight: a period that ends before
+ * it starts is a refusal, not a suggestion.
+ */
+export function endFromStart(start: string, minutes: number | null): string {
+  if (!minutes || !/^\d{2}:\d{2}/.test(start)) return "";
+  const [h, m] = start.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  if (total >= 24 * 60) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
+}
+
+/**
+ * The draft after its start time changes.
+ *
+ * On a new period, while the person has not typed an end of their own, the end
+ * follows the start by the default length. Otherwise only the start moves.
+ */
+export function withStartTime(
+  draft: PeriodDraft,
+  start: string,
+  { minutes, endChosen, editing }: {
+    minutes: number | null;
+    endChosen: boolean;
+    editing: boolean;
+  },
+): PeriodDraft {
+  if (editing || endChosen) return { ...draft, start_time: start };
+  const end = endFromStart(start, minutes);
+  return { ...draft, start_time: start, end_time: end || draft.end_time };
+}

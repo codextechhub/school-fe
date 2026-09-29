@@ -32,7 +32,7 @@ import {
   useDeleteExamSlotMutation,
   useGetExamsQuery,
   useGetRoomsQuery,
-  useGetTeachersQuery,
+  useGetInvigilatorsQuery,
   usePublishExamMutation,
   useUpdateExamSlotMutation,
 } from "@/redux/services/calendar/calendar-api";
@@ -115,10 +115,10 @@ export default function ExamScheduling() {
     branch: lens.branch,
     active: "true",
   });
-  // Invigilators are NOT narrowed by the lens, unlike the teacher screen's own
-  // list. This is the picker for putting somebody in a room, and a school
-  // borrowing an invigilator from its other branch for a morning is ordinary.
-  const { data: teacherData } = useGetTeachersQuery({ session: lens.session });
+  // Not narrowed by the branch lens: a school borrowing an invigilator from
+  // its other branch for a morning is ordinary. Narrowed by the school's
+  // invigilator roles on the server.
+  const { data: invigilatorData } = useGetInvigilatorsQuery();
 
   const [create, { isLoading: creating }] = useCreateExamSlotMutation();
   const [previewExamSlot] = usePreviewExamSlotMutation();
@@ -542,7 +542,8 @@ export default function ExamScheduling() {
         classes={paperClasses}
         subjects={subjectData?.data ?? []}
         rooms={roomData?.data ?? []}
-        teachers={teacherData?.data ?? []}
+        invigilators={invigilatorData?.data ?? []}
+        currentInvigilator={paper?.slot?.invigilator ?? null}
         saving={creating || updating}
         removing={removing}
         onClose={() => setPaper(null)}

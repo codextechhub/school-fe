@@ -12,7 +12,7 @@ const problems = (w: TermWords) => [
 ] as const;
 
 /**
- * Settings > Academic structure: the school's word for a part of its year,
+ * Settings > Academics > Academic structure: the school's word for a part of its year,
  * the parts a new year starts with, and the default arms.
  */
 export default function SettingsAcademicsArticle() {
@@ -21,7 +21,7 @@ export default function SettingsAcademicsArticle() {
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
         <p><strong>Academic structure</strong> in <strong>Settings</strong> holds three starting points for your school&apos;s year: the word every screen and message uses for a part of the year, the {w.terms} every new academic year starts with, and the arms offered when classes are added for a level. The settings are the whole school&apos;s: somebody who works in one branch reads them without changing them.</p>
-        <p>Open <strong>Settings</strong> and select <strong>Academic structure</strong>. It sits on its own in the list of areas, between <strong>Students</strong> and <strong>Staff</strong>. You can also type &quot;academic structure settings&quot; into the search box in the header.</p>
+        <p>Open <strong>Settings</strong>, then <strong>Academics</strong>, and select <strong>Academic structure</strong>. The <strong>Academics</strong> group sits between <strong>Students</strong> and <strong>Staff</strong>, and also holds <strong>Calendar and timetables</strong>, where the school&apos;s teaching days and timetable rules are set. You can also type &quot;academic structure settings&quot; into the search box in the header.</p>
         <GuideChecklist items={[
           "Your role can view school settings. Saving a change needs the key to update them as well.",
           "You work across the whole school rather than one branch.",

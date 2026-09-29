@@ -16,7 +16,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import type {
   ClassTimetableRow,
   DuplicateSummary,
+  TeacherDutyMatch,
 } from "@/redux/services/calendar/calendar-types";
+import { splitWarnings } from "./publish-check";
+import { DutyNote } from "./duty-note";
 
 /** The server sends an ISO weekday, so the name is the client's to choose. */
 const DAY_NAMES: Record<number, string> = {
@@ -48,6 +51,11 @@ const DAY_NAMES: Record<number, string> = {
  * two classes certainly cannot share a room at the same time, so keeping rooms
  * usually needs fixing afterwards. The form says so rather than letting the red
  * cells explain it later.
+ *
+ * **Copied teachers answer to the school's teaching-duty rule.** The preview
+ * lists each copied lesson whose teacher has no duty for the target class.
+ * Under WARN the copy goes ahead; under REFUSE the server refuses it with a
+ * sentence, which shows here, and the preview says so before the press.
  */
 
 export function DuplicateDrawer({
@@ -60,6 +68,7 @@ export function DuplicateDrawer({
   onPreview,
   onClose,
   onRun,
+  dutyMatch = "OFF",
 }: {
   open: boolean;
   targetName: string;
@@ -79,6 +88,8 @@ export function DuplicateDrawer({
     keepTeachers: boolean;
     keepRooms: boolean;
   }) => Promise<unknown>;
+  /** The school's teaching-duty rule: how copied duty mismatches read. */
+  dutyMatch?: TeacherDutyMatch;
 }) {
   const [source, setSource] = useState<number | null>(null);
   const [keepTeachers, setKeepTeachers] = useState(true);
@@ -145,9 +156,10 @@ export function DuplicateDrawer({
                   aria-label="Copy from"
                   placeholder="Search classes"
                   value={source ? String(source) : ""}
-                  onChange={(e) =>
-                    setSource(e.target.value ? Number(e.target.value) : null)
-                  }
+                  onChange={(e) => {
+                    setRefusal("");
+                    setSource(e.target.value ? Number(e.target.value) : null);
+                  }}
                   options={sources.map((c) => ({
                     value: String(c.id),
                     label: `${c.name} · ${c.lesson_count} lesson${c.lesson_count === 1 ? "" : "s"}`,
@@ -162,7 +174,10 @@ export function DuplicateDrawer({
                 <input
                   type="checkbox"
                   checked={keepTeachers}
-                  onChange={(e) => setKeepTeachers(e.target.checked)}
+                  onChange={(e) => {
+                    setRefusal("");
+                    setKeepTeachers(e.target.checked);
+                  }}
                   className="mt-0.5 size-4 shrink-0 accent-[var(--color-primary,#4A659D)]"
                 />
                 <span className="min-w-0">
@@ -222,9 +237,15 @@ export function DuplicateDrawer({
                       {summary.skipped > 0 && (
                         <p className="mt-1.5 text-xs text-gray-05 text-pretty">
                           {summary.skipped} will be skipped: they sit in a
-                          period {targetName} does not run.
+                          period {targetName} does not run, or on a day the
+                          school no longer teaches.
                         </p>
                       )}
+                      <DuplicateDutyNotice
+                        summary={summary}
+                        dutyMatch={dutyMatch}
+                        keepTeachers={keepTeachers}
+                      />
                       {summary.rows.length > 0 && (
                         <ul className="mt-2.5 grid max-h-56 gap-1 overflow-y-auto">
                           {summary.rows.map((row, i) => (
@@ -274,7 +295,9 @@ export function DuplicateDrawer({
           )}
 
           {refusal && (
-            <p className="mt-4 text-xs text-error-text text-pretty">{refusal}</p>
+            <p role="alert" className="mt-4 text-xs text-error-text text-pretty">
+              {refusal}
+            </p>
           )}
         </ScrollArea>
 
@@ -294,5 +317,41 @@ export function DuplicateDrawer({
         </div>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/**
+ * The copied lessons whose teacher has no teaching duty for the target class.
+ *
+ * Nothing under OFF. Under WARN a warning, and the copy goes ahead. Under
+ * REFUSE, while teachers are being kept, the server refuses the copy, so this
+ * says so before the press and names the way round it.
+ */
+export function DuplicateDutyNotice({
+  summary,
+  dutyMatch,
+  keepTeachers,
+}: {
+  summary: DuplicateSummary;
+  dutyMatch: TeacherDutyMatch;
+  keepTeachers: boolean;
+}) {
+  const duty = splitWarnings(summary.warnings).duty;
+  if (dutyMatch === "OFF" || duty.length === 0) return null;
+  const blocks = dutyMatch === "REFUSE" && keepTeachers;
+  return (
+    <>
+      <DutyNote
+        severity={blocks ? "blocking" : "warning"}
+        lines={duty.map((w) => w.detail)}
+      />
+      {blocks && (
+        <p className="mt-1.5 text-xs text-gray-05 text-pretty">
+          The school only allows a teacher who has the lesson in Teaching
+          duties, so this copy will be refused. Turn off &quot;Keep the same
+          teachers&quot;, or give them the duties first.
+        </p>
+      )}
+    </>
   );
 }

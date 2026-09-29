@@ -11,6 +11,7 @@ export default function TeachingDutiesArticle() {
           "This year's classes and the subjects each one takes exist in Academic Structure.",
           "The teachers are on the staff list.",
         ]} />
+        <GuideCallout tone="info" title="Timetables can check these duties">Your school can have class timetables warn about, or refuse, a lesson given to a teacher without that class and subject here. It is set under <strong>The lesson&apos;s teacher and Teaching duties</strong> in <strong>Settings</strong>, <strong>Academics</strong>, <strong>Calendar and timetables</strong>.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="read-coverage" title="Read the coverage">

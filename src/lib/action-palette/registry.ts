@@ -850,6 +850,20 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.SETTINGS.ACADEMICS },
   },
   {
+    id: "view-calendar-settings",
+    label: "View calendar and timetable settings",
+    aliases: [
+      "teaching days", "saturday lessons", "week starts", "closes the school",
+      "room required", "teaching duty match", "invigilators", "period length",
+      "timetable settings", "calendar settings",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.calendar.anyOf },
+    run: { to: R.SETTINGS.CALENDAR },
+  },
+  {
     id: "view-staff-settings",
     label: "View staff rules",
     aliases: [

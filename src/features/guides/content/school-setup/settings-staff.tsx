@@ -94,6 +94,7 @@ export default function SettingsStaffArticle() {
           <li><strong>Leave out days the school is closed</strong>: public holidays and breaks on the school calendar do not count against anybody&apos;s leave. On until you turn it off.</li>
         </ul>
         <p>For example, with Monday to Friday and closures left out, leave from Monday to the following Friday with a public holiday on the Wednesday counts 9 days. A request is counted this way when it is filed. Requests already filed keep their days.</p>
+        <p>Working days are for leave only. The days lessons happen are the teaching days, set in <strong>Settings</strong> under <strong>Academics</strong>, <strong>Calendar and timetables</strong>, so a school that teaches on Saturday mornings can still count leave Monday to Friday.</p>
       </GuideSection>
 
       <GuideSection id="save-the-rules" title="Save the rules">

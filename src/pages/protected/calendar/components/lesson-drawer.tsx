@@ -15,6 +15,7 @@ import { parseApiError } from "@/utils/api-error";
 import type {
   ClashWarning,
   Room,
+  TeacherDutyMatch,
   TeacherRow,
   TimetableSlot,
 } from "@/redux/services/calendar/calendar-types";
@@ -25,6 +26,8 @@ import { ClashPreview } from "./clash-preview";
 import { useClashPreview } from "./use-clash-preview";
 import { ProblemSummary } from "./problem-summary";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
+import { isDutyCode, splitWarnings } from "./publish-check";
+import { DutyNote } from "./duty-note";
 
 /**
  * One cell of one class's week.
@@ -46,6 +49,12 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
  * **The room list IS narrowed**, and for the opposite reason: a room is a
  * physical place, and a class cannot be scheduled into one at another branch.
  * The server refuses that outright, so offering it would be offering a refusal.
+ *
+ * **A teacher with no teaching duty for the lesson is not a clash.** The
+ * server says so in the same warnings list, and it is shown under the teacher
+ * field rather than in the clash box: under WARN it saves without a tick,
+ * because nobody is double-booked; under REFUSE the save is refused and the
+ * refusal lands on the same field.
  *
  * **What the reader may do shapes the footer.** Clearing a slot is a delete and
  * is offered only when `onRemove` is passed, which the screen does for a
@@ -83,6 +92,7 @@ export function LessonDrawer({
   onRemove,
   onPreview,
   canPreview = true,
+  dutyMatch = "WARN",
 }: {
   open: boolean;
   target: LessonTarget | null;
@@ -101,6 +111,8 @@ export function LessonDrawer({
   onPreview: (values: LessonValues) => Promise<{ warnings: ClashWarning[] }>;
   /** Whether the reader holds the key the preview endpoint asks for. */
   canPreview?: boolean;
+  /** The school's teaching-duty rule, which decides how a mismatch reads. */
+  dutyMatch?: TeacherDutyMatch;
 }) {
   // Rooms are only named with their branch for a reader who works across branches.
   const { multiBranch } = useAcademicsLens();
@@ -110,6 +122,7 @@ export function LessonDrawer({
     room: null,
   });
   const [refusal, setRefusal] = useState("");
+  const [teacherRefusal, setTeacherRefusal] = useState("");
 
   // Subject is the only required one. A grid is legitimately built subjects
   // first and people later, and the publish gate is what refuses an unstaffed
@@ -140,12 +153,16 @@ export function LessonDrawer({
         room: target.slot?.room ?? null,
       });
       setRefusal("");
+      setTeacherRefusal("");
       reset();
       clash.reset();
     }
   }
 
   const editing = !!target?.slot;
+  const { clashes, duty } = splitWarnings(clash.warnings);
+  // Only a real clash asks for the tick; a duty warning does not.
+  const blocked = clashes.length > 0 && !clash.acknowledged;
 
   const save = async () => {
     if (!attempt()) return;
@@ -153,9 +170,13 @@ export function LessonDrawer({
       await onSave(values);
       onClose();
     } catch (error) {
-      setRefusal(
-        parseApiError(error).message || "That lesson could not be saved.",
-      );
+      const parsed = parseApiError(error);
+      const message = parsed.message || "That lesson could not be saved.";
+      if (isDutyCode(parsed.code) || parsed.detail.field === "teacher") {
+        setTeacherRefusal(message);
+      } else {
+        setRefusal(message);
+      }
     }
   };
 
@@ -214,12 +235,13 @@ export function LessonDrawer({
                 aria-label="Teacher"
                 placeholder="Search teachers"
                 value={values.teacher ? String(values.teacher) : ""}
-                onChange={(e) =>
+                onChange={(e) => {
+                  setTeacherRefusal("");
                   setValues((v) => ({
                     ...v,
                     teacher: e.target.value ? Number(e.target.value) : null,
-                  }))
-                }
+                  }));
+                }}
                 options={teachers.map((t) => ({
                   value: String(t.id),
                   label: t.name,
@@ -231,6 +253,16 @@ export function LessonDrawer({
               branches. Leave it empty to fill the subjects now and the people
               later.
             </p>
+            {teacherRefusal ? (
+              <DutyNote severity="blocking" lines={[teacherRefusal]} />
+            ) : (
+              duty.length > 0 && (
+                <DutyNote
+                  severity={dutyMatch === "REFUSE" ? "blocking" : "warning"}
+                  lines={duty.map((w) => w.detail)}
+                />
+              )
+            )}
           </div>
 
           <div className="mt-4">
@@ -261,7 +293,7 @@ export function LessonDrawer({
               found the box below says the same thing about a real collision
               and names it, so leaving this here would say it twice - once in
               the abstract, once about Mr Eze, an inch apart. */}
-          {clash.warnings.length === 0 && (
+          {clashes.length === 0 && (
             <p className="mt-5 rounded-lg border border-white-02 bg-white-05 px-3 py-2.5 text-xs text-gray-06 text-pretty">
               A clash does not stop this saving. If the teacher or the room is
               already booked, both cells stay flagged in red and publishing is
@@ -273,7 +305,7 @@ export function LessonDrawer({
             <p className="mt-4 text-xs text-error-text text-pretty">{refusal}</p>
           )}
           <ClashPreview
-            warnings={clash.warnings}
+            warnings={clashes}
             asking={clash.asking}
             acknowledged={clash.acknowledged}
             onAcknowledge={clash.setAcknowledged}
@@ -307,7 +339,7 @@ export function LessonDrawer({
               unacknowledged clash, and that is not the same thing - the reason
               is a box on screen an inch above it, with the tick that clears
               it. */}
-          <Button onClick={save} disabled={saving || clash.blocked}>
+          <Button onClick={save} disabled={saving || blocked}>
             {saving && <Loader2 className="size-4 animate-spin" />}
             {editing ? "Save changes" : "Add lesson"}
           </Button>

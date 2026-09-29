@@ -19,11 +19,12 @@ import { parseApiError } from "@/utils/api-error";
 import type {
   ClashWarning,
   ExamSlotWrite,
+  Invigilator,
+  Person,
   Room,
   Sitting,
-  TeacherRow,
 } from "@/redux/services/calendar/calendar-types";
-import type { PaperValues } from "./paper-values";
+import { invigilatorOptions, type PaperValues } from "./paper-values";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
 import { ClashPreview } from "./clash-preview";
@@ -56,6 +57,12 @@ import { useAcademicsLens } from "@/hooks/use-academics-lens";
  * has them; one that publishes only morning and afternoon does not, and is not
  * made to invent them.
  *
+ * **The invigilator list is the school's eligible people, not its teachers.**
+ * Who may invigilate is the school's `invigilator_roles` rule, so the list can
+ * hold a lab technician or an administrator, each named with the role that
+ * makes them eligible. A paper already held by somebody who has since left the
+ * list keeps them on offer, so opening it does not quietly clear the field.
+ *
  * **What the reader may do shapes the footer.** Removing a paper is a delete
  * and is offered only when `onRemove` is passed, which the screen does for a
  * reader holding the exam delete key. The clash preview runs on the server's
@@ -79,7 +86,8 @@ export function PaperDrawer({
   classes,
   subjects,
   rooms,
-  teachers,
+  invigilators,
+  currentInvigilator,
   saving,
   removing,
   onClose,
@@ -98,7 +106,10 @@ export function PaperDrawer({
   classes: SchoolClass[];
   subjects: Subject[];
   rooms: Room[];
-  teachers: TeacherRow[];
+  /** Everybody the school allows to invigilate. */
+  invigilators: Invigilator[];
+  /** The paper's invigilator as saved, kept on offer if no longer eligible. */
+  currentInvigilator?: Person | null;
   saving: boolean;
   removing: boolean;
   onClose: () => void;
@@ -191,13 +202,15 @@ export function PaperDrawer({
       onClose();
     } catch (error) {
       const parsed = parseApiError(error);
-      // CLASS_ALREADY_SITTING names the class and the paper it collided with,
-      // and carries `detail.field`, so it lands under the class picker rather
-      // than in a toast the reader is not looking at.
+      // A refusal carrying `detail.field` lands under that field:
+      // CLASS_ALREADY_SITTING under the class, NOT_AN_INVIGILATOR under the
+      // invigilator.
       const field =
         parsed.code === "EXAM_OUTSIDE_EXAM_PERIOD"
           ? "exam_date"
-          : String(parsed.detail.field ?? "");
+          : parsed.code === "NOT_AN_INVIGILATOR"
+            ? "invigilator"
+            : String(parsed.detail.field ?? "");
       setRefusal({
         field,
         message: parsed.message || "That paper could not be saved.",
@@ -342,20 +355,20 @@ export function PaperDrawer({
           </div>
 
           <div className="mt-4">
-            <Field label="Invigilator">
+            <Field
+              label="Invigilator"
+              error={refusal?.field === "invigilator" ? refusal.message : ""}
+            >
               <SearchSelect
                 aria-label="Invigilator"
-                placeholder="Search teachers"
+                placeholder="Search people"
                 value={values.invigilator ? String(values.invigilator) : ""}
                 onChange={(e) =>
                   patch({
                     invigilator: e.target.value ? Number(e.target.value) : null,
                   })
                 }
-                options={teachers.map((t) => ({
-                  value: String(t.id),
-                  label: t.name,
-                }))}
+                options={invigilatorOptions(invigilators, currentInvigilator)}
               />
             </Field>
           </div>

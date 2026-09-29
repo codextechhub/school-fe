@@ -105,3 +105,21 @@ export function warningsFromDays(days: GridDay[]): ClashWarning[] {
   }
   return [...byKey.values()];
 }
+
+/**
+ * The days on a grid that the school no longer teaches.
+ *
+ * The server draws such a day only while it still holds a lesson, so the
+ * lesson can be seen and cleared: it still counts in clashes and at the
+ * publish gate. Absent `is_teaching_day` reads as a teaching day.
+ */
+export function offDays(days: GridDay[]): GridDay[] {
+  return days.filter((day) => day.is_teaching_day === false);
+}
+
+/** "Saturday", "Saturday and Sunday", "Friday, Saturday and Sunday". */
+export function dayList(days: GridDay[]): string {
+  const names = days.map((day) => day.day_label);
+  if (names.length < 2) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}

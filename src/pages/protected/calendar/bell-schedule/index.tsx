@@ -12,11 +12,15 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { parseApiError } from "@/utils/api-error";
 import {
+  useCopyBellScheduleMutation,
   useCreatePeriodMutation,
   useDeletePeriodMutation,
   useGetPeriodsQuery,
   useUpdatePeriodMutation,
 } from "@/redux/services/calendar/calendar-api";
+import { useSessionLens } from "@/hooks/use-session-lens";
+import { useCalendarRules } from "@/hooks/use-school-week";
+import { weekdayChoices } from "@/lib/week";
 import type {
   DayOfWeek,
   Period,
@@ -27,10 +31,22 @@ import { blankPeriod, periodDraftFrom } from "../components/period-draft";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
 import {
+  CopyResultNote,
+  CopyScheduleOffer,
   PeriodDirectory,
   SchoolDayPanel,
   type BellDay,
 } from "./bell-schedule-view";
+import {
+  copyOfferFor,
+  copyScopeFor,
+  type CopyScope,
+  type CopySource,
+  periodsInScope,
+  usePreviousSchedule,
+  viewCoversScope,
+} from "./bell-copy";
+import { useBranchLens } from "@/hooks/use-branch-lens";
 
 /**
  * The daily period structure every timetable grid is built on.
@@ -45,11 +61,19 @@ import {
  *
  * **The order column is not editable anywhere.** It is assigned from the times,
  * so the school day cannot be put in an order that disagrees with the clock.
+ *
+ * **The weekdays are the school's teaching days**, from its calendar rules,
+ * plus any day that still owns periods. A year with no periods in the
+ * reader's reach is offered a copy of the most recent earlier year that has
+ * some, worded for what the copy will touch (see bell-copy.ts).
  */
 export default function BellSchedule() {
-  const { lens, branch, readOnlyYear, multiBranch, sessionName } =
+  const { lens, branch, readOnlyYear, multiBranch, sessionName, currentSession } =
     useAcademicsLens();
+  const { sessions } = useSessionLens();
+  const { applies, wholeSchool, pinnedBranch, allLabel } = useBranchLens();
   const { hasPermission } = usePermissions();
+  const { teachingDays, weekStartsOn, defaultPeriodMinutes } = useCalendarRules();
 
   const [day, setDay] = useState<BellDay>("all");
   const [editing, setEditing] = useState<Period | null>(null);
@@ -68,6 +92,13 @@ export default function BellSchedule() {
   const [create, { isLoading: creating }] = useCreatePeriodMutation();
   const [update, { isLoading: updating }] = useUpdatePeriodMutation();
   const [remove, { isLoading: removing }] = useDeletePeriodMutation();
+  const [copySchedule, { isLoading: copying }] = useCopyBellScheduleMutation();
+  const [copyConfirm, setCopyConfirm] = useState(false);
+  const [copyRefusal, setCopyRefusal] = useState("");
+  const [copied, setCopied] = useState<{
+    message: string;
+    skipped: { name: string; day: string }[];
+  } | null>(null);
 
   const schedule = data?.data;
   const periods = useMemo(() => schedule?.periods ?? [], [schedule]);
@@ -99,6 +130,12 @@ export default function BellSchedule() {
           .filter((value): value is DayOfWeek => value !== null),
       ),
     [everyPeriod],
+  );
+
+  // The teaching days, plus any day still carrying periods of its own.
+  const weekdays = useMemo(
+    () => weekdayChoices(teachingDays, weekStartsOn, [...ownDays]),
+    [teachingDays, weekStartsOn, ownDays],
   );
 
   const canCreate = hasPermission(P.CREATE_TIMETABLE_ENTRY) && !readOnlyYear;
@@ -133,6 +170,63 @@ export default function BellSchedule() {
     setConfirm(null);
   };
 
+  const empty = !isLoading && everyPeriod.length === 0;
+  const copyScope = copyScopeFor({ applies, wholeSchool });
+  const coversScope = viewCoversScope({
+    scope: copyScope,
+    branch,
+    pinned: pinnedBranch != null,
+  });
+  const targetInScope = periodsInScope(everyPeriod, copyScope).length;
+  const previous = usePreviousSchedule({
+    sessions,
+    current: currentSession,
+    scope: copyScope,
+    enabled: canCreate && (coversScope ? targetInScope === 0 : empty),
+  });
+  const copyOffer = copyOfferFor({
+    canCreate,
+    loading: isLoading || !allData,
+    coversScope,
+    targetInScope,
+    viewEmpty: empty,
+    source: previous,
+  });
+  const copySource = copyOffer?.kind === "offer" ? copyOffer.source : null;
+
+  const runCopy = async () => {
+    if (!copySource || !currentSession) return;
+    setCopyRefusal("");
+    try {
+      const result = await copySchedule({
+        from_session: copySource.session.id,
+        session: currentSession.id,
+      }).unwrap();
+      const message =
+        result.message || `Copied ${copySource.session.name}'s bell schedule.`;
+      const skipped = (result.data?.skipped ?? []).map((s) => ({ name: s.name, day: s.day_label }));
+      toast.success(message);
+      setCopied({ message, skipped });
+    } catch (error) {
+      setCopyRefusal(
+        parseApiError(error).message || "That bell schedule could not be copied.",
+      );
+    }
+    setCopyConfirm(false);
+  };
+
+  const copyPanel = (
+    <CopyScheduleOffer
+      offer={copyOffer}
+      scope={copyScope}
+      targetName={sessionName}
+      allLabel={allLabel}
+      copying={copying}
+      refusal={copyRefusal}
+      onCopy={() => setCopyConfirm(true)}
+    />
+  );
+
   if (isError) {
     return (
       <PageShell>
@@ -146,8 +240,6 @@ export default function BellSchedule() {
       </PageShell>
     );
   }
-
-  const empty = !isLoading && everyPeriod.length === 0;
 
   return (
     <PageShell className="content-start gap-5" grid>
@@ -180,6 +272,8 @@ export default function BellSchedule() {
           <Skeleton className="h-72 w-full rounded-md" />
         </>
       ) : empty ? (
+        <>
+        {copyPanel}
         <OutlinedNotice
           icon={Bell}
           title="No bell schedule yet"
@@ -191,12 +285,22 @@ export default function BellSchedule() {
           actionLabel={canCreate ? "Add the first period" : undefined}
           onAction={() => open(null)}
         />
+        </>
       ) : (
         <>
+          {copied && (
+            <CopyResultNote
+              message={copied.message}
+              skipped={copied.skipped}
+              onDismiss={() => setCopied(null)}
+            />
+          )}
+          {copyPanel}
           <SchoolDayPanel
             day={day}
             periods={stripPeriods}
             ownDays={ownDays}
+            weekdays={weekdays}
             label={stripLabel}
             note={schedule?.note}
             canEdit={canEdit}
@@ -222,8 +326,25 @@ export default function BellSchedule() {
         saving={creating || updating}
         initial={editing ? periodDraftFrom(editing) : blankPeriod(branch)}
         dayHasOwnSchedule={(d) => ownDays.has(d)}
+        teachingDays={teachingDays}
+        weekStartsOn={weekStartsOn}
+        defaultPeriodMinutes={defaultPeriodMinutes}
         onClose={() => setDrawerOpen(false)}
         onSave={save}
+      />
+
+      <PromptModal
+        isOpen={copyConfirm && !!copySource}
+        onClose={() => setCopyConfirm(false)}
+        onConfirm={runCopy}
+        loading={copying}
+        canCancel
+        title={`Copy ${copySource?.session.name}'s bell schedule?`}
+        description={copyConfirmText(copyScope, copySource, sessionName)}
+        onConfirmText="Copy"
+        containerClass="min-h-[320px] lg:w-[420px]"
+        srcClass="size-25"
+        src="/image/caution.png"
       />
 
       <PromptModal
@@ -270,4 +391,26 @@ function deleteBody(period: Period | null): string {
     return `${period.label} runs ${when} on ${period.day_label} only. If it is the last period that day owns, the day goes back to running the everyday schedule. Any lesson already scheduled in it will block the removal.`;
   }
   return `${period.label} runs ${when} every day, so it comes off every timetable grid built on it. Any lesson already scheduled in it will block the removal.`;
+}
+
+/**
+ * The copy confirmation, naming what will be copied and where. A period set
+ * for a day the school no longer teaches is left out, and the server says so
+ * afterwards.
+ */
+function copyConfirmText(
+  scope: CopyScope,
+  source: CopySource | null,
+  target: string | null,
+): string {
+  if (!source) return "";
+  const count = source.periodCount;
+  const periods = `${count} period${count === 1 ? "" : "s"}`;
+  const where =
+    scope === "school"
+      ? `${periods}, from every branch,`
+      : scope === "branches"
+        ? `${periods} at your branch${count === 1 ? "" : "es"}`
+        : periods;
+  return `${source.session.name}'s ${where} are added to ${target ?? "this year"} with the same times, types and days. Any set for a day the school no longer teaches is left out. ${source.session.name} is not changed, and anything copied can be edited or removed here afterwards.`;
 }

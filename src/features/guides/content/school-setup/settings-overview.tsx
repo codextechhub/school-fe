@@ -15,6 +15,10 @@ const groups = (w: TermWords) => [
     ["Guardians", "How many guardians each child needs, whether a new guardian needs an email, how siblings are recognised, and your own relationship words."],
     ["Promotion", "Who moves up at the end of the year, which class they land in, and what a full class does during the run."],
   ]],
+  ["Academics", [
+    ["Academic structure", `Whether your school says Term or Semester, the ${w.terms} every new year starts with, and the arms offered for new classes.`],
+    ["Calendar and timetables", "The days your school teaches, the day its week starts, which events close it, what a timetable needs to publish, and who may invigilate."],
+  ]],
   ["Staff", [
     ["Staff rules", "The role new staff start with, the documents kept on file, what staff change themselves, hire approval, and leave allowances."],
     ["Staff IDs", "Whether everybody on the staff needs a staff ID, and what a valid one looks like."],
@@ -22,7 +26,6 @@ const groups = (w: TermWords) => [
     ["Payroll", "Whether the whole school is paid in one run, or each branch runs its own."],
   ]],
   ["Everything else", [
-    ["Academic structure", `Whether your school says Term or Semester, the ${w.terms} every new year starts with, and the arms offered for new classes.`],
     ["More settings", "Roles, field access, approval paths, and the Finance and Procurement settings."],
   ]],
 ] as const;
@@ -46,12 +49,12 @@ export default function SettingsOverviewArticle() {
       <GuideSection id="open-settings" title="Open Settings">
         <GuideSteps>
           <GuideStep title="Select Settings">Select <strong>Settings</strong> in the sidebar, or type &quot;settings&quot; into the search box in the header. Your school&apos;s name shows at the top right, so you know whose settings you are changing.</GuideStep>
-          <GuideStep title="Pick an area">The areas are grouped under <strong>Your school</strong>, <strong>Students</strong> and <strong>Staff</strong>, with <strong>Overview</strong>, <strong>Academic structure</strong> (between Students and Staff) and <strong>More settings</strong> on their own. On a wide screen the groups run down the left and open like sub-menus; the group holding the page you are on stays open. On a phone the groups are a row of buttons across the top, and the open group&apos;s areas appear as a second row beneath. Each area has its own address, so you can bookmark it or share the link with a colleague who holds the same access.</GuideStep>
+          <GuideStep title="Pick an area">The areas are grouped under <strong>Your school</strong>, <strong>Students</strong>, <strong>Academics</strong> and <strong>Staff</strong>, with <strong>Overview</strong> and <strong>More settings</strong> on their own. <strong>Academics</strong> holds <strong>Academic structure</strong> and <strong>Calendar and timetables</strong>. On a wide screen the groups run down the left and open like sub-menus; the group holding the page you are on stays open. On a phone the groups are a row of buttons across the top, and the open group&apos;s areas appear as a second row beneath. Each area has its own address, so you can bookmark it or share the link with a colleague who holds the same access.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
       <GuideSection id="the-overview" title="Read the overview">
-        <p><strong>Overview</strong> shows a card for every area your role can open, under the same group headings as the list of areas, with the areas that stand on their own gathered under <strong>Everything else</strong>. Select a card to go straight to it.</p>
+        <p><strong>Overview</strong> shows a card for every area your role can open, under the same group headings as the list of areas, with <strong>More settings</strong>, which stands on its own, under <strong>Everything else</strong>. Select a card to go straight to it.</p>
         {groups(w).map(([group, areas]) => (
           <div key={group} className="space-y-2">
             <p className="text-sm font-semibold text-black-01">{group}</p>

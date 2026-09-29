@@ -210,10 +210,11 @@ export const STAFF_GUIDES = [
     relatedGuideIds: [
       "school.staff.add-staff",
       "school.staff.find-staff-record",
+      "school.setup.settings-calendar",
     ],
     estimatedMinutes: 6,
     owner: OWNER,
-    reviewedAt: "2026-09-27",
+    reviewedAt: "2026-09-29",
     risk: "medium",
     status: "published",
     article: () => import("../content/staff/teaching-duties"),

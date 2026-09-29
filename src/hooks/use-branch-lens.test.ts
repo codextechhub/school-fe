@@ -40,6 +40,7 @@ describe("the branch picker", () => {
     expect(lens.canChoose).toBe(true);
     expect(lens.choices.map((b) => b.id)).toEqual([MAIN.id, ANNEX.id]);
     expect(lens.allLabel).toBe("All my branches");
+    expect(lens.wholeSchool).toBe(false);
     expect(lens.pinnedBranch).toBeNull();
   });
 
@@ -49,6 +50,7 @@ describe("the branch picker", () => {
     expect(lens.canChoose).toBe(true);
     expect(lens.choices).toEqual(BRANCHES);
     expect(lens.allLabel).toBe("All branches");
+    expect(lens.wholeSchool).toBe(true);
   });
 
   it("is not offered at a single-branch school", () => {

@@ -37,7 +37,8 @@ import type {
 import { eventKindsIn, eventVariant } from "./event-kind";
 import { formatRange } from "./dates";
 import { AudiencePicker } from "./audience-picker";
-import type { EventDraft } from "./event-draft";
+import { closesSchoolShown, type EventDraft } from "./event-draft";
+import { useCalendarRules } from "@/hooks/use-school-week";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
 import { useSchoolWords } from "@/hooks/use-school-words";
@@ -72,6 +73,10 @@ import { useSchoolWords } from "@/hooks/use-school-words";
  * overlapping another, SUCCEEDS and returns `warnings`. They are handed to the
  * caller to toast, and the drawer closes, because the write happened.
  *
+ * **"School closed" starts from the school's default for the type.** On a new
+ * event the box follows the type chosen (see `closesSchoolShown`) until the
+ * person changes the box themselves; an edited event keeps its own answer.
+ *
  * **Changing the branch clears the audience.** A class that was in scope stops
  * being in scope the moment the event moves branch, and the server refuses the
  * whole write for one out-of-scope id. Clearing is the honest reset; carrying
@@ -105,8 +110,11 @@ export function EventDrawer({
     label: tiedLabel,
   } = useBranchLens();
   const kinds = eventKindsIn(useSchoolWords());
+  const { closesSchoolByType } = useCalendarRules();
 
   const [draft, setDraft] = useState<EventDraft>(initial);
+  // Set once the person changes the "school closed" box in this drawer.
+  const [closesChosen, setClosesChosen] = useState(false);
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
     null,
   );
@@ -166,10 +174,19 @@ export function EventDrawer({
     setLastOpenedFor(openedFor);
     if (open) {
       setDraft(initial);
+      setClosesChosen(false);
       reset();
       setRefusal(null);
     }
   }
+
+  const closesSchool = closesSchoolShown({
+    editing,
+    chosen: closesChosen,
+    eventType: draft.event_type,
+    byType: closesSchoolByType,
+    value: draft.closes_school,
+  });
 
   const dirty =
     JSON.stringify({ ...draft, branch: effectiveBranch }) !==
@@ -192,7 +209,7 @@ export function EventDrawer({
         // A one-day event is the ordinary case, and the server takes the two
         // dates equal for it rather than a null end.
         end_date: draft.end_date || draft.start_date,
-        closes_school: draft.closes_school,
+        closes_school: closesSchool,
         description: draft.description.trim(),
         // Sent explicitly, including null: omitting it on a PATCH means "leave
         // it alone", which is not what picking school-wide means.
@@ -398,8 +415,11 @@ export function EventDrawer({
           <label className="mt-4 flex cursor-pointer items-start gap-2.5">
             <input
               type="checkbox"
-              checked={draft.closes_school}
-              onChange={(e) => patch({ closes_school: e.target.checked })}
+              checked={closesSchool}
+              onChange={(e) => {
+                setClosesChosen(true);
+                patch({ closes_school: e.target.checked });
+              }}
               className="mt-0.5 size-4 shrink-0 accent-[var(--color-primary,#4A659D)]"
             />
             <span className="min-w-0">

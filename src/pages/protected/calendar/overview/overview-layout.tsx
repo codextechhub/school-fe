@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/custom/surface";
 import { cn } from "@/lib/utils";
+import { WEEK_STARTS_ON, type JsWeekday } from "@/lib/week";
 import { routesPath } from "@/routes/routesPath";
 import type {
   AlertCode,
@@ -31,7 +32,7 @@ import type {
 import { eventVariant } from "../components/event-kind";
 import {
   formatRange,
-  GRID_WEEKDAYS,
+  gridWeekdays,
   leadingDays,
   localDate,
   monthLabel,
@@ -44,7 +45,6 @@ import { useSchoolWords, type TermWords } from "@/hooks/use-school-words";
 const C = routesPath.PROTECTED.ACADEMIC_CALENDAR;
 const T = routesPath.PROTECTED.TIMETABLES;
 const S = routesPath.PROTECTED.ACADEMIC_STRUCTURE;
-const WEEKDAYS = GRID_WEEKDAYS.map((day) => day.slice(0, 2));
 
 type ReadyOverview = CalendarOverview & { session: CalendarSession };
 
@@ -61,6 +61,7 @@ export function CalendarOverviewLayout({
   canSeeSessions,
   canSeeTimetables,
   canCreateEvent,
+  weekStartsOn = WEEK_STARTS_ON,
 }: {
   overview: ReadyOverview;
   year: CalendarYear;
@@ -68,6 +69,8 @@ export function CalendarOverviewLayout({
   canSeeSessions: boolean;
   canSeeTimetables: boolean;
   canCreateEvent: boolean;
+  /** The school's week start for the month grid. Monday when not given. */
+  weekStartsOn?: JsWeekday;
 }) {
   const [monthOffset, setMonthOffset] = useState(0);
   const words = useSchoolWords();
@@ -180,6 +183,7 @@ export function CalendarOverviewLayout({
           anchor={today}
           monthOffset={monthOffset}
           events={nextUp}
+          weekStartsOn={weekStartsOn}
           onMove={setMonthOffset}
         />
       </div>
@@ -279,17 +283,19 @@ function TermChips({ terms, className }: { terms: TimelineTerm[]; className?: st
   );
 }
 
-function MiniMonth({ anchor, monthOffset, events, onMove }: {
+function MiniMonth({ anchor, monthOffset, events, weekStartsOn, onMove }: {
   anchor: string;
   monthOffset: number;
   events: UpcomingEvent[];
+  weekStartsOn: JsWeekday;
   onMove: (offset: number) => void;
 }) {
   const base = localDate(anchor);
   const visible = new Date(base.getFullYear(), base.getMonth() + monthOffset, 1);
   const year = visible.getFullYear();
   const month = visible.getMonth() + 1;
-  const leading = leadingDays(visible);
+  const leading = leadingDays(visible, weekStartsOn);
+  const weekdays = gridWeekdays(weekStartsOn).map((day) => day.slice(0, 2));
   const daysInMonth = new Date(year, month, 0).getDate();
   const cellCount = Math.ceil((leading + daysInMonth) / 7) * 7;
   const words = useSchoolWords();
@@ -306,7 +312,7 @@ function MiniMonth({ anchor, monthOffset, events, onMove }: {
         </Button>
       </div>
       <div className="mt-4 grid grid-cols-7 gap-y-1 text-center">
-        {WEEKDAYS.map((day) => <span key={day} className="text-[10px] font-medium uppercase tracking-wide text-gray-05">{day}</span>)}
+        {weekdays.map((day) => <span key={day} className="text-[10px] font-medium uppercase tracking-wide text-gray-05">{day}</span>)}
         {Array.from({ length: cellCount }).map((_, index) => {
           const date = new Date(year, month - 1, index - leading + 1);
           const iso = toIso(date);

@@ -38,7 +38,16 @@ import {
   useUpdateSlotMutation,
 } from "@/redux/services/calendar/calendar-api";
 import { useGetSubjectsQuery } from "@/redux/services/academics/academics-api";
-import type { GridCell } from "@/redux/services/calendar/calendar-types";
+import type {
+  DayOfWeek,
+  GridCell,
+} from "@/redux/services/calendar/calendar-types";
+import { useCalendarRules } from "@/hooks/use-school-week";
+import { publishCheckFor, splitWarnings } from "../components/publish-check";
+import {
+  PublishCheckPanel,
+  type PublishRefusal,
+} from "../components/publish-check-panel";
 import { TimetableGrid } from "../components/timetable-grid";
 import {
   LessonDrawer,
@@ -67,15 +76,27 @@ import { canManageRow } from "@/lib/can-manage";
  * *Published* is not read-only here. A published grid can still be edited, and
  * the seeded data proves it matters: a class can be published and then acquire
  * a clash when another class books the same teacher.
+ *
+ * **The publish check follows the school's rules.** A lesson needs a room
+ * before publishing only when `room_required_to_publish` says so, and a
+ * teacher with no teaching duty for a lesson is listed under WARN and blocks
+ * under REFUSE. Duty mismatches travel in the grid's warnings but are not
+ * clashes, so they are split out before the clash list and the red cells. A
+ * lesson on a day the school no longer teaches always blocks publishing.
  */
 export default function ClassTimetables() {
   const { lens, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
+  const { roomRequiredToPublish, teacherDutyMatch } = useCalendarRules();
   const [params, setParams] = useSearchParams();
 
   const [lesson, setLesson] = useState<LessonTarget | null>(null);
   const [dupOpen, setDupOpen] = useState(false);
   const [confirm, setConfirm] = useState<"clear" | null>(null);
+  // The last refused publish, kept against the class it was about.
+  const [refused, setRefused] = useState<
+    (PublishRefusal & { classId: number }) | null
+  >(null);
 
   const { data: listData, isLoading: listLoading } =
     useGetClassTimetablesQuery(lens);
@@ -133,8 +154,15 @@ export default function ClassTimetables() {
   const canManage = hasPermission(P.DELETE_TIMETABLE) && !readOnlyYear && mine;
   const canPublish = hasPermission(P.PUBLISH_TIMETABLE) && !readOnlyYear && mine;
 
-  const warnings = grid?.warnings ?? [];
+  const warnings = splitWarnings(grid?.warnings).clashes;
   const published = grid?.status === "PUBLISHED";
+  const check = grid
+    ? publishCheckFor(grid, {
+        roomRequired: roomRequiredToPublish,
+        dutyMatch: teacherDutyMatch,
+      })
+    : null;
+  const refusal = refused && refused.classId === current ? refused : null;
 
   const openCell = (cell: GridCell, dayIndex: number) => {
     // A filled cell is an edit; an empty one is a new lesson.
@@ -160,13 +188,14 @@ export default function ClassTimetables() {
       ? await updateSlot({ id: lesson.slot.id, ...body }).unwrap()
       : await createSlot({
           school_class: current,
-          day_of_week: lesson.dayOfWeek as 1 | 2 | 3 | 4 | 5,
+          day_of_week: lesson.dayOfWeek as DayOfWeek,
           period: lesson.period,
           ...body,
         }).unwrap();
     toast.success(result.message);
     // The write happened AND has something to say. Each warning is the
-    // server's own sentence, naming who is double-booked and where.
+    // server's own sentence: who is double-booked and where, or which teacher
+    // has no teaching duty for the lesson.
     for (const w of result.data?.warnings ?? []) toast.warning(w.detail);
     return result.data?.warnings ?? [];
   };
@@ -178,7 +207,7 @@ export default function ClassTimetables() {
     if (!lesson || !current) return { warnings: [] };
     const result = await previewSlot({
       school_class: current,
-      day_of_week: lesson.dayOfWeek as 1 | 2 | 3 | 4 | 5,
+      day_of_week: lesson.dayOfWeek as DayOfWeek,
       period: lesson.period,
       subject: values.subject!,
       teacher: values.teacher,
@@ -212,13 +241,26 @@ export default function ClassTimetables() {
     if (!current) return;
     try {
       const result = await publish({ id: current }).unwrap();
+      setRefused(null);
       toast.success(result.message);
+      // Published under WARN, and these lessons' teachers have no duty for them.
+      for (const w of result.data?.warnings ?? []) toast.warning(w.detail);
     } catch (error) {
-      // TIMETABLE_HAS_CLASHES or TIMETABLE_INCOMPLETE. Both are sentences
-      // written for this reader and shown as they arrived.
-      toast.error(
-        parseApiError(error).message || "That timetable could not be published.",
-      );
+      // Each refusal is a sentence written for this reader, shown as it
+      // arrived. Clash rows are already listed above the grid, so only the
+      // other refusals' rows are kept: missing teachers or rooms, duty gaps,
+      // and lessons on a day the school no longer teaches.
+      const parsed = parseApiError(error);
+      const message = parsed.message || "That timetable could not be published.";
+      const items = Array.isArray(parsed.detail.items)
+        ? parsed.detail.items.filter((i): i is string => typeof i === "string")
+        : [];
+      setRefused({
+        classId: current,
+        message,
+        items: parsed.code === "TIMETABLE_HAS_CLASHES" ? [] : items,
+      });
+      toast.error(message);
     }
   };
 
@@ -394,6 +436,10 @@ export default function ClassTimetables() {
             </div>
           )}
 
+          {check && (canPublish || canEdit) && (
+            <PublishCheckPanel check={check} refusal={refusal} />
+          )}
+
           {grid.filled === 0 && canCreate && (
             <p className="print-hide border-b border-primary/10 bg-pry-01/25 px-4 py-3 text-[13px] text-gray-06 text-pretty sm:px-5">
               {grid.lesson_periods} teaching slots this week. Click any empty
@@ -448,6 +494,7 @@ export default function ClassTimetables() {
         onRemove={canManage ? removeLesson : undefined}
         onPreview={previewLesson}
         canPreview={hasPermission(P.CREATE_TIMETABLE_ENTRY)}
+        dutyMatch={teacherDutyMatch}
       />
 
       <DuplicateDrawer
@@ -468,6 +515,7 @@ export default function ClassTimetables() {
             keep_rooms: keepRooms,
           })
         }
+        dutyMatch={teacherDutyMatch}
         onClose={() => setDupOpen(false)}
         onRun={async ({ source, keepTeachers, keepRooms }) => {
           if (!current) return;
@@ -478,6 +526,7 @@ export default function ClassTimetables() {
             keep_rooms: keepRooms,
           }).unwrap();
           toast.success(result.message);
+          for (const w of result.data?.warnings ?? []) toast.warning(w.detail);
         }}
       />
 

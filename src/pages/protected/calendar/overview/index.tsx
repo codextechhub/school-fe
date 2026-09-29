@@ -15,6 +15,7 @@ import {
 
 import { CalendarOverviewLayout } from "./overview-layout";
 import { useSchoolWords } from "@/hooks/use-school-words";
+import { useSchoolWeek } from "@/hooks/use-school-week";
 
 /**
  * Loads the calendar overview for the selected branch and school year.
@@ -27,6 +28,7 @@ export default function CalendarOverview() {
   const { hasPermission } = usePermissions();
   const navigate = useNavigate();
   const words = useSchoolWords();
+  const { weekStartsOn } = useSchoolWeek();
 
   const { data, isLoading, isError, refetch } =
     useGetCalendarOverviewQuery(lens);
@@ -96,6 +98,7 @@ export default function CalendarOverview() {
           overview.session.status !== "ARCHIVED" &&
           !year.session?.read_only
         }
+        weekStartsOn={weekStartsOn}
       />
     </PageShell>
   );

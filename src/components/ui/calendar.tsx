@@ -12,7 +12,7 @@ import {
 
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { WEEK_STARTS_ON } from "@/lib/week"
+import { useSchoolWeek } from "@/hooks/use-school-week"
 
 function Calendar({
   className,
@@ -27,10 +27,13 @@ function Calendar({
   buttonVariant?: React.ComponentProps<typeof Button>["variant"]
 }) {
   const defaultClassNames = getDefaultClassNames()
+  // The school's week start, so a date sits in the same column here as on
+  // every month grid. A caller's own `weekStartsOn` still wins.
+  const { weekStartsOn } = useSchoolWeek()
 
   return (
     <DayPicker
-      weekStartsOn={WEEK_STARTS_ON}
+      weekStartsOn={weekStartsOn}
       showOutsideDays={showOutsideDays}
       className={cn(
         "bg-background group/calendar p-3 [--cell-size:--spacing(8)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",

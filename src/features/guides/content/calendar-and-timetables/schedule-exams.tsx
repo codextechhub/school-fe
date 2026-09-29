@@ -9,7 +9,7 @@ export default function ScheduleExamsArticle() {
           "An event of type Exam period is dated on the calendar for this year.",
           "The classes and subjects being examined exist.",
           "Rooms are added, if papers need a room.",
-          "Staff who invigilate carry the teacher role.",
+          "Staff who invigilate hold a role your school lets invigilate. Until the school chooses, that is Teacher.",
         ]} />
         <GuideCallout tone="info" title="Not every plan includes exams">Exam scheduling appears in the Timetables menu only when your school&apos;s plan includes it.</GuideCallout>
       </GuideSection>
@@ -24,7 +24,7 @@ export default function ScheduleExamsArticle() {
           <GuideStep title="Open the form">Select <strong>Add paper</strong>. On the board, you can also select <strong>Add a paper</strong> in an empty sitting to start with its date and sitting filled in.</GuideStep>
           <GuideStep title="Class and subject">Choose the <strong>Class</strong> and the <strong>Subject</strong>. Only classes you may change are offered.</GuideStep>
           <GuideStep title="Date and sitting">Choose the <strong>Date</strong>, which must fall inside the exam period, and the <strong>Sitting</strong>: Morning or Afternoon.</GuideStep>
-          <GuideStep title="Room and invigilator">Pick a <strong>Room</strong> and an <strong>Invigilator</strong> if you have them. Invigilators can come from any branch.</GuideStep>
+          <GuideStep title="Room and invigilator">Pick a <strong>Room</strong> and an <strong>Invigilator</strong> if you have them. The invigilator list holds everybody whose role may invigilate, each with that role, such as <em>Bola Adeyemi · Lab technician</em>. Somebody who works across the whole school sees people from every branch; somebody who works in one branch sees the people who work there or across the school.</GuideStep>
           <GuideStep title="Times">Set a <strong>Start time</strong> and <strong>End time</strong> if you publish exact times. They are optional.</GuideStep>
           <GuideStep title="Save">Select <strong>Add paper</strong>.</GuideStep>
         </GuideSteps>
@@ -37,6 +37,7 @@ export default function ScheduleExamsArticle() {
           <GuideStep title="Refused">A class sitting two papers at once is impossible, so it cannot be saved. Change the date or sitting.</GuideStep>
           <GuideStep title="Warned">A room used twice, or one invigilator in two rooms, can be real: two classes can sit in one hall. Tick the box to confirm you know, and the paper saves.</GuideStep>
         </GuideSteps>
+        <p>A paper given to somebody before their role stopped counting keeps them. It still saves when you change its room or anything else, and their name stays in the picker. Choosing them again after somebody else was put on the paper is refused, with a message under <strong>Invigilator</strong> such as <strong>Bola Adeyemi does not hold a role whose holders may invigilate at this school (Teacher). Choose someone who does, or add their role in Settings, Calendar and timetables.</strong></p>
         <p>Every clash in the timetable is listed at the top. The warned kind saves and publishes, because a shared hall or an invigilator moving between rooms is often meant, so check each one is intended before you publish.</p>
       </GuideSection>
 
@@ -57,6 +58,7 @@ export default function ScheduleExamsArticle() {
           <GuideStep title="Add paper is greyed out">The timetable is published, the year is archived, or your role cannot add timetable entries.</GuideStep>
           <GuideStep title="The date is refused">It falls outside the exam period. Change the date, or the exam period&apos;s dates on the calendar.</GuideStep>
           <GuideStep title="Save stays grey">The form has found a refusal, or a clash you have not confirmed. Both are explained directly above the button.</GuideStep>
+          <GuideStep title="Somebody is missing from the Invigilator list">Their role is not one your school lets invigilate, or you work in one branch and they work only at another. The roles are set in <strong>Settings</strong> under <strong>Academics</strong>, <strong>Calendar and timetables</strong>.</GuideStep>
           <GuideStep title="An exam period cannot be removed from the calendar">It still has papers scheduled inside it. Remove the papers first.</GuideStep>
         </GuideSteps>
       </GuideSection>

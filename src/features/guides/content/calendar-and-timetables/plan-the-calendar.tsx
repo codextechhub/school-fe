@@ -15,7 +15,7 @@ export default function PlanTheCalendarArticle() {
       </GuideSection>
 
       <GuideSection id="read-the-overview" title="Read the calendar overview">
-        <p><strong>Overview</strong> opens on <strong>Today at school</strong>: the date, the {w.term} you are in (or <em>Between {w.terms}</em>), how many teaching days of the {w.term} have passed, and the next event. School-closed days do not count as teaching days. A small month calendar beside it marks days that have events.</p>
+        <p><strong>Overview</strong> opens on <strong>Today at school</strong>: the date, the {w.term} you are in (or <em>Between {w.terms}</em>), how many teaching days of the {w.term} have passed, and the next event. A teaching day is one of the days your school teaches, set in <strong>Settings</strong> under <strong>Academics</strong>, <strong>Calendar and timetables</strong>, that no school-closed event covers. A small month calendar beside it marks days that have events, and starts its week on the day your school&apos;s week starts: Monday, or Sunday where the school has chosen it.</p>
         <p>Below that are counts of <strong>{w.Terms}</strong>, events this {w.term}, <strong>Classes timetabled</strong> and <strong>Rooms</strong>; select a count to open its screen. <strong>Coming up</strong> lists the next dated events, and <strong>Needs attention</strong> lists problems with the year, such as a {w.term} that falls outside the year, two {w.terms} that overlap, events outside every {w.term}, or classes with no timetable.</p>
       </GuideSection>
 
@@ -23,7 +23,7 @@ export default function PlanTheCalendarArticle() {
         <GuideSteps>
           <GuideStep title="Open the form">Select <strong>Add event</strong> on the overview or on <strong>Events</strong>.</GuideStep>
           <GuideStep title="Name it">Type the <strong>Event name</strong>, for example <em>Mid-{w.term} break</em>.</GuideStep>
-          <GuideStep title="Choose the type">Pick one <strong>Type</strong>: Public holiday, Mid-{w.term} break, Exam period, School event, PTA or Sports day.</GuideStep>
+          <GuideStep title="Choose the type">Pick one <strong>Type</strong>: Public holiday, Mid-{w.term} break, Exam period, School event, PTA or Sports day. The type decides whether <strong>School closed on these days</strong> starts ticked.</GuideStep>
           <GuideStep title="Set the dates">Choose the <strong>Start date</strong>. The <strong>End date</strong> follows it, which suits a one-day event; move it for an event that runs several days.</GuideStep>
           <GuideStep title="Choose where it applies">When your school runs more than one branch, choose <strong>The whole school</strong> or <strong>One branch</strong>. Most events apply to every branch.</GuideStep>
           <GuideStep title="Save">Add a <strong>Description</strong> if useful, then select <strong>Add event</strong>.</GuideStep>
@@ -38,6 +38,7 @@ export default function PlanTheCalendarArticle() {
 
       <GuideSection id="school-closed-days" title="Mark days the school is closed">
         <p>Tick <strong>School closed on these days</strong> for a holiday or break. The days are marked non-teaching on the calendar and taken out of the teaching-day count. Events like this carry a <strong>School closed</strong> badge in the list.</p>
+        <p>On a new event the box starts ticked for a type your school has said closes it, and follows the type if you change it. Until your school chooses, those types are Public holiday and Mid-{w.term} break. Tick or clear the box yourself and it stays as you left it. An event you edit keeps its own answer. The types are set in <strong>Settings</strong> under <strong>Academics</strong>, <strong>Calendar and timetables</strong>.</p>
         <GuideCallout tone="tip" title="Timetables are left alone">Closing the school does not change any timetable. The lessons on those days are simply not held.</GuideCallout>
       </GuideSection>
 
@@ -60,6 +61,7 @@ export default function PlanTheCalendarArticle() {
           <GuideStep title="Add event is greyed out or missing">The year you are looking at is archived and read-only, or your role cannot add events. Switch to the active year.</GuideStep>
           <GuideStep title="The overview says No school year yet">Create a year on Sessions &amp; {w.Terms} first; the calendar hangs off it.</GuideStep>
           <GuideStep title={`An event says Outside every ${w.term}`}>Its dates fall between {w.terms} or outside the year. Check the dates, or the {w.term} dates on Sessions &amp; {w.Terms}.</GuideStep>
+          <GuideStep title="A new holiday is not marked School closed">Your school has not ticked that type under <strong>Events that close the school</strong> in its settings. Tick the box on the event before you save it.</GuideStep>
           <GuideStep title="Edit or Delete is missing on one event">The event is school-wide and you work in one branch only, so you can read it but not change it.</GuideStep>
         </GuideSteps>
       </GuideSection>

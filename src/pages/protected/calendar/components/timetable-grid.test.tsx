@@ -160,3 +160,56 @@ describe("timetable grid", () => {
     expect(onCellClick).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("a day the school no longer teaches", () => {
+  const saturday: GridDay = {
+    day_of_week: 6,
+    day_label: "Saturday",
+    is_teaching_day: false,
+    cells: [
+      { ...days[0].cells[0] },
+      { ...days[0].cells[1] },
+      {
+        ...days[0].cells[2],
+        slot: { ...days[0].cells[2].slot!, id: 11, day_of_week: 6 },
+      },
+    ],
+  };
+
+  it("mutes the column, says so, and offers only its lessons", () => {
+    const onCellClick = vi.fn();
+    act(() => {
+      root.render(
+        <TimetableGrid
+          days={[...days, saturday]}
+          variant="class"
+          onCellClick={onCellClick}
+          emptyLabel="Add"
+        />,
+      );
+    });
+
+    expect(container.querySelector('[role="note"]')?.textContent).toContain(
+      "Not a teaching day: Saturday. Move or remove these lessons: publishing waits until they are gone",
+    );
+    const heads = [...container.querySelectorAll("th")].map((th) => th.textContent);
+    expect(heads).toContain("SaturdayNot a teaching day");
+    // Monday's empty cell is offered; Saturday's is not.
+    expect(container.querySelectorAll('[aria-label="Fill Period 1"]')).toHaveLength(1);
+    expect(container.textContent).toContain("Not taught");
+
+    const lessons = container.querySelectorAll<HTMLButtonElement>(
+      '[aria-label="Mathematics, Period 2"]',
+    );
+    expect(lessons).toHaveLength(2);
+    act(() => lessons[1].click());
+    expect(onCellClick).toHaveBeenCalledWith(saturday.cells[2], 1);
+  });
+
+  it("adds no note while every day is taught", () => {
+    act(() => {
+      root.render(<TimetableGrid days={days} variant="class" />);
+    });
+    expect(container.querySelector('[role="note"]')).toBeNull();
+  });
+});

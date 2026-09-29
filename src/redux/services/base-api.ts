@@ -488,6 +488,10 @@ export const baseApi = createApi({
     // moves them: a lesson, a room and an event all change what the hub says.
     "Calendar",
     "CalendarOverview",
+    // The school's calendar rules: week start, teaching days and the rest.
+    // Apart from Calendar because every date picker reads it and no event
+    // write changes it.
+    "CalendarRules",
     "Rooms",
     "Periods",
     // The class picker, the grid and the publish state are one tag: they are

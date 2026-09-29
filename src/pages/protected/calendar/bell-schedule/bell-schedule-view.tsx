@@ -1,6 +1,8 @@
 import {
   BookOpen,
   Coffee,
+  Copy,
+  Loader2,
   Megaphone,
   Pencil,
   Trash2,
@@ -9,6 +11,7 @@ import {
 
 import { CardActions, ClickableCard, Panel } from "@/components/custom/surface";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type {
   DayOfWeek,
@@ -18,17 +21,17 @@ import type {
 import { RowActions } from "../components/row-actions";
 import { durationOf, formatClock } from "./bell-schedule-time";
 import { canManageRow } from "@/lib/can-manage";
+import type { CopyOffer, CopyScope } from "./bell-copy";
+import {
+  DEFAULT_TEACHING_DAYS,
+  WEEK_STARTS_ON,
+  weekdayChoices,
+} from "@/lib/week";
 
 export type BellDay = DayOfWeek | "all";
 
-const DAY_TABS: { value: BellDay; label: string; short: string }[] = [
-  { value: "all", label: "Every day", short: "Every day" },
-  { value: 1, label: "Monday", short: "Mon" },
-  { value: 2, label: "Tuesday", short: "Tue" },
-  { value: 3, label: "Wednesday", short: "Wed" },
-  { value: 4, label: "Thursday", short: "Thu" },
-  { value: 5, label: "Friday", short: "Fri" },
-];
+/** The day tabs when the page passes none: a Monday-to-Friday school. */
+const DEFAULT_WEEKDAYS = weekdayChoices(DEFAULT_TEACHING_DAYS, WEEK_STARTS_ON);
 
 const TYPE_STYLE: Record<
   PeriodType,
@@ -63,11 +66,15 @@ const TYPE_STYLE: Record<
 /**
  * A clock-led preview of the periods that actually run on the selected day.
  * Block widths follow their duration, so the picture agrees with the times.
+ *
+ * The day tabs are the school's teaching days in its week order, plus any day
+ * that still carries periods of its own (see `weekdayChoices`).
  */
 export function SchoolDayPanel({
   day,
   periods,
   ownDays,
+  weekdays = DEFAULT_WEEKDAYS,
   label,
   note,
   canEdit,
@@ -77,6 +84,7 @@ export function SchoolDayPanel({
   day: BellDay;
   periods: Period[];
   ownDays: Set<DayOfWeek>;
+  weekdays?: { value: DayOfWeek; short: string }[];
   label: string;
   note?: string;
   canEdit: boolean;
@@ -84,6 +92,10 @@ export function SchoolDayPanel({
   onEdit: (period: Period) => void;
 }) {
   const lessons = periods.filter((period) => period.period_type === "LESSON").length;
+  const tabs: { value: BellDay; short: string }[] = [
+    { value: "all", short: "Every day" },
+    ...weekdays,
+  ];
 
   return (
     <Panel as="section" className="overflow-hidden">
@@ -97,7 +109,7 @@ export function SchoolDayPanel({
 
         <div className="max-w-full overflow-x-auto pb-1">
           <div className="inline-flex min-w-max gap-1.5">
-            {DAY_TABS.map((tab) => {
+            {tabs.map((tab) => {
               const selected = day === tab.value;
               const hasOwnSchedule =
                 tab.value !== "all" && ownDays.has(tab.value);
@@ -206,6 +218,129 @@ export function SchoolDayPanel({
           <span>{periods.length} total periods</span>
         </div>
       </div>
+    </Panel>
+  );
+}
+
+/**
+ * The offer to start a year from an earlier year's bell schedule, worded for
+ * what the copy will actually touch (see `CopyScope` in bell-copy.ts).
+ *
+ * `switch-view` is the narrower case: a reader looking at one branch while
+ * their copy would fill several. It names the earlier year and says where the
+ * copy is made, without a button whose effect the view cannot show. A refusal
+ * is the server's sentence, shown beside the button that caused it.
+ */
+export function CopyScheduleOffer({
+  offer,
+  scope,
+  targetName,
+  allLabel,
+  copying,
+  refusal,
+  onCopy,
+}: {
+  offer: CopyOffer;
+  scope: CopyScope;
+  targetName: string | null;
+  /** "All branches" or "All my branches", as the branch picker says it. */
+  allLabel: string;
+  copying: boolean;
+  refusal?: string;
+  onCopy: () => void;
+}) {
+  if (!offer) return null;
+  const { session, periodCount: count } = offer.source;
+  const target = targetName ?? "this year";
+  const periods = `${count} period${count === 1 ? "" : "s"}`;
+
+  if (offer.kind === "switch-view") {
+    return (
+      <Panel as="section" className="p-4 sm:p-5">
+        <p className="text-xs text-gray-06 text-pretty">
+          {session.name} has a bell schedule you can copy. Copying fills{" "}
+          {scope === "school" ? "every branch" : "all your branches"} at once,
+          so it is offered under {allLabel} in the branch picker.
+        </p>
+      </Panel>
+    );
+  }
+
+  const body =
+    scope === "school"
+      ? `${session.name} has ${periods} across every branch, school-wide ones included. Copy them all into ${target}, then change anything that differs.`
+      : scope === "branches"
+        ? `${session.name} has ${periods} at your branch${count === 1 ? "" : "es"}. Copy them into ${target}, then change anything that differs. The school's shared periods are copied by a school-wide administrator.`
+        : `${session.name} has ${periods}. Copy them into ${target}, then change anything that differs.`;
+
+  return (
+    <Panel
+      as="section"
+      className="flex min-w-0 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
+    >
+      <div className="min-w-0">
+        <h2 className="font-mont text-sm font-semibold text-black-01">
+          Start from {session.name}
+        </h2>
+        <p className="mt-1 text-xs text-gray-05 text-pretty">{body}</p>
+        {refusal && (
+          <p role="alert" className="mt-2 text-xs text-error-text text-pretty">
+            {refusal}
+          </p>
+        )}
+      </div>
+      <Button
+        variant="outline"
+        className="shrink-0 text-sm"
+        onClick={onCopy}
+        disabled={copying}
+      >
+        {copying ? <Loader2 className="size-4 animate-spin" /> : <Copy className="size-4" />}
+        Copy from {session.name}
+      </Button>
+    </Panel>
+  );
+}
+
+/**
+ * What a finished copy said, kept on the page after the offer has gone.
+ *
+ * The server's sentence leads. Periods it left out, set for a day the school
+ * no longer teaches, are listed so the school can recreate any it still wants.
+ */
+export function CopyResultNote({
+  message,
+  skipped,
+  onDismiss,
+}: {
+  message: string;
+  skipped: { name: string; day: string }[];
+  onDismiss: () => void;
+}) {
+  return (
+    <Panel
+      as="section"
+      role="status"
+      className="flex min-w-0 items-start justify-between gap-3 p-4 sm:p-5"
+    >
+      <div className="min-w-0">
+        <p className="text-xs text-gray-06 text-pretty">{message}</p>
+        {skipped.length > 0 && (
+          <ul className="mt-1.5 grid gap-0.5">
+            {skipped.map((row, i) => (
+              <li
+                key={`${row.day}-${row.name}-${i}`}
+                className="text-xs text-gray-05 text-pretty"
+              >
+                {row.day} · {row.name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      <Button variant="ghost" size="sm" className="shrink-0 text-xs" onClick={onDismiss}>
+        Dismiss
+      </Button>
     </Panel>
   );
 }

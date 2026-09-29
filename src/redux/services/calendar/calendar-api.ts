@@ -12,6 +12,12 @@ import {
 import type {
   BellSchedule,
   CalendarCurrent,
+  CalendarRules,
+  CalendarRulesUpdate,
+  CopyBellScheduleArgs,
+  CopyBellScheduleResult,
+  Invigilator,
+  PublishResult,
   ClashWarning,
   CalendarEvent,
   CalendarEventWrite,
@@ -63,6 +69,16 @@ import type {
  * blocked while one stands.
  */
 
+/**
+ * The addresses of the school's calendar rules and the reads and writes that
+ * follow from them, in one place so a moved route is a one-line change.
+ */
+export const CALENDAR_RULES_URLS = {
+  rules: `/academics/calendar/rules/`,
+  invigilators: `/academics/exams/invigilators/`,
+  copyBellSchedule: `/academics/timetable/periods/copy/`,
+} as const;
+
 export const calendarApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // ── The hub, and the year as a timeline ────────────────────────────────
@@ -105,9 +121,50 @@ export const calendarApi = baseApi.injectEndpoints({
       providesTags: ["CalendarOverview"],
     }),
 
+    // ── The school's rules ─────────────────────────────────────────────────
+
+    /**
+     * Teaching days, week start, event defaults, publish checks, invigilator
+     * roles and the default period length.
+     *
+     * Silent and long-lived: every date picker reads the week start from it,
+     * and a failed or slow read must never interrupt a screen. Readers fall
+     * back to a Monday-to-Friday school while it is missing (see
+     * `resolveCalendarRules`).
+     */
+    getCalendarRules: builder.query<Envelope<CalendarRules>, void>({
+      query: () => ({ url: CALENDAR_RULES_URLS.rules, method: "GET" }),
+      extraOptions: { silent: true },
+      keepUnusedDataFor: 3600,
+      providesTags: ["CalendarRules"],
+    }),
+
+    updateCalendarRules: builder.mutation<
+      Envelope<CalendarRules>,
+      CalendarRulesUpdate
+    >({
+      query: (body) => ({ url: CALENDAR_RULES_URLS.rules, method: "PUT", body }),
+      // Teaching days are the columns of every grid, and the invigilator roles
+      // decide who the invigilator list holds.
+      invalidatesTags: [
+        "CalendarRules", "ClassTimetables", "TeacherTimetables", "CalendarOverview",
+      ],
+    }),
+
+    /**
+     * Everybody who may invigilate an exam paper, alphabetical, with the
+     * roles that make them eligible. Narrowed by the school's
+     * `invigilator_roles`, so it moves when those do, and to the caller's
+     * branches for a branch-bound reader. Needs the exam view key.
+     */
+    getInvigilators: builder.query<Envelope<Invigilator[]>, void>({
+      query: () => ({ url: CALENDAR_RULES_URLS.invigilators, method: "GET" }),
+      providesTags: ["CalendarRules", "Teachers"],
+    }),
+
     // ── Events ─────────────────────────────────────────────────────────────
 
-    getCalendarEvents: builder.query<
+    getCalendarEvents:builder.query<
       PaginatedEnvelope<CalendarEvent>,
       EventListArgs | void
     >({
@@ -251,6 +308,29 @@ export const calendarApi = baseApi.injectEndpoints({
       invalidatesTags: ["Periods", "ClassTimetables", "TeacherTimetables"],
     }),
 
+    /**
+     * Start a year's bell schedule from an earlier year's.
+     *
+     * Only into a year with no periods: the server refuses anything else with
+     * a sentence, and that sentence is what the screen shows. The copied
+     * periods become the rows of every grid in the target year, so the grids
+     * and the hub's "no bell schedule" state move with them.
+     */
+    copyBellSchedule: builder.mutation<
+      Envelope<CopyBellScheduleResult>,
+      CopyBellScheduleArgs
+    >({
+      query: ({ from_session, session }) => ({
+        url: CALENDAR_RULES_URLS.copyBellSchedule,
+        method: "POST",
+        params: sessionParam(session),
+        body: { from_session },
+      }),
+      invalidatesTags: [
+        "Periods", "ClassTimetables", "TeacherTimetables", "CalendarOverview",
+      ],
+    }),
+
     // ── Class timetables ───────────────────────────────────────────────────
 
     /** The class picker: every class, with its lesson count, state and clash. */
@@ -378,10 +458,12 @@ export const calendarApi = baseApi.injectEndpoints({
     /**
      * Publish, which is the one moment a school asserts the grid is finished.
      *
-     * Refused while a clash stands, or while the grid is incomplete. The
-     * refusal is the server's sentence and is shown as it arrives.
+     * Refused while the grid is incomplete, while a lesson's teacher has no
+     * teaching duty for it under the school's REFUSE, or while a clash stands.
+     * The refusal is the server's sentence and is shown as it arrives. A grid
+     * that publishes under WARN answers with its duty mismatches in `warnings`.
      */
-    publishTimetable: builder.mutation<Envelope<ClassTimetable>, { id: number }>({
+    publishTimetable: builder.mutation<Envelope<PublishResult>, { id: number }>({
       query: ({ id }) => ({
         url: `/academics/timetable/classes/${id}/publish/`,
         method: "POST",
@@ -526,6 +608,10 @@ export const {
   useGetCalendarOverviewQuery,
   useGetCalendarYearQuery,
   useGetCalendarCurrentQuery,
+  useGetCalendarRulesQuery,
+  useUpdateCalendarRulesMutation,
+  useGetInvigilatorsQuery,
+  useCopyBellScheduleMutation,
   useGetCalendarEventsQuery,
   useGetCalendarEventQuery,
   useCreateCalendarEventMutation,

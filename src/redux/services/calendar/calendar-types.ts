@@ -425,6 +425,12 @@ export interface GridCell {
 export interface GridDay {
   day_of_week: DayOfWeek;
   day_label: string;
+  /**
+   * False on a day the school no longer teaches that still holds a lesson.
+   * The server draws it so the lesson can be seen and cleared; it still counts
+   * in clashes and at the publish gate. Absent reads as a teaching day.
+   */
+  is_teaching_day?: boolean;
   cells: GridCell[];
 }
 
@@ -484,6 +490,11 @@ export interface DuplicateSummary {
   /** A source lesson in a period the target does not run. Carries no teacher
    *  or room, because nothing about it is being copied. */
   skipped_rows: Pick<DuplicateRow, "day_of_week" | "period" | "subject">[];
+  /**
+   * Copied lessons whose teacher has no teaching duty for the target class,
+   * under the school's WARN. Under REFUSE the copy is refused instead.
+   */
+  warnings?: ClashWarning[];
 }
 
 export interface DuplicateArgs {
@@ -591,3 +602,105 @@ export interface ExamSlotWrite {
   room?: number | null;
   invigilator?: number | null;
 }
+
+// ── The school's calendar and timetable rules ────────────────────────────────
+
+/**
+ * How strictly a lesson's teacher has to match the class and subject they hold
+ * in Teaching duties.
+ *
+ *   OFF     anyone may take any lesson, and nothing is said.
+ *   WARN    a mismatch saves with a warning, and the publish check lists it.
+ *   REFUSE  a mismatch is refused on save and blocks publishing.
+ */
+export type TeacherDutyMatch = "OFF" | "WARN" | "REFUSE";
+
+export interface RuleOption<T extends string = string> {
+  value: T;
+  label: string;
+}
+
+/**
+ * The school's rules for its calendar, timetables and exams.
+ *
+ * Readable by every signed-in member, because every calendar and date picker
+ * draws its week from `week_starts_on`. Weekdays are ISO numbers throughout:
+ * 1 is Monday and 7 is Sunday, the same numbering `DayOfWeek` uses.
+ *
+ * Each is a default or a check on what happens next. Nothing already on the
+ * calendar, and no published timetable, changes when these do.
+ */
+export interface CalendarRules {
+  /** ISO weekdays lessons happen on. Timetables show these days. */
+  teaching_days: number[];
+  /** ISO weekday: 1 is Monday, 7 is Sunday. */
+  week_starts_on: number;
+  /** Whether a new event of each type starts out closing the school. */
+  closes_school_by_type: Record<string, boolean>;
+  /** Every event type, labelled in the school's own words. */
+  event_types: RuleOption[];
+  /** False when a lesson publishes once it has a teacher, room or not. */
+  room_required_to_publish: boolean;
+  teacher_duty_match: TeacherDutyMatch;
+  teacher_duty_match_options: RuleOption[];
+  /** Role keys whose holders may invigilate an exam paper. */
+  invigilator_roles: string[];
+  invigilator_role_options: RuleOption[];
+  /** The length a new period starts with. Null means type both times. */
+  default_period_minutes: number | null;
+}
+
+/** A change to the rules. Needs settings rights and whole-school reach. */
+export interface CalendarRulesUpdate {
+  teaching_days: number[];
+  week_starts_on: number;
+  closes_school_by_type: Record<string, boolean>;
+  room_required_to_publish: boolean;
+  teacher_duty_match: TeacherDutyMatch;
+  invigilator_roles: string[];
+  default_period_minutes: number | null;
+  /** Kept on the audit record. */
+  reason?: string;
+}
+
+/**
+ * Somebody who may invigilate an exam paper.
+ *
+ * Eligibility comes from the school's `invigilator_roles`, so a bursar can be
+ * on this list at one school and absent at another. `role_label` says which of
+ * their roles made them eligible, because two people called Eze are told apart
+ * by what they do.
+ */
+export interface Invigilator extends Person {
+  /** The eligible roles this person holds, joined: "Teacher, Lab technician". */
+  role_label: string;
+}
+
+/**
+ * Copy an earlier session's bell schedule into one that has none.
+ *
+ * `session` is the year being filled, sent the same way as every other lens.
+ * The server refuses a target that already holds periods, with a sentence.
+ */
+export interface CopyBellScheduleArgs {
+  from_session: number;
+  session: number;
+}
+
+/** What a bell copy wrote: how many periods, and the periods themselves. */
+export interface CopyBellScheduleResult {
+  copied: number;
+  periods: Period[];
+  /**
+   * Day-specific periods left out because the school no longer teaches that
+   * day. The envelope's message says so in a sentence.
+   */
+  skipped?: { name: string; day_of_week: number; day_label: string }[];
+}
+
+/**
+ * What a successful publish answers with. `warnings` lists the lessons
+ * published under the school's WARN whose teacher has no teaching duty for
+ * them, and is empty otherwise.
+ */
+export type PublishResult = TimetableStatus & { warnings: ClashWarning[] };

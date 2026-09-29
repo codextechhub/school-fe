@@ -19,6 +19,7 @@ export default function TermViewArticle() {
 
       <GuideSection id="use-the-month-grid" title="Use the month calendar">
         <p><strong>Month calendar</strong> opens on the month today falls in. Use the arrows to move a month back or forward, and <strong>Today</strong> to return.</p>
+        <p>The week starts on the day your school&apos;s week starts: Monday, or Sunday where the school has chosen it in <strong>Settings</strong> under <strong>Academics</strong>, <strong>Calendar and timetables</strong>. Every date picker in XVS starts on the same day.</p>
         <p>Today&apos;s date is highlighted. Days the school is closed are tinted, and each event on a day appears as a named chip on a wide screen, or as a coloured dot on a phone. The key above the grid shows which is which.</p>
       </GuideSection>
 

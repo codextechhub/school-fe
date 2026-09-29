@@ -9,7 +9,7 @@
  * function below splits the string instead of letting Date parse it.
  */
 
-import { WEEK_STARTS_ON } from "@/lib/week";
+import type { JsWeekday } from "@/lib/week";
 
 const MONTHS = [
   "January", "February", "March", "April", "May", "June",
@@ -20,15 +20,22 @@ const SHORT = MONTHS.map((m) => m.slice(0, 3));
 
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-/** Weekday names in grid order, starting on {@link WEEK_STARTS_ON}. */
-export const GRID_WEEKDAYS = [
-  ...WEEKDAY_NAMES.slice(WEEK_STARTS_ON),
-  ...WEEKDAY_NAMES.slice(0, WEEK_STARTS_ON),
-];
+/**
+ * Weekday names in grid order for a week starting on `weekStartsOn`.
+ *
+ * The week start is the school's (see `useSchoolWeek`), passed in rather than
+ * read here so these stay plain functions a test can call with either day.
+ */
+export function gridWeekdays(weekStartsOn: JsWeekday): string[] {
+  return [
+    ...WEEKDAY_NAMES.slice(weekStartsOn),
+    ...WEEKDAY_NAMES.slice(0, weekStartsOn),
+  ];
+}
 
 /** How many cells come before `date` in its grid week. */
-export function leadingDays(date: Date): number {
-  return (date.getDay() - WEEK_STARTS_ON + 7) % 7;
+export function leadingDays(date: Date, weekStartsOn: JsWeekday): number {
+  return (date.getDay() - weekStartsOn + 7) % 7;
 }
 
 /** `YYYY-MM-DD` to its three numbers, with no timezone anywhere near it. */

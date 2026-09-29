@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { CalendarOff, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,7 +7,7 @@ import type {
   GridCell,
   GridDay,
 } from "@/redux/services/calendar/calendar-types";
-import { clashedSlotIds, toRows } from "./grid-shape";
+import { clashedSlotIds, dayList, offDays, toRows } from "./grid-shape";
 
 /**
  * The weekly grid, drawn once and read by both the class screen and the
@@ -30,6 +30,12 @@ import { clashedSlotIds, toRows } from "./grid-shape";
  * running its own schedule shows only that schedule, and a period that does not
  * run on a given day leaves a struck-through gap rather than an empty cell that
  * invites a click.
+ *
+ * **A day the school no longer teaches is drawn muted, with a note above the
+ * table.** The server sends one only while it still holds a lesson, and such a
+ * lesson blocks publishing. Its lessons stay pressable so they can be moved or
+ * cleared; its empty cells are not, because the server refuses a new lesson on
+ * that day.
  */
 
 export function TimetableGrid({
@@ -49,12 +55,28 @@ export function TimetableGrid({
 }) {
   const rows = toRows(days);
   const clashed = clashedSlotIds(warnings);
+  const off = offDays(days);
 
   if (!rows.length) return null;
 
   return (
-    // Scrolls inside its own box. Six columns of readable width do not fit a
-    // phone, and a page that scrolls sideways is a bug.
+    <>
+    {off.length > 0 && (
+      <p
+        role="note"
+        className="print-hide flex items-start gap-1.5 border-b border-yellow-01/30 bg-yellow-01/5 px-4 py-2.5 text-xs text-gray-06 text-pretty sm:px-5"
+      >
+        <CalendarOff className="mt-px size-3.5 shrink-0 text-yellow-02" />
+        <span className="min-w-0">
+          Not a teaching day: {dayList(off)}.{" "}
+          {variant === "class"
+            ? "Move or remove these lessons: publishing waits until they are gone, and they still count in clashes."
+            : "Move or remove these lessons on the class timetables: their classes cannot be published until then, and they still count in clashes."}
+        </span>
+      </p>
+    )}
+    {/* Scrolls inside its own box. Six columns of readable width do not fit a
+        phone, and a page that scrolls sideways is a bug. */}
     <ScrollArea orientation="horizontal">
       <table className="w-full min-w-[56rem] border-collapse text-left">
         <thead>
@@ -62,14 +84,25 @@ export function TimetableGrid({
             <th className="w-32 border-b border-r border-border px-3 py-3 font-mont text-xs font-semibold text-gray-06">
               Period
             </th>
-            {days.map((day) => (
-              <th
-                key={day.day_of_week}
-                className="border-b border-border px-3 py-3 font-mont text-xs font-semibold text-gray-06"
-              >
-                {day.day_label}
-              </th>
-            ))}
+            {days.map((day) => {
+              const taught = day.is_teaching_day !== false;
+              return (
+                <th
+                  key={day.day_of_week}
+                  className={cn(
+                    "border-b border-border px-3 py-3 font-mont text-xs font-semibold",
+                    taught ? "text-gray-06" : "bg-white-02/60 text-gray-05",
+                  )}
+                >
+                  {day.day_label}
+                  {!taught && (
+                    <span className="block text-[10px] font-normal text-gray-05">
+                      Not a teaching day
+                    </span>
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
@@ -93,31 +126,38 @@ export function TimetableGrid({
                   {row.time}
                 </p>
               </td>
-              {row.cells.map((cell, dayIndex) => (
-                <td
-                  key={dayIndex}
-                  className="border-b border-r border-border p-0 align-top last:border-r-0"
-                >
-                  <Cell
-                    cell={cell}
-                    variant={variant}
-                    clashed={clashed}
-                    emptyLabel={emptyLabel}
-                    onClick={
-                      onCellClick &&
-                      cell &&
-                      (variant === "class" || cell.slot)
-                        ? () => onCellClick(cell, dayIndex)
-                        : undefined
-                    }
-                  />
-                </td>
-              ))}
+              {row.cells.map((cell, dayIndex) => {
+                const taught = days[dayIndex]?.is_teaching_day !== false;
+                return (
+                  <td
+                    key={dayIndex}
+                    className={cn(
+                      "border-b border-r border-border p-0 align-top last:border-r-0",
+                      !taught && "bg-white-02/40",
+                    )}
+                  >
+                    <Cell
+                      cell={cell}
+                      variant={variant}
+                      clashed={clashed}
+                      emptyLabel={taught ? emptyLabel : "Not taught"}
+                      onClick={
+                        onCellClick &&
+                        cell &&
+                        (cell.slot || (variant === "class" && taught))
+                          ? () => onCellClick(cell, dayIndex)
+                          : undefined
+                      }
+                    />
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>
       </table>
     </ScrollArea>
+    </>
   );
 }
 

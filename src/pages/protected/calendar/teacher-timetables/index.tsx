@@ -15,6 +15,7 @@ import {
 import type { GridCell } from "@/redux/services/calendar/calendar-types";
 import { TimetableGrid } from "../components/timetable-grid";
 import { warningsFromDays } from "../components/grid-shape";
+import { splitWarnings } from "../components/publish-check";
 import { PersonPicker } from "./person-picker";
 import { PageShell } from "@/components/layout/page-shell";
 
@@ -62,8 +63,9 @@ export default function TeacherTimetables() {
   );
   const week = weekData?.data;
 
+  // Clashes only: a teaching-duty warning is not a double-booking.
   const warnings = useMemo(
-    () => (week ? warningsFromDays(week.days) : []),
+    () => (week ? splitWarnings(warningsFromDays(week.days)).clashes : []),
     [week],
   );
 

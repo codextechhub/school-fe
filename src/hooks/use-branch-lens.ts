@@ -54,6 +54,7 @@ export function resolveBranchLens<B extends LensBranch>({
     pinnedBranch,
     branch,
     choices,
+    wholeSchool: reachIds === null,
     allLabel: reachIds === null ? "All branches" : "All my branches",
   };
 }
@@ -102,7 +103,8 @@ export function useBranchLens() {
     }),
     [branches, reach, user?.branch_id, lens, isLoading],
   );
-  const { applies, canChoose, pinnedBranch, branch, choices, allLabel } = resolved;
+  const { applies, canChoose, pinnedBranch, branch, choices, allLabel, wholeSchool } =
+    resolved;
 
   useEffect(() => {
     if (branch !== lens) dispatch(setBranchLens(branch));
@@ -122,6 +124,12 @@ export function useBranchLens() {
     canChoose,
     /** The one branch the reader may work in, when their reach is exactly one. */
     pinnedBranch,
+    /**
+     * True when the reader's reach is the whole school rather than named
+     * branches. A school-wide write acts on every branch; a branch-bound
+     * reader's acts only on theirs.
+     */
+    wholeSchool,
     branch,
     label,
     /** "All branches" for a whole-school reader, "All my branches" otherwise. */

@@ -1,5 +1,7 @@
 import type {
   ExamSlot,
+  Invigilator,
+  Person,
   Sitting,
 } from "@/redux/services/calendar/calendar-types";
 
@@ -50,4 +52,22 @@ export function paperValuesFrom(slot: ExamSlot): PaperValues {
     room: slot.room,
     invigilator: slot.invigilator?.id ?? null,
   };
+}
+
+/**
+ * The invigilator picker's options: each eligible person with their role, and
+ * the saved invigilator on top when they are no longer on the list.
+ */
+export function invigilatorOptions(
+  invigilators: Invigilator[],
+  current?: Person | null,
+): { value: string; label: string }[] {
+  const options = invigilators.map((person) => ({
+    value: String(person.id),
+    label: person.role_label ? `${person.name} · ${person.role_label}` : person.name,
+  }));
+  if (current && !invigilators.some((person) => person.id === current.id)) {
+    options.unshift({ value: String(current.id), label: current.name });
+  }
+  return options;
 }

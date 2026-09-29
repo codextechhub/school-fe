@@ -52,3 +52,31 @@ export function draftFrom(event: CalendarEvent): EventDraft {
     audience: toPicks(event.audience),
   };
 }
+
+/**
+ * Whether the "school closed" box reads ticked.
+ *
+ * A new event takes the school's default for its type (`closes_school_by_type`
+ * in the calendar rules), and follows it as the type changes, until the person
+ * ticks or clears the box in this drawer themselves. An event being edited
+ * always keeps its own answer: a school changing its defaults has not changed
+ * what last October's holiday was. A type the rules do not mention keeps
+ * whatever the box already says.
+ */
+export function closesSchoolShown({
+  editing,
+  chosen,
+  eventType,
+  byType,
+  value,
+}: {
+  editing: boolean;
+  /** True once the person has changed the box in this drawer. */
+  chosen: boolean;
+  eventType: EventType;
+  byType: Record<string, boolean>;
+  value: boolean;
+}): boolean {
+  if (editing || chosen) return value;
+  return byType[eventType] ?? value;
+}

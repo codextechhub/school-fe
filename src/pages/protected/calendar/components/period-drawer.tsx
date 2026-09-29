@@ -21,7 +21,13 @@ import type {
   PeriodType,
   PeriodWrite,
 } from "@/redux/services/calendar/calendar-types";
-import type { PeriodDraft } from "./period-draft";
+import { withStartTime, type PeriodDraft } from "./period-draft";
+import {
+  DEFAULT_TEACHING_DAYS,
+  WEEK_STARTS_ON,
+  weekdayChoices,
+  type JsWeekday,
+} from "@/lib/week";
 import { problemsOf, useFormProblems } from "./form-problems";
 import { ProblemSummary } from "./problem-summary";
 
@@ -37,6 +43,13 @@ import { ProblemSummary } from "./problem-summary";
  * at all. That is what a school with a short Friday means, and it is also the
  * single most surprising thing on this screen - so it is said in the form, at
  * the moment a day is chosen, rather than discovered afterwards.
+ *
+ * **The days offered are the school's teaching days**, so a Saturday school is
+ * offered Saturday. A period already sitting on a day the school no longer
+ * teaches keeps that day on offer, so editing it never moves it silently.
+ *
+ * **A new period's end follows its start** by the school's default length,
+ * until the person types an end of their own.
  */
 
 const PERIOD_TYPES: { value: PeriodType; label: string }[] = [
@@ -46,21 +59,6 @@ const PERIOD_TYPES: { value: PeriodType; label: string }[] = [
   { value: "ASSEMBLY", label: "Assembly" },
 ];
 
-/**
- * Monday to Friday, and Saturday and Sunday are deliberately absent.
- *
- * The column holds all seven and a Saturday school is a real thing, so the
- * server accepts them. Which days a FORM offers is the client's choice, and
- * this one offers the five a school building a bell schedule means.
- */
-const DAYS: { value: DayOfWeek; label: string }[] = [
-  { value: 1, label: "Monday" },
-  { value: 2, label: "Tuesday" },
-  { value: 3, label: "Wednesday" },
-  { value: 4, label: "Thursday" },
-  { value: 5, label: "Friday" },
-];
-
 export function PeriodDrawer({
   open,
   initial,
@@ -68,6 +66,9 @@ export function PeriodDrawer({
   saving,
   /** True when the chosen day already has a schedule of its own. */
   dayHasOwnSchedule,
+  teachingDays = DEFAULT_TEACHING_DAYS,
+  weekStartsOn = WEEK_STARTS_ON,
+  defaultPeriodMinutes = null,
   onClose,
   onSave,
 }: {
@@ -76,6 +77,11 @@ export function PeriodDrawer({
   editing: boolean;
   saving: boolean;
   dayHasOwnSchedule: (day: DayOfWeek) => boolean;
+  /** ISO weekdays the school teaches: the days "Applies on" offers. */
+  teachingDays?: DayOfWeek[];
+  weekStartsOn?: JsWeekday;
+  /** Minutes a new period's end follows its start by. Null turns it off. */
+  defaultPeriodMinutes?: number | null;
   onClose: () => void;
   onSave: (body: PeriodWrite) => Promise<unknown>;
 }) {
@@ -87,6 +93,12 @@ export function PeriodDrawer({
   } = useBranchLens();
 
   const [draft, setDraft] = useState<PeriodDraft>(initial);
+  // Set once the person types an end, so the start stops moving it.
+  const [endChosen, setEndChosen] = useState(false);
+  const days = weekdayChoices(teachingDays, weekStartsOn, [
+    initial.day_of_week,
+    draft.day_of_week,
+  ]);
   const [refusal, setRefusal] = useState<{ field: string; message: string } | null>(
     null,
   );
@@ -144,6 +156,7 @@ export function PeriodDrawer({
     setLastOpenedFor(openedFor);
     if (open) {
       setDraft(initial);
+      setEndChosen(!!initial.end_time);
       setRefusal(null);
       reset();
     }
@@ -176,12 +189,14 @@ export function PeriodDrawer({
       onClose();
     } catch (error) {
       const parsed = parseApiError(error);
-      // PERIOD_OVERLAP names the period it collided with and the time it runs.
-      // PERIOD_TIME_INVALID is about the two boxes. Both belong under the times.
+      // PERIOD_OVERLAP and PERIOD_TIME_INVALID belong under the times, and
+      // DAY_NOT_TAUGHT (keyed `day_of_week`) under "Applies on".
       const field =
         parsed.code === "PERIOD_OVERLAP" || parsed.code === "PERIOD_TIME_INVALID"
           ? "times"
-          : String(parsed.detail.field ?? "");
+          : parsed.code === "DAY_NOT_TAUGHT"
+            ? "day_of_week"
+            : String(parsed.detail.field ?? "");
       setRefusal({
         field,
         message: parsed.message || "That period could not be saved.",
@@ -226,7 +241,16 @@ export function PeriodDrawer({
                 ref={register("start_time")}
                 type="time"
                 value={draft.start_time}
-                onChange={(e) => patch({ start_time: e.target.value })}
+                onChange={(e) => {
+                  setDraft((d) =>
+                    withStartTime(d, e.target.value, {
+                      minutes: defaultPeriodMinutes,
+                      endChosen,
+                      editing,
+                    }),
+                  );
+                  setRefusal(null);
+                }}
                 onBlur={leave("start_time")}
                 aria-invalid={invalid("start_time")}
               />
@@ -236,7 +260,10 @@ export function PeriodDrawer({
                 ref={register("end_time")}
                 type="time"
                 value={draft.end_time}
-                onChange={(e) => patch({ end_time: e.target.value })}
+                onChange={(e) => {
+                  setEndChosen(!!e.target.value);
+                  patch({ end_time: e.target.value });
+                }}
                 onBlur={leave("end_time")}
                 aria-invalid={invalid("end_time")}
               />
@@ -290,7 +317,7 @@ export function PeriodDrawer({
                 label="Every day"
                 onClick={() => patch({ day_of_week: null })}
               />
-              {DAYS.map((day) => (
+              {days.map((day) => (
                 <DayChip
                   key={day.value}
                   on={draft.day_of_week === day.value}
@@ -299,11 +326,16 @@ export function PeriodDrawer({
                 />
               ))}
             </div>
+            {refusal?.field === "day_of_week" && (
+              <p role="alert" className="mt-1.5 text-xs text-error-text text-pretty">
+                {refusal.message}
+              </p>
+            )}
             {replacesWholeDay && (
               // The most surprising rule on the screen, said at the moment it
               // becomes true rather than discovered on the grid afterwards.
               <p className="mt-2 rounded-lg border border-yellow-01/40 bg-yellow-01/5 px-3 py-2 text-xs text-gray-06 text-pretty">
-                {DAYS.find((d) => d.value === draft.day_of_week)?.label} does not
+                {days.find((d) => d.value === draft.day_of_week)?.label} does not
                 have its own schedule yet. Adding this gives it one, and it will
                 then run ONLY the periods you put on it - the everyday schedule
                 will not apply to it at all.
