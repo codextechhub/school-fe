@@ -11,6 +11,7 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import { canRollBackImport } from "./import-access";
 import { toast } from "sonner";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import {
   useGetImportTemplatesQuery,
   useGetImportTemplateQuery,
@@ -1008,6 +1009,7 @@ export function ConfirmStep({
   const statementContext = batch.domain_context?.type === "bank_statement"
     ? batch.domain_context
     : null;
+  const { formatDay } = useSchoolDisplay();
 
   return (
     <div className="bg-white rounded-md border border-white-02 p-6 space-y-5">
@@ -1025,7 +1027,7 @@ export function ConfirmStep({
             ["Bank account", statementContext.bank_account_name],
             [
               "Statement date",
-              new Date(`${statementContext.statement_date}T00:00:00`).toLocaleDateString(),
+              formatDay(statementContext.statement_date),
             ],
             ["Opening balance", statementContext.opening_balance_major],
             ["Closing balance", statementContext.closing_balance_major],
@@ -1267,6 +1269,7 @@ export function CompleteStep({
   const canRollback = canRollBackImport(batch.dataset_type, hasPermission);
   // The batch page refuses a reader without this key, so it is not offered.
   const canViewDetails = hasPermission(P.VIEW_IMPORT_BATCHES);
+  const { formatInstantTime } = useSchoolDisplay();
 
   const { data: jobData } = useGetImportJobQuery(
     { batchId, jobId: latestJobId! },
@@ -1397,11 +1400,11 @@ export function CompleteStep({
           </div>
           <div className="px-4 py-3 border-r border-gray-200">
             <p className="text-[10px] uppercase tracking-wide text-gray-500 font-semibold mb-1">Started</p>
-            <p className="text-xs text-black-01">{job.started_at ? new Date(job.started_at).toLocaleTimeString() : "-"}</p>
+            <p className="text-xs text-black-01">{job.started_at ? formatInstantTime(job.started_at) : "-"}</p>
           </div>
           <div className="px-4 py-3">
             <p className="text-[10px] uppercase tracking-wide text-gray-500 font-semibold mb-1">Completed</p>
-            <p className="text-xs text-black-01">{job.completed_at ? new Date(job.completed_at).toLocaleTimeString() : "-"}</p>
+            <p className="text-xs text-black-01">{job.completed_at ? formatInstantTime(job.completed_at) : "-"}</p>
           </div>
         </div>
       )}

@@ -50,6 +50,7 @@ import { FIELD_RESOURCE, STUDENT_MEDICAL_FIELDS } from "@/lib/field-resources";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import { useStudentsLens } from "@/hooks/use-students-lens";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { Panel as Surface } from "@/components/custom/surface";
 import { AsAtBanner, AsAtControl, LiveOnly } from "@/components/custom/as-at-control";
 import { AsAtContext, useAsAt, useAsAtParam } from "@/lib/as-at";
@@ -350,7 +351,7 @@ export default function StudentProfile() {
           loading={documentsLoading}
         />
       )}
-      {tab === "history" && <HistoryTab studentId={studentId} />}
+      {tab === "history" && <HistoryTab studentId={studentId} branch={student?.branch} />}
 
       <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />
     </PageShell>
@@ -378,6 +379,8 @@ function Overview({
   onOpenTab: (tab: TabKey) => void;
 }) {
   const navigate = useNavigate();
+  // Timestamps read in the student's branch zone.
+  const { prefs } = useSchoolDisplay(student?.branch);
   const asAt = useAsAt();
   const { currentData: subjectsData, isFetching: subjectsLoading } =
     useGetStudentSubjectsQuery({ id: student?.id ?? 0, asAt }, { skip: !student });
@@ -529,12 +532,12 @@ function Overview({
           <ol className="grid gap-3">
             <ActivityRow
               title="Profile updated"
-              detail={formatDateTime(student.updated_at)}
+              detail={formatDateTime(student.updated_at, prefs)}
               tone="bg-emerald-600"
             />
             <ActivityRow
               title="Student record created"
-              detail={formatDateTime(student.created_at)}
+              detail={formatDateTime(student.created_at, prefs)}
               tone="bg-violet-500"
             />
           </ol>
@@ -1325,8 +1328,10 @@ const DOT: Record<string, string> = {
   edit: "bg-gray-400",
 };
 
-function HistoryTab({ studentId }: { studentId: number }) {
+/** The record's history, timed in the student's branch zone (`branch`). */
+function HistoryTab({ studentId, branch }: { studentId: number; branch?: number }) {
   const asAt = useAsAt();
+  const { prefs } = useSchoolDisplay(branch);
   const { currentData: data, isFetching: isLoading } = useGetStudentHistoryQuery({ id: studentId, asAt });
   const entries = data?.data ?? [];
 
@@ -1347,7 +1352,7 @@ function HistoryTab({ studentId }: { studentId: number }) {
             <div className="min-w-0">
               <p className="text-sm text-black-01">{e.text}</p>
               <p className="text-xs text-gray-05">
-                {formatDateTime(e.when)} · {e.actor}
+                {formatDateTime(e.when, prefs)} · {e.actor}
               </p>
             </div>
           </li>

@@ -8,6 +8,8 @@ import {
   useStartInvoiceCheckoutMutation,
 } from "@/redux/services/pay/pay-api";
 import { useBrandFavicon } from "@/hooks/use-brand-favicon";
+import { formatDate } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 
 /**
  * Paying an invoice from the link in its email.
@@ -160,7 +162,7 @@ export default function PayInvoice() {
       <div className="mt-4 divide-y">
         <Row label="Billed to" value={invoice.customer_name} />
         <Row label="Invoice total" value={invoice.total} />
-        <Row label="Due" value={invoice.due_date} />
+        <Row label="Due" value={formatDate(invoice.due_date, activeDisplayPrefs())} />
       </div>
 
       {invoice.payable ? (

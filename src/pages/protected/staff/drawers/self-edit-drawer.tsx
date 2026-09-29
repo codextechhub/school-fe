@@ -2,7 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { toIsoDate } from "@/components/ui/date-picker-input.utils";
+import { todayIso } from "@/lib/as-at";
 import { NativeSelect } from "@/components/ui/native-select";
 import { apiErrorMessage, fieldErrors } from "@/utils/api-error";
 import { fieldWriteErrors } from "@/components/finance-ui";
@@ -164,7 +164,7 @@ export function SelfEditDrawer({
           <Field key={key} label={LABEL[key]} error={errors[key]}>
             {key === "date_of_birth" ? (
               <DatePickerInput
-                max={toIsoDate(new Date())}
+                max={todayIso()}
                 value={value(key)}
                 onChange={(e) => set(key)(e.target.value)}
                 className={inputClass}

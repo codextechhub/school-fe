@@ -3,16 +3,8 @@ import { CalendarClock, History } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
-import { todayIso, useAsAt } from "@/lib/as-at";
-
-function longDate(iso: string): string {
-  const [year, month, day] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(year, month - 1, day));
-}
+import { useSchoolDisplay } from "@/hooks/use-school-display";
+import { useAsAt } from "@/lib/as-at";
 
 /**
  * The "As at" date control on a profile.
@@ -35,7 +27,8 @@ export function AsAtControl({
   value: string | undefined;
   onChange: (day?: string) => void;
 }) {
-  const today = todayIso();
+  const { formatDay, today: todayIn } = useSchoolDisplay();
+  const today = todayIn();
   return (
     <div
       className="grid w-fit max-w-full gap-1 justify-self-start rounded-xl border border-border bg-white-05 px-3 py-2.5"
@@ -56,7 +49,7 @@ export function AsAtControl({
       </label>
       <span className="text-[11px] text-gray-05">
         {historyStarts
-          ? `History from ${longDate(historyStarts)}`
+          ? `History from ${formatDay(historyStarts, { month: "long" })}`
           : "No history recorded yet"}
       </span>
     </div>
@@ -76,6 +69,7 @@ export function AsAtBanner({
   asAt: string;
   onReturn: () => void;
 }) {
+  const { formatDay } = useSchoolDisplay();
   return (
     <div
       role="status"
@@ -83,7 +77,7 @@ export function AsAtBanner({
     >
       <CalendarClock className="size-4 shrink-0" aria-hidden="true" />
       <p className="min-w-0 flex-1">
-        <span className="font-semibold">Showing this record as at {longDate(asAt)}.</span>{" "}
+        <span className="font-semibold">Showing this record as at {formatDay(asAt, { month: "long" })}.</span>{" "}
         Everything below is as it stood at the end of that day, and nothing can be changed
         while you are looking at the past.
       </p>

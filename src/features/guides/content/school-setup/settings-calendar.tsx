@@ -46,6 +46,7 @@ export default function SettingsCalendarArticle() {
 
       <GuideSection id="week-starts-on" title="Week starts on">
         <p>Under <strong>Week starts on</strong>, choose <strong>Monday</strong> or <strong>Sunday</strong>. Until you choose, it is Monday. It is the first column of every calendar and date picker: the month calendar on the calendar overview, the month grid in {w.Term} view, and every date box that opens a calendar. Timetable columns follow the same order.</p>
+        <p>The week start is separate from how dates and times are written. The date style, the 12- or 24-hour clock and the time zone that decides which day is today are set under <strong>Display</strong> in <strong>Your school</strong>.</p>
       </GuideSection>
 
       <GuideSection id="events-that-close-the-school" title="Events that close the school">

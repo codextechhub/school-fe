@@ -50,6 +50,8 @@ import { formatDate } from "../format";
 import { Pager } from "../pager";
 import { PersonAvatar } from "../person-avatar";
 import { StudentStatusBadge } from "../status-badge";
+import { todayIso } from "@/lib/as-at";
+import { daysBetween, shiftDay } from "@/lib/dates";
 
 type StageKey = "waiting" | "placement" | "closed";
 
@@ -559,17 +561,15 @@ function sortLongestWaiting(rows: StudentRow[]) {
  * An applicant's clock starts at `applied_on`; anyone already on the roll
  * started at `enrolment_date`. Saying "waiting 12 days" rather than printing
  * the date is the point of the line: the number is what somebody acts on, and
- * a date makes the reader do the subtraction before they can.
+ * a date makes the reader do the subtraction before they can. Days are counted
+ * on the school's calendar.
  */
 function waitingLine(s: StudentRow): string {
   const since = s.applied_on ?? s.enrolment_date;
   if (!since) return "No date recorded";
-  const then = new Date(`${since}T00:00:00`);
-  if (Number.isNaN(then.getTime())) return formatDate(since);
-  const days = Math.max(
-    0,
-    Math.floor((Date.now() - then.getTime()) / 86_400_000),
-  );
+  const elapsed = daysBetween(since, todayIso());
+  if (elapsed === null) return formatDate(since);
+  const days = Math.max(0, elapsed);
   const verb = s.applied_on ? "Applied" : "Enrolled";
   if (days === 0) return `${verb} today`;
   return `${verb} ${days} ${days === 1 ? "day" : "days"} ago · ${formatDate(since)}`;
@@ -815,13 +815,7 @@ function StageControls({
       .catch((error) => toast.error(writeErrorMessage(error, "That move could not be made.")));
 
   const extend = () => {
-    const next = new Date();
-    next.setDate(next.getDate() + 7);
-    const iso = [
-      next.getFullYear(),
-      String(next.getMonth() + 1).padStart(2, "0"),
-      String(next.getDate()).padStart(2, "0"),
-    ].join("-");
+    const iso = shiftDay(todayIso(), 7);
     return send(
       student.admission_stage ?? null,
       iso,

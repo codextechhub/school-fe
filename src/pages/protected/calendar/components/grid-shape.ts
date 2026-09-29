@@ -1,3 +1,5 @@
+import { formatTime, type DisplayPrefs } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 import type {
   ClashWarning,
   GridCell,
@@ -34,9 +36,13 @@ export interface GridRow {
  *
  * The API answers per day because that is how the rules are computed; a grid is
  * drawn per period. A day that does not run a given period contributes null,
- * which renders as "does not run" rather than as an empty slot.
+ * which renders as "does not run" rather than as an empty slot. Row times are
+ * written on the school's clock (`prefs`).
  */
-export function toRows(days: GridDay[]): GridRow[] {
+export function toRows(
+  days: GridDay[],
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): GridRow[] {
   const seen = new Map<number, GridRow>();
   const order: number[] = [];
   for (const day of days) {
@@ -49,7 +55,7 @@ export function toRows(days: GridDay[]): GridRow[] {
           // shows its label alone rather than a bare " - ".
           time:
             cell.start_time && cell.end_time
-              ? `${cell.start_time.slice(0, 5)} - ${cell.end_time.slice(0, 5)}`
+              ? `${formatTime(cell.start_time, prefs)} - ${formatTime(cell.end_time, prefs)}`
               : "",
           kind: cell.kind,
           runsOn: [],

@@ -6,7 +6,7 @@ import type {
   StudentRow,
 } from "@/redux/services/students/students-types";
 
-const TODAY = new Date("2026-09-01T00:00:00");
+const NOW = new Date("2026-09-01T12:00:00Z");
 
 function student(over: Partial<StudentRow> & { id: number }): StudentRow {
   return {
@@ -49,7 +49,8 @@ describe("buildWorkQueue", () => {
       ],
       applicants: [],
       seats: [],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows).toHaveLength(1);
     expect(rows[0].title).toBe("Emeka Obi is on the roll with no class");
@@ -64,7 +65,8 @@ describe("buildWorkQueue", () => {
       ],
       applicants: [],
       seats: [seat({ id: 1, name: "JSS1 A", used: 30, remaining: 0 })],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows[0].detail).toContain("JSS1 A is full");
   });
@@ -74,7 +76,8 @@ describe("buildWorkQueue", () => {
       unplaced: [student({ id: 7, level_name: "JSS1", enrolment_date: "2026-08-31" })],
       applicants: [],
       seats: [seat({ id: 1, name: "JSS1 A", used: 10, remaining: 20 })],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows[0].detail).not.toContain("full");
   });
@@ -87,7 +90,8 @@ describe("buildWorkQueue", () => {
       ],
       applicants: [],
       seats: [],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows[0].title).toContain("Old One");
   });
@@ -101,7 +105,8 @@ describe("buildWorkQueue", () => {
         student({ id: 4, full_name: "Later Person", applied_on: "2026-08-30" }),
       ],
       seats: [],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows[0].title).toBe("2 applications awaiting enrolment");
     expect(rows[0].detail).toBe("Longest waiting 12 days · Chiamaka Nwosu");
@@ -115,7 +120,8 @@ describe("buildWorkQueue", () => {
         seat({ id: 1, name: "JSS1 A", capacity: 35, used: 36, remaining: -1 }),
         seat({ id: 2, name: "JSS1 B", capacity: 35, used: 34, remaining: 1 }),
       ],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows[0].title).toBe("JSS1 A is over by 1");
     expect(rows[0].detail).toBe("36 of 35 · JSS1 B has 1 place");
@@ -128,7 +134,8 @@ describe("buildWorkQueue", () => {
       unplaced: [student({ id: 7, full_name: "Emeka Obi", enrolment_date: "2026-08-01" })],
       applicants: [],
       seats: [],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows[0].title).toContain("Emeka Obi");
     expect(rows[1].title).toContain("20 applications");
@@ -141,7 +148,8 @@ describe("buildWorkQueue", () => {
       ),
       applicants: [],
       seats: [],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
       limit: 4,
     });
     expect(rows).toHaveLength(4);
@@ -154,7 +162,8 @@ describe("buildWorkQueue", () => {
       unplaced: [],
       applicants: [],
       seats: [seat({ id: 1, name: "JSS1 A" })],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows).toEqual([]);
     expect(overflow).toBe(0);
@@ -165,7 +174,8 @@ describe("buildWorkQueue", () => {
       unplaced: [student({ id: 7, level_name: "JSS1", enrolment_date: "2026-08-31" })],
       applicants: [],
       seats: [seat({ id: 1, name: "JSS1 A", capacity: null, used: 99, remaining: null })],
-      today: TODAY,
+      now: NOW,
+      timeZone: "Africa/Lagos",
     });
     expect(rows[0].detail).not.toContain("full");
   });

@@ -1,3 +1,5 @@
+import { daysBetween, todayIn } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 import type {
   ClassSeats,
   StudentRow,
@@ -40,13 +42,13 @@ export interface QueueRow {
   studentId?: number;
 }
 
-/** Whole days between an ISO date and today. Negative dates read as 0. */
-function daysSince(iso: string | null, today: Date): number | null {
-  if (!iso) return null;
-  const then = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(then.getTime())) return null;
-  const days = Math.floor((today.getTime() - then.getTime()) / 86_400_000);
-  return days < 0 ? 0 : days;
+/**
+ * Whole calendar days from an ISO date to `today` (also `YYYY-MM-DD`).
+ * Future dates read as 0. Both are calendar dates, so no zone can shift them.
+ */
+function daysSince(iso: string | null, today: string): number | null {
+  const days = iso ? daysBetween(iso, today) : null;
+  return days === null ? null : Math.max(0, days);
 }
 
 function plural(n: number, one: string, many: string) {
@@ -66,17 +68,21 @@ export function buildWorkQueue({
   unplaced,
   applicants,
   seats,
-  today = new Date(),
+  now = new Date(),
+  timeZone = activeDisplayPrefs().timeZone,
   limit = 4,
 }: {
   summary?: StudentSummary;
   unplaced: StudentRow[];
   applicants: StudentRow[];
   seats: ClassSeats[];
-  today?: Date;
+  /** The present moment; "today" is its date in `timeZone`, the school's. */
+  now?: Date;
+  timeZone?: string;
   limit?: number;
 }): { rows: QueueRow[]; overflow: number } {
   const rows: QueueRow[] = [];
+  const today = todayIn(timeZone, now);
 
   // ── Children on the roll with nowhere to sit ────────────────────────────
   // Longest-waiting first: the one who has been in limbo since term started is

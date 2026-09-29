@@ -17,17 +17,24 @@ const row = (id: number, invitedAt: string | null) =>
   ({ id, invited_at: invitedAt }) as StaffListRow;
 
 describe("invitation age", () => {
-  const today = new Date(2026, 8, 15, 1, 0, 0);
+  // 01:00 on 15 September in Lagos; 03:00 in Nairobi.
+  const today = new Date("2026-09-15T00:00:00Z");
 
   it("counts calendar days rather than partial 24-hour periods", () => {
-    expect(invitationAgeDays("2026-09-06T23:30:00Z", today)).toBe(9);
-    expect(invitationAgeDays("2026-09-15T00:30:00Z", today)).toBe(0);
+    // 11:30 pm on 6 September, Lagos time.
+    expect(invitationAgeDays("2026-09-06T22:30:00Z", today, "Africa/Lagos")).toBe(9);
+    expect(invitationAgeDays("2026-09-15T00:30:00Z", today, "Africa/Lagos")).toBe(0);
+  });
+
+  it("counts the days on the school's calendar", () => {
+    // The same instant is already 7 September in Nairobi.
+    expect(invitationAgeDays("2026-09-06T22:30:00Z", today, "Africa/Nairobi")).toBe(8);
   });
 
   it("does not turn invalid or future dates into a misleading age", () => {
-    expect(invitationAgeDays("2026-02-30", today)).toBeNull();
-    expect(invitationAgeDays("not-a-date", today)).toBeNull();
-    expect(invitationAgeDays("2026-09-20", today)).toBe(0);
+    expect(invitationAgeDays("2026-02-30", today, "Africa/Lagos")).toBeNull();
+    expect(invitationAgeDays("not-a-date", today, "Africa/Lagos")).toBeNull();
+    expect(invitationAgeDays("2026-09-20", today, "Africa/Lagos")).toBe(0);
   });
 
   it("writes singular, plural, same-day, and missing ages naturally", () => {
@@ -39,7 +46,7 @@ describe("invitation age", () => {
 });
 
 describe("invitation page metrics", () => {
-  const today = new Date(2026, 8, 15, 12, 0, 0);
+  const today = new Date("2026-09-15T11:00:00Z");
 
   it("counts invitations at the seven-day follow-up threshold", () => {
     expect(
@@ -51,12 +58,13 @@ describe("invitation page metrics", () => {
           row(4, null),
         ],
         today,
+        "Africa/Lagos",
       ),
     ).toEqual({ followUp: 2, oldestDays: 14 });
   });
 
   it("has no oldest age when no row has a usable sent date", () => {
-    expect(invitationPageMetrics([row(1, null)], today)).toEqual({
+    expect(invitationPageMetrics([row(1, null)], today, "Africa/Lagos")).toEqual({
       followUp: 0,
       oldestDays: null,
     });

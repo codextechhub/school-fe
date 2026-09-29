@@ -20,6 +20,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useAsAt } from "@/lib/as-at";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { fieldErrors, writeErrorMessage } from "@/utils/api-error";
 import {
   useDeleteStaffDocumentMutation,
@@ -945,7 +946,15 @@ function BalanceCard({ row }: { row: StaffLeaveBalance }) {
  * kind is a coloured rail down the left rather than a word somebody has to
  * notice.
  */
-export function HistoryTab({ entries }: { entries: StaffHistoryEntry[] }) {
+export function HistoryTab({
+  entries,
+  branch,
+}: {
+  entries: StaffHistoryEntry[];
+  /** The person's home branch, whose zone the times are read in. */
+  branch?: number | null;
+}) {
+  const { prefs } = useSchoolDisplay(branch);
   if (!entries.length) return <Empty>Nothing recorded yet.</Empty>;
 
   return (
@@ -984,7 +993,7 @@ export function HistoryTab({ entries }: { entries: StaffHistoryEntry[] }) {
             <p className="mt-0.5 text-xs text-gray-01">{entry.note}</p>
           )}
           <p className="mt-0.5 text-xs text-gray-05">
-            {formatDateTime(entry.at)}
+            {formatDateTime(entry.at, prefs)}
             {entry.kind === "employment"
               ? entry.changed_by
                 ? ` · ${entry.changed_by.name}`

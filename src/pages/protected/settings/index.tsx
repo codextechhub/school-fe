@@ -4,6 +4,7 @@ import {
   BadgeCheck,
   Briefcase,
   CalendarClock,
+  Clock,
   CalendarRange,
   ClipboardList,
   GraduationCap,
@@ -48,6 +49,7 @@ import { NotificationsSection } from "./sections/notifications-section";
 import { PayrollSection } from "./sections/payroll-section";
 import { ProfileSection } from "./sections/profile-section";
 import { SecuritySection } from "./sections/security-section";
+import { DisplaySection } from "./sections/display-section";
 import { StaffProfilesSection } from "./sections/staff-profiles-section";
 import { StaffSection } from "./sections/staff-section";
 import { StaffNumbersSection } from "./sections/staff-numbers-section";
@@ -74,6 +76,7 @@ const SECTION_META: Record<
   overview: { title: "Overview", description: "Everything in one place", icon: LayoutGrid },
   profile: { title: "School profile", description: "Crest, address and details", icon: School, group: "school" },
   security: { title: "Sign-in and security", description: "Lockouts and link lifetimes", icon: ShieldCheck, group: "school" },
+  display: { title: "Display", description: "Dates, times and time zones", icon: Clock, group: "school" },
   notifications: { title: "Notifications", description: "Which events send email", icon: BellRing, group: "school" },
   enrolment: { title: "Enrolment", description: "Ages, documents, classes", icon: UserPlus, group: "students" },
   admissions: { title: "Admissions", description: "Steps and offers", icon: ClipboardList, group: "students" },
@@ -92,6 +95,7 @@ const SECTION_META: Record<
 const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX.Element> = {
   profile: ProfileSection,
   security: SecuritySection,
+  display: DisplaySection,
   notifications: NotificationsSection,
   enrolment: EnrolmentSection,
   guardians: GuardiansSection,
@@ -199,6 +203,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   overview: "",
   profile: "Your crest, address, website and motto, and the details XVS set up for you.",
   security: "How many wrong passwords lock an account, and how long reset links and invitations last.",
+  display: "How dates and times read across XVS, and the time zone your school and each branch keep.",
   notifications: "Which events also send an email to the people they concern.",
   enrolment: "How old a new pupil may be, which documents and details are required, and how full a class may get.",
   guardians: "How many guardians a child needs, whether their email is required, how siblings are recognised, and your own relationship words.",

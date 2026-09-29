@@ -58,6 +58,8 @@ import type {
 import { useAppSelector } from "@/redux/store";
 import { useAsAt } from "@/lib/as-at";
 import { formatRelativeDate } from "@/utils/helpers";
+import { formatDate, zonedInstant, type DisplayPrefs } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 
 interface Props {
   userId: number;
@@ -65,12 +67,9 @@ interface Props {
   className?: string;
 }
 
-const formatExpiry = (value: string): string =>
-  new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(value));
+/** The day an exception lapses, in the school's style and zone. */
+const formatExpiry = (value: string, prefs: DisplayPrefs = activeDisplayPrefs(null)): string =>
+  formatDate(value, prefs);
 
 /**
  * The catalogue narrowed to what a field picker can use.
@@ -395,8 +394,9 @@ function AddFieldExceptionDrawer({
         access,
         mode,
         reason: reason.trim(),
+        // The end of the chosen day in the school's zone, not the device's.
         expires_at: expiresAt
-          ? new Date(`${expiresAt}T23:59:59`).toISOString()
+          ? zonedInstant(expiresAt, "23:59:59", activeDisplayPrefs(null).timeZone)
           : null,
       }).unwrap();
       toast.success("Field exception applied.");

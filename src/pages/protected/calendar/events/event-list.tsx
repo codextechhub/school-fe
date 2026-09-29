@@ -13,6 +13,7 @@ import { Pager } from "@/pages/protected/students/pager";
 
 import { audienceLine } from "../components/audience";
 import { formatRange } from "../components/dates";
+import { monthName } from "@/lib/dates";
 import { eventVariant } from "../components/event-kind";
 import { RowActions } from "../components/row-actions";
 import { canManageRow } from "@/lib/can-manage";
@@ -146,12 +147,11 @@ export function EventList({
   );
 }
 
+/** A tear-off calendar tile: the month over the day, read straight from the ISO date. */
 function DateTile({ date }: { date: string }) {
-  const parsed = new Date(`${date}T00:00:00`);
-  const month = new Intl.DateTimeFormat("en-GB", { month: "short" })
-    .format(parsed)
-    .toUpperCase();
-  const day = new Intl.DateTimeFormat("en-GB", { day: "numeric" }).format(parsed);
+  const [, monthNumber, dayNumber] = date.split("-").map(Number);
+  const month = monthName(monthNumber).toUpperCase();
+  const day = String(dayNumber || "");
 
   return (
     <span className="grid w-12 shrink-0 place-content-center rounded-lg bg-pry-01 px-1 py-2 text-center sm:w-14">

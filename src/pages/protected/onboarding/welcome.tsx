@@ -7,6 +7,8 @@ import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { routesPath } from "@/routes/routesPath";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
+import { zoneLongName } from "@/lib/dates";
 import { SUPPORT_MAIL } from "@/utils/static";
 import { useOnboardingState } from "./use-onboarding-state";
 import { initialsOf } from "./onboarding-format";
@@ -31,6 +33,7 @@ export default function OnboardingWelcome() {
   const { state, isLoading } = useOnboardingState();
   const user = useAppSelector(selectUser);
   const school = useAppSelector(selectSchool);
+  const display = useSchoolDisplay(null);
   const logoUrl = useSchoolLogo();
 
   const schoolName = school?.name ?? user?.school_name ?? "your school";
@@ -84,7 +87,7 @@ export default function OnboardingWelcome() {
                 {schoolName}
               </p>
               <p className="mt-0.5 text-xs text-gray-06 truncate">
-                {school?.slug ? `${school.slug} · ` : ""}West Africa Time
+                {school?.slug ? `${school.slug} · ` : ""}{zoneLongName(display.prefs.timeZone)}
               </p>
             </div>
             {isLoading ? (

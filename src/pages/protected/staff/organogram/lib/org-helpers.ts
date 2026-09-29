@@ -6,6 +6,8 @@
  * expand/collapse bookkeeping.
  */
 
+import { calendarDayOf, formatDate, type DisplayPrefs } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 import type {
   CurrentOrganogramAssignment,
   OrganogramNode,
@@ -56,11 +58,13 @@ export const KIND_LABEL: Record<OrgNodeKind, string> = {
 
 // ── Formatters ────────────────────────────────────────────────────────────────
 
-export function fmtDate(value: string | null | undefined): string {
-  if (!value) return "-";
-  const date = new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00` : value);
-  if (Number.isNaN(date.getTime())) return "-";
-  return date.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+/** A date or timestamp in the school's style; "-" for nothing or junk. */
+export function fmtDate(
+  value: string | null | undefined,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string {
+  if (!value || !calendarDayOf(value, prefs.timeZone)) return "-";
+  return formatDate(value, prefs);
 }
 
 /** Acting holders, as `${userId}@${positionId}`. */

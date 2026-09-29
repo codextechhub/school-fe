@@ -569,7 +569,7 @@ function TabBody({
   }
   if (tab === "history") {
     if (!history.currentData) return <TabSkeleton />;
-    return <HistoryTab entries={history.currentData.data.entries} />;
+    return <HistoryTab entries={history.currentData.data.entries} branch={person.branch_id} />;
   }
   return <Empty>Choose a staff tab to view its details.</Empty>;
 }

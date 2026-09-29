@@ -6,38 +6,38 @@
  * verbatim reads as a database row rather than a child's record.
  */
 
-const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+import {
+  formatDate as formatSchoolDate,
+  formatDateTime as formatSchoolDateTime,
+  type DisplayPrefs,
+} from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 
 /**
- * "2012-11-07" becomes "7 Nov 2012".
+ * A date in the school's style: "7 Nov 2012", "07/11/2012" or "2012-11-07".
  *
- * Parsed by hand rather than through `new Date(iso)`. That constructor reads a
- * bare date as UTC midnight and then prints it in the reader's zone, so a
- * birthday west of Greenwich comes out a day early - which is a wrong date on a
- * legal record, not a formatting quibble.
+ * A calendar date ("2012-11-07") is split by hand and never shifted, because
+ * `new Date()` reads it as UTC midnight and a birthday west of Greenwich would
+ * come out a day early - a wrong date on a legal record, not a formatting
+ * quibble. A timestamp is dated in the school's zone. `prefs` defaults to the
+ * session's settings; a component that knows the record's branch passes that
+ * branch's from `useSchoolDisplay`.
  */
-export function formatDate(iso: string | null | undefined): string {
+export function formatDate(
+  iso: string | null | undefined,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string {
   if (!iso) return "-";
-  const parts = String(iso).slice(0, 10).split("-");
-  if (parts.length !== 3) return String(iso);
-  const [year, month, day] = parts.map(Number);
-  if (!year || !month || !day || month < 1 || month > 12) return String(iso);
-  return `${day} ${MONTHS[month - 1]} ${year}`;
+  return formatSchoolDate(iso, prefs);
 }
 
-/** A timestamp for the History tab: "7 Nov 2012, 14:32". */
-export function formatDateTime(iso: string | null | undefined): string {
+/** A timestamp for the History tab: "7 Nov 2012, 2:32 pm" or "07/11/2012, 14:32". */
+export function formatDateTime(
+  iso: string | null | undefined,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string {
   if (!iso) return "-";
-  const at = new Date(iso);
-  if (Number.isNaN(at.getTime())) return String(iso);
-  const time = at.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  return `${formatDate(iso)}, ${time}`;
+  return formatSchoolDateTime(iso, prefs);
 }
 
 /**

@@ -1,3 +1,5 @@
+import type { SchoolDisplay } from "@/lib/dates";
+
 /**
  * The `field_access` map as the login response and `/user/auth/me/` send it.
  *
@@ -110,6 +112,14 @@ export interface TenantInfo {
    * than locking a real school out of its own app.
    */
   status?: string
+  /**
+   * How this school shows dates and times: its time zone, date style, clock,
+   * and the branches that keep a zone of their own. Read through
+   * `useSchoolDisplay` or `@/lib/school-display`, never directly. Optional
+   * because a session issued before the settings existed carries none, and
+   * the defaults (Africa/Lagos, "29 Sep 2026", 12-hour) then apply.
+   */
+  display?: SchoolDisplay | null
 }
 
 export interface User {

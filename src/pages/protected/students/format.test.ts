@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatDate, titleCaseCode } from "./format";
+import { formatDate, formatDateTime, titleCaseCode } from "./format";
 
 describe("formatDate", () => {
   it("writes a date the way a person reads one", () => {
@@ -28,6 +28,21 @@ describe("formatDate", () => {
   it("hands back anything it cannot parse instead of showing NaN", () => {
     expect(formatDate("not a date")).toBe("not a date");
     expect(formatDate("2012-13-07")).toBe("2012-13-07");
+  });
+});
+
+describe("the school's display settings", () => {
+  const prefs = { timeZone: "Africa/Nairobi", dateFormat: "DD_MM_YYYY", clock: "H24" } as const;
+
+  it("writes a date in the school's style without moving it", () => {
+    expect(formatDate("2012-11-07", prefs)).toBe("07/11/2012");
+  });
+
+  it("dates and times a timestamp in the school's zone", () => {
+    expect(formatDate("2026-08-30T22:30:00Z", prefs)).toBe("31/08/2026");
+    expect(formatDateTime("2026-08-30T22:30:00Z", prefs)).toBe("31/08/2026, 01:30");
+    expect(formatDateTime("2026-08-30T13:32:00Z")).toBe("30 Aug 2026, 2:32 pm");
+    expect(formatDateTime(null)).toBe("-");
   });
 });
 

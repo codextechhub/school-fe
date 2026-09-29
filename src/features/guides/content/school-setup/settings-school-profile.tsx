@@ -32,7 +32,7 @@ export default function SettingsSchoolProfileArticle() {
         <GuideCallout tone="info" title="Currency and term structure are fixed once you are live">
           Accounts already kept in one currency cannot be read again in another, and a term structure already carrying fees cannot be re-cut. Once your school is live, both fields read <strong>Fixed once the school is live</strong>. Select <strong>Contact XVS</strong> under the field if one of them has to change. The word your screens use for a part of the year, and the names a new year starts with, are your school&apos;s to set under <strong>Academic structure</strong> in <strong>Settings</strong>.
         </GuideCallout>
-        <p>All times in XVS are shown in West Africa Time (WAT). It is not a setting you can change.</p>
+        <p>Your school&apos;s time zone, how a date is written, and whether the clock reads 12 or 24 hours are set under <strong>Display</strong> in <strong>Settings</strong>, not on the profile. A branch in another time zone can keep its own there.</p>
       </GuideSection>
 
       <GuideSection id="change-your-logo" title="Change your logo">

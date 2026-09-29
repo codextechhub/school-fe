@@ -5,6 +5,7 @@ import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 
 export interface ConsoleSettingsSection {
   key: string;
@@ -496,6 +497,7 @@ export interface SettingsAuditRow {
 }
 
 export function SettingsAuditHistory({ rows }: { rows: SettingsAuditRow[] }) {
+  const { formatDateTime } = useSchoolDisplay(null);
   return (
     <SettingsPanel title="Recent changes" description="The latest saved changes for this entity. The full immutable record remains in the Finance audit trail.">
       {rows.length === 0 ? (
@@ -507,7 +509,7 @@ export function SettingsAuditHistory({ rows }: { rows: SettingsAuditRow[] }) {
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="font-mont text-sm font-semibold text-gray-01">{row.message}</p>
-                <p className="mt-0.5 font-mont text-xs text-gray-05">{row.actor ?? "System"} · {new Date(row.created_at).toLocaleString()}</p>
+                <p className="mt-0.5 font-mont text-xs text-gray-05">{row.actor ?? "System"} · {formatDateTime(row.created_at)}</p>
               </div>
               <PolicyBadge kind="configured">Saved</PolicyBadge>
             </div>

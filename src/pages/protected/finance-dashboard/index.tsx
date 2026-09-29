@@ -55,12 +55,12 @@ import {
 } from "@/pages/protected/finance/dashboard-cards";
 import { FinanceKpiTile, FinanceTabMotion, ReceivablesHeadline, SpendHeadline } from "./presentation";
 import "./style.css";
+import { formatDate } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 
-/** "2026-06-16" → "16 Jun 2026". */
+/** "2026-06-16" as "16 Jun 2026", in the school's style. */
 function fmtDate(iso?: string) {
-  if (!iso) return "";
-  const d = new Date(`${iso}T00:00:00`);
-  return isNaN(d.getTime()) ? iso : d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return formatDate(iso, activeDisplayPrefs());
 }
 
 const F = routesPath.PROTECTED.FINANCE;

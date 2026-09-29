@@ -199,6 +199,56 @@ describe("updateTenant", () => {
     expect(next).not.toBe(state);
     expect(next.tenant?.kind).toBe("PLATFORM");
   });
+
+  describe("display settings", () => {
+    const base = { slug: "greenfield", name: "Greenfield Academy", kind: "SCHOOL" };
+    const display = {
+      time_zone: "Africa/Lagos",
+      date_format: "D_MMM_YYYY",
+      clock: "H12",
+      branch_zones: { "12": "Africa/Nairobi" },
+    };
+
+    it("keeps the SAME state reference when /me brings equal settings", () => {
+      const state = stateWith({ tenant: { ...base, display } });
+      const next = authSliceReducer(
+        state,
+        updateTenant({ ...base, display: { ...display, branch_zones: { "12": "Africa/Nairobi" } } }),
+      );
+      expect(next).toBe(state);
+    });
+
+    it("applies a changed clock, so a saved setting reaches every screen", () => {
+      const state = stateWith({ tenant: { ...base, display } });
+      const next = authSliceReducer(state, updateTenant({ ...base, display: { ...display, clock: "H24" } }));
+      expect(next).not.toBe(state);
+      expect(next.tenant?.display?.clock).toBe("H24");
+    });
+
+    it("applies a branch zone added, changed or cleared", () => {
+      const state = stateWith({ tenant: { ...base, display } });
+      const cleared = authSliceReducer(state, updateTenant({ ...base, display: { ...display, branch_zones: {} } }));
+      expect(cleared).not.toBe(state);
+      const moved = authSliceReducer(
+        state,
+        updateTenant({ ...base, display: { ...display, branch_zones: { "12": "Africa/Accra" } } }),
+      );
+      expect(moved.tenant?.display?.branch_zones).toEqual({ "12": "Africa/Accra" });
+    });
+
+    it("applies settings arriving on a session that had none", () => {
+      const state = stateWith({ tenant: base });
+      const next = authSliceReducer(state, setAuthContext({
+        user: null,
+        school: null,
+        tenant: { ...base, display },
+        permissions: [],
+        field_access: {},
+        branch_reach: null,
+      }));
+      expect(next.tenant?.display).toEqual(display);
+    });
+  });
 });
 
 describe("updateSchool", () => {

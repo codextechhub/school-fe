@@ -24,6 +24,7 @@ import type {
   ImportTemplateListItem,
 } from "@/redux/services/dashboard/import-types";
 import { PageShell } from "@/components/layout/page-shell";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 
 /**
  * "Upload Initial Datasets", drawn as the design draws it.
@@ -154,6 +155,7 @@ type TemplateRow = {
 export default function OnboardingImport() {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
+  const { formatDateTime } = useSchoolDisplay(null);
 
   const templates = useGetImportTemplatesQuery({ page_size: 100 });
   const batches = useGetImportBatchesQuery({ page_size: 50 });
@@ -384,7 +386,7 @@ export default function OnboardingImport() {
               {batch.original_filename}
             </p>
             <p className="text-[11px] text-gray-05">
-              {new Date(batch.created_at).toLocaleString()}
+              {formatDateTime(batch.created_at)}
             </p>
           </div>
         ),
@@ -407,7 +409,7 @@ export default function OnboardingImport() {
           </div>
         ),
       })),
-    [batchRowsData, navigate],
+    [batchRowsData, navigate, formatDateTime],
   );
 
   return (

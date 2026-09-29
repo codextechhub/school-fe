@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetMyBranchQuery } from "@/redux/services/branches/branches-api";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { locationOf, StatusChip } from "./branch-display";
 
 /**
@@ -33,6 +34,7 @@ export function BranchDrawer({
     skip: code == null,
   });
   const branch = data?.data;
+  const { formatDate } = useSchoolDisplay(branch?.id ?? null);
 
   return (
     <Sheet open={code != null} onOpenChange={(next) => !next && onClose()}>
@@ -84,7 +86,7 @@ export function BranchDrawer({
                   label="Opened"
                   value={
                     branch.opened_at
-                      ? new Date(branch.opened_at).toLocaleDateString()
+                      ? formatDate(branch.opened_at)
                       : ""
                   }
                 />

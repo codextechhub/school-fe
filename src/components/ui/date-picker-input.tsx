@@ -4,6 +4,7 @@ import { CalendarDays, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { parseDate, toIsoDate } from "./date-picker-input.utils";
 import {
   Popover,
@@ -56,14 +57,15 @@ type DatePickerInputProps = Omit<React.ComponentProps<"input">, "type"> & {
   windowLabel?: string | null;
 };
 
-function displayDate(date: Date): string {
-  return new Intl.DateTimeFormat(undefined, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-}
-
+/**
+ * A date field: a button showing the chosen day, opening a calendar.
+ *
+ * The value in and out is always `YYYY-MM-DD`. What the button shows is the
+ * school's date style ("29 Sep 2026", "29/09/2026" or "2026-09-29"), and
+ * "today" is the school's calendar day rather than the device's: after 11 pm
+ * in London it is already tomorrow in Lagos, and that is the day a school
+ * means.
+ */
 function DatePickerInput({
   className,
   value,
@@ -85,6 +87,7 @@ function DatePickerInput({
   "aria-describedby": ariaDescribedBy,
   ...props
 }: DatePickerInputProps) {
+  const { formatDay, today } = useSchoolDisplay();
   const controlled = value !== undefined;
   const [internalValue, setInternalValue] = React.useState(
     typeof defaultValue === "string" ? defaultValue : "",
@@ -123,15 +126,15 @@ function DatePickerInput({
   // The month the popover opens on: the selected date, else the first allowed
   // day, else today. Opening on a month where every day is greyed out reads as
   // a broken calendar.
-  const openingMonth = selected ?? rangeStart ?? fromDate ?? new Date();
+  const todayIso = today();
+  const openingMonth = selected ?? rangeStart ?? fromDate ?? parseDate(todayIso);
 
   // "Today" is only useful when today is selectable. When it is not, offer the
   // nearest allowed day instead - that is the date the user actually wants, and
   // otherwise they must page through months hunting for one that is not grey.
-  const todayIso = toIsoDate(new Date());
   const todayAllowed =
-    !(fromDate && new Date(new Date().setHours(0, 0, 0, 0)) < fromDate)
-    && !(toDate && new Date(new Date().setHours(0, 0, 0, 0)) > toDate)
+    !(fromDate && todayIso < toIsoDate(fromDate))
+    && !(toDate && todayIso > toIsoDate(toDate))
     && (!constrained || ranges.some((r) => todayIso >= r.from && todayIso <= r.to));
   const jumpTarget = todayAllowed ? todayIso : (nearestOpenDate(todayIso, ranges) ?? todayIso);
 
@@ -182,7 +185,7 @@ function DatePickerInput({
             className,
           )}
         >
-          <span className="truncate">{selected ? displayDate(selected) : (placeholder ?? "Select date")}</span>
+          <span className="truncate">{selected ? formatDay(currentValue) : (placeholder ?? "Select date")}</span>
           <CalendarDays className="size-4 shrink-0 text-gray-05" aria-hidden="true" />
         </Button>
       </PopoverTrigger>

@@ -1,6 +1,9 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 
+import { formatMonthYear, type DisplayPrefs } from "./dates"
+import { activeDisplayPrefs } from "./school-display"
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
@@ -17,13 +20,18 @@ export function getInitials(name: string): string {
   return initials;
 }
 
-export function formatMonthYearShort(dateString: string): string {
-  const date = new Date(dateString);
-
-  return date.toLocaleString("en-US", {
-    month: "short",
-    year: "numeric",
-  });
+/**
+ * "Sep 2026", from a calendar date or a timestamp.
+ *
+ * A calendar date is read as written rather than through `new Date()`, which
+ * takes "2026-09-01" as UTC midnight and names August for any reader west of
+ * Greenwich. A timestamp is placed in the school's zone first.
+ */
+export function formatMonthYearShort(
+  dateString: string,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string {
+  return formatMonthYear(dateString, prefs);
 }
 
 export const getVariantColor = (val?:string) => {

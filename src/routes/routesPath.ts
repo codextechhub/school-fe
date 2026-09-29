@@ -160,6 +160,7 @@ export const routesPath = {
       ADMISSIONS: "/settings/admissions",
       PROMOTION: "/settings/promotion",
       ACADEMICS: "/settings/academics",
+      DISPLAY: "/settings/display",
       CALENDAR: "/settings/calendar",
       ADMISSION_NUMBERS: "/settings/admission-numbers",
       PAYROLL: "/settings/payroll",

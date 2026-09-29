@@ -34,7 +34,7 @@ export default function SchoolProfileArticle() {
           <GuideStep title="Save">Select <strong>Save changes</strong>. Only the fields you changed are sent, and every save is recorded against your school.</GuideStep>
           <GuideStep title="Go back to the checklist">Select <strong>Back to control room</strong> and mark the profile step done.</GuideStep>
         </GuideSteps>
-        <p>All times in XVS are shown in West Africa Time (WAT). It is not a setting you can change.</p>
+        <p>A new school runs on West Africa Time, writes a date as <strong>29 Sep 2026</strong> and reads the clock in 12 hours. Once the school is live, its time zone, how a date is written, and whether the clock reads 12 or 24 hours can be changed under <strong>Display</strong> in <strong>Settings</strong>, and a branch in another time zone can keep its own.</p>
       </GuideSection>
 
       <GuideSection id="add-your-logo" title="Add your logo">

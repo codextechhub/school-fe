@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { DEFAULT_DISPLAY } from "@/lib/dates";
 import { clashedSlotIds, toRows, warningsFromDays } from "./grid-shape";
 import type {
   GridCell,
@@ -94,9 +95,11 @@ describe("turning days into rows", () => {
     expect(rows.map((r) => r.runsOn)).toEqual([[], []]);
   });
 
-  it("trims the seconds off the times", () => {
-    const rows = toRows([day(1, "Monday", [cell(1)])]);
-    expect(rows[0].time).toBe("08:00 - 08:45");
+  it("writes the times on the school's clock, without seconds", () => {
+    const rows = toRows([day(1, "Monday", [cell(1)])], DEFAULT_DISPLAY);
+    expect(rows[0].time).toBe("8:00 am - 8:45 am");
+    const h24 = toRows([day(1, "Monday", [cell(1)])], { ...DEFAULT_DISPLAY, clock: "H24" });
+    expect(h24[0].time).toBe("08:00 - 08:45");
   });
 
   it("leaves the time blank where the grid sends none", () => {

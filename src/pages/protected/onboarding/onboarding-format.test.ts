@@ -11,11 +11,15 @@ describe("humanDate / humanDateTime", () => {
     expect(humanDate("2026-08-17T11:40:00Z")).toBe("17 Aug 2026");
   });
 
-  it("adds the clock time for a 'last checked' stamp", () => {
-    // Local-time rendering, so build the input from a local date to keep the
-    // assertion true wherever the suite runs.
-    const local = new Date(2026, 7, 17, 11, 40);
-    expect(humanDateTime(local.toISOString())).toBe("17 Aug 2026, 11:40");
+  it("adds the clock time for a 'last checked' stamp, in the school's zone", () => {
+    // 10:40 UTC is 11:40 in Lagos, the default zone, whatever the runner's zone.
+    expect(humanDateTime("2026-08-17T10:40:00Z")).toBe("17 Aug 2026, 11:40 am");
+  });
+
+  it("follows the school's date style, clock and zone", () => {
+    const prefs = { timeZone: "Africa/Nairobi", dateFormat: "DD_MM_YYYY", clock: "H24" } as const;
+    expect(humanDate("2026-08-17T22:30:00Z", prefs)).toBe("18/08/2026");
+    expect(humanDateTime("2026-08-17T22:30:00Z", prefs)).toBe("18/08/2026, 01:30");
   });
 
   it("returns an empty string for null and for junk", () => {

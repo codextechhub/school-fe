@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { startOfDay } from "date-fns";
+import { todayIso } from "@/lib/as-at";
 import { toast } from "sonner";
 import {
   ArrowRight,
@@ -368,9 +368,11 @@ function RequestForm() {
   const navigate = useNavigate();
   const [submit, { isLoading }] = useSubmitGoLiveRequestMutation();
   const [date, setDate] = useState("");
-  // Today is a legitimate answer; yesterday is not. Computed once so the
-  // calendar's floor cannot drift mid-session.
-  const [earliest] = useState(() => startOfDay(new Date()));
+  // Today (the school's) is a legitimate answer; yesterday is not. Fixed at mount.
+  const [earliest] = useState(() => {
+    const [year, month, day] = todayIso().split("-").map(Number);
+    return new Date(year, month - 1, day);
+  });
   const [note, setNote] = useState("");
   const [acknowledged, setAcknowledged] = useState(false);
   const [error, setError] = useState("");

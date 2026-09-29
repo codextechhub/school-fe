@@ -43,6 +43,7 @@ import type {
   GridCell,
 } from "@/redux/services/calendar/calendar-types";
 import { useCalendarRules } from "@/hooks/use-school-week";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { publishCheckFor, splitWarnings } from "../components/publish-check";
 import {
   PublishCheckPanel,
@@ -122,6 +123,8 @@ export default function ClassTimetables() {
     { skip: !current },
   );
   const grid = gridData?.data;
+  // The class's own branch zone; a school-wide class reads in the school's.
+  const { formatDate } = useSchoolDisplay(currentRow?.branch);
 
   const { data: subjectData } = useGetSubjectsQuery(lens);
   // Deliberately unnarrowed, unlike the teacher screen's list. This is the
@@ -461,7 +464,7 @@ export default function ClassTimetables() {
             <p className="print-hide border-t border-border px-4 py-3 text-xs text-gray-05 text-pretty sm:px-5">
               Published{" "}
               {grid.published_at
-                ? new Date(grid.published_at).toLocaleDateString()
+                ? formatDate(grid.published_at)
                 : ""}
               . Editing it here does not unpublish it; press Republish when the
               week is right again.

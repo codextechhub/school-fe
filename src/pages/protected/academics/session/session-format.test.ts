@@ -242,4 +242,9 @@ describe("dayAfter and dayLabel", () => {
   it("prints a calendar day without shifting it", () => {
     expect(dayLabel("2026-12-18")).toBe("18 Dec 2026");
   });
+
+  it("prints it in the school's date style", () => {
+    const prefs = { timeZone: "Africa/Lagos", dateFormat: "YYYY_MM_DD", clock: "H12" } as const;
+    expect(dayLabel("2026-12-18", prefs)).toBe("2026-12-18");
+  });
 });

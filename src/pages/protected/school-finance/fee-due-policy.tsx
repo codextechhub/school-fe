@@ -41,16 +41,12 @@ import {
   type FeeDuePolicy,
 } from "@/redux/services/school-finance/fee-due-policy-api";
 import { useSchoolWords } from "@/hooks/use-school-words";
+import { formatDay } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 
-/** 12 December 2026, from the API's ISO date. */
+/** "12 December 2026" from the API's ISO date, or the school's numeric style. */
 function formatDue(iso: string) {
-  const date = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
+  return formatDay(iso, activeDisplayPrefs(), { month: "long" });
 }
 
 /**

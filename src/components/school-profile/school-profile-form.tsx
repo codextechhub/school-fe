@@ -13,6 +13,8 @@ import type {
 } from "@/redux/services/school/school-types";
 import { requestSupportOpen } from "@/components/layout/support-open";
 import { routesPath } from "@/routes/routesPath";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
+import { zoneLongName } from "@/lib/dates";
 import { schoolProfileSchema } from "@/schema/onboarding";
 import { writeErrorMessage } from "@/utils/api-error";
 
@@ -50,6 +52,7 @@ export function SchoolProfileForm({
   readOnlyText?: string;
 }) {
   const [update, { isLoading }] = useUpdateSchoolProfileMutation();
+  const display = useSchoolDisplay(null);
   const editable = new Set(profile.editable_fields);
   const open = (field: ProfileField) => canEdit && editable.has(field);
   const lockedByServer = (field: ProfileField) =>
@@ -173,8 +176,10 @@ export function SchoolProfileForm({
         />
       </div>
 
-      {/* A fact, not a setting: XVS shows West Africa Time everywhere. */}
-      <p className="text-xs text-gray-05">All times are shown in West Africa Time (WAT).</p>
+      <p className="text-xs text-gray-05">
+        Times are shown in {zoneLongName(display.prefs.timeZone)}. Your school&apos;s time zone, and
+        each branch&apos;s, are set in Settings, Display.
+      </p>
 
       {canEdit || footer ? (
         <div className="flex flex-wrap gap-2 pt-1">

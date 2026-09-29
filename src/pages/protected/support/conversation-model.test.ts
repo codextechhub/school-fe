@@ -76,6 +76,19 @@ describe("support conversation grouping", () => {
     expect(days[1].groups).toHaveLength(1);
   });
 
+  it("turns the day at midnight in the school's zone", () => {
+    // 20:30 and 21:30 UTC on the 19th: both still the 19th in Lagos, but the
+    // second is already the 20th in Nairobi.
+    const messages = [
+      comment("1", tunde, "2026-09-19T20:30:00Z"),
+      comment("2", tunde, "2026-09-19T21:30:00Z"),
+    ];
+    const lagos = buildConversationDays(messages, [], "Africa/Lagos");
+    expect(lagos.map((day) => day.day)).toEqual(["2026-09-19"]);
+    const nairobi = buildConversationDays(messages, [], "Africa/Nairobi");
+    expect(nairobi.map((day) => day.day)).toEqual(["2026-09-19", "2026-09-20"]);
+  });
+
   it("keeps the opening upload batch separate from later conversation files", () => {
     const before = attachment("before", tunde, "2026-09-19T08:02:00Z");
     const after = attachment("after", tunde, "2026-09-19T09:00:00Z");

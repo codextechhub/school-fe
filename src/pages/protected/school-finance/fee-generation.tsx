@@ -60,6 +60,8 @@ import type { ClassSeats } from "@/redux/services/students/students-types";
 import { apiErrorMessage } from "@/utils/api-errors";
 import { formatMoney } from "@/utils/money";
 import { useSchoolWords, type TermWords } from "@/hooks/use-school-words";
+import { formatDay as formatSchoolDay } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 
 /** The server takes at most this many pupils in one run. */
 const MAX_PUPILS = 2000;
@@ -70,11 +72,9 @@ const labelCls = "mb-1 block font-mont text-xs font-medium text-gray-01";
 const sectionTitleCls =
   "mb-2 font-mont text-xs font-semibold uppercase tracking-wide text-gray-05";
 
-/** 15 December 2026, from an ISO date. */
+/** "15 December 2026" from an ISO date, or the school's numeric style. */
 function formatDay(iso: string) {
-  const date = new Date(`${iso}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return formatSchoolDay(iso, activeDisplayPrefs(), { month: "long" });
 }
 
 function plural(n: number, one: string, many = `${one}s`) {

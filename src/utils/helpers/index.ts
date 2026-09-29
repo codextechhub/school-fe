@@ -2,6 +2,9 @@
 // gets deleted rather than kept "just in case" - git history has the old
 // implementations (currency formatting, duration, Vimeo IDs, …).
 
+import { calendarDayOf, formatRelativeDay, type DisplayPrefs } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
+
 export function returnInitial(name: string) {
   // Initials from the first two words; a single-word name yields a single
   // letter (a mononym avatar shouldn't look like a two-letter typo, e.g.
@@ -12,59 +15,21 @@ export function returnInitial(name: string) {
   return (words[0].slice(0, 1) + words[1].slice(0, 1)).toUpperCase();
 }
 
-export const formatRelativeDate = (dateStr: string): string => {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return "-";
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  const isSameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate();
-
-  if (isSameDay(date, today)) return "Today";
-  if (isSameDay(date, yesterday)) return "Yesterday";
-
-  const day = date.getDate();
-  const suffix =
-    day % 10 === 1 && day !== 11
-      ? "st"
-      : day % 10 === 2 && day !== 12
-        ? "nd"
-        : day % 10 === 3 && day !== 13
-          ? "rd"
-          : "th";
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const year = date.getFullYear();
-  return `${day}${suffix} ${month} ${year}`;
-};
-
-export const formatDate = (timestamp: string | number | Date): string => {
-  const date = new Date(timestamp);
-  if (isNaN(date.getTime())) return "-";
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-export function formatStartedTime(isoString: string) {
-  const date = new Date(isoString);
-  if (isNaN(date.getTime())) return "-";
-  const day = date.getDate();
-  const month = date.toLocaleString("en-US", { month: "short" });
-  const year = date.getFullYear();
-
-  let hours = date.getHours();
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const ampm = hours >= 12 ? "pm" : "am";
-
-  hours = hours % 12 || 12; // convert 0 to 12-hour format
-
-  return `${day} ${month} ${year}, ${hours}:${minutes}${ampm}`;
-}
+/**
+ * "Today", "Yesterday", or the date in the school's style ("3 Sep 2026" by
+ * default), judged by the school's calendar rather than the reader's device.
+ *
+ * The shared finance package's import screens call this through the
+ * `@/utils/helpers` path with a single argument, so the signature stays
+ * `(dateStr)` and the prefs default to the session's. The wording is
+ * `formatRelativeDay` from `@/lib/dates`, so these screens and the school's
+ * own read the same. "-" for anything empty or unreadable.
+ */
+export const formatRelativeDate = (
+  dateStr: string | null | undefined,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string =>
+  calendarDayOf(dateStr, prefs.timeZone) ? formatRelativeDay(dateStr, prefs) : "-";
 
 /**
  * Generates a URL query string from a given object of parameters.
@@ -100,20 +65,4 @@ export function generateQueryString(params: Record<string, QueryValue>): string 
     .join("&");
 
   return query ? `?${query}` : "";
-}
-
-const ENUM_LABEL_MAP: Record<string, string> = {
-  FAITH_BASED: "Faith-Based",
-  NGO: "Non-Governmental Organization",
-  "2_SEMESTERS": "2 Semesters",
-  "3_TERMS": "3 Terms",
-};
-
-export function formatEnum(value: string | null | undefined): string {
-  if (!value) return "-";
-  if (ENUM_LABEL_MAP[value]) return ENUM_LABEL_MAP[value];
-  return value
-    .replace(/_/g, " ")
-    .toLowerCase()
-    .replace(/\b\w/g, (c) => c.toUpperCase());
 }

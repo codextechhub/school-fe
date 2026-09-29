@@ -1,29 +1,39 @@
 import { format, isValid, parseISO } from "date-fns";
 
+import { formatDate, formatDateTime, type DisplayPrefs } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
+
 /**
- * Dates the way the design contract asks for them: "17 Aug 2026", never an ISO
- * string. Written once here because the control room, the go-live panel and the
- * request history all print the same timestamps and must not disagree.
+ * Dates the way the school has asked for them ("17 Aug 2026" by default),
+ * never an ISO string. Written once here because the control room, the
+ * go-live panel and the request history all print the same timestamps and
+ * must not disagree.
  *
  * A null or unparseable value returns an empty string, so a caller can render
- * `humanDate(x) || "-"` rather than guarding first.
+ * `humanDate(x) || "-"` rather than guarding first. `prefs` defaults to the
+ * session's settings.
  */
-const toDate = (value: string | null | undefined): Date | null => {
+const readable = (value: string | null | undefined): string | null => {
   if (!value) return null;
-  const parsed = parseISO(value);
-  return isValid(parsed) ? parsed : null;
+  return isValid(parseISO(value)) ? value : null;
 };
 
 /** "17 Aug 2026" */
-export function humanDate(value: string | null | undefined): string {
-  const date = toDate(value);
-  return date ? format(date, "d MMM yyyy") : "";
+export function humanDate(
+  value: string | null | undefined,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string {
+  const at = readable(value);
+  return at ? formatDate(at, prefs) : "";
 }
 
-/** "17 Aug 2026, 11:40" */
-export function humanDateTime(value: string | null | undefined): string {
-  const date = toDate(value);
-  return date ? format(date, "d MMM yyyy, HH:mm") : "";
+/** "17 Aug 2026, 11:40 am" */
+export function humanDateTime(
+  value: string | null | undefined,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string {
+  const at = readable(value);
+  return at ? formatDateTime(at, prefs) : "";
 }
 
 /** "2026-08-17" - the value shape a native date input wants. */

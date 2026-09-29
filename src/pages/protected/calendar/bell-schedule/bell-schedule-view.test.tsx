@@ -59,6 +59,8 @@ describe("school day panel", () => {
     expect(durationOf(lesson)).toBe(45);
     expect(durationOf(schoolBreak)).toBe(15);
     expect(formatClock("13:05:00")).toBe("1:05 pm");
+    expect(formatClock("13:05:00", { timeZone: "Africa/Lagos", dateFormat: "D_MMM_YYYY", clock: "H24" }))
+      .toBe("13:05");
 
     act(() => {
       root.render(

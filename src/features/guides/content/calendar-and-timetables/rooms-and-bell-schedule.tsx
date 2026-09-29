@@ -54,7 +54,7 @@ export default function RoomsAndBellScheduleArticle() {
       <GuideSection id="add-periods" title="Add the periods of the day">
         <GuideSteps>
           <GuideStep title="Open the form">On <strong>Bell schedule</strong>, select <strong>Add period</strong>.</GuideStep>
-          <GuideStep title="Label and times">Type a <strong>Label</strong>, for example <em>Period 1</em>, and set the <strong>Start time</strong> and <strong>End time</strong>. The end must be after the start. Where your school has set a length for a new period, the end time fills in from the start, such as 08:40 from 08:00 for 40 minutes, until you type an end of your own.</GuideStep>
+          <GuideStep title="Label and times">Type a <strong>Label</strong>, for example <em>Period 1</em>, and set the <strong>Start time</strong> and <strong>End time</strong>. The end must be after the start. Where your school has set a length for a new period, the end time fills in from the start, 40 minutes later for a 40-minute period, until you type an end of your own.</GuideStep>
           <GuideStep title="Choose the type">Pick <strong>Lesson</strong>, <strong>Break</strong>, <strong>Lunch</strong> or <strong>Assembly</strong>. Only lesson periods can hold lessons on a timetable.</GuideStep>
           <GuideStep title="Choose the day">Leave <strong>Applies on</strong> at <strong>Every day</strong> for the normal school day. The weekdays beside it are your school&apos;s teaching days, in the order its week runs.</GuideStep>
           <GuideStep title="Save">Select <strong>Add period</strong>. Repeat for each period.</GuideStep>

@@ -2,6 +2,7 @@ import { CalendarOff, Plus } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import type {
   ClashWarning,
   GridCell,
@@ -53,7 +54,8 @@ export function TimetableGrid({
   onCellClick?: (cell: GridCell, dayIndex: number) => void;
   emptyLabel?: string;
 }) {
-  const rows = toRows(days);
+  const { prefs } = useSchoolDisplay();
+  const rows = toRows(days, prefs);
   const clashed = clashedSlotIds(warnings);
   const off = offDays(days);
 

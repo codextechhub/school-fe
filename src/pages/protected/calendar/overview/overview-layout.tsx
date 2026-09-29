@@ -41,6 +41,8 @@ import {
   toIso,
 } from "../components/dates";
 import { useSchoolWords, type TermWords } from "@/hooks/use-school-words";
+import { formatDay, monthName } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 
 const C = routesPath.PROTECTED.ACADEMIC_CALENDAR;
 const T = routesPath.PROTECTED.TIMETABLES;
@@ -248,16 +250,9 @@ export function CalendarOverviewLayout({
   );
 }
 
+/** "Tuesday, 29 September", or "Tuesday, 29/09" in a numeric style. */
 function longDate(iso: string) {
-  const date = localDate(iso);
-  const weekday = new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-  }).format(date);
-  const dayAndMonth = new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "long",
-  }).format(date);
-  return `${weekday}, ${dayAndMonth}`;
+  return formatDay(iso, activeDisplayPrefs(), { weekday: "long", month: "long", year: false });
 }
 
 function TermChips({ terms, className }: { terms: TimelineTerm[]; className?: string }) {
@@ -392,7 +387,7 @@ function UpcomingPanel({ events }: { events: UpcomingEvent[] }) {
               <li key={event.id}>
                 <Link to={C.EVENTS} className="group grid min-w-0 grid-cols-[3.5rem_minmax(0,1fr)_auto] items-center gap-3 rounded-lg px-1 py-3 transition-colors hover:bg-pry-01/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:grid-cols-[4rem_minmax(0,1fr)_auto]">
                   <span className="rounded-lg bg-white-05 px-1.5 py-2 text-center">
-                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-primary">{shortMonth(month)}</span>
+                    <span className="block text-[10px] font-semibold uppercase tracking-wide text-primary">{monthName(month)}</span>
                     <span className="block text-lg font-semibold leading-none text-black-01">{day}</span>
                   </span>
                   <span className="min-w-0">
@@ -470,10 +465,6 @@ function QuickLink({ to, icon: Icon, label, description }: {
       <span className="mt-0.5 block text-[11px] text-gray-05">{description}</span>
     </Link>
   );
-}
-
-function shortMonth(month: number) {
-  return new Intl.DateTimeFormat("en-GB", { month: "short" }).format(new Date(2026, month - 1, 1));
 }
 
 function alertDestination(code: AlertCode, canSeeSessions: boolean, canSeeTimetables: boolean) {

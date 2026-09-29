@@ -1,42 +1,26 @@
 import { canManageRow } from "@/lib/can-manage";
+import { calendarDayOf, daysBetween, todayIn } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 import { P, type PermissionCode } from "@/permissions";
 import type { StaffListRow } from "@/redux/services/staff/staff-types";
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * The invitation age displayed by the list and its detail drawer.
  *
  * Invitations are discussed in calendar days, not elapsed 24-hour periods. A
  * link sent late on 6 September reads as 9 days old throughout 15 September,
- * which agrees with the date printed beside it. Invalid and future dates do
- * not become alarming negative ages.
+ * which agrees with the date printed beside it. Both days are the school's
+ * (`timeZone`), the same zone that printed date is written in. Invalid and
+ * future dates do not become alarming negative ages.
  */
 export function invitationAgeDays(
   invitedAt: string | null | undefined,
-  today = new Date(),
+  now = new Date(),
+  timeZone = activeDisplayPrefs().timeZone,
 ): number | null {
-  if (!invitedAt) return null;
-
-  const [year, month, day] = invitedAt.slice(0, 10).split("-").map(Number);
-  if (!year || !month || !day) return null;
-
-  const sentDay = Date.UTC(year, month - 1, day);
-  const parsed = new Date(sentDay);
-  if (
-    parsed.getUTCFullYear() !== year ||
-    parsed.getUTCMonth() !== month - 1 ||
-    parsed.getUTCDate() !== day
-  ) {
-    return null;
-  }
-
-  const currentDay = Date.UTC(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate(),
-  );
-  return Math.max(0, Math.floor((currentDay - sentDay) / DAY_MS));
+  const sent = calendarDayOf(invitedAt, timeZone);
+  const days = sent ? daysBetween(sent, todayIn(timeZone, now)) : null;
+  return days === null ? null : Math.max(0, days);
 }
 
 export function waitingLabel(days: number | null): string {
@@ -48,10 +32,11 @@ export function waitingLabel(days: number | null): string {
 /** Summary values for the invitation records loaded on the current page. */
 export function invitationPageMetrics(
   rows: StaffListRow[],
-  today = new Date(),
+  now = new Date(),
+  timeZone = activeDisplayPrefs().timeZone,
 ): { followUp: number; oldestDays: number | null } {
   const ages = rows
-    .map((row) => invitationAgeDays(row.invited_at, today))
+    .map((row) => invitationAgeDays(row.invited_at, now, timeZone))
     .filter((age): age is number => age != null);
 
   return {

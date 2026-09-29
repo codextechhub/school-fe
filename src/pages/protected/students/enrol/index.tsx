@@ -41,6 +41,7 @@ import { GuardianRows, type GuardianDraft } from "./guardian-rows";
 import { todayIso } from "@/lib/as-at";
 import { dobProblem } from "../date-of-birth";
 import { relationshipLabel } from "../relationships";
+import { formatDate } from "../format";
 
 /** A new guardian's name as one line, from the parts typed so far. */
 function draftName(g: GuardianDraft): string {
@@ -1275,7 +1276,7 @@ export function Review({
           <>
             <Line label="Entry class" value={className ?? "Not picked"} />
             {!hidden("enrolment_date") && (
-              <Line label="Admission date" value={form.enrolment_date} />
+              <Line label="Admission date" value={formatDate(form.enrolment_date)} />
             )}
           </>
         )}

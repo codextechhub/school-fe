@@ -7,16 +7,19 @@
  * midnight UTC, so a reader west of Greenwich renders it as the 20th - which is
  * how a one-day holiday moves to the wrong day for half the world. Every
  * function below splits the string instead of letting Date parse it.
+ *
+ * The formatters write the school's chosen date style (`@/lib/dates`). Their
+ * `prefs` default to the session's settings, so a plain call is right.
  */
 
+import {
+  formatDay,
+  formatDayRange,
+  formatMonthYear,
+  type DisplayPrefs,
+} from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 import type { JsWeekday } from "@/lib/week";
-
-const MONTHS = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
-
-const SHORT = MONTHS.map((m) => m.slice(0, 3));
 
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -56,11 +59,9 @@ export function toIso(date: Date): string {
   return `${date.getFullYear()}-${m}-${d}`;
 }
 
-/** "21 Nov 2025". */
-export function formatDate(iso: string): string {
-  if (!iso) return "";
-  const [y, m, d] = parts(iso);
-  return `${d} ${SHORT[m - 1]} ${y}`;
+/** "21 Nov 2025", or "21/11/2025", in the school's style. */
+export function formatDate(iso: string, prefs: DisplayPrefs = activeDisplayPrefs()): string {
+  return formatDay(iso, prefs);
 }
 
 /**
@@ -68,21 +69,24 @@ export function formatDate(iso: string): string {
  *
  * A one-day event reads as one date rather than as a range of one, because a
  * school writing "1 Oct 2025 - 1 Oct 2025" for Independence Day looks like a
- * form that has been filled in wrong.
+ * form that has been filled in wrong. The numeric styles print both ends in
+ * full (see `formatDayRange`).
  */
-export function formatRange(start: string, end: string): string {
-  if (!start) return "";
-  if (!end || end === start) return formatDate(start);
-  const [sy, sm, sd] = parts(start);
-  const [ey, em, ed] = parts(end);
-  if (sy !== ey) return `${formatDate(start)} - ${formatDate(end)}`;
-  if (sm !== em) return `${sd} ${SHORT[sm - 1]} - ${ed} ${SHORT[em - 1]} ${ey}`;
-  return `${sd} - ${ed} ${SHORT[em - 1]} ${ey}`;
+export function formatRange(
+  start: string,
+  end: string,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string {
+  return formatDayRange(start, end, prefs);
 }
 
 /** "November 2025", for the month grid's heading. */
-export function monthLabel(year: number, month: number): string {
-  return `${MONTHS[month - 1]} ${year}`;
+export function monthLabel(
+  year: number,
+  month: number,
+  prefs: DisplayPrefs = activeDisplayPrefs(),
+): string {
+  return formatMonthYear({ year, month }, prefs, { month: "long" });
 }
 
 /** Whole days from a to b. Both are calendar dates, so this cannot be fractional. */

@@ -1,3 +1,4 @@
+import { DEFAULT_TIME_ZONE, calendarDayOf } from "@/lib/dates";
 import type {
   TicketAttachment,
   TicketComment,
@@ -27,7 +28,8 @@ export interface ConversationSenderGroup {
 
 export interface ConversationDay {
   key: string;
-  date: Date;
+  /** The calendar day in the school's zone, `YYYY-MM-DD`; null when the time is unreadable. */
+  day: string | null;
   groups: ConversationSenderGroup[];
 }
 
@@ -38,11 +40,6 @@ const validTime = (value: string): number => {
 
 const OPENING_UPLOAD_GAP_MS = 5 * 60 * 1000;
 
-const dayKey = (value: string): string => {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return "unknown";
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
-};
 
 const sameAuthor = (left: TicketUser, right: TicketUser): boolean =>
   left.id === right.id || (
@@ -71,10 +68,15 @@ export function conversationCommentBody(
  * matter. Opening files are removed before this function is called. Adjacent
  * events from one person share a single sender heading until another person
  * speaks or the calendar day turns.
+ *
+ * The day turns at midnight in `timeZone`, the school's, so a message sent at
+ * 11:30 pm Lagos time sits under that day for every reader, whatever their
+ * device's zone.
  */
 export function buildConversationDays(
   comments: TicketComment[],
   attachments: TicketAttachment[],
+  timeZone: string = DEFAULT_TIME_ZONE,
 ): ConversationDay[] {
   const items: ConversationItem[] = [
     ...comments.map((comment) => ({
@@ -95,10 +97,11 @@ export function buildConversationDays(
 
   const days: ConversationDay[] = [];
   for (const item of items) {
-    const key = dayKey(item.createdAt);
+    const calendarDay = calendarDayOf(item.createdAt, timeZone);
+    const key = calendarDay ?? "unknown";
     let day = days.at(-1);
     if (!day || day.key !== key) {
-      day = { key, date: new Date(item.createdAt), groups: [] };
+      day = { key, day: calendarDay, groups: [] };
       days.push(day);
     }
 

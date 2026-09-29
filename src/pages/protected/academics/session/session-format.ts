@@ -5,6 +5,8 @@ import type {
   TermWrite,
 } from "@/redux/services/academics/academics-types";
 import { todayIso } from "@/lib/as-at";
+import { formatDay, type DisplayPrefs } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 import { TERM_WORDS } from "@/lib/school-words";
 
 /**
@@ -207,12 +209,7 @@ export function termProblem(
   return "";
 }
 
-/** "12 Dec 2026", read as a calendar day rather than a UTC instant. */
-export function dayLabel(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(y, m - 1, d));
+/** "12 Dec 2026" in the school's style, read as a calendar day rather than a UTC instant. */
+export function dayLabel(iso: string, prefs: DisplayPrefs = activeDisplayPrefs()): string {
+  return formatDay(iso, prefs);
 }

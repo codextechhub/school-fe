@@ -4,6 +4,7 @@ import { AlertTriangle, Info } from "lucide-react";
 
 import { NativeSelect } from "@/components/ui/native-select";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { apiErrorMessage, fieldErrorsFor } from "@/utils/api-error";
 import {
   useChangeStaffStatusMutation,
@@ -20,16 +21,6 @@ import { AccountBadge, EmploymentBadge } from "../badges";
 
 /** Moves a school is asked to account for later, and drawn accordingly. */
 const HEAVY: EmploymentStatus[] = ["SUSPENDED", "TERMINATED"];
-
-/** Today as the reader's calendar has it, not as UTC has it. */
-function localToday(): string {
-  const now = new Date();
-  return new Date(now.getTime() - now.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 10);
-}
-
-const today = localToday();
 
 /**
  * Move somebody through the employment lifecycle.
@@ -64,9 +55,8 @@ export function StatusDrawer({
   const [change, { isLoading: saving }] = useChangeStaffStatusMutation();
 
   const [next, setNext] = useState<EmploymentStatus | "">("");
-  // Defaults to today, computed once at mount rather than in an effect. Read in
-  // the reader's own zone: `toISOString` answers in UTC and would put a
-  // west-of-Greenwich school a day behind on the date it is defaulting to.
+  const { today } = useSchoolDisplay();
+  // Today on the school's calendar, read when the drawer opens.
   const [effective, setEffective] = useState(today);
   const [lastDay, setLastDay] = useState("");
   const [reason, setReason] = useState("");

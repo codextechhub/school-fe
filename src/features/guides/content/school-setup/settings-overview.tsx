@@ -6,6 +6,7 @@ const groups = (w: TermWords) => [
   ["Your school", [
     ["School profile", "Your crest, address, website and motto, and the details XVS set up for you."],
     ["Sign-in and security", "How many wrong passwords lock an account, and how long reset links and invitations last."],
+    ["Display", "How dates and times read across XVS, and the time zone your school and each branch keep."],
     ["Notifications", "Which events also send an email to the people they concern, and whether approvals email anybody."],
   ]],
   ["Students", [
@@ -42,14 +43,14 @@ export default function SettingsOverviewArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p><strong>Settings</strong> is where your school decides how it runs in XVS: its profile, its sign-in rules, which events send email, and the rules its records follow. Each area opens only for a role that holds the key that area checks, so two people can see a different list.</p>
+        <p><strong>Settings</strong> is where your school decides how it runs in XVS: its profile, its sign-in rules, how dates and times read, which events send email, and the rules its records follow. Each area opens only for a role that holds the key that area checks, so two people can see a different list.</p>
         <p>Settings that belong to XVS itself, such as what your plan includes, are not here. Ask the XVS team through the headset in the header if one of those needs to change.</p>
       </GuideSection>
 
       <GuideSection id="open-settings" title="Open Settings">
         <GuideSteps>
           <GuideStep title="Select Settings">Select <strong>Settings</strong> in the sidebar, or type &quot;settings&quot; into the search box in the header. Your school&apos;s name shows at the top right, so you know whose settings you are changing.</GuideStep>
-          <GuideStep title="Pick an area">The areas are grouped under <strong>Your school</strong>, <strong>Students</strong>, <strong>Academics</strong> and <strong>Staff</strong>, with <strong>Overview</strong> and <strong>More settings</strong> on their own. <strong>Academics</strong> holds <strong>Academic structure</strong> and <strong>Calendar and timetables</strong>. On a wide screen the groups run down the left and open like sub-menus; the group holding the page you are on stays open. On a phone the groups are a row of buttons across the top, and the open group&apos;s areas appear as a second row beneath. Each area has its own address, so you can bookmark it or share the link with a colleague who holds the same access.</GuideStep>
+          <GuideStep title="Pick an area">The areas are grouped under <strong>Your school</strong>, <strong>Students</strong>, <strong>Academics</strong> and <strong>Staff</strong>, with <strong>Overview</strong> and <strong>More settings</strong> on their own. <strong>Your school</strong> holds <strong>School profile</strong>, <strong>Sign-in and security</strong>, <strong>Display</strong> and <strong>Notifications</strong>, and <strong>Academics</strong> holds <strong>Academic structure</strong> and <strong>Calendar and timetables</strong>. On a wide screen the groups run down the left and open like sub-menus; the group holding the page you are on stays open. On a phone the groups are a row of buttons across the top, and the open group&apos;s areas appear as a second row beneath. Each area has its own address, so you can bookmark it or share the link with a colleague who holds the same access.</GuideStep>
         </GuideSteps>
       </GuideSection>
 

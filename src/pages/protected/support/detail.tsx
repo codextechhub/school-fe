@@ -27,6 +27,7 @@ import { formatBytes } from "@/utils/format-bytes";
 import { apiErrorMessage } from "@/utils/api-error";
 import { fetchAttachmentObjectUrl, openAttachment } from "@/utils/attachment-download";
 import { routesPath } from "@/routes/routesPath";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { requestSupportOpen } from "@/components/layout/support-open";
 import {
   useAddTicketAttachmentMutation,
@@ -174,32 +175,25 @@ function Fact({ label, value }: { label: string; value: string }) {
   );
 }
 
-const dayLabel = (date: Date): string => {
-  if (!Number.isFinite(date.getTime())) return "Date unknown";
-  return date.toLocaleDateString("en-NG", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
-
-const messageTime = (value: string): string => {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) return "Time unknown";
-  return date.toLocaleTimeString("en-NG", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-/** The time a message was sent, in the small grey type the thread uses. */
-function MessageTime({ value, className }: { value: string; className?: string }) {
+/**
+ * The time a message was sent, in the small grey type the thread uses.
+ * `label` is the time already on the school's clock (see the thread).
+ */
+function MessageTime({
+  value,
+  label,
+  className,
+}: {
+  value: string;
+  label: string;
+  className?: string;
+}) {
   return (
     <time
       dateTime={value}
       className={cn("shrink-0 whitespace-nowrap text-[11px] leading-5 text-gray-01", className)}
     >
-      {messageTime(value)}
+      {label}
     </time>
   );
 }
@@ -213,14 +207,14 @@ function MessageTime({ value, className }: { value: string; className?: string }
  * full, the spacer wraps and the time drops onto a short line of its own
  * underneath, so it never covers the text.
  */
-function TimedText({ text, time }: { text: string; time: string }) {
+function TimedText({ text, time, label }: { text: string; time: string; label: string }) {
   return (
     <div className="relative">
       <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black-01">
         {text}
         <span aria-hidden="true" className="inline-block w-12" />
       </p>
-      <MessageTime value={time} className="absolute bottom-0 right-0" />
+      <MessageTime value={time} label={label} className="absolute bottom-0 right-0" />
     </div>
   );
 }
@@ -228,7 +222,15 @@ function TimedText({ text, time }: { text: string; time: string }) {
 /**
  * Files at the foot of a message, with its time level with the last file.
  */
-function TimedFiles({ files, time }: { files: TicketAttachment[]; time: string }) {
+function TimedFiles({
+  files,
+  time,
+  label,
+}: {
+  files: TicketAttachment[];
+  time: string;
+  label: string;
+}) {
   return (
     <div className="flex items-end gap-2">
       <div className="min-w-0 flex-1">
@@ -236,7 +238,7 @@ function TimedFiles({ files, time }: { files: TicketAttachment[]; time: string }
           <AttachmentCard key={file.id} file={file} compact />
         ))}
       </div>
-      <MessageTime value={time} />
+      <MessageTime value={time} label={label} />
     </div>
   );
 }
@@ -352,9 +354,14 @@ export default function SupportTicketDetail() {
     unattachedFiles,
     ticket?.created_at ?? "",
   );
+  // The ticket's branch zone, else the school's, for the day breaks and the times.
+  const { formatDay, formatInstantTime, prefs } = useSchoolDisplay(ticket?.branch ?? null);
+  const messageTime = (value: string) =>
+    Number.isFinite(new Date(value).getTime()) ? formatInstantTime(value) : "Time unknown";
   const conversationDays = buildConversationDays(
     ticket?.comments ?? [],
     ticketAttachments.conversation,
+    prefs.timeZone,
   );
   const conversationItemCount = conversationDays.reduce(
     (dayTotal, day) =>
@@ -615,7 +622,7 @@ export default function SupportTicketDetail() {
                       <div className="flex items-center gap-3">
                         <span className="h-px flex-1 bg-white-02" />
                         <time className="shrink-0 text-[11px] font-medium text-gray-01">
-                          {dayLabel(day.date)}
+                          {day.day ? formatDay(day.day, { month: "long" }) : "Date unknown"}
                         </time>
                         <span className="h-px flex-1 bg-white-02" />
                       </div>
@@ -650,7 +657,11 @@ export default function SupportTicketDetail() {
                                   )}
                                 >
                                   {item.kind === "attachment" ? (
-                                    <TimedFiles files={[item.attachment]} time={item.createdAt} />
+                                    <TimedFiles
+                                      files={[item.attachment]}
+                                      time={item.createdAt}
+                                      label={messageTime(item.createdAt)}
+                                    />
                                   ) : item.comment.attachments?.length ? (
                                     <>
                                       <p className="whitespace-pre-wrap break-words text-sm leading-5 text-black-01">
@@ -659,10 +670,15 @@ export default function SupportTicketDetail() {
                                       <TimedFiles
                                         files={item.comment.attachments}
                                         time={item.createdAt}
+                                        label={messageTime(item.createdAt)}
                                       />
                                     </>
                                   ) : (
-                                    <TimedText text={item.comment.body} time={item.createdAt} />
+                                    <TimedText
+                                      text={item.comment.body}
+                                      time={item.createdAt}
+                                      label={messageTime(item.createdAt)}
+                                    />
                                   )}
                                 </div>
                               ))}

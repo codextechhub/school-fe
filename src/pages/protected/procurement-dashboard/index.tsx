@@ -19,6 +19,8 @@
 
 import { useState } from "react";
 import { formatDistanceToNowStrict } from "date-fns";
+import { formatDate, formatDayMonth } from "@/lib/dates";
+import { activeDisplayPrefs } from "@/lib/school-display";
 import { LayoutGrid, Package, Plus, UsersRound } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 
@@ -55,14 +57,13 @@ function rowCols(n: number) {
   return n >= 3 ? "md:grid-cols-2 xl:grid-cols-3" : n === 2 ? "md:grid-cols-2" : "";
 }
 
+/** A calendar date in the school's style. */
 function fmtDate(iso?: string) {
-  if (!iso) return "";
-  const date = new Date(`${iso}T00:00:00`);
-  return Number.isNaN(date.getTime()) ? iso
-    : date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return formatDate(iso, activeDisplayPrefs());
 }
 
-const dayMonth = (iso: string) => new Date(`${iso}T00:00:00`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+/** "5 Dec" or "05/12", for a contract's end date in a tight row. */
+const dayMonth = (iso: string) => formatDayMonth(iso, activeDisplayPrefs());
 
 /** Whole days since an ISO timestamp, as the approval list reads it: "today", "1 day", "6 days". */
 function waitingFor(iso: string | null, now: Date = new Date()): { label: string; days: number } {

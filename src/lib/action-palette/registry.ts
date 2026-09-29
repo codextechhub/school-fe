@@ -774,6 +774,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.SETTINGS.SECURITY },
   },
   {
+    id: "view-display-settings",
+    label: "View display settings",
+    aliases: [
+      "date format", "time format", "12 hour clock", "24 hour clock",
+      "time zone", "timezone", "branch time zone",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.display.anyOf },
+    run: { to: R.SETTINGS.DISPLAY },
+  },
+  {
     id: "view-notification-settings",
     label: "View notification settings",
     aliases: ["emails", "email notifications", "stop emails", "notification preferences"],

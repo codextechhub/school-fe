@@ -10,6 +10,7 @@ import {
   type TenantInfo,
   type User,
 } from "./auth-types";
+import type { SchoolDisplay } from "@/lib/dates";
 
 // Shape of the login / activation response's `data` envelope.
 interface AuthPayload {
@@ -98,13 +99,32 @@ const sameBranchReach = (
     a.branch_ids.length === b.branch_ids.length &&
     a.branch_ids.every((id, i) => id === b.branch_ids[i]));
 
+/** Whether two display settings say the same thing, branch zones included. */
+const sameDisplay = (
+  a: SchoolDisplay | null | undefined,
+  b: SchoolDisplay | null | undefined,
+): boolean => {
+  if (a === b) return true;
+  if (!a || !b) return !a && !b;
+  const zonesA = a.branch_zones ?? {};
+  const zonesB = b.branch_zones ?? {};
+  const keys = Object.keys(zonesA);
+  return (
+    a.time_zone === b.time_zone &&
+    a.date_format === b.date_format &&
+    a.clock === b.clock &&
+    keys.length === Object.keys(zonesB).length &&
+    keys.every((key) => zonesA[key] === zonesB[key])
+  );
+};
+
 /**
- * Every field the app reads off the tenant belongs in this comparison. It used
- * to test slug and name only, which was harmless while those were the only
- * fields that existed - and stopped being harmless the moment `status` started
- * deciding what a school may open: a /me sync carrying the school's move from
- * PENDING to ACTIVE would have been dropped here as "the same tenant", leaving
- * the app locked against a school the server had already let in.
+ * Every field the app reads off the tenant belongs in this comparison.
+ *
+ * A field left out is a change `/me` can never deliver: a sync carrying the
+ * school's move from PENDING to ACTIVE, or its new time zone, would be dropped
+ * here as "the same tenant", and the app would keep acting on the old value
+ * while the server had already moved on.
  */
 const sameTenant = (
   a: TenantInfo | null | undefined,
@@ -116,7 +136,8 @@ const sameTenant = (
     a.slug === b.slug &&
     a.name === b.name &&
     a.kind === b.kind &&
-    a.status === b.status);
+    a.status === b.status &&
+    sameDisplay(a.display, b.display));
 
 const sameSchool = (
   a: SchoolInfo | null | undefined,

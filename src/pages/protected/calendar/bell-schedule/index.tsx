@@ -47,6 +47,7 @@ import {
   viewCoversScope,
 } from "./bell-copy";
 import { useBranchLens } from "@/hooks/use-branch-lens";
+import { formatClock } from "./bell-schedule-time";
 
 /**
  * The daily period structure every timetable grid is built on.
@@ -364,11 +365,6 @@ export default function BellSchedule() {
   );
 }
 
-/** "08:00:00" as "08:00". The seconds are never anything but zero here. */
-function clock(value: string): string {
-  return (value ?? "").slice(0, 5);
-}
-
 function directoryNote(day: BellDay, dayLabel?: string, serverNote?: string) {
   if (day === "all") {
     return "Every period defined, including weekdays that run their own schedule.";
@@ -386,7 +382,7 @@ function directoryNote(day: BellDay, dayLabel?: string, serverNote?: string) {
  */
 function deleteBody(period: Period | null): string {
   if (!period) return "";
-  const when = `${clock(period.start_time)} to ${clock(period.end_time)}`;
+  const when = `${formatClock(period.start_time)} to ${formatClock(period.end_time)}`;
   if (period.day_of_week) {
     return `${period.label} runs ${when} on ${period.day_label} only. If it is the last period that day owns, the day goes back to running the everyday schedule. Any lesson already scheduled in it will block the removal.`;
   }

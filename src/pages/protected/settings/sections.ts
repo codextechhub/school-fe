@@ -23,6 +23,7 @@ export const SCHOOL_SETTINGS_SECTIONS = [
   "overview",
   "profile",
   "security",
+  "display",
   "notifications",
   "enrolment",
   "guardians",
@@ -81,6 +82,7 @@ export const SECTION_GATES: Record<
 > = {
   profile: { anyOf: [P.VIEW_SCHOOL_PROFILE] },
   security: { anyOf: [P.VIEW_SETTINGS] },
+  display: { anyOf: [P.VIEW_SETTINGS] },
   notifications: {
     anyOf: [],
     parts: [

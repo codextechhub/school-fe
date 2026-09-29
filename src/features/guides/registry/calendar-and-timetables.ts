@@ -38,6 +38,7 @@ export const CALENDAR_AND_TIMETABLES_GUIDES = [
       "school.academics.sessions-and-terms",
       "school.timetables.schedule-exams",
       "school.setup.settings-calendar",
+      "school.setup.settings-display",
     ],
     article: () => import("../content/calendar-and-timetables/plan-the-calendar"),
   },

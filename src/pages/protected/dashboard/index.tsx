@@ -39,6 +39,9 @@ import { buildAttention } from "./attention";
 import { HeroBuildings } from "./hero-buildings";
 import { FocusPanel } from "./focus-panel";
 import { useSchoolWords } from "@/hooks/use-school-words";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
+import { useNow } from "@/hooks/use-now";
+import { nowIn } from "@/lib/dates";
 
 const R = routesPath.PROTECTED;
 
@@ -274,11 +277,10 @@ export default function Dashboard() {
   const termPercent = teachable > 0 ? Math.round((taught / teachable) * 100) : 0;
   const terms = str?.viewed_session?.terms ?? [];
 
-  const today = new Intl.DateTimeFormat("en-NG", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  }).format(new Date());
+  // The date and greeting follow the school's clock, not the reader's device.
+  const { formatDay, prefs } = useSchoolDisplay();
+  const schoolNow = nowIn(prefs.timeZone, new Date(useNow()));
+  const today = formatDay(schoolNow.date, { weekday: "long", month: "long", year: false });
 
   const heroActions = [
     canSeeStudents && {
@@ -465,7 +467,7 @@ export default function Dashboard() {
               {today}
             </p>
             <h1 className="mt-2 font-mont text-2xl font-semibold tracking-tight sm:text-[30px]">
-              {greeting(new Date().getHours())}
+              {greeting(schoolNow.hour)}
               {user?.first_name ? `, ${user.first_name}` : ""}.
             </h1>
             <p className="mt-2 max-w-lg text-[13px] leading-5 text-white/70 text-pretty">

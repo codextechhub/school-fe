@@ -2,6 +2,8 @@ import { AlertTriangle, Clock, DoorOpen, Plus, UserCheck } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { ExamSlot } from "@/redux/services/calendar/calendar-types";
+import { formatTime } from "@/lib/dates";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { formatDate } from "../components/dates";
 import { board } from "./paper-filters";
 
@@ -41,6 +43,7 @@ export function PaperBoard({
   onAdd: (date: string, sitting: string) => void;
 }) {
   const laid = board(slots);
+  const { prefs } = useSchoolDisplay();
 
   return (
     <div className="grid gap-2.5">
@@ -51,7 +54,7 @@ export function PaperBoard({
         >
           <div className="sm:border-r sm:border-white-02 sm:pr-3">
             <p className="font-mont text-[13px] font-semibold text-black-01">
-              {formatDate(day.date)}
+              {formatDate(day.date, prefs)}
             </p>
             <p className="mt-0.5 text-[11px] text-gray-05">
               {day.cells.reduce((n, c) => n + c.papers.length, 0)} paper
@@ -125,9 +128,9 @@ export function PaperBoard({
                               {slot.start_time && (
                                 <span className="inline-flex items-center gap-1">
                                   <Clock className="size-3" />
-                                  {slot.start_time.slice(0, 5)}
+                                  {formatTime(slot.start_time, prefs)}
                                   {slot.end_time
-                                    ? ` - ${slot.end_time.slice(0, 5)}`
+                                    ? ` - ${formatTime(slot.end_time, prefs)}`
                                     : ""}
                                 </span>
                               )}

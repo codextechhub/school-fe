@@ -1,6 +1,9 @@
 import { createContext, useCallback, useContext } from "react";
 import { useSearchParams } from "react-router";
 
+import { todayIn } from "./dates";
+import { activeDisplayPrefs } from "./school-display";
+
 /**
  * Reading a record "as at" an earlier day.
  *
@@ -38,14 +41,15 @@ export function recordQuery(url: (id: number) => string, arg: RecordArg) {
   return { url: url(id), method: "GET" as const, params: asAt ? { as_at: asAt } : undefined };
 }
 
-/** Today's date, as the API and the picker spell it. */
+/**
+ * Today's date as the API and the picker spell it, by the school's calendar.
+ *
+ * Read in the school's zone (or the lens branch's), not the device's: a
+ * bursar in London at 11:30 pm is already on tomorrow's page in Lagos, and the
+ * API answers "today" as Lagos has it.
+ */
 export function todayIso(): string {
-  const now = new Date();
-  return [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-  ].join("-");
+  return todayIn(activeDisplayPrefs().timeZone);
 }
 
 /**
