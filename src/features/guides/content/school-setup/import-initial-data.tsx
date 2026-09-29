@@ -28,7 +28,7 @@ export default function ImportInitialDataArticle() {
       </GuideSection>
 
       <GuideSection id="staff-imported-during-setup" title="Staff imported during setup">
-        <p>Staff imported now start on your school&apos;s starting role, Teacher unless it was changed in <strong>Settings</strong> under <strong>Staff</strong>, and are marked <strong>Invited at go-live</strong>. Nobody is emailed yet: each result line reads, for example, <em>Tunde Bello added. Their invitation goes out when the school goes live.</em></p>
+        <p>Staff imported now start on your school&apos;s starting role, Teacher unless it was changed in <strong>Settings</strong> under <strong>Staff rules</strong>, and are marked <strong>Invited at go-live</strong>. Nobody is emailed yet: each result line reads, for example, <em>Tunde Bello added. Their invitation goes out when the school goes live.</em></p>
         <p>When your school goes live, all their invitations go out together. One that fails does not hold up go-live or the others; send that person theirs with <strong>Resend</strong> once you are live.</p>
         <GuideCallout tone="info" title="Going live approves the list">Staff imported during setup skip hire approval, because going live is the school approving the list. A file that still has a Role column is not refused: it warns once that roles are not imported and that everybody starts on the starting role.</GuideCallout>
       </GuideSection>

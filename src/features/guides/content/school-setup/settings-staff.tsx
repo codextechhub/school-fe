@@ -19,7 +19,7 @@ const SELF_EDIT = [
 ] as const;
 
 const PROBLEMS = [
-  ["Staff is not in Settings", "It opens for a role that can view both school settings and staff. Ask whoever manages roles at your school."],
+  ["Staff rules is not in Settings", "It opens for a role that can view both school settings and staff. Ask whoever manages roles at your school."],
   ["The boxes are greyed out and there is no Save", "Your role reads these rules without changing them, or you work in one branch. The rules are the whole school's, and the screen says why at the bottom."],
   ["The starting role is refused on save", "The role carries permissions your own role does not hold, so you cannot make it everybody's starting role. Ask an administrator who holds them, or pick another role."],
   ["Hires are waiting and nobody can approve them", "The hire approvers group is empty. Select Add approvers on the Hiring panel, or open Approvers under Workflow, and put somebody in it. The waiting hires become theirs to decide straight away."],
@@ -45,7 +45,7 @@ export default function SettingsStaffArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p><strong>Staff</strong> in <strong>Settings</strong> holds your school&apos;s own rules for its staff: the role a new member of staff starts with, the documents kept on file, what staff change about themselves, whether a hire is approved before the invitation goes out, and how leave is limited and counted. The rules are the whole school&apos;s: somebody who works in one branch reads them without changing them.</p>
+        <p><strong>Staff rules</strong> in <strong>Settings</strong>, in the <strong>Staff</strong> group, holds your school&apos;s own rules for its staff: the role a new member of staff starts with, the documents kept on file, what staff change about themselves, whether a hire is approved before the invitation goes out, and how leave is limited and counted. The rules are the whole school&apos;s: somebody who works in one branch reads them without changing them.</p>
         <GuideChecklist items={[
           "Your role can view school settings and view staff. Saving a change needs the key to update settings as well.",
           "You act for the whole school, not one branch.",

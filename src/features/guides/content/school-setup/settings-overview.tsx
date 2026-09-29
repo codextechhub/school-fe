@@ -1,19 +1,27 @@
 import { GuideCallout, GuideSection, GuideStep, GuideSteps } from "../../article-components";
 
-const AREAS = [
-  ["School profile", "Your crest, address, website and motto, and the details XVS set up for you."],
-  ["Sign-in and security", "How many wrong passwords lock an account, and how long reset links and invitations last."],
-  ["Notifications", "Which events also send an email to the people they concern, and whether approvals email anybody."],
-  ["Enrolment", "How old a new pupil may be, which documents and details are required, and how full a class may get."],
-  ["Guardians", "How many guardians each child needs, whether a new guardian needs an email, how siblings are recognised, and your own relationship words."],
-  ["Admissions", "The steps an applicant goes through, which of them is an offer and for how long, and the documents needed before enrolling."],
-  ["Promotion", "Who moves up at the end of the year, which class they land in, and what a full class does during the run."],
-  ["Admission numbers", "Whether every child needs an admission number, and what a valid one looks like."],
-  ["Payroll", "Whether the whole school is paid in one run, or each branch runs its own."],
-  ["Staff", "The role new staff start with, the documents kept on file, what staff change themselves, hire approval, and leave allowances."],
-  ["Staff IDs", "Whether everybody on the staff needs a staff ID, and what a valid one looks like."],
-  ["Staff profiles", "How much of a colleague's profile their line managers and other colleagues see."],
-  ["More settings", "Roles, field access, approval paths, and the Finance and Procurement settings."],
+const GROUPS = [
+  ["Your school", [
+    ["School profile", "Your crest, address, website and motto, and the details XVS set up for you."],
+    ["Sign-in and security", "How many wrong passwords lock an account, and how long reset links and invitations last."],
+    ["Notifications", "Which events also send an email to the people they concern, and whether approvals email anybody."],
+  ]],
+  ["Students", [
+    ["Enrolment", "How old a new pupil may be, which documents and details are required, and how full a class may get."],
+    ["Admissions", "The steps an applicant goes through, which of them is an offer and for how long, and the documents needed before enrolling."],
+    ["Admission numbers", "Whether every child needs an admission number, and what a valid one looks like."],
+    ["Guardians", "How many guardians each child needs, whether a new guardian needs an email, how siblings are recognised, and your own relationship words."],
+    ["Promotion", "Who moves up at the end of the year, which class they land in, and what a full class does during the run."],
+  ]],
+  ["Staff", [
+    ["Staff rules", "The role new staff start with, the documents kept on file, what staff change themselves, hire approval, and leave allowances."],
+    ["Staff IDs", "Whether everybody on the staff needs a staff ID, and what a valid one looks like."],
+    ["Staff profiles", "How much of a colleague's profile their line managers and other colleagues see."],
+    ["Payroll", "Whether the whole school is paid in one run, or each branch runs its own."],
+  ]],
+  ["Everything else", [
+    ["More settings", "Roles, field access, approval paths, and the Finance and Procurement settings."],
+  ]],
 ] as const;
 
 const PROBLEMS = [
@@ -34,20 +42,25 @@ export default function SettingsOverviewArticle() {
       <GuideSection id="open-settings" title="Open Settings">
         <GuideSteps>
           <GuideStep title="Select Settings">Select <strong>Settings</strong> in the sidebar, or type &quot;settings&quot; into the search box in the header. Your school&apos;s name shows at the top right, so you know whose settings you are changing.</GuideStep>
-          <GuideStep title="Pick an area">The list of areas runs down the left on a wide screen, and across the top on a narrower screen such as a phone. Select one to open it. Each area has its own address, so you can bookmark it or share the link with a colleague who holds the same access.</GuideStep>
+          <GuideStep title="Pick an area">The areas are grouped under <strong>Your school</strong>, <strong>Students</strong> and <strong>Staff</strong>, with <strong>Overview</strong> and <strong>More settings</strong> on their own. On a wide screen the groups run down the left and open like sub-menus; the group holding the page you are on stays open. On a phone the groups are a row of buttons across the top, and the open group&apos;s areas appear as a second row beneath. Each area has its own address, so you can bookmark it or share the link with a colleague who holds the same access.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
       <GuideSection id="the-overview" title="Read the overview">
-        <p><strong>Overview</strong> shows a card for every area your role can open. Select a card to go straight to it.</p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {AREAS.map(([title, body]) => (
-            <div key={title} className="rounded-2xl border border-gray-200 bg-white p-4">
-              <p className="text-sm font-semibold text-black-01">{title}</p>
-              <p className="mt-1 text-xs leading-5 text-gray-01">{body}</p>
+        <p><strong>Overview</strong> shows a card for every area your role can open, under the same group headings as the list of areas. Select a card to go straight to it.</p>
+        {GROUPS.map(([group, areas]) => (
+          <div key={group} className="space-y-2">
+            <p className="text-sm font-semibold text-black-01">{group}</p>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {areas.map(([title, body]) => (
+                <div key={title} className="min-w-0 rounded-2xl border border-gray-200 bg-white p-4">
+                  <p className="text-sm font-semibold text-black-01">{title}</p>
+                  <p className="mt-1 text-xs leading-5 text-gray-01">{body}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </GuideSection>
 
       <GuideSection id="more-settings" title="Find the settings on other screens">

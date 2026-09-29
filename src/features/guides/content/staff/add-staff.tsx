@@ -25,7 +25,7 @@ export default function AddStaffArticle() {
       </GuideSection>
 
       <GuideSection id="role-and-duties" title="Role and teaching duties">
-        <p>At a running school the form does not ask for a role. Everybody starts on the school&apos;s starting role, set in <strong>Settings</strong> under <strong>Staff</strong>, reaching as far as their posting. The form says which role that is under <strong>What happens when you save</strong>. Roles are added or removed afterwards from Roles &amp; Permissions by whoever manages them.</p>
+        <p>At a running school the form does not ask for a role. Everybody starts on the school&apos;s starting role, set in <strong>Settings</strong> under <strong>Staff rules</strong>, reaching as far as their posting. The form says which role that is under <strong>What happens when you save</strong>. Roles are added or removed afterwards from Roles &amp; Permissions by whoever manages them.</p>
         <p>While the school is still being set up, a <strong>Role</strong> step asks for the administrator role to grant, and <strong>This role reaches</strong> says which branch&apos;s records it opens. It follows the posting unless you widen it.</p>
         <p>When the starting role is a teaching role and the year&apos;s classes and subjects exist, a <strong>Teaching duties</strong> step appears. Pick subjects and classes: every subject you pick is assigned in every class you pick, with the person as main teacher where that class subject has none. The form counts how many duties that makes. The step is optional, and duties can be changed later on Teaching duties.</p>
       </GuideSection>

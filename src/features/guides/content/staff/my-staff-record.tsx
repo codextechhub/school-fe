@@ -36,7 +36,7 @@ export default function MyStaffRecordArticle() {
       </GuideSection>
 
       <GuideSection id="update-your-details" title="Update your details">
-        <p>You can correct some facts about yourself without anybody&apos;s help. Your school chooses which, in <strong>Settings</strong> under <strong>Staff</strong>. Unless it has chosen otherwise, they are your photograph, middle name, date of birth and phone.</p>
+        <p>You can correct some facts about yourself without anybody&apos;s help. Your school chooses which, in <strong>Settings</strong> under <strong>Staff rules</strong>. Unless it has chosen otherwise, they are your photograph, middle name, date of birth and phone.</p>
         <GuideSteps>
           <GuideStep title="Open the drawer">On your own record, select <strong>Update my details</strong>. The drawer shows only the details your school lets you change.</GuideStep>
           <GuideStep title="Change your photograph">Where it is offered, select the camera on your picture and choose a photo. It saves straight away.</GuideStep>
