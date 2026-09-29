@@ -34,10 +34,12 @@ export default function QuotesFromSuppliersArticle() {
       </GuideSection>
 
       <GuideSection id="record-quotations" title="Record the quotations">
+        <p>Invited suppliers can use the emailed link and verification code to submit their own quotations. The form shows the RFQ version and the local closing date and time. A supplier can enter a quantity offered below the requested quantity, mark an unavailable line as no-bid, and view uploaded images in a gallery. Whole quantities display without trailing decimals. Submission sends the RFQ buyer an in-app alert.</p>
         <GuideSteps>
           <GuideStep title="Select New Quotation">On <strong>Quotations</strong>, choose the <strong>RFQ</strong>, then the <strong>Vendor</strong>. Only invited suppliers who have not yet quoted are offered.</GuideStep>
           <GuideStep title="Enter their offer">Fill in the <strong>Quote date</strong>, <strong>Valid until</strong>, <strong>Lead time (days)</strong>, the supplier&apos;s <strong>Reference</strong>, and a price for each line. Select <strong>Create quotation</strong>.</GuideStep>
           <GuideStep title="Submit it">Open the quotation and select <strong>Submit</strong>. A submitted quotation is a firm offer in contention.</GuideStep>
+          <GuideStep title="Review the evidence">Open the submitted quotation, select <strong>Evidence</strong>, then select <strong>View image</strong> under Attachments. Use <strong>Previous</strong> and <strong>Next</strong> to inspect each image without leaving the quotation.</GuideStep>
         </GuideSteps>
       </GuideSection>
 

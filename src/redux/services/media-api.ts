@@ -8,6 +8,7 @@
  */
 
 import { baseApi } from "./base-api";
+import { buildAttachmentUrl } from "@/utils/attachment-download";
 
 export const mediaApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
@@ -17,11 +18,10 @@ export const mediaApi = baseApi.injectEndpoints({
       // "Resource not found." on top of every screen the crest appears on, once
       // per render. The image just does not draw.
       extraOptions: { silent: true },
-      // mediaUrl is the absolute URL the backend built (host + /media/...).
-      // fetchBaseQuery uses an absolute http(s) URL as-is (no baseUrl prefix).
+      // Media paths resolve at the host root, outside the API prefix.
       queryFn: async (mediaUrl, _api, _extra, baseQuery) => {
         const result = await baseQuery({
-          url: mediaUrl,
+          url: new URL(buildAttachmentUrl(mediaUrl), window.location.origin).href,
           // Only a successful body is bytes. Reading an ERROR body as a Blob
           // put a Blob in `error.data`, and redux's serializable check then
           // logged a wall of warnings for a single missing file - noise that
