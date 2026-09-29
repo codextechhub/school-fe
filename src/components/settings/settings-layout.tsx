@@ -1,7 +1,9 @@
-import { useEffect, useRef, type ElementType, type ReactNode } from "react";
-import { ArrowRight, CheckCircle2, CircleDashed, History, LockKeyhole } from "lucide-react";
+import { useEffect, useRef, useState, type ElementType, type ReactNode, type RefObject } from "react";
+import { ArrowRight, CheckCircle2, ChevronDown, CircleDashed, History, LockKeyhole } from "lucide-react";
 import { Link } from "react-router";
+import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 export interface ConsoleSettingsSection {
@@ -9,6 +11,8 @@ export interface ConsoleSettingsSection {
   title: string;
   description: string;
   icon: ElementType;
+  /** The `ConsoleSettingsGroup` key this section sits under, when it has one. */
+  group?: string;
 }
 
 export interface SettingsConsumerInfo {
@@ -31,12 +35,100 @@ export function SettingsConsumer({ consumer }: { consumer?: SettingsConsumerInfo
   );
 }
 
+/** A heading in the sections rail that holds several sections under one name. */
+export interface ConsoleSettingsGroup {
+  key: string;
+  title: string;
+  icon: ElementType;
+}
+
+type RailEntry =
+  | { kind: "section"; section: ConsoleSettingsSection }
+  | { kind: "group"; group: ConsoleSettingsGroup; sections: ConsoleSettingsSection[] };
+
+/** Sections in their given order, with grouped ones gathered where their group first appears. */
+function railEntries(sections: ConsoleSettingsSection[], groups: ConsoleSettingsGroup[]): RailEntry[] {
+  const byKey = new Map(groups.map((g) => [g.key, g]));
+  const entries: RailEntry[] = [];
+  const placed = new Map<string, Extract<RailEntry, { kind: "group" }>>();
+  for (const section of sections) {
+    const group = section.group ? byKey.get(section.group) : undefined;
+    if (!group) {
+      entries.push({ kind: "section", section });
+      continue;
+    }
+    const existing = placed.get(group.key);
+    if (existing) {
+      existing.sections.push(section);
+    } else {
+      const entry = { kind: "group" as const, group, sections: [section] };
+      placed.set(group.key, entry);
+      entries.push(entry);
+    }
+  }
+  return entries;
+}
+
+const XL_QUERY = "(min-width: 1280px)";
+/** Space kept under the fitted box, so it does not sit on the window's edge. */
+const FIT_BOTTOM_GAP = 24;
+const FIT_MIN_HEIGHT = 420;
+
+/**
+ * The height that fits a box from its top to the bottom of the window, at xl
+ * and up; `undefined` below xl, where the page scrolls as usual.
+ *
+ * Measured rather than calculated from the header's height, because banners
+ * above the page (a proxy session, an announcement) move the box down.
+ */
+function useFitToWindow(ref: RefObject<HTMLElement | null>, enabled: boolean, remeasure: unknown) {
+  const [height, setHeight] = useState<number | undefined>(undefined);
+  useEffect(() => {
+    if (!enabled || typeof window === "undefined" || !window.matchMedia) return;
+    const media = window.matchMedia(XL_QUERY);
+    const measure = () => {
+      const box = ref.current;
+      if (!box || !media.matches) {
+        setHeight(undefined);
+        return;
+      }
+      const top = box.getBoundingClientRect().top + window.scrollY;
+      setHeight(Math.max(FIT_MIN_HEIGHT, window.innerHeight - top - FIT_BOTTOM_GAP));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    media.addEventListener?.("change", measure);
+    return () => {
+      window.removeEventListener("resize", measure);
+      media.removeEventListener?.("change", measure);
+    };
+  }, [ref, enabled, remeasure]);
+  return height;
+}
+
+/**
+ * A settings console: a rail of sections beside the open one.
+ *
+ * **Groups.** A section that names a `group` sits under that group's heading
+ * in the rail, which opens and closes like a sub-menu; the group holding the
+ * open section is always open. Below xl the rail is a row of pills: groups
+ * show as one pill each, and the open group's sections follow in a second
+ * row, so a phone never scrolls sideways past a dozen pills to find one.
+ *
+ * **`fitScreen`.** At xl and up the rail and the open section sit in a box as
+ * tall as the window, and each scrolls on its own, so a long section scrolls
+ * without taking the rail away and the page itself never grows. Below xl the
+ * page scrolls as every other page does. Both are opt-in, so a console that
+ * passes neither keeps a flat rail on a scrolling page.
+ */
 export function ConsoleSettingsLayout({
   title,
   description,
   basePath,
   activeSection,
   sections,
+  groups = [],
+  fitScreen = false,
   scopeLabel,
   guideTargetPrefix,
   children,
@@ -46,28 +138,157 @@ export function ConsoleSettingsLayout({
   basePath: string;
   activeSection: string;
   sections: ConsoleSettingsSection[];
+  groups?: ConsoleSettingsGroup[];
+  fitScreen?: boolean;
   scopeLabel?: string | null;
   guideTargetPrefix?: string;
   children: ReactNode;
 }) {
   const railRef = useRef<HTMLDivElement>(null);
+  const subRailRef = useRef<HTMLDivElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  // Below xl the sections are a row that scrolls sideways, and a deep link
-  // can land on a section whose pill is off the right edge. Bring it into
-  // view by moving the row itself, never the page.
+  const entries = railEntries(sections, groups);
+  const activeGroup = sections.find((s) => s.key === activeSection)?.group;
+  const activeEntry = entries.find(
+    (e): e is Extract<RailEntry, { kind: "group" }> => e.kind === "group" && e.group.key === activeGroup,
+  );
+  const [opened, setOpened] = useState<Record<string, boolean>>({});
+  const isOpen = (key: string) => key === activeGroup || Boolean(opened[key]);
+
+  const fittedHeight = useFitToWindow(boxRef, fitScreen, activeSection);
+  const fitted = fittedHeight !== undefined;
+
+  // Below xl the rows scroll sideways, and a deep link can land on a pill off
+  // the right edge. Bring it into view by moving the row itself, never the page.
   useEffect(() => {
-    const rail = railRef.current;
-    const active = rail?.querySelector<HTMLElement>('[aria-current="page"]');
-    if (!rail || !active || rail.scrollWidth <= rail.clientWidth) return;
-    const left = active.offsetLeft - rail.offsetLeft;
-    const right = left + active.offsetWidth;
-    if (left < rail.scrollLeft || right > rail.scrollLeft + rail.clientWidth) {
-      rail.scrollLeft = Math.max(0, left - 16);
+    for (const rail of [railRef.current, subRailRef.current]) {
+      const active = rail?.querySelector<HTMLElement>('[aria-current="page"], [data-active-group="true"]');
+      if (!rail || !active || rail.scrollWidth <= rail.clientWidth) continue;
+      const left = active.offsetLeft - rail.offsetLeft;
+      const right = left + active.offsetWidth;
+      if (left < rail.scrollLeft || right > rail.scrollLeft + rail.clientWidth) {
+        rail.scrollLeft = Math.max(0, left - 16);
+      }
     }
   }, [activeSection]);
 
+  // A new section starts at its top, as a new page would.
+  useEffect(() => {
+    if (contentRef.current) contentRef.current.scrollTop = 0;
+  }, [activeSection]);
+
+  const hrefOf = (key: string) => (key === "overview" ? basePath : `${basePath}/${key}`);
+
+  const rail = (
+    <div className="hidden space-y-1 rounded-xl border border-white-02 bg-white p-2 xl:block">
+      {entries.map((entry) => {
+        if (entry.kind === "section") {
+          return <RailLink key={entry.section.key} section={entry.section} to={hrefOf(entry.section.key)} active={entry.section.key === activeSection} />;
+        }
+        const { group } = entry;
+        const Icon = group.icon;
+        const open = isOpen(group.key);
+        const holdsActive = group.key === activeGroup;
+        return (
+          <div key={group.key}>
+            <button
+              type="button"
+              aria-expanded={open}
+              onClick={() => setOpened((current) => ({ ...current, [group.key]: !open }))}
+              disabled={holdsActive}
+              className={cn(
+                "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-default",
+                holdsActive ? "text-primary" : "text-gray-01 hover:bg-gray-02/50",
+              )}
+            >
+              <span className={cn("grid size-8 shrink-0 place-content-center rounded-md bg-gray-02 text-gray-05", holdsActive && "bg-primary/10 text-primary")}>
+                <Icon className="size-4" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-mont text-xs font-semibold">{group.title}</span>
+                <span className="mt-0.5 block truncate font-mont text-[10px] text-gray-05">
+                  {entry.sections.map((s) => s.title).join(", ")}
+                </span>
+              </span>
+              <ChevronDown className={cn("size-4 shrink-0 text-gray-05 transition-transform", open && "rotate-180")} aria-hidden />
+            </button>
+            {open ? (
+              <div className="mb-1 ml-7 space-y-0.5 border-l border-white-02 pl-3">
+                {entry.sections.map((section) => {
+                  const active = section.key === activeSection;
+                  return (
+                    <Link
+                      key={section.key}
+                      to={hrefOf(section.key)}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "block rounded-md px-2.5 py-1.5 transition-colors",
+                        active ? "bg-primary/8 text-primary" : "text-gray-01 hover:bg-gray-02/50",
+                      )}
+                    >
+                      <span className="block font-mont text-xs font-semibold">{section.title}</span>
+                      <span className="block truncate font-mont text-[10px] text-gray-05">{section.description}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const pills = (
+    <div className="xl:hidden">
+      <div ref={railRef} className="flex max-w-full gap-2 overflow-x-auto pb-1">
+        {entries.map((entry) => {
+          if (entry.kind === "section") {
+            return <RailLink key={entry.section.key} section={entry.section} to={hrefOf(entry.section.key)} active={entry.section.key === activeSection} pill />;
+          }
+          const holdsActive = entry.group.key === activeGroup;
+          return (
+            <Link
+              key={entry.group.key}
+              to={hrefOf(entry.sections[0].key)}
+              data-active-group={holdsActive ? "true" : undefined}
+              className={pillClass(holdsActive)}
+            >
+              <span className={cn("grid size-8 shrink-0 place-content-center rounded-md bg-gray-02 text-gray-05", holdsActive && "bg-primary/10 text-primary")}>
+                <entry.group.icon className="size-4" />
+              </span>
+              <span className="font-mont text-xs font-semibold">{entry.group.title}</span>
+            </Link>
+          );
+        })}
+      </div>
+      {activeEntry ? (
+        <div ref={subRailRef} className="mt-2 flex max-w-full gap-1.5 overflow-x-auto pb-1" aria-label={`${activeEntry.group.title} sections`}>
+          {activeEntry.sections.map((section) => {
+            const active = section.key === activeSection;
+            return (
+              <Link
+                key={section.key}
+                to={hrefOf(section.key)}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "shrink-0 whitespace-nowrap rounded-full border px-3 py-1.5 font-mont text-xs font-medium transition-colors",
+                  active ? "border-primary/30 bg-primary/8 text-primary" : "border-white-02 bg-white text-gray-01 hover:bg-gray-02/50",
+                )}
+              >
+                {section.title}
+              </Link>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
+  );
+
   return (
-    <main className="min-w-0 space-y-5 px-4.5 pb-6 pt-14 text-black-01 sm:py-6">
+    <PageShell className="space-y-5 px-4.5 pb-6 pt-14 text-black-01 sm:py-6">
       <div data-guide={guideTargetPrefix ? `${guideTargetPrefix}.heading` : undefined} className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="font-mont text-xl font-semibold text-gray-01">{title}</h1>
@@ -81,39 +302,78 @@ export function ConsoleSettingsLayout({
         ) : null}
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[220px_minmax(0,1fr)]">
-        <nav data-guide={guideTargetPrefix ? `${guideTargetPrefix}.sections` : undefined} aria-label={`${title} sections`} className="min-w-0">
-          <div ref={railRef} className="flex max-w-full gap-2 overflow-x-auto pb-1 xl:sticky xl:top-4 xl:block xl:space-y-1 xl:overflow-visible xl:rounded-xl xl:border xl:border-white-02 xl:bg-white xl:p-2">
-            {sections.map((section) => {
-              const Icon = section.icon;
-              const active = section.key === activeSection;
-              const to = section.key === "overview" ? basePath : `${basePath}/${section.key}`;
-              return (
-                <Link
-                  key={section.key}
-                  to={to}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "group flex min-w-max items-center gap-2.5 rounded-lg border border-white-02 bg-white px-3 py-2.5 text-left transition-colors xl:min-w-0 xl:border-transparent",
-                    active ? "border-primary/20 bg-primary/8 text-primary xl:border-primary/20" : "text-gray-01 hover:bg-gray-02/50",
-                  )}
-                >
-                  <span className={cn("grid size-8 shrink-0 place-content-center rounded-md bg-gray-02 text-gray-05", active && "bg-primary/10 text-primary")}>
-                    <Icon className="size-4" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block font-mont text-xs font-semibold">{section.title}</span>
-                    <span className="mt-0.5 hidden truncate font-mont text-[10px] text-gray-05 xl:block">{section.description}</span>
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
+      <div
+        ref={boxRef}
+        style={fitted ? { height: fittedHeight } : undefined}
+        className="grid min-w-0 grid-cols-1 gap-5 xl:grid-cols-[240px_minmax(0,1fr)]"
+      >
+        <nav
+          data-guide={guideTargetPrefix ? `${guideTargetPrefix}.sections` : undefined}
+          aria-label={`${title} sections`}
+          className={cn("min-w-0", fitted && "min-h-0")}
+        >
+          {pills}
+          {fitted ? (
+            <ScrollArea className="hidden h-full xl:block">{rail}</ScrollArea>
+          ) : (
+            <div className="xl:sticky xl:top-4">{rail}</div>
+          )}
         </nav>
 
-        <section data-guide={guideTargetPrefix ? `${guideTargetPrefix}.content` : undefined} className="min-w-0">{children}</section>
+        <section data-guide={guideTargetPrefix ? `${guideTargetPrefix}.content` : undefined} className={cn("min-w-0", fitted && "min-h-0")}>
+          {fitted ? (
+            <ScrollArea className="h-full" viewportRef={contentRef} viewportClassName="pr-3">
+              <div className="pb-2">{children}</div>
+            </ScrollArea>
+          ) : (
+            children
+          )}
+        </section>
       </div>
-    </main>
+    </PageShell>
+  );
+}
+
+function pillClass(active: boolean) {
+  return cn(
+    "group flex min-w-max items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors",
+    active ? "border-primary/20 bg-primary/8 text-primary" : "border-white-02 bg-white text-gray-01 hover:bg-gray-02/50",
+  );
+}
+
+function RailLink({
+  section,
+  to,
+  active,
+  pill = false,
+}: {
+  section: ConsoleSettingsSection;
+  to: string;
+  active: boolean;
+  pill?: boolean;
+}) {
+  const Icon = section.icon;
+  return (
+    <Link
+      to={to}
+      aria-current={active ? "page" : undefined}
+      className={
+        pill
+          ? pillClass(active)
+          : cn(
+              "group flex min-w-0 items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition-colors",
+              active ? "border-primary/20 bg-primary/8 text-primary" : "border-transparent text-gray-01 hover:bg-gray-02/50",
+            )
+      }
+    >
+      <span className={cn("grid size-8 shrink-0 place-content-center rounded-md bg-gray-02 text-gray-05", active && "bg-primary/10 text-primary")}>
+        <Icon className="size-4" />
+      </span>
+      <span className="min-w-0">
+        <span className="block font-mont text-xs font-semibold">{section.title}</span>
+        {pill ? null : <span className="mt-0.5 block truncate font-mont text-[10px] text-gray-05">{section.description}</span>}
+      </span>
+    </Link>
   );
 }
 

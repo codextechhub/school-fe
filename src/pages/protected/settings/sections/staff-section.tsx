@@ -72,7 +72,7 @@ export function StaffSection() {
   return (
     <div className="space-y-5">
       <SettingsSectionHeader
-        title="Staff"
+        title="Staff rules"
         description="How new staff start, what the school keeps on file, what staff change themselves, and how leave is counted."
       />
       <StaffForm key={JSON.stringify(rules)} rules={rules} />

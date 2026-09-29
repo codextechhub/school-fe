@@ -19,6 +19,7 @@ import {
   ConsoleSettingsLayout,
   SettingsOverviewCard,
   SettingsSectionHeader,
+  type ConsoleSettingsGroup,
   type ConsoleSettingsSection,
 } from "@/components/settings/settings-layout";
 import PageAccessDenied from "@/components/custom/page-access-denied";
@@ -49,23 +50,35 @@ import { StaffNumbersSection } from "./sections/staff-numbers-section";
 
 const BASE = routesPath.PROTECTED.SETTINGS.INDEX;
 
+/**
+ * The rail's groups. Related sections sit under one heading, so the rail reads
+ * as a handful of areas rather than a dozen peers; each section keeps its own
+ * address, so links and guides into it are unaffected.
+ */
+const GROUPS: ConsoleSettingsGroup[] = [
+  { key: "school", title: "Your school", icon: School },
+  { key: "students", title: "Students", icon: GraduationCap },
+  { key: "staff", title: "Staff", icon: Briefcase },
+];
+
+/** Every section, in rail order; a section's `group` places it under that heading. */
 const SECTION_META: Record<
   SchoolSettingsSection,
   Omit<ConsoleSettingsSection, "key"> & { icon: ElementType }
 > = {
   overview: { title: "Overview", description: "Everything in one place", icon: LayoutGrid },
-  profile: { title: "School profile", description: "Crest, address and details", icon: School },
-  security: { title: "Sign-in and security", description: "Lockouts and link lifetimes", icon: ShieldCheck },
-  notifications: { title: "Notifications", description: "Which events send email", icon: BellRing },
-  enrolment: { title: "Enrolment", description: "Ages, documents, classes", icon: UserPlus },
-  guardians: { title: "Guardians", description: "Contacts and siblings", icon: Users },
-  admissions: { title: "Admissions", description: "Steps and offers", icon: ClipboardList },
-  promotion: { title: "Promotion", description: "Arms, holds and full classes", icon: GraduationCap },
-  "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash },
-  payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark },
-  staff: { title: "Staff", description: "Starting role, leave, hiring", icon: Briefcase },
-  "staff-ids": { title: "Staff IDs", description: "The rule for staff numbers", icon: BadgeCheck },
-  "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog },
+  profile: { title: "School profile", description: "Crest, address and details", icon: School, group: "school" },
+  security: { title: "Sign-in and security", description: "Lockouts and link lifetimes", icon: ShieldCheck, group: "school" },
+  notifications: { title: "Notifications", description: "Which events send email", icon: BellRing, group: "school" },
+  enrolment: { title: "Enrolment", description: "Ages, documents, classes", icon: UserPlus, group: "students" },
+  admissions: { title: "Admissions", description: "Steps and offers", icon: ClipboardList, group: "students" },
+  "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash, group: "students" },
+  guardians: { title: "Guardians", description: "Contacts and siblings", icon: Users, group: "students" },
+  promotion: { title: "Promotion", description: "Arms, holds and full classes", icon: GraduationCap, group: "students" },
+  staff: { title: "Staff rules", description: "Starting role, leave, hiring", icon: Briefcase, group: "staff" },
+  "staff-ids": { title: "Staff IDs", description: "The rule for staff numbers", icon: BadgeCheck, group: "staff" },
+  "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog, group: "staff" },
+  payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark, group: "staff" },
   more: { title: "More settings", description: "Roles, approvals, finance", icon: ListChecks },
 };
 
@@ -127,6 +140,8 @@ export default function SchoolSettings({
       basePath={BASE}
       activeSection={active}
       sections={visible.map((key) => ({ key, ...SECTION_META[key] }))}
+      groups={GROUPS}
+      fitScreen
       scopeLabel={school?.name ?? null}
     >
       {Panel ? <Panel /> : <Overview sections={visible.filter((key) => key !== "overview")} />}
@@ -141,19 +156,34 @@ function Overview({ sections }: { sections: SchoolSettingsSection[] }) {
         title="Overview"
         description="Pick an area to change. Only the areas your role can open are shown."
       />
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-        {sections.map((key) => (
-          <SettingsOverviewCard
-            key={key}
-            icon={SECTION_META[key].icon}
-            title={SECTION_META[key].title}
-            description={OVERVIEW_TEXT[key]}
-            to={`${BASE}/${key}`}
-          />
-        ))}
-      </div>
+      {overviewGroups(sections).map(({ title, keys }) => (
+        <section key={title} className="space-y-2.5">
+          <h3 className="font-mont text-xs font-semibold uppercase tracking-wide text-gray-05">{title}</h3>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+            {keys.map((key) => (
+              <SettingsOverviewCard
+                key={key}
+                icon={SECTION_META[key].icon}
+                title={SECTION_META[key].title}
+                description={OVERVIEW_TEXT[key]}
+                to={`${BASE}/${key}`}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
     </div>
   );
+}
+
+/** The overview's cards under the rail's group headings, ungrouped ones last. */
+function overviewGroups(sections: SchoolSettingsSection[]) {
+  const grouped = GROUPS.map((group) => ({
+    title: group.title,
+    keys: sections.filter((key) => SECTION_META[key].group === group.key),
+  }));
+  const rest = sections.filter((key) => !SECTION_META[key].group);
+  return [...grouped, { title: "Everything else", keys: rest }].filter((g) => g.keys.length > 0);
 }
 
 const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
