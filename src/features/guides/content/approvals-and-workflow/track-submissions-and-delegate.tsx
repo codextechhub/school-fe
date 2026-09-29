@@ -37,7 +37,7 @@ export default function TrackSubmissionsAndDelegateArticle() {
           <GuideStep title="Set the dates">The delegation starts at the beginning of the <strong>Start date</strong> and lasts until the end of the <strong>End date</strong>. The end date cannot be before the start date.</GuideStep>
           <GuideStep title="Limit what they cover, if you want">In <strong>Applies to</strong>, choose one kind of document, or leave it on <strong>All document types</strong>.</GuideStep>
           <GuideStep title="Decide whether you still approve too">With <strong>Exclusive delegation</strong> off, both of you can act and either vote counts. With it on, only your delegate appears in approver queues for the period.</GuideStep>
-          <GuideStep title="Add a reason and save">The reason is optional, up to 240 characters, such as &quot;Out of office for term break.&quot; Check the summary line, then select <strong>Save delegation</strong>.</GuideStep>
+          <GuideStep title="Add a reason and save">The reason is optional, up to 240 characters, such as &quot;Out of office for {w.term} break.&quot; Check the summary line, then select <strong>Save delegation</strong>.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="warning" title="A delegation hands over your decisions, not your account">Your delegate approves in their own name. Never share your password to cover an absence.</GuideCallout>
       </GuideSection>

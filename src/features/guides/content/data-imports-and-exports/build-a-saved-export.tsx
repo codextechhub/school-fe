@@ -1,10 +1,12 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
+import { useGuideWords } from "../../guide-words";
 
 export default function BuildASavedExportArticle() {
+  const w = useGuideWords();
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>A saved export is a recipe you build once and run whenever you need the same file, such as a termly list of students with their guardians&apos; phone numbers for the transport office. Each run produces a fresh file; the recipe itself holds no data.</p>
+        <p>A saved export is a recipe you build once and run whenever you need the same file, such as the list of students with their guardians&apos; phone numbers that the transport office asks for each {w.term}. Each run produces a fresh file; the recipe itself holds no data.</p>
         <GuideChecklist items={[
           "Open Export Centre under Data in the sidebar, then Exports.",
           "Know what the file is for and who will receive it, so you choose only the columns they need.",

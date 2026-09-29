@@ -17,8 +17,8 @@ import {
   contextualGuideContext,
   findWalkthrough,
   GUIDE_CATEGORIES,
-  GUIDE_REGISTRY,
   useGuideReader,
+  useGuideRegistry,
   useWalkthrough,
   type GuideRecord,
 } from "@/features/guides";
@@ -43,7 +43,8 @@ import { routesPath } from "@/routes/routesPath";
  * guides for this page") is reason enough to look without standing in the
  * way. Switching to them keeps the form's typing, because the form stays
  * mounted underneath. A walkthrough started from here closes the panel
- * first, so the tour points at the screen and not at the panel over it.
+ * first, so the tour points at the screen and not at the panel over it. Guide
+ * titles are listed in the school's word, from `useGuideRegistry`.
  */
 export function SupportSheet({
   open,
@@ -58,9 +59,10 @@ export function SupportSheet({
   const [view, setView] = useState<"ticket" | "guides">("ticket");
   const { pathname } = useLocation();
   const reader = useGuideReader();
+  const registry = useGuideRegistry();
   const page = useMemo(
-    () => contextualGuideContext(GUIDE_REGISTRY, pathname, reader),
-    [pathname, reader],
+    () => contextualGuideContext(registry, pathname, reader),
+    [registry, pathname, reader],
   );
   const guideCount = page.guides.length + page.troubleshooting.length;
   const walkthroughs = page.walkthroughs.filter(

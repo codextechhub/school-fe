@@ -112,6 +112,7 @@ export type GuideValidationIssue = {
     | "invalid-date"
     | "invalid-id"
     | "invalid-permissions"
+    | "invalid-placeholder"
     | "invalid-route"
     | "invalid-section"
     | "missing-article"

@@ -12,13 +12,19 @@
  * supplies the school's own word once, through `GuideWordsProvider`, around
  * everything the dashboard renders.
  *
- * Guide metadata (titles, summaries, tags, aliases, section titles) is static
- * and says "term"; the guide search treats "semester" as the same word, so
- * either finds a guide.
+ * Text written once as data (walkthrough steps, and a guide's title, summary,
+ * contents list and category description) names the word through opt-in
+ * placeholders, `{term}`, `{Term}`, `{terms}` and `{Terms}`, and is printed
+ * through `fillTermWords` or `guideInSchoolWords`. Only a placeholder is
+ * reworded, so "payment terms" and a stored name such as "First Term" stay as
+ * written. The guide search reads the same text with the placeholders filled
+ * as "term" and treats "semester" as the same word, so either finds a guide.
  */
 import { createContext, useContext } from "react";
 
 import { TERM_WORDS, type TermWords } from "@/lib/school-words";
+
+import type { GuideArticleSection } from "./types";
 
 export type { TermWords };
 
@@ -37,6 +43,13 @@ export const TERM_TOKEN_PATTERN = /\{[^{}]*\}/g;
 /** The placeholders fixed text may carry. */
 export const TERM_TOKENS = ["{term}", "{Term}", "{terms}", "{Terms}"] as const;
 
+const KNOWN_TOKENS: ReadonlySet<string> = new Set(TERM_TOKENS);
+
+/** The placeholders in `text` that are not one of {@link TERM_TOKENS}. */
+export function unknownTermTokens(text: string): string[] {
+  return (text.match(TERM_TOKEN_PATTERN) ?? []).filter((token) => !KNOWN_TOKENS.has(token));
+}
+
 /**
  * Fixed text with each placeholder in the school's word: "Fill in each
  * {term}" reads "Fill in each semester" at a semester school.
@@ -46,4 +59,30 @@ export const TERM_TOKENS = ["{term}", "{Term}", "{terms}", "{Terms}"] as const;
  */
 export function fillTermWords(text: string, words: TermWords): string {
   return text.replace(TOKEN, (_, form: keyof TermWords) => String(words[form]));
+}
+
+/** The parts of a guide record a reader sees printed. */
+type GuideText = {
+  title: string;
+  summary: string;
+  sections?: readonly GuideArticleSection[];
+};
+
+/**
+ * A guide record with its title, summary and "On this page" list in the
+ * school's word, and everything else as registered.
+ *
+ * Every screen that prints a guide's title or summary reads the record through
+ * this (by way of `useGuideRegistry`), so the guides home, the help panel, the
+ * header search and the article heading say what the article body says.
+ */
+export function guideInSchoolWords<T extends GuideText>(guide: T, words: TermWords): T {
+  return {
+    ...guide,
+    title: fillTermWords(guide.title, words),
+    summary: fillTermWords(guide.summary, words),
+    ...(guide.sections && {
+      sections: guide.sections.map((section) => ({ ...section, title: fillTermWords(section.title, words) })),
+    }),
+  };
 }

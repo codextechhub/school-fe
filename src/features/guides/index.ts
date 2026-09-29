@@ -19,6 +19,8 @@ export {
 } from "./discovery";
 export type { GuideLandingView, GuideReader } from "./discovery";
 export { useGuideReader } from "./use-guide-reader";
+export { guideInSchoolWords, useGuideWords } from "./guide-words";
+export { useGuideCategories, useGuideRegistry } from "./use-guide-registry";
 export { GUIDE_REGISTRY } from "./registry";
 export { GUIDE_COVERAGE_ROUTE_PATTERNS, GUIDE_ROUTE_PATTERNS, GUIDE_ROUTE_PATTERN_SET } from "./route-catalog";
 export { searchGuides } from "./search";

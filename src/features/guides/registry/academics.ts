@@ -44,8 +44,8 @@ export const ACADEMICS_GUIDES = [
   {
     id: "school.academics.sessions-and-terms",
     slug: "set-up-sessions-and-terms",
-    title: "Set up sessions and terms",
-    summary: "Create a school year with its terms, choose the branches it covers, make it the active year, copy last year's structure in, and archive it when it ends.",
+    title: "Set up sessions and {terms}",
+    summary: "Create a school year with its {terms}, choose the branches it covers, make it the active year, copy last year's structure in, and archive it when it ends.",
     category: "academics",
     tags: ["session", "term", "semester", "school year", "activate", "archive", "copy structure"],
     aliases: ["term dates", "new school year", "start a session", "add a term", "set active session", "close the year", "archive session", "roll forward", "copy last year", "semesters"],
@@ -57,7 +57,7 @@ export const ACADEMICS_GUIDES = [
     primaryRoute: R.ACADEMIC_STRUCTURE.SESSIONS,
     sections: [
       { id: "before-you-start", title: "Before you start" },
-      { id: "create-a-session", title: "Create a session and its terms" },
+      { id: "create-a-session", title: "Create a session and its {terms}" },
       { id: "choose-branches", title: "Choose where the session applies" },
       { id: "read-a-session", title: "Read a session" },
       { id: "set-active", title: "Make a session the active one" },

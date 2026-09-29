@@ -1,16 +1,21 @@
+import { TERM_WORDS } from "@/lib/school-words";
+
 import { GUIDE_CATEGORIES } from "./categories";
+import { fillTermWords } from "./guide-words";
 import type { GuideRecord, ScoredGuide } from "./types";
 
 /**
  * Words the search treats as one. A school calls a part of its year a term or
- * a semester, and every screen says its own word, but guide metadata is
- * written once and says "term". Folding both onto "term", in the metadata and
- * in the query alike, lets a reader at either kind of school find a guide by
- * the word on their screen.
+ * a semester, and every screen says its own word. Guide metadata is written
+ * once, with `{term}`-style placeholders where it means a part of the year,
+ * and may reach the search raw or already in a semester school's word.
+ * Filling the placeholders as "term" and folding "semester" onto "term", in the
+ * metadata and in the query alike, indexes both the same way and lets a reader
+ * at either kind of school find a guide by the word on their screen.
  */
 const SAME_WORD: Record<string, string> = { semester: "term", semesters: "terms" };
 
-const normalize = (value: string) => value
+const normalize = (value: string) => fillTermWords(value, TERM_WORDS)
   .toLocaleLowerCase()
   .replace(/[^a-z0-9]+/g, " ")
   .trim()

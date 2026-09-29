@@ -32,15 +32,17 @@ import {
   findWalkthrough,
   guideLandingView,
   GUIDE_CATEGORIES,
-  GUIDE_REGISTRY,
   GUIDE_ROLE_ENTRY_POINTS,
   guidesForAudience,
   recentlyReviewedGuides,
   resolveGuideRoutePattern,
   searchGuides,
+  useGuideCategories,
   useGuideReader,
+  useGuideRegistry,
   visibleGuides,
   type GuideAudience,
+  type GuideCategory,
   type GuideCategoryId,
   type GuideRecord,
 } from "@/features/guides";
@@ -80,6 +82,9 @@ const guidePath = (guide: GuideRecord) => routesPath.PROTECTED.SUPPORT.GUIDE_DET
  * dropped, so the guides themselves are reached without scrolling past twenty
  * full-width cards.
  *
+ * Guide titles, summaries and area descriptions read in the school's word,
+ * from `useGuideRegistry` and `useGuideCategories`.
+ *
  * A search that finds nothing is recorded (words and route pattern only) after
  * a pause, once per distinct query, so the guides can be written for what
  * people actually look for.
@@ -88,6 +93,8 @@ export default function HowToGuides() {
   const navigate = useNavigate();
   const location = useLocation();
   const reader = useGuideReader();
+  const registry = useGuideRegistry();
+  const categories = useGuideCategories();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [activeResult, setActiveResult] = useState(0);
@@ -102,9 +109,9 @@ export default function HowToGuides() {
   const audience = GUIDE_ROLE_ENTRY_POINTS.some((candidate) => candidate.id === audienceParam)
     ? audienceParam as GuideAudience
     : null;
-  const selectedCategory = GUIDE_CATEGORIES.find((candidate) => candidate.id === category) ?? null;
+  const selectedCategory = categories.find((candidate) => candidate.id === category) ?? null;
   const selectedAudience = GUIDE_ROLE_ENTRY_POINTS.find((candidate) => candidate.id === audience) ?? null;
-  const permitted = useMemo(() => visibleGuides(GUIDE_REGISTRY, reader), [reader]);
+  const permitted = useMemo(() => visibleGuides(registry, reader), [registry, reader]);
   const audienceGuides = useMemo(() => guidesForAudience(permitted, audience), [audience, permitted]);
   const normalizedQuery = query.trim();
   const categoryGuides = useMemo(
@@ -127,7 +134,7 @@ export default function HowToGuides() {
   const roleEntries = (selectedAudience ? [selectedAudience] : GUIDE_ROLE_ENTRY_POINTS)
     .map((role) => ({ ...role, count: guidesForAudience(permitted, role.id).length }))
     .filter((role) => role.count > 0 || role.id === audience);
-  const areas = GUIDE_CATEGORIES
+  const areas = categories
     .map((item) => ({ ...item, count: audienceGuides.filter((guide) => guide.category === item.id).length }))
     .filter((item) => item.count > 0);
 
@@ -440,7 +447,7 @@ function CategoryGuideResults({
   onActivateGuide,
   onBack,
 }: {
-  category: (typeof GUIDE_CATEGORIES)[number];
+  category: GuideCategory;
   guides: GuideRecord[];
   audienceLabel?: string;
   queryActive: boolean;

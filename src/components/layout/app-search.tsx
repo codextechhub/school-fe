@@ -13,10 +13,10 @@ import {
 import { useSearchStaffQuery } from "@/redux/services/staff/staff-api";
 import { useAppSelector } from "@/redux/store";
 import {
-  GUIDE_REGISTRY,
   resolveGuideRoutePattern,
   searchGuides,
   useGuideReader,
+  useGuideRegistry,
   visibleGuides,
 } from "@/features/guides";
 import { useRecordGuideAnalyticsMutation } from "@/redux/services/support/guide-analytics-api";
@@ -73,7 +73,8 @@ type SearchVariant = "desktop" | "mobile";
  * **Guides come last.** Once two characters are typed, the how-to guides the
  * reader may open are searched too and the best three are listed under the
  * actions: somebody typing "promote" most likely wants the screen, and the
- * guide for it is the next thing they might want. A query that finds nothing
+ * guide for it is the next thing they might want. Their titles read in the
+ * school's word, from `useGuideRegistry`. A query that finds nothing
  * at all (no person, no action, no guide) is recorded, words and route
  * pattern only, so guides get written for what people actually look for.
  *
@@ -262,15 +263,16 @@ export function AppSearch({
   const recordCount = recordRows.length;
 
   const guideReader = useGuideReader();
+  const guideRegistry = useGuideRegistry();
   const guideRows = useMemo(
     () => (resultsOpen && longEnough
-      ? searchGuides(visibleGuides(GUIDE_REGISTRY, guideReader), trimmed, 3).map(({ guide }) => ({
+      ? searchGuides(visibleGuides(guideRegistry, guideReader), trimmed, 3).map(({ guide }) => ({
           id: guide.id,
           title: guide.title,
           to: routesPath.PROTECTED.SUPPORT.GUIDE_DETAIL_SLUG(guide.slug),
         }))
       : []),
-    [resultsOpen, longEnough, guideReader, trimmed],
+    [resultsOpen, longEnough, guideRegistry, guideReader, trimmed],
   );
   /** Where the guide rows start in the flat order: after every action row. */
   const guideStart = recordCount + view.rows.length;

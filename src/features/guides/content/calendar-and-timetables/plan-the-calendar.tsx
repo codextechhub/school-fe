@@ -6,7 +6,7 @@ export default function PlanTheCalendarArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>The calendar holds the dates of the school year: public holidays, mid-term breaks, exam periods and school events. Every event is dated inside the school year you are looking at, and the {w.term} it falls in is worked out from its dates. Open <strong>Calendar</strong> in the sidebar.</p>
+        <p>The calendar holds the dates of the school year: public holidays, mid-{w.term} breaks, exam periods and school events. Every event is dated inside the school year you are looking at, and the {w.term} it falls in is worked out from its dates. Open <strong>Calendar</strong> in the sidebar.</p>
         <GuideChecklist items={[
           `The school year and its ${w.terms} exist on Sessions & ${w.Terms}.`,
           "The year selector at the foot of the sidebar shows the year you are planning.",
@@ -22,8 +22,8 @@ export default function PlanTheCalendarArticle() {
       <GuideSection id="add-an-event" title="Add an event">
         <GuideSteps>
           <GuideStep title="Open the form">Select <strong>Add event</strong> on the overview or on <strong>Events</strong>.</GuideStep>
-          <GuideStep title="Name it">Type the <strong>Event name</strong>, for example <em>Mid-term break</em>.</GuideStep>
-          <GuideStep title="Choose the type">Pick one <strong>Type</strong>: Public holiday, Mid-term break, Exam period, School event, PTA or Sports day.</GuideStep>
+          <GuideStep title="Name it">Type the <strong>Event name</strong>, for example <em>Mid-{w.term} break</em>.</GuideStep>
+          <GuideStep title="Choose the type">Pick one <strong>Type</strong>: Public holiday, Mid-{w.term} break, Exam period, School event, PTA or Sports day.</GuideStep>
           <GuideStep title="Set the dates">Choose the <strong>Start date</strong>. The <strong>End date</strong> follows it, which suits a one-day event; move it for an event that runs several days.</GuideStep>
           <GuideStep title="Choose where it applies">When your school runs more than one branch, choose <strong>The whole school</strong> or <strong>One branch</strong>. Most events apply to every branch.</GuideStep>
           <GuideStep title="Save">Add a <strong>Description</strong> if useful, then select <strong>Add event</strong>.</GuideStep>

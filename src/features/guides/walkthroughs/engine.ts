@@ -7,7 +7,7 @@ import type {
 } from "./types";
 import type { GuideRecord } from "../types";
 import { routePatternMatches } from "../route-pattern";
-import { TERM_TOKEN_PATTERN, TERM_TOKENS } from "../guide-words";
+import { unknownTermTokens } from "../guide-words";
 import { routesPath } from "@/routes/routesPath";
 
 const STORAGE_PREFIX = "school-guide-walkthrough";
@@ -195,8 +195,6 @@ export function walkthroughCompletionRoute(
     : routesPath.PROTECTED.SUPPORT.GUIDES;
 }
 
-const KNOWN_TOKENS: ReadonlySet<string> = new Set(TERM_TOKENS);
-
 /**
  * Every broken contract in the walkthroughs, as readable lines.
  *
@@ -231,10 +229,8 @@ export function validateWalkthroughs(
         issues.push(`Invalid step route in ${walkthrough.id}:${step.id}`);
       }
       if (step.kind !== "branch") {
-        const unknown = `${step.title} ${step.body}`
-          .match(TERM_TOKEN_PATTERN)
-          ?.filter((token) => !KNOWN_TOKENS.has(token));
-        if (unknown?.length) issues.push(`Unknown placeholder ${unknown[0]} in ${walkthrough.id}:${step.id}`);
+        const unknown = unknownTermTokens(`${step.title} ${step.body}`);
+        if (unknown.length) issues.push(`Unknown placeholder ${unknown[0]} in ${walkthrough.id}:${step.id}`);
       }
       if (step.target) {
         const contract = `${walkthrough.id}:${step.target}`;

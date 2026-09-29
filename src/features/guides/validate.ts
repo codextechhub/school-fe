@@ -1,3 +1,4 @@
+import { unknownTermTokens } from "./guide-words";
 import { GUIDE_ROUTE_PATTERN_SET } from "./route-catalog";
 import {
   GUIDE_AUDIENCES,
@@ -22,6 +23,13 @@ function duplicateValues(values: readonly string[]): Set<string> {
   return duplicates;
 }
 
+/**
+ * Every broken contract in the guide registry, one issue per problem.
+ *
+ * Title, summary, section titles, tags and aliases may carry the school-word
+ * placeholders (`{term}`, `{Term}`, `{terms}`, `{Terms}`); any other `{...}` is
+ * a typo that would reach the reader as written, and is refused.
+ */
 export function validateGuideRegistry(
   records: readonly GuideRecord[],
   options: ValidationOptions = {},
@@ -74,6 +82,16 @@ export function validateGuideRegistry(
       if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(sectionId) || duplicateValues(sectionIds).has(sectionId)) {
         issues.push({ code: "invalid-section", guideId: record.id, message: `Invalid or duplicated article section: ${sectionId}` });
       }
+    }
+    const worded = [
+      record.title,
+      record.summary,
+      ...(record.sections ?? []).map((section) => section.title),
+      ...record.tags,
+      ...record.aliases,
+    ];
+    for (const token of new Set(worded.flatMap(unknownTermTokens))) {
+      issues.push({ code: "invalid-placeholder", guideId: record.id, message: `Unknown placeholder ${token}` });
     }
     for (const relatedId of record.relatedGuideIds ?? []) {
       if (relatedId === record.id || !ids.has(relatedId)) {

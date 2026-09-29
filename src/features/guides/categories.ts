@@ -5,7 +5,7 @@ export const GUIDE_CATEGORIES = [
   { id: "school-setup", title: "School setup", description: "Set the school up, take it live, and manage its branches.", order: 2 },
   { id: "students-and-guardians", title: "Students and guardians", description: "Admit, enrol, place, promote, and keep family records right.", order: 3 },
   { id: "staff", title: "Staff", description: "Add staff, invite them, post them to branches, and assign teaching.", order: 4 },
-  { id: "academics", title: "Academics", description: "Sessions, terms, departments, programmes, classes, and subjects.", order: 5 },
+  { id: "academics", title: "Academics", description: "Sessions, {terms}, departments, programmes, classes, and subjects.", order: 5 },
   { id: "calendar-and-timetables", title: "Calendar and timetables", description: "Date the school year, plan the week, and schedule exams.", order: 6 },
   { id: "roles-and-permissions", title: "Roles and permissions", description: "Decide who can do what, and get access changes approved.", order: 7 },
   { id: "approvals-and-workflow", title: "Approvals and workflow", description: "Decide what waits on you, track what you sent, and set up approval routes.", order: 8 },

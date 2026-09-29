@@ -6,7 +6,7 @@ import PageAccessDenied from "@/components/custom/page-access-denied";
 import { PageShell } from "@/components/layout/page-shell";
 import { requestSupportOpen } from "@/components/layout/support-open";
 import { Button } from "@/components/ui/button";
-import { GUIDE_CATEGORIES, GUIDE_REGISTRY, canDiscoverGuide, findWalkthrough, useGuideReader, useWalkthrough } from "@/features/guides";
+import { GUIDE_CATEGORIES, GUIDE_REGISTRY, canDiscoverGuide, findWalkthrough, useGuideReader, useGuideRegistry, useWalkthrough } from "@/features/guides";
 import { resetGuideArticleScroll, scrollToGuideSection } from "@/features/guides/article-navigation";
 import { useRecordGuideAnalyticsMutation } from "@/redux/services/support/guide-analytics-api";
 import { routesPath } from "@/routes/routesPath";
@@ -33,11 +33,16 @@ const GUIDE_ARTICLES = new Map(
  *
  * `?walkthrough=start` starts the guide's walkthrough on arrival, which is how
  * a link elsewhere can offer "show me" rather than "read about it".
+ *
+ * The heading, summary, "On this page" list and related guides come from the
+ * registry in the school's word (`useGuideRegistry`), so they say "semester"
+ * wherever the article body below them does.
  */
 export default function GuideArticlePage() {
   const { slug = "" } = useParams();
   const reader = useGuideReader();
-  const guide = GUIDE_REGISTRY.find((candidate) => candidate.slug === slug);
+  const registry = useGuideRegistry();
+  const guide = registry.find((candidate) => candidate.slug === slug);
   // Keyed by slug, so moving to another article starts its answers afresh.
   const [answers, setAnswers] = useState<{ slug: string; feedback?: "yes" | "no"; completed?: boolean }>({ slug });
   const current = answers.slug === slug ? answers : { slug };
@@ -74,7 +79,7 @@ export default function GuideArticlePage() {
   if (guide.status !== "published" || !Article) return <GuideUnavailable title="Guide is being prepared" message="This guide is planned but not published yet." />;
 
   const category = GUIDE_CATEGORIES.find((candidate) => candidate.id === guide.category);
-  const related = GUIDE_REGISTRY.filter((candidate) => (
+  const related = registry.filter((candidate) => (
     candidate.status === "published"
     && guide.relatedGuideIds?.includes(candidate.id)
     && canDiscoverGuide(candidate, reader)

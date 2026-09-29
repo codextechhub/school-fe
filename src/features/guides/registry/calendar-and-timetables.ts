@@ -43,8 +43,8 @@ export const CALENDAR_AND_TIMETABLES_GUIDES = [
   {
     id: "school.calendar.term-view",
     slug: "browse-the-year-in-term-view",
-    title: "Browse the year in term view",
-    summary: "See the school year as a timeline of terms and a month grid, and open any day to read, add or change its events.",
+    title: "Browse the year in {term} view",
+    summary: "See the school year as a timeline of {terms} and a month grid, and open any day to read, add or change its events.",
     category: "calendar-and-timetables",
     tags: ["term view", "month", "timeline", "calendar", "holiday", "event"],
     aliases: ["month calendar", "this term", "by term", "what is on this day", "calendar grid", "when is the break", "term calendar"],

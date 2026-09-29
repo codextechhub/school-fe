@@ -15,10 +15,13 @@ import { MemoryRouter, Navigate } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { ACTIONS } from "@/lib/action-palette/registry";
+import { TERM_WORDS, termWordsFor } from "@/lib/school-words";
 import { resolvePermissionKey } from "@/permissions";
 import { authRoutes } from "@/routes/auth";
 import { protectedRoutes } from "@/routes/protected";
 
+import { GUIDE_CATEGORIES } from "./categories";
+import { GuideWordsContext, guideInSchoolWords, unknownTermTokens } from "./guide-words";
 import { GUIDE_REGISTRY } from "./registry";
 import { GUIDE_COVERAGE_ROUTE_PATTERNS, GUIDE_ROUTE_PATTERN_SET } from "./route-catalog";
 import { validateGuideRegistry } from "./validate";
@@ -64,6 +67,30 @@ describe("the guide registry", () => {
     expect(unresolved).toEqual([]);
   });
 
+  it("accepts the school-word placeholders and refuses any other", () => {
+    const guide = GUIDE_REGISTRY.find((candidate) => candidate.id === "school.academics.sessions-and-terms")!;
+    const typo = {
+      ...guide,
+      title: "Set up sessions and {Semesters}",
+      sections: [...guide.sections!, { id: "extra", title: "Add a {term_name}" }],
+      aliases: [...guide.aliases, "{Terms} of the year"],
+    };
+    const issues = validateGuideRegistry([typo], {
+      validRoutes: new Set(guide.routes),
+    }).filter((issue) => issue.code === "invalid-placeholder");
+    expect(issues.map((issue) => issue.message)).toEqual([
+      "Unknown placeholder {Semesters}",
+      "Unknown placeholder {term_name}",
+    ]);
+  });
+
+  it("gives every category description only the school-word placeholders", () => {
+    const unknown = GUIDE_CATEGORIES.flatMap((category) => (
+      unknownTermTokens(category.description).map((token) => `${category.id}: ${token}`)
+    ));
+    expect(unknown).toEqual([]);
+  });
+
   it("opens every primary route without an id to fill in", () => {
     const withParams = GUIDE_REGISTRY
       .filter((guide) => guide.primaryRoute?.includes(":"))
@@ -84,6 +111,26 @@ describe("every guide article", () => {
       );
       const rendered = [...html.matchAll(/<section id="([^"]+)"/g)].map((match) => match[1]);
       expect(rendered).toEqual((guide.sections ?? []).map((section) => section.id));
+    },
+  );
+
+  it.each(published.map((guide) => [guide.id, guide] as const))(
+    "%s titles its contents as its article does, in either word",
+    async (_id, guide) => {
+      const module = await guide.article!();
+      for (const words of [TERM_WORDS, termWordsFor("SEMESTER")]) {
+        const html = renderToStaticMarkup(
+          createElement(
+            GuideWordsContext,
+            { value: words },
+            createElement(MemoryRouter, null, createElement(module.default as ComponentType)),
+          ),
+        );
+        const headings = [...html.matchAll(/<section id="[^"]+"[^>]*><h2[^>]*>([^<]*)<\/h2>/g)]
+          .map((match) => match[1].replaceAll("&amp;", "&").replaceAll("&#x27;", "'"));
+        const listed = (guideInSchoolWords(guide, words).sections ?? []).map((section) => section.title);
+        expect(listed, words.term).toEqual(headings);
+      }
     },
   );
 
