@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { CheckCircle2, Mail } from "lucide-react";
+import { CheckCircle2, Clock3, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
@@ -23,13 +23,20 @@ import type { StaffDetail } from "@/redux/services/staff/staff-types";
  * mistyped and the one nothing can check: `adaokeye@gmail.com` is a perfectly
  * valid address belonging to somebody else's mother, and the moment to notice
  * is now rather than a week later when nobody has accepted.
+ *
+ * **A hire the school approves first has sent nothing yet.** With
+ * `awaitingApproval` the screen says the invitation goes out once the hire is
+ * approved in Workflow, and offers no Resend: there is no invitation to send
+ * again, and the server refuses one until the hire is decided.
  */
 export function InvitationSent({
   person,
+  awaitingApproval = false,
   roleLabel,
   onAddAnother,
 }: {
   person: StaffDetail;
+  awaitingApproval?: boolean;
   roleLabel: string;
   onAddAnother: () => void;
 }) {
@@ -52,17 +59,38 @@ export function InvitationSent({
   return (
     <PageShell className="content-start gap-5" grid>
       <Surface as="section" className="px-6 py-7">
-        <CheckCircle2 className="size-8 text-green-01-text" aria-hidden />
-        <h2 className="mt-3 text-lg font-semibold text-black-01">
-          Invitation sent
-        </h2>
-        <p className="mt-1 text-sm text-gray-01">
-          {person.full_name} is on the staff list with employment status
-          Invited, and their account is waiting for them to set a password.
-        </p>
+        {awaitingApproval ? (
+          <>
+            <Clock3 className="size-8 text-yellow-01-text" aria-hidden />
+            <h2 className="mt-3 text-lg font-semibold text-black-01">
+              Added, waiting for approval
+            </h2>
+            <p className="mt-1 text-sm text-gray-01">
+              Added. Their invitation is sent once the hire is approved in
+              Workflow. Until then {person.full_name} is on the staff list as
+              Awaiting approval and nothing has been sent to them.
+            </p>
+          </>
+        ) : (
+          <>
+            <CheckCircle2 className="size-8 text-green-01-text" aria-hidden />
+            <h2 className="mt-3 text-lg font-semibold text-black-01">
+              Invitation sent
+            </h2>
+            <p className="mt-1 text-sm text-gray-01">
+              {person.full_name} is on the staff list with employment status
+              Invited, and their account is waiting for them to set a password.
+            </p>
+          </>
+        )}
 
         <dl className="mt-5 grid max-w-md gap-2.5">
-          {person.email && <Row label="Sent to" value={person.email} />}
+          {person.email && (
+            <Row
+              label={awaitingApproval ? "Goes to" : "Sent to"}
+              value={person.email}
+            />
+          )}
           <Row label="Role" value={roleLabel || person.roles?.join(", ") || "-"} />
           {person.staff_number && (
             <Row label="Staff ID" value={person.staff_number} />
@@ -71,8 +99,9 @@ export function InvitationSent({
         </dl>
 
         <p className="mt-4 max-w-md text-xs text-gray-05">
-          The link is single-use and expires. Resending voids the old one and
-          restarts the clock, and never creates a second record for them.
+          {awaitingApproval
+            ? "If the hire is rejected or withdrawn, nothing is ever sent and the record is closed."
+            : "The link is single-use and expires. Resending voids the old one and restarts the clock, and never creates a second record for them."}
         </p>
 
         <div className="mt-6 flex flex-wrap gap-2.5">
@@ -85,14 +114,23 @@ export function InvitationSent({
           >
             View their record
           </Button>
-          <Button
-            variant="outline"
-            disabled={resending}
-            onClick={() => void resendInvite()}
-          >
-            <Mail className="size-4" />
-            Resend invitation
-          </Button>
+          {awaitingApproval ? (
+            <Button
+              variant="outline"
+              onClick={() => navigate(routesPath.PROTECTED.WORKFLOW.MY_SUBMISSIONS)}
+            >
+              Track in Workflow
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              disabled={resending}
+              onClick={() => void resendInvite()}
+            >
+              <Mail className="size-4" />
+              Resend invitation
+            </Button>
+          )}
           <Button
             variant="ghost"
             onClick={() => navigate(routesPath.PROTECTED.STAFF.INDEX)}

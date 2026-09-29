@@ -10,6 +10,7 @@ import type {
   StaffBulkRole,
   StaffBulkRoleResult,
   StaffCreate,
+  StaffCreated,
   StaffDetail,
   StaffDocument,
   StaffHistoryEntry,
@@ -19,6 +20,9 @@ import type {
   StaffLeaveWrite,
   StaffListQuery,
   StaffListResponse,
+  StaffNumberPolicy,
+  StaffRules,
+  StaffRulesUpdate,
   StaffQualification,
   StaffQualificationWrite,
   StaffRoles,
@@ -97,8 +101,11 @@ export const staffApi = baseApi.injectEndpoints({
      * Open before go-live, with the role picker narrowed to the two
      * administrator roles - and the POST refuses any other role as well, so the
      * narrowing is the rule rather than a description of it.
+     *
+     * Where the school approves each hire, the record is written Awaiting
+     * approval, nothing is sent, and `awaiting_approval` is true.
      */
-    createStaff: builder.mutation<Envelope<StaffDetail>, FormData | StaffCreate>({
+    createStaff: builder.mutation<Envelope<StaffCreated>, FormData | StaffCreate>({
       query: (body) => ({ url: `/i/me/staff/`, method: "POST", body }),
       extraOptions: { silent: true },
       invalidatesTags: ["SchoolStaff", "Onboarding"],
@@ -334,7 +341,8 @@ export const staffApi = baseApi.injectEndpoints({
     // ── Leave ──────────────────────────────────────────────────────────────
 
     /**
-     * Somebody's leave, and the days taken per type.
+     * Somebody's leave, the days taken per type, and their balances against
+     * the school's allowances for one academic session.
      *
      * A person always reads their own without holding `school.leave.view`.
      * Closed before go-live.
@@ -351,7 +359,7 @@ export const staffApi = baseApi.injectEndpoints({
      * so this is one call behind two gates rather than two calls.
      *
      * The request goes to the school's own approver group. Overlapping leave
-     * warns in `warnings` and does not refuse.
+     * and leave past the type's allowance warn in `warnings` and do not refuse.
      */
     fileStaffLeave: builder.mutation<
       Envelope<StaffLeaveFiled>,
@@ -536,6 +544,61 @@ export const staffApi = baseApi.injectEndpoints({
       extraOptions: { silent: true },
       invalidatesTags: ["SchoolStaff", "Roles"],
     }),
+
+    // ── The school's staff rules ───────────────────────────────────────────
+
+    /**
+     * The school's staff rules; the Add form and the leave drawer read them too.
+     *
+     * Closed before go-live, and silent so that a form reading them during
+     * onboarding falls back to its defaults rather than being sent away.
+     */
+    getStaffRules: builder.query<Envelope<StaffRules>, void>({
+      query: () => ({ url: `/i/me/staff/rules/`, method: "GET" }),
+      extraOptions: { silent: true },
+      providesTags: ["SchoolStaff"],
+    }),
+
+    updateStaffRules: builder.mutation<Envelope<StaffRules>, StaffRulesUpdate>({
+      query: (body) => ({ url: `/i/me/staff/rules/`, method: "PUT", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["SchoolStaff", "StaffLeave"],
+    }),
+
+    /** The staff ID rule: the school's, or with a branch that branch's. */
+    getStaffNumberPolicy: builder.query<Envelope<StaffNumberPolicy>, { branch?: string } | void>({
+      query: (arg) => ({
+        url: `/i/me/staff/number-policy/`,
+        method: "GET",
+        params: arg && arg.branch ? { branch: arg.branch } : undefined,
+      }),
+      providesTags: ["SchoolStaff"],
+    }),
+
+    updateStaffNumberPolicy: builder.mutation<
+      Envelope<Omit<StaffNumberPolicy, "suggestion">>,
+      Omit<StaffNumberPolicy, "suggestion" | "source"> & { branch?: string }
+    >({
+      query: ({ branch, ...body }) => ({
+        url: `/i/me/staff/number-policy/`,
+        method: "PUT",
+        params: branch ? { branch } : undefined,
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["SchoolStaff"],
+    }),
+
+    /** Remove a branch's own staff ID rule, so it follows the school's again. */
+    resetBranchStaffNumberPolicy: builder.mutation<Envelope<StaffNumberPolicy>, string>({
+      query: (branch) => ({
+        url: `/i/me/staff/number-policy/`,
+        method: "DELETE",
+        params: { branch },
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["SchoolStaff"],
+    }),
   }),
 });
 
@@ -575,4 +638,9 @@ export const {
   useGetStaffRosterQuery,
   useMoveStaffPostingMutation,
   useGrantStaffRoleInBulkMutation,
+  useGetStaffRulesQuery,
+  useUpdateStaffRulesMutation,
+  useGetStaffNumberPolicyQuery,
+  useUpdateStaffNumberPolicyMutation,
+  useResetBranchStaffNumberPolicyMutation,
 } = staffApi;

@@ -43,9 +43,9 @@ export default function ConfirmRolesAndInviteStaffArticle() {
           <GuideStep title="Open the Invitations tab">Select <strong>Invitations</strong>, or open it from the staff card in the control room.</GuideStep>
           <GuideStep title="Fill in Invite a user">Enter <strong>First name</strong>, <strong>Last name</strong> and <strong>Email address</strong>, and choose a <strong>Role</strong>. Only admins can be invited during onboarding.</GuideStep>
           <GuideStep title="Send it">Select <strong>Send invitation</strong>. The invitation goes out by email and appears in the app. There is no SMS.</GuideStep>
-          <GuideStep title="Follow it up">Under <strong>Invitations sent</strong>, each person shows <strong>Invited</strong> until they activate their account and <strong>Active</strong> after. To chase someone, choose <strong>Resend invitation</strong> from the row&apos;s menu.</GuideStep>
+          <GuideStep title="Follow it up">Under <strong>Invitations sent</strong>, each person shows <strong>Invited</strong> until they activate their account and <strong>Active</strong> after. To chase someone, choose <strong>Resend invitation</strong> from the row&apos;s menu. Staff imported during setup show <strong>Invited at go-live</strong> and the date they were <strong>Added</strong>, with no Resend: their invitations go out when the school goes live.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="info" title="Teachers come later">Invite the admin staff who will run the system during setup. Teachers and other staff can follow after go-live.</GuideCallout>
+        <GuideCallout tone="info" title="Teachers come later">Invite the admin staff who will run the system during setup. Teachers and other staff can be imported now and are invited when the school goes live, or added after go-live.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">

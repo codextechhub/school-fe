@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { StaffListRow } from "./staff-types";
+import type { StaffDetail, StaffLeave, StaffListRow } from "./staff-types";
 
 /**
  * The staff row's field names, pinned against a real payload.
@@ -83,5 +83,52 @@ describe("the staff row the app reads", () => {
     expect(ROW.email).toBeTypeOf("string");
     expect(ROW.roles[0]).toBeTypeOf("string");
     expect(ROW.account_status).toBeTypeOf("string");
+  });
+});
+
+/**
+ * A verbatim `/v1/i/me/staff/<id>/leave/` body from a school that has set no
+ * allowances, in the session covering today.
+ *
+ * Every leave type is present whether or not the school limits it, and a
+ * type with no limit carries null for both `allowance` and `remaining`, which
+ * the Leave tab reads as "No limit" rather than as zero days left.
+ */
+const LEAVE: StaffLeave = {
+  leave: [],
+  days_taken: [],
+  balances: [
+    { leave_type: "ANNUAL", label: "Annual", allowance: null, taken: 0, pending: 0, remaining: null },
+    { leave_type: "SICK", label: "Sick", allowance: null, taken: 0, pending: 0, remaining: null },
+    { leave_type: "MATERNITY", label: "Maternity", allowance: null, taken: 0, pending: 0, remaining: null },
+    { leave_type: "PATERNITY", label: "Paternity", allowance: null, taken: 0, pending: 0, remaining: null },
+    { leave_type: "STUDY", label: "Study", allowance: null, taken: 0, pending: 0, remaining: null },
+    { leave_type: "COMPASSIONATE", label: "Compassionate", allowance: null, taken: 0, pending: 0, remaining: null },
+    { leave_type: "OTHER", label: "Other", allowance: null, taken: 0, pending: 0, remaining: null },
+  ],
+  balance_session: { id: 15, name: "2026/2027", start_date: "2026-08-17", end_date: "2027-07-16" },
+  balance_note:
+    "Allowances are per academic session, set in Settings, Staff. Taken counts approved leave and pending counts leave waiting for a decision; remaining is the allowance less both. A type with no allowance has no limit.",
+};
+
+/** The fields of a verbatim own-record `/v1/i/me/staff/<id>/` body that the school's staff rules add. */
+const OWN_RECORD: Pick<StaffDetail, "missing_documents" | "self_editable_fields"> = {
+  missing_documents: [],
+  self_editable_fields: ["middle_name", "photo", "date_of_birth", "phone"],
+};
+
+describe("the staff rules as the record and the leave list carry them", () => {
+  it("counts every leave type against one named session", () => {
+    expect(LEAVE.balances.map((row) => row.leave_type)).toHaveLength(7);
+    expect(LEAVE.balance_session?.name).toBe("2026/2027");
+    for (const row of LEAVE.balances) {
+      expect(row.allowance === null).toBe(row.remaining === null);
+    }
+  });
+
+  it("names self-editable details as field names, the photograph as `photo`", () => {
+    expect(OWN_RECORD.self_editable_fields).toContain("photo");
+    expect(OWN_RECORD.self_editable_fields).not.toContain("photo_url");
+    expect(Array.isArray(OWN_RECORD.missing_documents)).toBe(true);
   });
 });

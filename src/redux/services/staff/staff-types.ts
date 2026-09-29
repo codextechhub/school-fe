@@ -1,4 +1,5 @@
 import type { AsAtMeta } from "@/lib/as-at";
+import type { AdmissionPolicy } from "../students/students-types";
 import type { Envelope, Pagination } from "../onboarding/onboarding-types";
 
 /**
@@ -20,9 +21,25 @@ import type { StaffOrganogramPlacement } from "./organogram-types";
 
 // ── Vocabularies ───────────────────────────────────────────────────────────
 
-/** Does this person still work here. Set only by a logged transition. */
+/**
+ * Does this person still work here. Set only by a logged transition.
+ *
+ * Two statuses can come before `INVITED`, and in both the record and the
+ * account exist and nothing has been sent. `PENDING_APPROVAL` is a hire at a
+ * school that approves each one (Settings, Staff), moved on only by that
+ * approval. `AWAITING_GO_LIVE` is somebody imported while the school was
+ * being set up, whose invitation goes out with everybody else's when the
+ * school goes live.
+ */
 export type EmploymentStatus =
-  "INVITED" | "ACTIVE" | "ON_LEAVE" | "SUSPENDED" | "RESIGNED" | "TERMINATED";
+  | "PENDING_APPROVAL"
+  | "AWAITING_GO_LIVE"
+  | "INVITED"
+  | "ACTIVE"
+  | "ON_LEAVE"
+  | "SUSPENDED"
+  | "RESIGNED"
+  | "TERMINATED";
 
 /**
  * May this login be used. The identity layer's, not this module's.
@@ -264,7 +281,34 @@ export interface StaffDetail
   history_starts: string | null;
   /** Present only on a record read as at an earlier day. */
   as_at?: AsAtMeta;
+  /**
+   * The document types the school expects (Settings, Staff) that this record
+   * holds none of. A flag, never a gate. Empty when nothing is missing or the
+   * school expects nothing, null on a record read as at an earlier day, and
+   * absent for a reader without the records group.
+   */
+  missing_documents?: StaffMissingDocument[] | null;
+  /**
+   * What the person may change about themselves, as field names (`phone`,
+   * `photo`, `first_name`...). Only on the signed-in person's own record.
+   */
+  self_editable_fields?: string[];
 }
+
+/** An expected document type with nothing of that type on the record. */
+export interface StaffMissingDocument {
+  type: DocumentType;
+  label: string;
+}
+
+/**
+ * The create's answer: the new record, and whether it waits for approval.
+ *
+ * `awaiting_approval` is true where the school approves each hire. The record
+ * then reads `PENDING_APPROVAL` and no invitation has been sent; the approval
+ * sends it.
+ */
+export type StaffCreated = StaffDetail & { awaiting_approval?: boolean };
 
 // ── Profile visibility ─────────────────────────────────────────────────────
 
@@ -332,6 +376,11 @@ export interface StaffCounts {
   with_teaching_duties: number;
   locked_accounts: number;
   /**
+   * People lacking a document type the school expects. Null for a reader
+   * without the records key, and where the school expects no document.
+   */
+  missing_documents?: number | null;
+  /**
    * By branch where a school has several, by role where it has one.
    *
    * The dimension recedes rather than repeating one value on every row, so
@@ -393,6 +442,8 @@ export interface StaffListQuery {
   /** A branch id, or the literal `"school"` for people with no single base. */
   branch?: string;
   teaching?: "true" | "false";
+  /** People lacking a document the school expects. Needs the records key. */
+  missing_documents?: "true";
 }
 
 // ── Writes on the record ───────────────────────────────────────────────────
@@ -813,7 +864,14 @@ export interface StaffLeaveRequest {
   leave_type_label: string;
   start_date: string;
   end_date: string;
+  /** The school's working days in the range, less its closures. */
   days: number;
+  /**
+   * Days past the type's allowance for the session, counting approved and
+   * pending leave, when the request was filed or re-dated. 0 within it or
+   * where the type has no limit.
+   */
+  over_allowance_by?: number;
   note: string;
   status: LeaveStatus;
   /**
@@ -830,16 +888,44 @@ export interface StaffLeaveRequest {
 }
 
 /**
- * Somebody's leave, and how much of it has been taken.
+ * One leave type's standing in one academic session.
  *
- * `balance_note` is the server saying in words that there is no balance:
- * nothing anywhere records an entitlement to count against. Render it beside
- * `days_taken` rather than leaving a bare number to be read as one.
+ * `taken` sums approved requests and `pending` those waiting for a decision.
+ * `remaining` is the allowance less both, negative once an approver has let a
+ * request past it, and null with `allowance` where the type has no limit.
+ */
+export interface StaffLeaveBalance {
+  leave_type: LeaveType;
+  label: string;
+  allowance: number | null;
+  taken: number;
+  pending: number;
+  remaining: number | null;
+}
+
+/** The academic session a set of balances counts against. */
+export interface StaffLeaveSession {
+  id: number;
+  name: string;
+  start_date: string;
+  end_date: string;
+}
+
+/**
+ * Somebody's leave, and where they stand against the school's allowances.
+ *
+ * `balances` covers every leave type for `balance_session`: the session
+ * covering today (or the as-at day), else the active one, or the one named by
+ * `?session=`. Both are empty where the school has no session to count
+ * against. `days_taken` is approved leave across every session.
+ * `balance_note` is the server's sentence explaining the figures.
  */
 export interface StaffLeave {
   leave: StaffLeaveRequest[];
-  /** Per type, summed from approved requests only. */
+  /** Per type, summed from approved requests only, across every session. */
   days_taken: { leave_type: LeaveType; days: number }[];
+  balances: StaffLeaveBalance[];
+  balance_session: StaffLeaveSession | null;
   balance_note: string;
 }
 
@@ -857,12 +943,16 @@ export interface StaffLeaveWrite {
   note?: string;
 }
 
-/** Overlapping leave warns and does not refuse. `message` is the whole sentence. */
-export interface StaffLeaveWarning {
-  code: "LEAVE_OVERLAP";
-  message: string;
-  leave_ids: number[];
-}
+/**
+ * What filing warns about without refusing. `message` is the whole sentence.
+ *
+ * Overlapping leave names the requests it clashes with. Leave past the type's
+ * allowance for the session is filed anyway, with the days over, for the
+ * approver to decide.
+ */
+export type StaffLeaveWarning =
+  | { code: "LEAVE_OVERLAP"; message: string; leave_ids: number[] }
+  | { code: "OVER_ALLOWANCE"; message: string; over_allowance_by: number };
 
 export interface StaffLeaveFiled {
   leave: StaffLeaveRequest;
@@ -885,3 +975,55 @@ export interface StaffSearchHit {
 // ── Envelope aliases ───────────────────────────────────────────────────────
 
 export type StaffEnvelope<T> = Envelope<T>;
+
+/**
+ * The school's staff ID rule (`/v1/i/me/staff/number-policy/`), the same
+ * shape as the admission-number rule: required or not, a pattern, the hint
+ * the Add form prints, and whether the next number is issued automatically.
+ * A branch may keep its own. A staff ID is also a sign-in identifier.
+ */
+export type StaffNumberPolicy = AdmissionPolicy;
+
+/** A value and the words a screen prints for it. */
+export interface StaffOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * The school's own staff rules (`/v1/i/me/staff/rules/`).
+ *
+ * Every value here defaults to how XVS behaved before a school could choose:
+ * new staff start as Teacher, no document is expected, staff edit the same
+ * four details of their own record, a hire is invited without approval, and
+ * no leave type has an allowance. `self_editable_locked` lists the details a
+ * school can never open to self-edit (staff ID, job title and the like).
+ */
+export interface StaffRules {
+  starting_role: string;
+  starting_role_options: StaffOption[];
+  required_documents: string[];
+  document_types: StaffOption[];
+  self_editable_fields: string[];
+  self_editable_options: StaffOption[];
+  self_editable_locked: StaffOption[];
+  hire_requires_approval: boolean;
+  leave: {
+    /** Days per leave type in one academic session; null is no limit. */
+    allowances: Record<string, number | null>;
+    leave_types: StaffOption[];
+    /** ISO weekdays that count as working days, 1 is Monday. */
+    working_days: number[];
+    /** Whether days the school is closed are left out of a leave request. */
+    exclude_closures: boolean;
+  };
+}
+
+export type StaffRulesUpdate = Pick<
+  StaffRules,
+  "starting_role" | "required_documents" | "self_editable_fields" | "hire_requires_approval"
+> & {
+  leave: Pick<StaffRules["leave"], "allowances" | "working_days" | "exclude_closures">;
+  reason?: string;
+};
+

@@ -1,5 +1,5 @@
 import { useDeferredValue, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { toast } from "sonner";
 import {
   ChevronRight,
@@ -17,6 +17,7 @@ import PermissionGate from "@/components/custom/permission-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PageShell } from "@/components/layout/page-shell";
+import { cn } from "@/lib/utils";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { P } from "@/permissions";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -28,7 +29,10 @@ import {
   useResendStaffInvitationMutation,
   useRevokeStaffInvitationMutation,
 } from "@/redux/services/staff/staff-api";
-import type { StaffListRow } from "@/redux/services/staff/staff-types";
+import type {
+  EmploymentStatus,
+  StaffListRow,
+} from "@/redux/services/staff/staff-types";
 
 import { PersonAvatar } from "../../students/person-avatar";
 import { formatDate } from "../../students/format";
@@ -36,15 +40,54 @@ import { InvitationDetailDrawer } from "./invitation-detail-drawer";
 import {
   invitationActions,
   invitationAgeDays,
+  invitationKind,
   invitationPageMetrics,
+  sendable,
   waitingLabel,
 } from "./invitation-model";
 import { RevokeDialog } from "./revoke-dialog";
 
+/** The three lists this screen can show, and the status each one filters on. */
+type View = "invited" | "awaiting" | "held";
+
+const STATUS: Record<View, EmploymentStatus> = {
+  invited: "INVITED",
+  awaiting: "PENDING_APPROVAL",
+  held: "AWAITING_GO_LIVE",
+};
+
+/** The words that change with the list, so the markup below reads the same for all three. */
+const WORDS: Record<View, { one: string; many: string; loading: string; search: string; none: string; noMatch: string }> = {
+  invited: {
+    one: "invitation",
+    many: "invitations",
+    loading: "Loading invitations",
+    search: "Search invitations",
+    none: "Everybody who has been invited has accepted.",
+    noMatch: "No invitations match this search.",
+  },
+  awaiting: {
+    one: "hire",
+    many: "hires",
+    loading: "Loading hires awaiting approval",
+    search: "Search hires awaiting approval",
+    none: "No hire is waiting for approval.",
+    noMatch: "No hires awaiting approval match this search.",
+  },
+  held: {
+    one: "invitation",
+    many: "invitations",
+    loading: "Loading invitations held for go-live",
+    search: "Search invitations held for go-live",
+    none: "No invitation is waiting for go-live.",
+    noMatch: "No invitations held for go-live match this search.",
+  },
+};
+
 /**
  * Who has been invited and has not yet accepted.
  *
- * The server applies the `INVITED` filter and the active branch lens before it
+ * The server applies the status filter and the active branch lens before it
  * counts or returns anything. Search also stays server-side so finding a name
  * is not limited to the current page.
  *
@@ -52,6 +95,16 @@ import { RevokeDialog } from "./revoke-dialog";
  * the single-use link and setting a first password. Resend helps a person who
  * has not done that; withdrawal protects a school when the hire or address is
  * wrong.
+ *
+ * **Two other kinds of person have been sent nothing yet**, and each is a list
+ * of its own rather than more invitations (see `invitationKind`). A hire
+ * awaiting approval waits on the school's approvers in Workflow. Somebody
+ * imported while the school was being set up is invited at go-live, with
+ * everybody else. The switch between lists appears only while there is more
+ * than one kind to show, and withdrawing from either closes the record without
+ * anything having been sent. A held invitation still unsent after go-live can
+ * be sent from here, which is how the server lets a school invite somebody the
+ * go-live release left behind.
  */
 export default function StaffInvitations() {
   const navigate = useNavigate();
@@ -62,13 +115,40 @@ export default function StaffInvitations() {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<StaffListRow | null>(null);
   const [revoking, setRevoking] = useState<StaffListRow | null>(null);
+  const [view, setView] = useState<View>("invited");
+  const words = WORDS[view];
+  const lensBranch = multiBranch && branch !== "all" ? String(branch) : undefined;
 
   const { data, isLoading, isFetching, isError, refetch } = useGetStaffListQuery({
     page,
     search: deferredSearch || undefined,
-    employment_status: "INVITED",
-    branch: multiBranch && branch !== "all" ? String(branch) : undefined,
+    employment_status: STATUS[view],
+    branch: lensBranch,
   });
+  // How many wait in the other two lists, which decides whether the switch shows.
+  const { data: awaitingData } = useGetStaffListQuery(
+    { page: 1, employment_status: "PENDING_APPROVAL", branch: lensBranch },
+    { skip: view === "awaiting" },
+  );
+  const { data: heldData } = useGetStaffListQuery(
+    { page: 1, employment_status: "AWAITING_GO_LIVE", branch: lensBranch },
+    { skip: view === "held" },
+  );
+  const countOf = (kind: View, probe: typeof data) =>
+    (view === kind ? data : probe)?.pagination?.totalItems ?? 0;
+  const awaitingCount = countOf("awaiting", awaitingData);
+  const heldCount = countOf("held", heldData);
+  const tabs: [View, string][] = [
+    ["invited", "Invited"],
+    ...(awaitingCount > 0 || view === "awaiting"
+      ? [["awaiting", `Awaiting approval (${awaitingCount})`] as [View, string]]
+      : []),
+    ...(heldCount > 0 || view === "held"
+      ? [["held", `Invited at go-live (${heldCount})`] as [View, string]]
+      : []),
+  ];
+  // The list names a starting role only once the school is live.
+  const schoolLive = data?.starting_role != null;
   const [resend, { isLoading: resending }] = useResendStaffInvitationMutation();
   const [revoke, { isLoading: revokingNow }] =
     useRevokeStaffInvitationMutation();
@@ -82,24 +162,37 @@ export default function StaffInvitations() {
   const actionsFor = (person: StaffListRow) =>
     invitationActions(person, hasPermission);
   const selectedActions = selected ? actionsFor(selected) : null;
+  // A hire awaiting approval has nothing to send; a held one only once live.
+  const offersSend = view === "invited" || (view === "held" && schoolLive);
 
   async function resendTo(person: StaffListRow) {
-    if (!person.can_resend) {
+    const held = invitationKind(person) === "held";
+    if (!sendable(person, schoolLive)) {
       toast.info(
-        `${person.full_name} has already set a password, so there is nothing to resend.`,
+        held
+          ? "Invitations for staff imported during setup go out when the school goes live."
+          : `${person.full_name} has already set a password, so there is nothing to resend.`,
       );
       return;
     }
     try {
       await resend(person.id).unwrap();
       toast.success(
-        `Sent again${person.email ? ` to ${person.email}` : ""}. The previous link no longer works.`,
+        held
+          ? `Invitation sent${person.email ? ` to ${person.email}` : ""}.`
+          : `Sent again${person.email ? ` to ${person.email}` : ""}. The previous link no longer works.`,
       );
     } catch (error) {
       toast.error(
-        apiErrorMessage(error, "We could not resend that invitation. Try again."),
+        apiErrorMessage(error, "We could not send that invitation. Try again."),
       );
     }
+  }
+
+  function switchTo(next: View) {
+    setView(next);
+    setPage(1);
+    setSelected(null);
   }
 
   function startRevoke(person: StaffListRow) {
@@ -109,13 +202,25 @@ export default function StaffInvitations() {
 
   async function confirmRevoke(reason: string) {
     if (!revoking) return;
+    const kind = invitationKind(revoking);
     try {
       await revoke({ id: revoking.id, reason }).unwrap();
-      toast.success(`${revoking.full_name}'s invitation was withdrawn.`);
+      toast.success(
+        kind === "hire"
+          ? `${revoking.full_name}'s hire was withdrawn. Nothing was sent to them.`
+          : kind === "held"
+            ? `${revoking.full_name}'s invitation was withdrawn before it was sent. Nothing was sent to them.`
+            : `${revoking.full_name}'s invitation was withdrawn.`,
+      );
       setRevoking(null);
     } catch (error) {
       toast.error(
-        apiErrorMessage(error, "We could not withdraw that invitation. Try again."),
+        apiErrorMessage(
+          error,
+          kind === "hire"
+            ? "We could not withdraw that hire. Try again."
+            : "We could not withdraw that invitation. Try again.",
+        ),
       );
     }
   }
@@ -134,6 +239,21 @@ export default function StaffInvitations() {
     );
   }
 
+  const summary =
+    view === "awaiting"
+      ? total
+        ? `${total} ${total === 1 ? "hire is" : "hires are"} waiting for the school's approval.`
+        : "No hire is waiting for approval."
+      : view === "held"
+        ? total
+          ? schoolLive
+            ? `${total} ${total === 1 ? "invitation" : "invitations"} from setup ${total === 1 ? "was" : "were"} not sent when the school went live.`
+            : `${total} ${total === 1 ? "person is" : "people are"} invited when the school goes live.`
+          : "No invitation is waiting for go-live."
+        : total
+          ? `${total} ${total === 1 ? "person is" : "people are"} waiting to activate their account.`
+          : "Everybody who has been invited has accepted.";
+
   return (
     <PageShell className="content-start gap-5" grid>
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -141,11 +261,7 @@ export default function StaffInvitations() {
           <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
             Invitations
           </h1>
-          <p className="mt-1 text-sm text-gray-01">
-            {total
-              ? `${total} ${total === 1 ? "person is" : "people are"} waiting to activate their account.`
-              : "Everybody who has been invited has accepted."}
-          </p>
+          <p className="mt-1 text-sm text-gray-01">{summary}</p>
         </div>
         <PermissionGate permission={P.INVITE_TEACHER}>
           <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
@@ -155,29 +271,79 @@ export default function StaffInvitations() {
         </PermissionGate>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <KpiCard
-          label="Awaiting response"
-          value={total}
-          foot={deferredSearch ? "Matching this search" : "Pending activation"}
-          tone="live"
-        />
-        <KpiCard
-          label="Needs follow-up"
-          value={metrics.followUp}
-          foot={
-            multiplePages
-              ? "On this page, waiting 7+ days"
-              : "Waiting 7+ days"
-          }
-          tone={metrics.followUp > 0 ? "warn" : "default"}
-        />
-        <KpiCard
-          label="Oldest invitation"
-          value={waitingLabel(metrics.oldestDays)}
-          foot={multiplePages ? "Oldest on this page" : "Longest waiting"}
-        />
-      </div>
+      {tabs.length > 1 && (
+        <div
+          role="tablist"
+          aria-label="Which people to show"
+          className="flex max-w-full gap-1 overflow-x-auto rounded-lg bg-gray-04 p-1 sm:w-fit"
+        >
+          {tabs.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={view === key}
+              onClick={() => switchTo(key)}
+              className={cn(
+                "whitespace-nowrap rounded-md px-3 py-1.5 text-[13px] font-medium",
+                view === key
+                  ? "bg-white text-black-01 shadow-sm"
+                  : "text-gray-01 hover:text-black-01",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {view === "awaiting" ? (
+        <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs leading-5 text-gray-01">
+          <Info className="mt-px size-3.5 shrink-0 text-primary" />
+          <span>
+            Your school approves each new hire before they are invited. These
+            wait on the school&apos;s approvers in Workflow, and nothing is sent
+            to them until a hire is approved.{" "}
+            <Link
+              to={routesPath.PROTECTED.WORKFLOW.APPROVALS}
+              className="font-medium text-primary underline-offset-2 hover:underline"
+            >
+              Open Approvals
+            </Link>
+          </span>
+        </p>
+      ) : view === "held" ? (
+        <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs leading-5 text-gray-01">
+          <Info className="mt-px size-3.5 shrink-0 text-primary" />
+          {schoolLive
+            ? "These were imported while the school was being set up, and their invitations were not sent when it went live. Send each one from here."
+            : "These were imported while the school is being set up. Their invitations go out when the school goes live, and nothing is sent to them before then."}
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <KpiCard
+            label="Awaiting response"
+            value={total}
+            foot={deferredSearch ? "Matching this search" : "Pending activation"}
+            tone="live"
+          />
+          <KpiCard
+            label="Needs follow-up"
+            value={metrics.followUp}
+            foot={
+              multiplePages
+                ? "On this page, waiting 7+ days"
+                : "Waiting 7+ days"
+            }
+            tone={metrics.followUp > 0 ? "warn" : "default"}
+          />
+          <KpiCard
+            label="Oldest invitation"
+            value={waitingLabel(metrics.oldestDays)}
+            foot={multiplePages ? "Oldest on this page" : "Longest waiting"}
+          />
+        </div>
+      )}
 
       <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-white p-3.5 sm:p-4">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">
@@ -190,12 +356,12 @@ export default function StaffInvitations() {
                 setPage(1);
               }}
               placeholder="Search name or email"
-              aria-label="Search invitations"
+              aria-label={words.search}
               className="h-10.5 w-full rounded-lg border border-white-02 bg-white pl-9 pr-3 text-sm outline-none focus:border-primary"
             />
           </div>
           <p className="ml-auto text-xs text-gray-05" aria-live="polite">
-            {total} {total === 1 ? "invitation" : "invitations"}
+            {total} {total === 1 ? words.one : words.many}
           </p>
         </div>
       </div>
@@ -205,13 +371,13 @@ export default function StaffInvitations() {
           "Person",
           "Role",
           ...(showBranch ? ["Branch"] : []),
-          "Sent",
+          view === "invited" ? "Sent" : "Added",
           "Waiting",
           "Status",
           "Actions",
         ]}
         loading={isLoading || isFetching}
-        loadingText="Loading invitations"
+        loadingText={words.loading}
         defaultBodyList={rows}
         cardBreakpoint="lg"
         tableBodyList={rows.map((person) => {
@@ -254,28 +420,37 @@ export default function StaffInvitations() {
                     : (person.branch_name ?? "-"),
                 }
               : {}),
-            Sent: person.invited_at ? formatDate(person.invited_at) : "-",
+            [view === "invited" ? "Sent" : "Added"]: person.invited_at
+              ? formatDate(person.invited_at)
+              : "-",
             Waiting: (
               <Badge variant={age != null && age >= 7 ? "amber" : "inactive"}>
                 <Clock3 className="size-3" />
                 {waitingLabel(age)}
               </Badge>
             ),
-            Status: <Badge variant="pending">Awaiting response</Badge>,
+            Status:
+              view === "awaiting" ? (
+                <Badge variant="pending">Awaiting approval</Badge>
+              ) : view === "held" ? (
+                <Badge variant="blue">Invited at go-live</Badge>
+              ) : (
+                <Badge variant="pending">Awaiting response</Badge>
+              ),
             Actions: (
               <span
                 className="flex items-center justify-end gap-1.5"
                 onClick={(event) => event.stopPropagation()}
               >
-                {actionsFor(person).resend && (
+                {offersSend && actionsFor(person).resend && (
                   <Button
                     variant="outline"
                     size="sm"
-                    disabled={resending || !person.can_resend}
+                    disabled={resending || !sendable(person, schoolLive)}
                     onClick={() => void resendTo(person)}
                   >
                     <RefreshCw className="size-3.5" />
-                    Resend
+                    {view === "held" ? "Send" : "Resend"}
                   </Button>
                 )}
                 <Button
@@ -295,24 +470,23 @@ export default function StaffInvitations() {
         totalPage={pagination?.totalPages ?? 1}
         onPageChange={(next) => setPage(Number(next) || 1)}
         hidePagination={(pagination?.totalPages ?? 0) < 2}
-        emptyText={
-          deferredSearch
-            ? "No invitations match this search."
-            : "Everybody who has been invited has accepted."
-        }
+        emptyText={deferredSearch ? words.noMatch : words.none}
       />
 
-      <p className="flex items-start gap-1.5 text-xs leading-5 text-gray-05">
-        <Info className="mt-px size-3.5 shrink-0" />
-        Only the invited person can activate this account by opening the link
-        and setting their first password.
-        {hasPermission(P.INVITE_TEACHER) &&
-          " Resending keeps the same staff record and invalidates the previous link."}
-      </p>
+      {view === "invited" && (
+        <p className="flex items-start gap-1.5 text-xs leading-5 text-gray-05">
+          <Info className="mt-px size-3.5 shrink-0" />
+          Only the invited person can activate this account by opening the link
+          and setting their first password.
+          {hasPermission(P.INVITE_TEACHER) &&
+            " Resending keeps the same staff record and invalidates the previous link."}
+        </p>
+      )}
 
       <InvitationDetailDrawer
         person={selected}
         showBranch={showBranch}
+        schoolLive={schoolLive}
         canResend={selectedActions?.resend ?? false}
         canWithdraw={selectedActions?.withdraw ?? false}
         resending={resending}

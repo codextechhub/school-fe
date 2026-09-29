@@ -56,6 +56,7 @@ export default function StaffDirectory() {
   const [account, setAccount] = useState<AccountStatus | "all">("all");
   const [schoolWideOnly, setSchoolWideOnly] = useState(false);
   const [teachingOnly, setTeachingOnly] = useState(false);
+  const [missingDocsOnly, setMissingDocsOnly] = useState(false);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
@@ -73,6 +74,7 @@ export default function StaffDirectory() {
     // the one a branch pill cannot ask. The pill answers the other half.
     branch: schoolWideOnly ? "school" : narrowed ? String(branch) : undefined,
     teaching: teachingOnly ? "true" : undefined,
+    missing_documents: missingDocsOnly ? "true" : undefined,
   });
 
   const rows = useMemo(() => data?.data ?? [], [data]);
@@ -89,7 +91,8 @@ export default function StaffDirectory() {
     (employment !== "all" ? 1 : 0) +
     (account !== "all" ? 1 : 0) +
     (schoolWideOnly ? 1 : 0) +
-    (teachingOnly ? 1 : 0);
+    (teachingOnly ? 1 : 0) +
+    (missingDocsOnly ? 1 : 0);
   const anyFilter = facets > 0 || search.trim().length > 0;
 
   const chips = [
@@ -116,6 +119,10 @@ export default function StaffDirectory() {
       label: "Has teaching duties",
       clear: () => setTeachingOnly(false),
     },
+    missingDocsOnly && {
+      label: "Missing documents",
+      clear: () => setMissingDocsOnly(false),
+    },
   ].filter(Boolean) as { label: string; clear: () => void }[];
 
   function resetTo(next: () => void) {
@@ -133,6 +140,7 @@ export default function StaffDirectory() {
     setAccount("all");
     setSchoolWideOnly(false);
     setTeachingOnly(false);
+    setMissingDocsOnly(false);
     setPage(1);
     setPicked([]);
   }
@@ -188,6 +196,7 @@ export default function StaffDirectory() {
         onPickStatus={(next) => resetTo(() => setEmployment(next))}
         onPickLocked={() => resetTo(() => setAccount("LOCKED"))}
         onPickTeaching={() => resetTo(() => setTeachingOnly(true))}
+        onPickMissingDocuments={() => resetTo(() => setMissingDocsOnly(true))}
       />
 
       <div className="grid min-w-0 gap-3 rounded-xl border border-border bg-white p-3.5 sm:p-4">
@@ -499,7 +508,7 @@ export default function StaffDirectory() {
         open={importing}
         datasetType="staff"
         title="Import staff"
-        description="Load your people from a spreadsheet. Everybody arrives Invited, and nothing is written until you confirm."
+        description="Load your people from a spreadsheet. Everybody starts with the school's starting role and is invited, or waits for approval where the school approves each hire. Nothing is written until you confirm."
         returnLabel="Back to staff"
         onClose={() => setImporting(false)}
         onFinished={() => {

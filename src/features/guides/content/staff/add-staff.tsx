@@ -11,20 +11,21 @@ export default function AddStaffArticle() {
           "You have the person's first name, last name and a working email address.",
           "You know which branch they will be based at, if your school has more than one.",
           "The email address is theirs alone. It is where the invitation goes and the address they sign in with.",
+          "If your school approves each hire, somebody is in the hire approvers group in Workflow.",
         ]} />
       </GuideSection>
 
       <GuideSection id="bio-and-employment" title="Bio and employment">
         <GuideSteps>
           <GuideStep title="Bio">Enter <strong>First name</strong>, <strong>Last name</strong> and <strong>Email address</strong>. Middle name, gender, phone, date of birth and a photograph are optional. Your school may hide or lock some of these fields for your role.</GuideStep>
-          <GuideStep title="Staff ID">Enter the <strong>Staff ID</strong> in your school&apos;s own format, or leave it blank. It only has to be unique within the school.</GuideStep>
+          <GuideStep title="Staff ID">Enter the <strong>Staff ID</strong> in your school&apos;s format. The box follows the staff ID rule of the branch you post the person to, set in <strong>Settings</strong> under <strong>Staff IDs</strong>: it is marked as required when the rule asks for one, and the hint under it is the one your school wrote, where it wrote one. Where your school issues IDs automatically, the empty box shows the next one, such as <strong>Next: BS/STF/0043</strong>, and leaving it blank gives the person that ID. A staff ID is unique across the school and also works for signing in.</GuideStep>
           <GuideStep title="Employment">Add the <strong>Job title</strong>, <strong>Employment type</strong> (Full-time, Part-time, Contract or Volunteer) and <strong>Hire date</strong>. Length of service is worked out from the hire date.</GuideStep>
           <GuideStep title="Posted to">Where you can choose between branches, pick where the person is based in <strong>Posted to</strong>. Only someone who covers the whole school can choose <strong>Across the whole school</strong>; a branch administrator can post people only to their own branches.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
       <GuideSection id="role-and-duties" title="Role and teaching duties">
-        <p>At a running school the form does not ask for a role. Everybody starts on the school&apos;s starting role, reaching as far as their posting, and the form says which role that is under <strong>What happens when you save</strong>. Roles are added or removed afterwards from Roles &amp; Permissions by whoever manages them.</p>
+        <p>At a running school the form does not ask for a role. Everybody starts on the school&apos;s starting role, set in <strong>Settings</strong> under <strong>Staff</strong>, reaching as far as their posting. The form says which role that is under <strong>What happens when you save</strong>. Roles are added or removed afterwards from Roles &amp; Permissions by whoever manages them.</p>
         <p>While the school is still being set up, a <strong>Role</strong> step asks for the administrator role to grant, and <strong>This role reaches</strong> says which branch&apos;s records it opens. It follows the posting unless you widen it.</p>
         <p>When the starting role is a teaching role and the year&apos;s classes and subjects exist, a <strong>Teaching duties</strong> step appears. Pick subjects and classes: every subject you pick is assigned in every class you pick, with the person as main teacher where that class subject has none. The form counts how many duties that makes. The step is optional, and duties can be changed later on Teaching duties.</p>
       </GuideSection>
@@ -40,10 +41,14 @@ export default function AddStaffArticle() {
           <GuideStep title="Go on">Choose <strong>Add another</strong>, <strong>View their record</strong>, <strong>Resend invitation</strong> or <strong>Back to directory</strong>.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="info" title="The link is single-use and expires">The person activates their account by opening the link and setting a password. Resending voids the old link and restarts the clock, and never creates a second record.</GuideCallout>
+        <p>Documents such as a CV or certificates are uploaded on the <strong>Documents</strong> tab of the record once it exists. Any your school expects are listed there as missing until they are in.</p>
+        <p><strong>If your school approves each hire</strong>, the button reads <strong>Create and send for approval</strong>. The record is created as Awaiting approval and nothing is sent to the person yet. The confirmation, <strong>Added, waiting for approval</strong>, says: <strong>Added. Their invitation is sent once the hire is approved in Workflow.</strong> Select <strong>Track in Workflow</strong> to follow the hire in your submissions. Once an approver approves it, the invitation goes out and the record moves to Invited. If the hire is rejected or withdrawn, nothing is ever sent and the record is closed.</p>
       </GuideSection>
 
       <GuideSection id="import-many-people" title="Import many people at once">
-        <p>To add a whole staff list, select <strong>Import</strong> on the Staff Directory. This needs permission to upload import batches, which is separate from adding staff one at a time. The <strong>Import staff</strong> drawer loads a spreadsheet, checks every row, and writes nothing until you confirm. Everybody imported arrives as Invited.</p>
+        <p>To add a whole staff list, select <strong>Import</strong> on the Staff Directory. This needs permission to upload import batches, which is separate from adding staff one at a time. The <strong>Import staff</strong> drawer loads a spreadsheet, checks every row, and writes nothing until you confirm. Everybody imported arrives as Invited, as Awaiting approval where your school approves each hire, or as Invited at go-live while the school is still being set up.</p>
+        <p>The file has no role column. Everybody imported starts on the school&apos;s starting role, as on the form, and other roles are given afterwards from Roles &amp; Permissions. A file that still has a Role column is not refused: the check warns once, for example <em>Roles are not imported. Everybody in this file starts as Teacher; give other roles from Roles &amp; Permissions.</em></p>
+        <p>While the school is still being set up, imported staff are not emailed. They are marked <strong>Invited at go-live</strong>, skip hire approval, and their invitations all go out when the school goes live. The form itself still invites the administrators it adds straight away.</p>
         <p>Afterwards, <strong>Recent imports</strong> on the directory toolbar shows how each import finished.</p>
       </GuideSection>
 
@@ -54,11 +59,13 @@ export default function AddStaffArticle() {
           { title: "The Teaching duties step does not appear", body: "The starting role is not a teaching role, or this year has no classes or subjects yet. Assign duties later on Teaching duties." },
           { title: "Posted to is not on the form", body: "It appears only when you can choose between more than one branch. Otherwise the person is filed under the branch you work in." },
           { title: "The photograph did not upload", body: "The person was still added. Open their record, select Edit staff, and add the photograph with the camera on the picture." },
+          { title: "The Staff ID is refused", body: "It does not fit the staff ID rule of the branch the person is posted to, or somebody at the school already has it. The message under the box is the rule's hint, where your school wrote one. Check the rule in Settings, under Staff IDs." },
+          { title: "The person is still Awaiting approval", body: "Your school approves each hire, and nobody has decided it yet. If the hire approvers group in Workflow is empty, nobody can: ask an administrator to add approvers." },
         ]} />
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="You are done when">The person appears in the directory as Invited, their invitation is listed on Invitations, and their posting and job title are right.</GuideCallout>
+        <GuideCallout tone="tip" title="You are done when">The person appears in the directory as Invited, or as Awaiting approval where your school approves each hire, they are listed on Invitations, and their posting and job title are right.</GuideCallout>
       </GuideSection>
     </div>
   );

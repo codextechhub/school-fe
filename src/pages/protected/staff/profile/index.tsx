@@ -195,12 +195,13 @@ export default function StaffProfile() {
 
   // Readable is not changeable: a branch administrator reads school-wide staff.
   const manageable = person ? canManage(person) : false;
-  // Somebody without the update key still corrects their own contact details.
+  // Somebody without the update key corrects what the school lets them.
   const editsOwnDetailsOnly =
     !!person &&
     signedInUserId != null &&
     signedInUserId === person.user_id &&
-    !(manageable && hasPermission(P.MODIFY_TEACHER));
+    !(manageable && hasPermission(P.MODIFY_TEACHER)) &&
+    (person.self_editable_fields === undefined || person.self_editable_fields.length > 0);
 
   return (
     <AsAtContext.Provider value={asAt}>
@@ -577,8 +578,10 @@ function TabBody({
  * Staff summary from the detail record.
  *
  * Payroll stays in finance because its permissions and source of truth are
- * different. Qualifications and documents are counted but are not called
- * missing because the API does not declare which ones a role requires.
+ * different. Qualifications are counted and never called missing, because
+ * nothing declares which ones a role requires. Documents are flagged against
+ * the types the school expects of every member of staff (Settings, Staff),
+ * from the record's `missing_documents`.
  */
 function OverviewTab({
   person,
@@ -698,6 +701,11 @@ function OverviewTab({
               action="View documents"
               onOpen={() => onOpenTab("documents")}
               tone="bg-emerald-50 text-emerald-800"
+              flag={
+                !asAt && person.missing_documents?.length
+                  ? `Missing: ${person.missing_documents.map((row) => row.label).join(", ")}`
+                  : undefined
+              }
             />
           )}
         </div>
@@ -1040,6 +1048,7 @@ function SnapshotCard({
   action,
   onOpen,
   tone,
+  flag,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
@@ -1048,6 +1057,8 @@ function SnapshotCard({
   action: string;
   onOpen: () => void;
   tone: string;
+  /** A short warning under the count, such as the documents still missing. */
+  flag?: string;
 }) {
   return (
     <Surface as="section" className="rounded-xl p-4 sm:p-5">
@@ -1066,6 +1077,9 @@ function SnapshotCard({
         <p className="text-3xl font-semibold leading-none">{value}</p>
         <p className="mt-2 text-xs opacity-75">{label}</p>
       </div>
+      {flag && (
+        <p className="mt-2.5 text-xs font-medium text-amber-800">{flag}</p>
+      )}
     </Surface>
   );
 }

@@ -161,6 +161,8 @@ export const routesPath = {
       PROMOTION: "/settings/promotion",
       ADMISSION_NUMBERS: "/settings/admission-numbers",
       PAYROLL: "/settings/payroll",
+      STAFF: "/settings/staff",
+      STAFF_IDS: "/settings/staff-ids",
       STAFF_PROFILES: "/settings/staff-profiles",
       MORE: "/settings/more",
     },

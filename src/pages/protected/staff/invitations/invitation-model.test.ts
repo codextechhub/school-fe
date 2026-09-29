@@ -7,7 +7,9 @@ import { P, type PermissionCode } from "@/permissions";
 import {
   invitationActions,
   invitationAgeDays,
+  invitationKind,
   invitationPageMetrics,
+  sendable,
   waitingLabel,
 } from "./invitation-model";
 
@@ -94,5 +96,37 @@ describe("invitation actions", () => {
         holding(P.INVITE_TEACHER, P.TRANSITION_TEACHER),
       ),
     ).toEqual({ resend: false, withdraw: false });
+  });
+});
+
+describe("invitation kinds", () => {
+  // Three people at Lagoon View, none of whom has accepted. Ada was invited
+  // last week. Bola was added after the school began approving each hire.
+  // Chidi was imported from the spreadsheet while the school was being set up.
+  const ada = { employment_status: "INVITED", can_resend: true } as StaffListRow;
+  const bola = { employment_status: "PENDING_APPROVAL", can_resend: false } as StaffListRow;
+  const chidi = { employment_status: "AWAITING_GO_LIVE", can_resend: false } as StaffListRow;
+
+  it("tells an invitation, a hire and a held invitation apart", () => {
+    expect(invitationKind(ada)).toBe("invitation");
+    expect(invitationKind(bola)).toBe("hire");
+    expect(invitationKind(chidi)).toBe("held");
+  });
+
+  it("never sends to a hire awaiting approval", () => {
+    expect(sendable(bola, true)).toBe(false);
+  });
+
+  it("sends a held invitation only once the school is live", () => {
+    // Before go-live the server refuses with INVITATION_HELD_FOR_GO_LIVE; after
+    // it, a resend is how one the go-live release left behind goes out. Its
+    // `can_resend` stays false either way, so it cannot be what decides.
+    expect(sendable(chidi, false)).toBe(false);
+    expect(sendable(chidi, true)).toBe(true);
+  });
+
+  it("resends an ordinary invitation only while its link is unused", () => {
+    expect(sendable(ada, true)).toBe(true);
+    expect(sendable({ ...ada, can_resend: false }, true)).toBe(false);
   });
 });

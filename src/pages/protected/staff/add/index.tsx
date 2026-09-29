@@ -22,11 +22,13 @@ import {
 import {
   useCreateStaffMutation,
   useGetStaffListQuery,
+  useGetStaffNumberPolicyQuery,
+  useGetStaffRulesQuery,
   useUpdateStaffMutation,
 } from "@/redux/services/staff/staff-api";
 import type {
   EmploymentType,
-  StaffDetail,
+  StaffCreated,
   StaffQualificationWrite,
 } from "@/redux/services/staff/staff-types";
 
@@ -34,6 +36,7 @@ import { Field, inputClass } from "../../students/drawers/drawer-shell";
 import { useReaderReach } from "../drawers/reader-reach";
 import { ChipToggle, PhotoField, QualificationRows, Section } from "./sections";
 import { InvitationSent } from "./invitation-sent";
+import { fitsPattern, staffNumberField } from "./staff-number-rule";
 
 const TYPES: { value: EmploymentType; label: string }[] = [
   { value: "FULL_TIME", label: "Full-time" },
@@ -94,6 +97,17 @@ function roleTeaches(label: string, key: string): boolean {
  * write is never sent. The backend declares the email open on create, because
  * every new account needs one to receive its invitation, so it is offered and
  * sent even to a role that may not read it on an existing staff member.
+ *
+ * **The Staff ID follows the school's staff number rule** for the branch the
+ * person is posted to (Settings, Staff IDs): required or not, the school's
+ * hint, and the next number where the school issues them. The server checks
+ * the same rule and its refusal lands under the box.
+ *
+ * **Where the school approves each hire, nothing is sent on save.** The record
+ * waits as Awaiting approval and the invitation goes out once the hire is
+ * approved in Workflow, so the copy says that instead of promising an email.
+ * The rule is read only at a live school: the staff rules are closed during
+ * onboarding, and a school never approves the hires it makes while setting up.
  */
 export default function AddStaff() {
   const navigate = useNavigate();
@@ -106,7 +120,7 @@ export default function AddStaff() {
     page: 1,
   });
   // Only the reader's own branches; a one-branch reader is filed under theirs.
-  const { branches, wholeSchool } = useReaderReach();
+  const { branches, wholeSchool, soleBranch } = useReaderReach();
   const { data: subjectData } = useGetSubjectsQuery();
   const { data: classData } = useGetClassesQuery();
 
@@ -143,7 +157,19 @@ export default function AddStaff() {
   const [pickedSubjects, setPickedSubjects] = useState<number[]>([]);
   const [pickedClasses, setPickedClasses] = useState<number[]>([]);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [created, setCreated] = useState<StaffDetail | null>(null);
+  const [created, setCreated] = useState<StaffCreated | null>(null);
+
+  // The rule of the branch they are posted to, which is the one the server checks.
+  const policyBranch = form.branch || (soleBranch ? String(soleBranch.id) : "");
+  const { data: policyData } = useGetStaffNumberPolicyQuery(
+    policyBranch ? { branch: policyBranch } : undefined,
+  );
+  const numberRule = staffNumberField(policyData?.data);
+  const numberOffered = !access.isReadOnly("staff_number", CREATING);
+  const { data: rulesData } = useGetStaffRulesQuery(undefined, {
+    skip: !startingRole,
+  });
+  const awaitsApproval = Boolean(startingRole && rulesData?.data?.hire_requires_approval);
 
   /**
    * Where the new grant reaches, which follows the posting until it is chosen.
@@ -195,13 +221,32 @@ export default function AddStaff() {
     if (choosesRole && !form.role) {
       found.role = "Pick the role this person will hold.";
     }
+    const number = form.staff_number.trim();
+    const rule = policyData?.data;
+    if (numberOffered && rule) {
+      if (!number && numberRule.required) {
+        found.staff_number =
+          rule.hint || "This school requires a staff ID for every member of staff.";
+      } else if (number && rule.pattern && !fitsPattern(rule.pattern, number)) {
+        found.staff_number =
+          rule.hint || "That staff ID is not in this school's format.";
+      }
+    }
     setErrors(found);
     return Object.keys(found).length === 0;
   }
 
+  /** Whether the form draws a box a server refusal on this field can sit under. */
+  function placed(field: string): boolean {
+    if (field === "branch") return branches.length > 1;
+    if (field === "role") return choosesRole;
+    if (field === "role_branch") return choosesRole && branches.length > 1;
+    return field in form && !access.isHidden(field, CREATING);
+  }
+
   async function save() {
     if (!validate()) return;
-    let person: StaffDetail;
+    let person: StaffCreated;
     try {
       const result = await create(access.writableOnly({
         first_name: form.first_name.trim(),
@@ -231,6 +276,10 @@ export default function AddStaff() {
       const perField = fieldWriteErrors(error) ?? fieldErrors(error);
       if (Object.keys(perField).length) {
         setErrors(perField);
+        // A refusal with no box on this form is said aloud rather than dropped.
+        for (const [field, message] of Object.entries(perField)) {
+          if (!placed(field)) toast.error(message);
+        }
         return;
       }
       toast.error(
@@ -259,6 +308,7 @@ export default function AddStaff() {
     return (
       <InvitationSent
         person={created}
+        awaitingApproval={Boolean(created.awaiting_approval)}
         roleLabel={chosenRole?.label ?? ""}
         onAddAnother={() => {
           setForm({
@@ -306,7 +356,9 @@ export default function AddStaff() {
         </button>
         <h2 className="mt-2 text-lg font-semibold text-black-01">Add staff</h2>
         <p className="mt-1 text-sm text-gray-01">
-          One form. They are invited by email as soon as you save.
+          {awaitsApproval
+            ? "One form. They are invited by email once the hire is approved in Workflow."
+            : "One form. They are invited by email as soon as you save."}
         </p>
       </div>
 
@@ -411,12 +463,14 @@ export default function AddStaff() {
             <AccessField access={access} name="staff_number" creating>
               <Field
                 label="Staff ID"
+                required={numberRule.required}
                 error={errors.staff_number}
-                hint="Your school's own format. Nothing checks its shape, only that nobody here already has it."
+                hint={numberRule.hint}
               >
                 <input
                   value={form.staff_number}
                   onChange={(e) => set("staff_number")(e.target.value)}
+                  placeholder={numberRule.placeholder || undefined}
                   className={inputClass}
                 />
               </Field>
@@ -621,12 +675,21 @@ export default function AddStaff() {
             posting. Roles are added or removed from Roles & Permissions.
           </p>
         )}
-        <p className="mt-1.5 text-[13px] text-gray-01">
-          The record is created with employment status Invited and the account
-          waiting for activation. An invitation goes out by email and in-app,
-          never by SMS. The link is single-use and expires; resending voids the
-          old one and restarts the clock.
-        </p>
+        {awaitsApproval ? (
+          <p className="mt-1.5 text-[13px] text-gray-01">
+            Your school approves each new hire. The record is created as
+            Awaiting approval and nothing is sent yet. Once the school&apos;s
+            approvers approve the hire in Workflow, the invitation goes out by
+            email and in-app, never by SMS.
+          </p>
+        ) : (
+          <p className="mt-1.5 text-[13px] text-gray-01">
+            The record is created with employment status Invited and the account
+            waiting for activation. An invitation goes out by email and in-app,
+            never by SMS. The link is single-use and expires; resending voids the
+            old one and restarts the clock.
+          </p>
+        )}
         <p className="mt-2 text-xs text-gray-05">
           Documents such as a CV or certificates are uploaded on the Documents
           tab of their record once it exists.
@@ -649,7 +712,11 @@ export default function AddStaff() {
           >
             <Button onClick={() => void save()} disabled={creating}>
               <Mail className="size-4" />
-              {creating ? "Sending…" : "Create and invite"}
+              {creating
+                ? "Saving…"
+                : awaitsApproval
+                  ? "Create and send for approval"
+                  : "Create and invite"}
             </Button>
           </PermissionGate>
         </div>

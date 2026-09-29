@@ -7,18 +7,22 @@ import type { StaffDetail } from "@/redux/services/staff/staff-types";
 /**
  * A member of staff correcting their own details.
  *
- * Tunde Bakare teaches at Holy Cross and holds no staff update key. The server
- * lets him change his photograph, middle name, date of birth and phone about
- * himself and nothing else, so the form offers those and sends only what he
- * changed. Where the school has closed his personal details to him, his middle
- * name and date of birth are absent from the record and absent from the form.
+ * Tunde Bakare teaches at Holy Cross and holds no staff update key. His own
+ * record carries the details Holy Cross lets staff change about themselves
+ * (Settings, Staff), and the form offers those and sends only what he changed.
+ * Where the school has closed his personal details to him, his middle name and
+ * date of birth are absent from the record and absent from the form. A record
+ * from a server that sends no list falls back to the photograph, middle name,
+ * date of birth and phone.
  */
 const update = vi.fn();
 
 vi.mock("@/redux/services/staff/staff-api", () => ({
   useUpdateStaffMutation: () => [update, { isLoading: false }],
 }));
-vi.mock("../../students/photo-picker", () => ({ PhotoPicker: () => null }));
+vi.mock("../../students/photo-picker", () => ({
+  PhotoPicker: () => <span data-testid="photo-picker" />,
+}));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock("../../students/drawers/drawer-shell", async (importActual) => {
   const actual = await importActual<typeof import("../../students/drawers/drawer-shell")>();
@@ -50,6 +54,9 @@ import { SelfEditDrawer } from "./self-edit-drawer";
 const TUNDE = {
   id: 39,
   full_name: "Tunde Bakare",
+  first_name: "Tunde",
+  last_name: "Bakare",
+  gender: "MALE",
   photo_url: null,
   middle_name: "",
   date_of_birth: null,
@@ -92,15 +99,34 @@ const saveButton = () =>
   [...container.querySelectorAll("button")].find((b) => b.textContent === "Save changes")!;
 
 describe("SelfEditDrawer", () => {
-  it("offers the three details a person may change and none of the school's", () => {
+  it("offers the old four details when the server sends no list", () => {
     render(TUNDE);
     expect(labels()).toEqual(
       expect.arrayContaining([expect.stringContaining("Middle name"), expect.stringContaining("Date of birth"), expect.stringContaining("Phone")]),
     );
     const text = container.textContent ?? "";
-    for (const closed of ["Job title", "Hire date", "Staff ID", "Employment type"]) {
+    for (const closed of ["Job title", "Hire date", "Staff ID", "Employment type", "First name", "Gender"]) {
       expect(text).not.toContain(closed);
     }
+    expect(container.querySelector("[data-testid='photo-picker']")).not.toBeNull();
+  });
+
+  it("offers exactly what the school opened to self-edit", () => {
+    render({ ...TUNDE, self_editable_fields: ["first_name", "gender", "phone"] } as StaffDetail);
+    const shown = labels().join(" ");
+    expect(shown).toContain("First name");
+    expect(shown).toContain("Gender");
+    expect(shown).toContain("Phone");
+    expect(shown).not.toContain("Middle name");
+    expect(shown).not.toContain("Date of birth");
+    expect(container.querySelector("[data-testid='photo-picker']")).toBeNull();
+  });
+
+  it("says so when the school opened nothing", () => {
+    render({ ...TUNDE, self_editable_fields: [] } as StaffDetail);
+    expect(labels()).toEqual([]);
+    expect(container.textContent).toContain("has not opened any of your details");
+    expect(saveButton().disabled).toBe(true);
   });
 
   it("leaves out a detail the record does not carry", () => {

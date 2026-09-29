@@ -5,7 +5,11 @@ import { Info } from "lucide-react";
 import { NativeSelect } from "@/components/ui/native-select";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { apiErrorMessage, fieldErrorsFor } from "@/utils/api-error";
-import { useFileStaffLeaveMutation } from "@/redux/services/staff/staff-api";
+import {
+  useFileStaffLeaveMutation,
+  useGetStaffLeaveQuery,
+  useGetStaffRulesQuery,
+} from "@/redux/services/staff/staff-api";
 import type { LeaveType } from "@/redux/services/staff/staff-types";
 
 import {
@@ -13,8 +17,10 @@ import {
   Field,
   inputClass,
 } from "../../students/drawers/drawer-shell";
+import { balanceHint, countingNote, overAllowanceMessage } from "./leave-copy";
 
-const TYPES: { value: LeaveType; label: string }[] = [
+/** The leave types when the school's rules cannot be read. */
+const FALLBACK_TYPES: { value: LeaveType; label: string }[] = [
   { value: "ANNUAL", label: "Annual" },
   { value: "SICK", label: "Sick" },
   { value: "MATERNITY", label: "Maternity" },
@@ -39,9 +45,16 @@ const TYPES: { value: LeaveType; label: string }[] = [
  * that parks rather than one approved unseen, and the drawer says so - the
  * alternative is a person watching Pending for a week with no idea why.
  *
- * **No balance, and none is asked for.** Nothing anywhere records an
- * entitlement to count against, so this collects dates and a reason and makes
- * no claim about how many days remain.
+ * **The types and the counting are the school's** (Settings, Staff), read from
+ * the staff rules. Those need `school.teachers.view`, which not every reader
+ * holds, so the drawer keeps a fixed list of types and a general sentence
+ * about counting for a reader who cannot read them. The days are counted by
+ * the server on submit; the drawer shows no estimate of its own.
+ *
+ * **Going past an allowance warns and never refuses.** Where the person's
+ * balance for the chosen type is on screen already (the Leave tab's own
+ * query), it is shown under the type, and a filing that goes over is filed
+ * and then said plainly.
  */
 export function LeaveDrawer({
   staffId,
@@ -56,12 +69,23 @@ export function LeaveDrawer({
   onClose: () => void;
 }) {
   const [file, { isLoading: saving }] = useFileStaffLeaveMutation();
+  const rules = useGetStaffRulesQuery().data?.data;
+  const leave = useGetStaffLeaveQuery({ id: staffId }).currentData?.data;
+  const types = rules?.leave.leave_types.length
+    ? (rules.leave.leave_types as { value: LeaveType; label: string }[])
+    : FALLBACK_TYPES;
 
   const [type, setType] = useState<LeaveType | "">("");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
   const [note, setNote] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const typeLabel = types.find((row) => row.value === type)?.label ?? "";
+  const balance = type
+    ? leave?.balances?.find((row) => row.leave_type === type)
+    : undefined;
+  const hint = balanceHint(balance, leave?.balance_session?.name ?? "this session");
 
   // Both ends are needed, and the end cannot precede the start. Checked here so
   // a reader is not sent to the server to be told something they can see.
@@ -81,11 +105,16 @@ export function LeaveDrawer({
         },
       }).unwrap();
 
-      // Overlaps warn and do not refuse, so the request IS filed and the
-      // warning is the second thing said rather than instead of the first.
+      // Warnings never refuse, so the request IS filed and each warning is the
+      // second thing said rather than instead of the first.
       toast.success("Leave filed and sent for approval.");
       for (const warning of result.data.warnings) {
-        toast.warning(warning.message);
+        toast.warning(
+          warning.code === "OVER_ALLOWANCE"
+            ? overAllowanceMessage(warning, { isSelf, personName, typeLabel })
+            : warning.message,
+          { duration: 10000 },
+        );
       }
       onClose();
     } catch (error) {
@@ -116,7 +145,12 @@ export function LeaveDrawer({
       saving={saving}
     >
       <div className="grid gap-4">
-        <Field label="Type of leave" required error={errors.leave_type}>
+        <Field
+          label="Type of leave"
+          required
+          error={errors.leave_type}
+          hint={hint || undefined}
+        >
           <NativeSelect
             aria-label="Type of leave"
             value={type}
@@ -124,7 +158,7 @@ export function LeaveDrawer({
             className="h-9"
           >
             <option value="">Choose a type</option>
-            {TYPES.map((row) => (
+            {types.map((row) => (
               <option key={row.value} value={row.value}>
                 {row.label}
               </option>
@@ -148,6 +182,7 @@ export function LeaveDrawer({
             errors.end_date ??
             (orderWrong ? "The last day cannot be before the first." : undefined)
           }
+          hint={countingNote(rules?.leave)}
         >
           {/* Bounded by the first day, so the calendar cannot offer an earlier one. */}
           <DatePickerInput
@@ -173,7 +208,8 @@ export function LeaveDrawer({
           <Info className="mt-px size-3.5 shrink-0 text-primary" />
           This is a request, not a recorded absence. It stays Pending until
           somebody approves it, and if the school has appointed nobody to
-          approve leave it waits rather than going through unseen.
+          approve leave it waits rather than going through unseen. Going past
+          an allowance does not stop it; the approver sees by how much.
         </p>
       </div>
     </DrawerShell>

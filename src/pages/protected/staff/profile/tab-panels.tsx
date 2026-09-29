@@ -1,6 +1,12 @@
 import { useRef, useState } from "react";
 import { useParams } from "react-router";
-import { CalendarPlus, FileText, ShieldCheck, Upload } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarPlus,
+  FileText,
+  ShieldCheck,
+  Upload,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -26,7 +32,9 @@ import type {
   StaffGrant,
   StaffHistoryEntry,
   StaffLeave,
+  StaffLeaveBalance,
   StaffLeaveRequest,
+  StaffMissingDocument,
   StaffQualification,
   StaffRevokedGrant,
   StaffRoles,
@@ -49,10 +57,12 @@ import { canManage } from "../can-manage";
  * there rather than only that there is nothing.
  *
  * **Nothing here claims a check the platform cannot make.** No verified badge
- * on a qualification, no expiry on a document, no leave balance, and no
- * coloured workload. Nothing anywhere verifies a degree, no register exists to
- * verify one against, and no entitlement is recorded to count leave against -
- * so a badge or a balance would be a number a school would believe.
+ * on a qualification, no expiry on a document, and no coloured workload.
+ * Nothing anywhere verifies a degree and no register exists to verify one
+ * against, so a badge would be a claim a school would believe. Leave balances
+ * and missing documents are shown because the school sets both itself
+ * (Settings, Staff): the allowances per leave type and the document types it
+ * expects.
  */
 
 export function TabSkeleton() {
@@ -426,6 +436,11 @@ const ACCEPTED_DOCUMENTS = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.xls,.xlsx";
  * controls are absent rather than offered and refused. The record is read from
  * the profile's own query (same arguments, so no second request), because the
  * tab is handed only its rows. Both are hidden when reading an earlier day.
+ *
+ * The record's `missing_documents` names the types the school expects that
+ * this person has none of. They are listed above the files as a flag, never a
+ * block, and a reader who may upload gets a button per type that opens the
+ * picker with that type already chosen.
  */
 export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
   const { id } = useParams();
@@ -441,6 +456,9 @@ export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
     !asAt &&
     (person ? canManage(person) : false) &&
     hasPermission(P.UPDATE_STAFF_RECORD);
+  const missing = asAt ? [] : (person?.missing_documents ?? []);
+  const input = useRef<HTMLInputElement>(null);
+  const [type, setType] = useState<DocumentType>("CV");
 
   return (
     <section>
@@ -449,7 +467,27 @@ export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
         state: nothing checks either, and a field somebody sets by hand reads as
         a check that was made.
       </SectionNote>
-      {canChange && <DocumentUpload staffId={staffId} />}
+      {missing.length > 0 && (
+        <MissingDocuments
+          missing={missing}
+          onUpload={
+            canChange
+              ? (next) => {
+                  setType(next);
+                  input.current?.click();
+                }
+              : undefined
+          }
+        />
+      )}
+      {canChange && (
+        <DocumentUpload
+          staffId={staffId}
+          type={type}
+          onTypeChange={setType}
+          input={input}
+        />
+      )}
       {rows.length ? (
         <ul className="grid gap-2.5">
           {rows.map((row) => (
@@ -468,16 +506,71 @@ export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
 }
 
 /**
+ * The document types the school expects and this person has none of.
+ *
+ * Worded as missing rather than overdue: nothing refuses a record for it, and
+ * the school decides what to chase.
+ */
+function MissingDocuments({
+  missing,
+  onUpload,
+}: {
+  missing: StaffMissingDocument[];
+  /** Absent for a reader who may not upload to this record. */
+  onUpload?: (type: DocumentType) => void;
+}) {
+  return (
+    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-3.5 py-3">
+      <p className="flex items-start gap-2 text-[13px] font-medium text-amber-800">
+        <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+        <span className="min-w-0">
+          Missing: {missing.map((row) => row.label).join(", ")}
+        </span>
+      </p>
+      <p className="mt-1 text-xs text-amber-800/80">
+        Your school expects these on every staff record.
+      </p>
+      {onUpload && (
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          {missing.map((row) => (
+            <Button
+              key={row.type}
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={() => onUpload(row.type)}
+            >
+              <Upload className="size-3.5" aria-hidden />
+              Upload {row.label}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * Pick a type, optionally name the file, then choose it.
  *
  * The server checks the extension and the size and answers 422 naming which
  * failed, so that refusal is shown under the control rather than in a toast.
  * A blank title takes the file's own name, since the server requires one.
+ * The type and the file input belong to the tab, so a missing document's
+ * button can choose the type and open the picker.
  */
-function DocumentUpload({ staffId }: { staffId: number }) {
-  const input = useRef<HTMLInputElement>(null);
+function DocumentUpload({
+  staffId,
+  type,
+  onTypeChange,
+  input,
+}: {
+  staffId: number;
+  type: DocumentType;
+  onTypeChange: (type: DocumentType) => void;
+  input: React.RefObject<HTMLInputElement | null>;
+}) {
   const [upload, { isLoading }] = useUploadStaffDocumentMutation();
-  const [type, setType] = useState<DocumentType>("CV");
   const [title, setTitle] = useState("");
   const [error, setError] = useState("");
 
@@ -512,7 +605,7 @@ function DocumentUpload({ staffId }: { staffId: number }) {
         <Field label="Type">
           <NativeSelect
             value={type}
-            onChange={(e) => setType(e.target.value as DocumentType)}
+            onChange={(e) => onTypeChange(e.target.value as DocumentType)}
             className="h-9"
           >
             {DOCUMENT_TYPES.map((option) => (
@@ -670,13 +763,19 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
 };
 
 /**
- * Absences filed for this person, and how many days have been taken.
+ * Absences filed for this person, and where they stand against the allowances.
  *
- * **Days taken is not a balance and the screen says so, in the server's own
- * words.** A balance is an entitlement minus what has been used, and nothing
- * anywhere records an entitlement: Nigerian statutory leave is a floor rather
- * than a schedule, and schools vary it by grade and by length of service. A
- * number here that looked like a balance is one a school would believe.
+ * **Balances are the school's own allowances, per academic session** (Settings,
+ * Staff), counted by the server for `balance_session`. A type shows when it
+ * has an allowance or when something was taken or is pending against it this
+ * session, so a school that sets two allowances does not read seven cards. A
+ * type with no allowance says "No limit" and counts only what was taken.
+ * `remaining` goes negative once an approver lets a request past the
+ * allowance, and reads as days over rather than as a minus sign.
+ *
+ * Where the school has no session to count against, the balances are empty
+ * and the tab falls back to the days taken across every session. With
+ * balances shown, the all-session totals stay as one quiet line underneath.
  */
 export function LeaveTab({
   leave,
@@ -688,6 +787,14 @@ export function LeaveTab({
   onFile?: () => void;
   fileLabel?: string;
 }) {
+  const session = leave.balance_session ?? null;
+  const shown = (leave.balances ?? []).filter(
+    (row) => row.allowance != null || row.taken > 0 || row.pending > 0,
+  );
+  const allSessions = leave.days_taken
+    .map((row) => `${(LEAVE_TYPE_LABEL[row.leave_type] ?? row.leave_type).toLowerCase()} ${dayCount(row.days)}`)
+    .join(", ");
+
   return (
     <div className="grid gap-5">
       {onFile && (
@@ -698,25 +805,51 @@ export function LeaveTab({
           </Button>
         </div>
       )}
-      <section>
-        <h3 className="mb-1 text-sm font-semibold text-black-01">Days taken</h3>
-        <SectionNote>{leave.balance_note}</SectionNote>
-        {leave.days_taken.length ? (
-          <div className="flex flex-wrap gap-2">
-            {leave.days_taken.map((row) => (
-              <span
-                key={row.leave_type}
-                className="inline-flex items-center gap-1.5 rounded-full bg-gray-04 px-2.5 py-1 text-[13px] text-gray-01"
-              >
-                <span className="font-semibold text-black-01">{row.days}</span>
-                {LEAVE_TYPE_LABEL[row.leave_type] ?? row.leave_type}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-[13px] text-gray-05">None taken.</p>
-        )}
-      </section>
+      {session ? (
+        <section>
+          <h3 className="mb-1 text-sm font-semibold text-black-01">
+            Leave balance, {session.name}
+          </h3>
+          <SectionNote>{leave.balance_note}</SectionNote>
+          {shown.length ? (
+            <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              {shown.map((row) => (
+                <BalanceCard key={row.leave_type} row={row} />
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[13px] text-gray-05">
+              No leave taken or pending this session, and the school sets no
+              allowances.
+            </p>
+          )}
+          {allSessions && (
+            <p className="mt-3 text-xs text-gray-05">
+              Approved across all sessions: {allSessions}.
+            </p>
+          )}
+        </section>
+      ) : (
+        <section>
+          <h3 className="mb-1 text-sm font-semibold text-black-01">Days taken</h3>
+          <SectionNote>{leave.balance_note}</SectionNote>
+          {leave.days_taken.length ? (
+            <div className="flex flex-wrap gap-2">
+              {leave.days_taken.map((row) => (
+                <span
+                  key={row.leave_type}
+                  className="inline-flex items-center gap-1.5 rounded-full bg-gray-04 px-2.5 py-1 text-[13px] text-gray-01"
+                >
+                  <span className="font-semibold text-black-01">{row.days}</span>
+                  {LEAVE_TYPE_LABEL[row.leave_type] ?? row.leave_type}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="text-[13px] text-gray-05">None taken.</p>
+          )}
+        </section>
+      )}
 
       <section>
         <h3 className="mb-3 text-sm font-semibold text-black-01">Requests</h3>
@@ -735,6 +868,11 @@ export function LeaveTab({
                     {formatDate(row.start_date)} to {formatDate(row.end_date)} ·{" "}
                     {row.days} {row.days === 1 ? "day" : "days"}
                   </span>
+                  {(row.over_allowance_by ?? 0) > 0 && (
+                    <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
+                      {dayCount(row.over_allowance_by ?? 0)} over allowance
+                    </span>
+                  )}
                   <span
                     className={cn(
                       "ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium",
@@ -757,6 +895,41 @@ export function LeaveTab({
         )}
       </section>
     </div>
+  );
+}
+
+function dayCount(days: number): string {
+  return `${days} ${days === 1 ? "day" : "days"}`;
+}
+
+/** One leave type's standing this session: what is left, then how it was reached. */
+function BalanceCard({ row }: { row: StaffLeaveBalance }) {
+  const limited = row.allowance != null && row.remaining != null;
+  const over = limited && (row.remaining ?? 0) < 0;
+
+  return (
+    <li className="min-w-0 rounded-lg border border-white-02 px-3.5 py-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+        <span className="text-sm font-medium text-black-01">{row.label}</span>
+        <span
+          className={cn(
+            "text-[13px] font-semibold",
+            over ? "text-amber-800" : "text-black-01",
+          )}
+        >
+          {!limited
+            ? "No limit"
+            : over
+              ? `${dayCount(-(row.remaining ?? 0))} over`
+              : `${dayCount(row.remaining ?? 0)} left`}
+        </span>
+      </div>
+      <p className="mt-1 text-xs text-gray-05">
+        {limited ? `${dayCount(row.allowance ?? 0)} allowed · ` : ""}
+        {row.taken} taken
+        {row.pending > 0 ? ` · ${row.pending} pending` : ""}
+      </p>
+    </li>
   );
 }
 

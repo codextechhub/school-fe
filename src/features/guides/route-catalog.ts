@@ -2,7 +2,7 @@
  * Every screen address a guide may name, as a route pattern.
  *
  * Written out rather than read from the router, because the router imports the
- * pages and the pages import the guides. `route-catalog.test.ts` holds the two
+ * pages and the pages import the guides. `registry.test.tsx` holds the two
  * together instead: it walks `protectedRoutes` and fails, naming the path,
  * when a screen is mounted that this list does not know or this list names a
  * screen that is no longer mounted.
@@ -49,6 +49,8 @@ export const GUIDE_ROUTE_PATTERNS = [
   R.SETTINGS.PROMOTION,
   R.SETTINGS.ADMISSION_NUMBERS,
   R.SETTINGS.PAYROLL,
+  R.SETTINGS.STAFF,
+  R.SETTINGS.STAFF_IDS,
   R.SETTINGS.STAFF_PROFILES,
   R.SETTINGS.MORE,
   R.WORKFLOW.APPROVALS,

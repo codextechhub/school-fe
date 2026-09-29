@@ -2,7 +2,9 @@ import {
   AlertTriangle,
   ArrowRight,
   CalendarClock,
+  FileMinus,
   GraduationCap,
+  Hourglass,
   LockKeyhole,
   Mail,
   UserCheck,
@@ -41,7 +43,12 @@ interface AttentionItem {
  *
  * Employment and account facts stay separate. The attention row uses only
  * counts the list response provides, so it never invents missing postings or
- * required records that the API cannot identify.
+ * records the API cannot identify. Missing documents are the school's own
+ * list of expected types (Settings, Staff), and the count is null for a reader
+ * without the records key, who gets no item for it rather than a zero.
+ *
+ * People on leave and invitations held for go-live are listed as information
+ * and left out of the Needs attention figure: nobody has to act on either.
  */
 export function CountsHeader({
   counts,
@@ -49,19 +56,26 @@ export function CountsHeader({
   onPickStatus,
   onPickLocked,
   onPickTeaching,
+  onPickMissingDocuments,
 }: {
   counts?: StaffCounts;
   loading?: boolean;
   onPickStatus: (status: EmploymentStatus) => void;
   onPickLocked: () => void;
   onPickTeaching: () => void;
+  onPickMissingDocuments: () => void;
 }) {
   const statusCount = (status: EmploymentStatus) =>
     counts?.by_employment_status.find((row) => row.value === status)?.count ?? 0;
   const invited = statusCount("INVITED");
+  const awaitingApproval = statusCount("PENDING_APPROVAL");
+  const heldForGoLive = statusCount("AWAITING_GO_LIVE");
+  const missingDocuments = counts?.missing_documents ?? 0;
   const onLeave = statusCount("ON_LEAVE");
   const locked = counts?.locked_accounts ?? 0;
-  const needsAttention = invited + locked;
+  // Every item the attention panel lists, except leave and invitations held
+  // for go-live, which are not faults.
+  const needsAttention = awaitingApproval + invited + locked + missingDocuments;
 
   const metrics: Metric[] = [
     {
@@ -89,13 +103,22 @@ export function CountsHeader({
     {
       label: "Needs attention",
       value: needsAttention,
-      note: "Invitations and account locks",
+      note: "Hires, invitations, locks and documents",
       icon: AlertTriangle,
       tone: "bg-amber-50 text-amber-700",
     },
   ];
 
   const attention: AttentionItem[] = [
+    awaitingApproval > 0 && {
+      key: "awaiting-approval",
+      count: awaitingApproval,
+      label: awaitingApproval === 1 ? "hire awaiting approval" : "hires awaiting approval",
+      action: "Review hires",
+      icon: Hourglass,
+      tone: "bg-yellow-01/10 text-yellow-01-text",
+      onClick: () => onPickStatus("PENDING_APPROVAL"),
+    },
     invited > 0 && {
       key: "invited",
       count: invited,
@@ -113,6 +136,30 @@ export function CountsHeader({
       icon: LockKeyhole,
       tone: "bg-red-50 text-red-700",
       onClick: onPickLocked,
+    },
+    missingDocuments > 0 && {
+      key: "missing-documents",
+      count: missingDocuments,
+      label:
+        missingDocuments === 1
+          ? "person missing documents"
+          : "people missing documents",
+      action: "Review records",
+      icon: FileMinus,
+      tone: "bg-amber-50 text-amber-700",
+      onClick: onPickMissingDocuments,
+    },
+    heldForGoLive > 0 && {
+      key: "held-for-go-live",
+      count: heldForGoLive,
+      label:
+        heldForGoLive === 1
+          ? "invitation held for go-live"
+          : "invitations held for go-live",
+      action: "Sent when the school goes live",
+      icon: Mail,
+      tone: "bg-blue-50 text-blue-700",
+      onClick: () => onPickStatus("AWAITING_GO_LIVE"),
     },
     onLeave > 0 && {
       key: "leave",

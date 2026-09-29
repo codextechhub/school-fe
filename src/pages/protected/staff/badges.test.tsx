@@ -21,7 +21,7 @@ import type {
  */
 
 const EMPLOYMENT: EmploymentStatus[] = [
-  "INVITED", "ACTIVE", "ON_LEAVE", "SUSPENDED", "RESIGNED", "TERMINATED",
+  "PENDING_APPROVAL", "AWAITING_GO_LIVE", "INVITED", "ACTIVE", "ON_LEAVE", "SUSPENDED", "RESIGNED", "TERMINATED",
 ];
 
 const ACCOUNT: AccountStatus[] = [
@@ -68,15 +68,41 @@ describe("EmploymentBadge", () => {
     expect(resigned).not.toBe(terminated);
   });
 
-  it("prints the server's wording, falling back to the code", () => {
+  it("prints the server's wording, and words of its own without one", () => {
     expect(
       renderToStaticMarkup(
         <EmploymentBadge status="ON_LEAVE" label="On Leave" />,
       ),
     ).toContain("On Leave");
-    expect(renderToStaticMarkup(<EmploymentBadge status="ON_LEAVE" />)).toContain(
-      "ON_LEAVE",
+    // The status drawer's current state carries only the code. A hire at a
+    // school that approves each one must not read PENDING_APPROVAL there.
+    for (const status of EMPLOYMENT) {
+      const markup = renderToStaticMarkup(<EmploymentBadge status={status} />);
+      expect(markup, status).not.toContain(status);
+    }
+    expect(
+      renderToStaticMarkup(<EmploymentBadge status="PENDING_APPROVAL" />),
+    ).toContain("Awaiting approval");
+  });
+
+  it("draws an invitation held for go-live apart from a hire awaiting approval", () => {
+    // Neither has been sent. The hire waits on the school's approvers; the
+    // held invitation waits on nothing anybody has to do, so it is not drawn
+    // as a warning.
+    const held = renderToStaticMarkup(<EmploymentBadge status="AWAITING_GO_LIVE" />);
+    const awaiting = renderToStaticMarkup(<EmploymentBadge status="PENDING_APPROVAL" />);
+    expect(held).toContain("Invited at go-live");
+    expect(classesOf(held)).not.toBe(classesOf(awaiting));
+  });
+
+  it("does not draw a hire waiting on approvers like an invitation waiting on the person", () => {
+    const awaiting = classesOf(
+      renderToStaticMarkup(<EmploymentBadge status="PENDING_APPROVAL" />),
     );
+    const invited = classesOf(
+      renderToStaticMarkup(<EmploymentBadge status="INVITED" />),
+    );
+    expect(awaiting).not.toBe(invited);
   });
 });
 

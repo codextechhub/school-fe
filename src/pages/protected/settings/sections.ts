@@ -30,6 +30,8 @@ export const SCHOOL_SETTINGS_SECTIONS = [
   "promotion",
   "admission-numbers",
   "payroll",
+  "staff",
+  "staff-ids",
   "staff-profiles",
   "more",
 ] as const;
@@ -41,6 +43,12 @@ export const DEFAULT_SCHOOL_SETTINGS_SECTION: SchoolSettingsSection = "overview"
 export interface SectionGate {
   /** The reader needs ANY of these. Empty means no key is needed. */
   anyOf: PermissionCode[];
+  /**
+   * Keys the reader needs as well, every one of them. For a section whose
+   * endpoint reads on a module's own key: the settings key opens the door,
+   * and the module key is what the read actually checks.
+   */
+  allOf?: PermissionCode[];
   /** A plan module the school must have bought, when the section needs one. */
   capability?: string;
   /**
@@ -84,6 +92,9 @@ export const SECTION_GATES: Record<
   promotion: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   "admission-numbers": { anyOf: [P.MODIFY_STUDENT], capability: "students" },
   payroll: { anyOf: [P.VIEW_SETTINGS], capability: "finance_advanced" },
+  // Their reads check the staff directory key.
+  staff: { anyOf: [P.VIEW_SETTINGS], allOf: [P.BROWSE_TEACHERS] },
+  "staff-ids": { anyOf: [P.VIEW_SETTINGS], allOf: [P.BROWSE_TEACHERS] },
   // Read on the settings key; saved on the Field Access key inside the section.
   "staff-profiles": { anyOf: [P.VIEW_SETTINGS] },
 };
@@ -101,7 +112,9 @@ export function openSettingsSections(can: {
   hasCapability: (key: string | null | undefined) => boolean;
 }): SettingsPanelSection[] {
   const passes = (gate: Omit<SectionGate, "parts">) =>
-    can.hasAnyPermission(...gate.anyOf) && can.hasCapability(gate.capability);
+    can.hasAnyPermission(...gate.anyOf) &&
+    (gate.allOf ?? []).every((code) => can.hasAnyPermission(code)) &&
+    can.hasCapability(gate.capability);
   return (Object.keys(SECTION_GATES) as SettingsPanelSection[]).filter((key) => {
     const gate = SECTION_GATES[key];
     return gate.parts ? gate.parts.some(passes) : passes(gate);

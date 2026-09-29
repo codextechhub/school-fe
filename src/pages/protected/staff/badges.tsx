@@ -36,6 +36,10 @@ type BadgeVariant = VariantProps<typeof badgeVariants>["variant"];
 
 /** Does this person still work here. LOCKED is deliberately not one of these. */
 const EMPLOYMENT: Record<EmploymentStatus, BadgeVariant> = {
+  // Waiting on the school's own approvers, not on the person.
+  PENDING_APPROVAL: "pending",
+  // Nothing to chase: going live sends it, so a calm colour rather than a warning.
+  AWAITING_GO_LIVE: "blue",
   INVITED: "amber",
   ACTIVE: "active",
   // Amber rather than red. Being on leave is a planned, reversible absence, and
@@ -46,6 +50,24 @@ const EMPLOYMENT: Record<EmploymentStatus, BadgeVariant> = {
   // school's record of them should not read like a punishment.
   RESIGNED: "inactive",
   TERMINATED: "rejected",
+};
+
+/**
+ * The wording for a badge drawn without the server's label.
+ *
+ * The server's `*_label` is preferred wherever a payload carries one; this
+ * covers the payloads that send only the code (the status drawer's current
+ * state), so no status is ever printed as its raw code.
+ */
+const EMPLOYMENT_LABEL: Record<EmploymentStatus, string> = {
+  PENDING_APPROVAL: "Awaiting approval",
+  AWAITING_GO_LIVE: "Invited at go-live",
+  INVITED: "Invited",
+  ACTIVE: "Active",
+  ON_LEAVE: "On leave",
+  SUSPENDED: "Suspended",
+  RESIGNED: "Resigned",
+  TERMINATED: "Terminated",
 };
 
 export function EmploymentBadge({
@@ -74,7 +96,7 @@ export function EmploymentBadge({
       variant={EMPLOYMENT[status] ?? "inactive"}
       className={cn("rounded-full px-2 py-0.5 text-[11px]", className)}
     >
-      {label || status}
+      {label || EMPLOYMENT_LABEL[status] || status}
     </Badge>
   );
   if (!note) return badge;

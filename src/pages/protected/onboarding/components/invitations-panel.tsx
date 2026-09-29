@@ -8,7 +8,10 @@ import { CustomInput } from "@/components/custom/custom-input";
 import { CustomNativeSelect } from "@/components/custom/custom-native-select";
 import PermissionGate from "@/components/custom/permission-gate";
 import { usePermissions } from "@/hooks/use-permissions";
-import { invitationActions } from "@/pages/protected/staff/invitations/invitation-model";
+import {
+  invitationActions,
+  invitationKind,
+} from "@/pages/protected/staff/invitations/invitation-model";
 import { P } from "@/permissions";
 import {
   useCreateStaffMutation,
@@ -48,8 +51,19 @@ const EMPTY = { first_name: "", last_name: "", email: "", role: "" };
  * Total over its input, including an absent one. A chip is a label on a row and
  * must never be the reason a table fails to render: a status this function has
  * not heard of is a sentence a reader can act on, and a crash is not.
+ *
+ * `held` is the one place the employment record answers instead: somebody
+ * imported during setup has an account parked before invitation, which would
+ * otherwise read "Pending approval", and their invitation goes out at go-live.
  */
-function StatusChip({ status }: { status?: string }) {
+function StatusChip({ status, held }: { status?: string; held?: boolean }) {
+  if (held) {
+    return (
+      <Badge variant="blue" className="text-xs">
+        Invited at go-live
+      </Badge>
+    );
+  }
   if (!status) {
     return (
       <Badge variant="inactive" className="text-xs">
@@ -198,7 +212,9 @@ export function InvitationsPanel() {
       <span className="block">
         <span className="block whitespace-nowrap">{person.full_name}</span>
         <span className="block text-xs font-normal text-gray-05 whitespace-nowrap">
-          {person.invited_at ? `Sent ${humanDate(person.invited_at)}` : "–"}
+          {person.invited_at
+            ? `${invitationKind(person) === "held" ? "Added" : "Sent"} ${humanDate(person.invited_at)}`
+            : "–"}
         </span>
       </span>
     ),
@@ -216,7 +232,12 @@ export function InvitationsPanel() {
         {person.roles.length ? person.roles.join(", ") : "–"}
       </span>
     ),
-    status: <StatusChip status={person.account_status} />,
+    status: (
+      <StatusChip
+        status={person.account_status}
+        held={invitationKind(person) === "held"}
+      />
+    ),
   }));
 
   if (forbidden) {
@@ -324,7 +345,12 @@ export function InvitationsPanel() {
           disabledDropdown={resending}
           dropDownList={(row: { _slug: number }) => {
             const person = people.find((entry) => entry.id === row._slug);
-            if (!person || !invitationActions(person, hasPermission).resend) {
+            // A held invitation goes out at go-live; there is nothing to resend.
+            if (
+              !person ||
+              invitationKind(person) === "held" ||
+              !invitationActions(person, hasPermission).resend
+            ) {
               return [];
             }
             return [
@@ -353,6 +379,13 @@ export function InvitationsPanel() {
           <Info className="size-3.5 shrink-0 mt-px text-gray-05" />
           Resending reuses the account that is already there, so chasing
           somebody never creates a second record for them.
+        </p>
+      )}
+      {people.some((person) => invitationKind(person) === "held") && (
+        <p className="mt-1.5 flex items-start gap-1.5 text-xs text-gray-05">
+          <Info className="size-3.5 shrink-0 mt-px text-gray-05" />
+          Staff imported during setup are marked Invited at go-live. Their
+          invitations go out when the school goes live.
         </p>
       )}
     </section>

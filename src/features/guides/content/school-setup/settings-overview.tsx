@@ -10,6 +10,8 @@ const AREAS = [
   ["Promotion", "Who moves up at the end of the year, which class they land in, and what a full class does during the run."],
   ["Admission numbers", "Whether every child needs an admission number, and what a valid one looks like."],
   ["Payroll", "Whether the whole school is paid in one run, or each branch runs its own."],
+  ["Staff", "The role new staff start with, the documents kept on file, what staff change themselves, hire approval, and leave allowances."],
+  ["Staff IDs", "Whether everybody on the staff needs a staff ID, and what a valid one looks like."],
   ["Staff profiles", "How much of a colleague's profile their line managers and other colleagues see."],
   ["More settings", "Roles, field access, approval paths, and the Finance and Procurement settings."],
 ] as const;

@@ -1,6 +1,8 @@
 import type { ElementType } from "react";
 import {
   BellRing,
+  BadgeCheck,
+  Briefcase,
   ClipboardList,
   GraduationCap,
   Hash,
@@ -42,6 +44,8 @@ import { PayrollSection } from "./sections/payroll-section";
 import { ProfileSection } from "./sections/profile-section";
 import { SecuritySection } from "./sections/security-section";
 import { StaffProfilesSection } from "./sections/staff-profiles-section";
+import { StaffSection } from "./sections/staff-section";
+import { StaffNumbersSection } from "./sections/staff-numbers-section";
 
 const BASE = routesPath.PROTECTED.SETTINGS.INDEX;
 
@@ -59,6 +63,8 @@ const SECTION_META: Record<
   promotion: { title: "Promotion", description: "Arms, holds and full classes", icon: GraduationCap },
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash },
   payroll: { title: "Payroll", description: "One run or one per branch", icon: Landmark },
+  staff: { title: "Staff", description: "Starting role, leave, hiring", icon: Briefcase },
+  "staff-ids": { title: "Staff IDs", description: "The rule for staff numbers", icon: BadgeCheck },
   "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog },
   more: { title: "More settings", description: "Roles, approvals, finance", icon: ListChecks },
 };
@@ -73,6 +79,8 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   promotion: PromotionSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
+  staff: StaffSection,
+  "staff-ids": StaffNumbersSection,
   "staff-profiles": StaffProfilesSection,
   more: MoreSection,
 };
@@ -159,6 +167,8 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   promotion: "Who moves up at the end of the year, whether a year group keeps its arms or is spread across classes, and what a full class does.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
+  staff: "The role new staff start with, the documents kept on file, what staff change themselves, hire approval, and leave allowances.",
+  "staff-ids": "Whether everybody on the staff needs a staff ID, and what a valid one looks like.",
   "staff-profiles": "How much of a colleague's profile their line managers and other colleagues see.",
   more: "Roles, field access, approval paths, and the Finance and Procurement settings.",
 };

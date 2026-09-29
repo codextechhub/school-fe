@@ -81,3 +81,38 @@ export function invitationActions(
     withdraw: manageable && hasPermission(P.TRANSITION_TEACHER),
   };
 }
+
+/**
+ * What kind of unaccepted person a row is, which decides every control on it.
+ *
+ * - `invitation`: sent, waiting for the person to open the link. Resend and
+ *   withdraw as usual.
+ * - `hire`: a hire the school approves first (`PENDING_APPROVAL`). Nothing
+ *   has been sent and the school's approvers are the ones being waited on, so
+ *   there is no resend, and withdrawing calls the hire off.
+ * - `held`: imported while the school was being set up (`AWAITING_GO_LIVE`).
+ *   Nothing has been sent; every such invitation goes out when the school goes
+ *   live. The server refuses a resend until then, and afterwards a resend
+ *   sends one the go-live release left behind. `can_resend` is false for
+ *   these throughout, because their account never reached the invited state.
+ */
+export type InvitationKind = "invitation" | "hire" | "held";
+
+export function invitationKind(person: Pick<StaffListRow, "employment_status">): InvitationKind {
+  if (person.employment_status === "PENDING_APPROVAL") return "hire";
+  if (person.employment_status === "AWAITING_GO_LIVE") return "held";
+  return "invitation";
+}
+
+/**
+ * Whether this row's send control can be pressed, once the reader may resend.
+ *
+ * A held invitation can be sent only after the school is live; an ordinary one
+ * only while its link is unused; a hire awaiting approval never.
+ */
+export function sendable(person: StaffListRow, schoolLive: boolean): boolean {
+  const kind = invitationKind(person);
+  if (kind === "held") return schoolLive;
+  if (kind === "hire") return false;
+  return person.can_resend;
+}

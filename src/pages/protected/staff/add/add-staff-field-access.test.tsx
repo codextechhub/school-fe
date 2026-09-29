@@ -62,6 +62,8 @@ vi.mock("@/redux/services/academics/academics-api", () => ({
 }));
 vi.mock("@/redux/services/staff/staff-api", () => ({
   useGetStaffListQuery: () => ({ data: listData, isLoading: false }),
+  useGetStaffNumberPolicyQuery: () => ({ data: undefined }),
+  useGetStaffRulesQuery: () => ({ data: undefined }),
   useCreateStaffMutation: () => [create, { isLoading: false }],
   useUpdateStaffMutation: () => [vi.fn()],
   useResendStaffInvitationMutation: () => [vi.fn(), { isLoading: false }],
