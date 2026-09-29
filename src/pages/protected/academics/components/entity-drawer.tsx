@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Children, cloneElement, isValidElement, useId, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -450,6 +450,15 @@ export function EntityDrawer({
   );
 }
 
+/**
+ * A labelled form field in a drawer.
+ *
+ * The label names the control for screen readers: a single control child is
+ * given an id (its own, when it already has one) that the label points at,
+ * and the error line, when shown, is announced with it. A child that is not a
+ * single element (a group of buttons, a fragment) keeps the label as a
+ * visible heading only.
+ */
 export function Field({
   label,
   error,
@@ -459,14 +468,28 @@ export function Field({
   error?: string;
   children: React.ReactNode;
 }) {
+  const generated = useId();
+  const child = Children.count(children) === 1 && isValidElement(children) ? children : null;
+  const childProps = (child?.props ?? {}) as { id?: string; "aria-describedby"?: string };
+  const controlId = childProps.id ?? generated;
+  const errorId = `${controlId}-error`;
+  const control = child
+    ? cloneElement(child as React.ReactElement<Record<string, unknown>>, {
+        id: controlId,
+        ...(error
+          ? { "aria-describedby": [childProps["aria-describedby"], errorId].filter(Boolean).join(" ") }
+          : {}),
+      })
+    : children;
+
   return (
     <div>
-      <label className="mb-1.5 block text-[13px] font-medium text-gray-06">
+      <label htmlFor={child ? controlId : undefined} className="mb-1.5 block text-[13px] font-medium text-gray-06">
         {label}
       </label>
-      {children}
+      {control}
       {error && (
-        <p className="mt-1.5 text-xs text-error-text text-pretty">{error}</p>
+        <p id={errorId} className="mt-1.5 text-xs text-error-text text-pretty">{error}</p>
       )}
     </div>
   );
