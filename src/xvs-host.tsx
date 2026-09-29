@@ -108,6 +108,13 @@ export function usePositions(): HostQueryResult<HostPosition> {
   return { data: rows, isLoading, isError };
 }
 
+/** Whether the reader may route an approval step through the school's own
+ *  organogram: the chart's own read key, the same one `usePositions` reads under.
+ */
+export function useCanUseOrganogram(): boolean {
+  return usePermissions().hasPermission(P.VIEW_SCHOOL_ORGANOGRAM);
+}
+
 /** This app keeps no recently-opened trail, so noting one is a no-op.
  *
  *  A real answer rather than a gap: the console has a trail worth writing to
