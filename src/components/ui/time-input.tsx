@@ -66,6 +66,15 @@ const ARROW_START = "08:00";
  *   A phone's number pad has no letters, so the toggle is how a phone user
  *   picks the half of the day; on a keyboard "830p" works as well.
  *
+ * Which half of the day a typed 12-hour time falls in, first match wins:
+ * 1. an am/pm typed with it ("6:30a", "12am");
+ * 2. once the toggle has been tapped, the half it shows: this box never
+ *    guesses again;
+ * 3. a guess by school hours: 7 to 11 am, 12 to 6 pm (see `guessMeridiem`).
+ * The toggle always shows the half in use, so a wrong guess is one tap to
+ * correct. A time the box did not read from typing (the stored value, an
+ * arrow key, a tidied entry) keeps its own half until the person types again.
+ *
  * Typing is read loosely and tidied on leaving the field: "8", "830", "0830",
  * "8:5" and "8:30 pm" are all understood (see `readTime`). The value follows
  * the typing as soon as the text reads as a time, so a form reacting to it
@@ -100,14 +109,23 @@ function TimeInput({
   const stored = value ?? "";
 
   const [text, setText] = React.useState(() => timeText(stored, clock));
+  // The half the toggle shows, and the one used to read the text while
+  // `guessing` is off.
   const [meridiem, setMeridiem] = React.useState<Meridiem>(
     () => meridiemOf(stored) ?? "am",
   );
+  // On while the text is the person's own typing, read by the guess.
+  const [guessing, setGuessing] = React.useState(false);
+  // Set once the toggle is tapped; typing then reads by it, not the guess.
+  const [picked, setPicked] = React.useState(false);
   const [focused, setFocused] = React.useState(false);
   const [shown, setShown] = React.useState({ value: stored, clock });
 
+  /** The half to read the text by: null leaves it to the guess. */
+  const readingHalf = guessing && !picked ? null : meridiem;
+
   /** The stored value some text stands for, or "" when it stands for none. */
-  const accept = (candidate: string, half: Meridiem = meridiem) => {
+  const accept = (candidate: string, half: Meridiem | null = readingHalf) => {
     const read = readTime(candidate, clock, half);
     return read && fitsRules(read.value, rules) ? read.value : "";
   };
@@ -119,10 +137,11 @@ function TimeInput({
     if (clock !== shown.clock || accept(text) !== (minutesText(stored) ?? "")) {
       setText(timeText(stored, clock));
       setMeridiem(meridiemOf(stored) ?? meridiem);
+      setGuessing(false);
     }
   }
 
-  const read = readTime(text, clock, meridiem);
+  const read = readTime(text, clock, readingHalf);
   const unreadable = text.trim() !== "" && accept(text) === "";
   const markInvalid =
     (unreadable && !focused) || ariaInvalid === true || ariaInvalid === "true";
@@ -141,7 +160,8 @@ function TimeInput({
 
   const type = (next: string) => {
     setText(next);
-    emit(accept(next));
+    setGuessing(true);
+    emit(accept(next, picked ? meridiem : null));
   };
 
   /** Rewrites readable text in the school's own form: "830p" becomes 8:30 pm. */
@@ -150,10 +170,13 @@ function TimeInput({
     if (!next) return;
     setText(timeText(next, clock));
     setMeridiem(meridiemOf(next) ?? meridiem);
+    setGuessing(false);
   };
 
   const pickHalf = (next: Meridiem) => {
     setMeridiem(next);
+    setPicked(true);
+    setGuessing(false);
     emit(accept(text, next));
   };
 
@@ -167,6 +190,7 @@ function TimeInput({
       : (min && fitsRules(min, rules) ? min : ARROW_START);
     setText(timeText(next, clock));
     setMeridiem(meridiemOf(next) ?? meridiem);
+    setGuessing(false);
     emit(next);
   };
 

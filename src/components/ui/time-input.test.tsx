@@ -15,6 +15,8 @@ describe("readTime", () => {
   it.each([
     ["8", "08:00"],
     ["08", "08:00"],
+    ["6", "06:00"],
+    ["12", "12:00"],
     ["830", "08:30"],
     ["0830", "08:30"],
     ["8:5", "08:05"],
@@ -51,6 +53,28 @@ describe("readTime", () => {
     expect(readTime("8:30", "H12", "pm")).toEqual({ value: "20:30", meridiem: "pm" });
     expect(readTime("12", "H12", "am")?.value).toBe("00:00");
     expect(readTime("12", "H12", "pm")?.value).toBe("12:00");
+  });
+
+  it.each([
+    ["6", "18:00", "pm"],
+    ["6:30", "18:30", "pm"],
+    ["7", "07:00", "am"],
+    ["11", "11:00", "am"],
+    ["11:59", "11:59", "am"],
+    ["12", "12:00", "pm"],
+    ["1", "13:00", "pm"],
+    ["2", "14:00", "pm"],
+  ])("guesses by school hours on a 12-hour school: %s is %s", (text, value, meridiem) => {
+    expect(readTime(text, "H12")).toEqual({ value, meridiem });
+  });
+
+  it.each([
+    ["12am", "00:00"],
+    ["6:30a", "06:30"],
+    ["7 pm", "19:00"],
+    ["11:30p", "23:30"],
+  ])("lets a typed am/pm beat the guess: %s is %s", (text, value) => {
+    expect(readTime(text, "H12")?.value).toBe(value);
   });
 
   it("reads an hour that only a 24-hour clock has as 24-hour, on a 12-hour school", () => {
@@ -202,6 +226,37 @@ describe("TimeInput", () => {
     leave();
     expect(field().value).toBe("8:30");
     expect(pressed()).toBe("pm");
+  });
+
+  it("guesses the half of a bare hour by school hours, and shows the guess on the toggle", () => {
+    const spy = render("H12");
+    typeInto("2");
+    expect(spy).toHaveBeenLastCalledWith("14:00");
+    expect(pressed()).toBe("pm");
+    typeInto("7");
+    expect(spy).toHaveBeenLastCalledWith("07:00");
+    expect(pressed()).toBe("am");
+  });
+
+  it("never guesses over a half the person tapped", () => {
+    const spy = render("H12");
+    typeInto("6:30");
+    expect(spy).toHaveBeenLastCalledWith("18:30");
+    leave();
+    act(() => halves().find((b) => b.textContent === "am")!.click());
+    expect(spy).toHaveBeenLastCalledWith("06:30");
+    typeInto("2");
+    expect(spy).toHaveBeenLastCalledWith("02:00");
+    expect(pressed()).toBe("am");
+  });
+
+  it("lets a typed am/pm beat the guess in the box", () => {
+    const spy = render("H12");
+    typeInto("6:30a");
+    expect(spy).toHaveBeenLastCalledWith("06:30");
+    leave();
+    expect(field().value).toBe("6:30");
+    expect(pressed()).toBe("am");
   });
 
   it("changes the stored value when the other half of the day is picked", () => {

@@ -63,14 +63,17 @@ export function minutesOf(value: string | null | undefined): number | null {
  * Which half of the day:
  * - a typed am/pm wins, and then the hour must be 1 to 12;
  * - otherwise on a 24-hour clock the hour is read as written (0 to 23);
- * - otherwise on a 12-hour clock an hour of 1 to 12 takes `meridiem` (the
- *   box's am/pm toggle), and 0 or 13 to 23 can only be a 24-hour time, so it
- *   is read as one: a person on a 12-hour school who types 14:00 means 2 pm.
+ * - otherwise on a 12-hour clock, 0 or 13 to 23 can only be a 24-hour time,
+ *   so it is read as one: a person on a 12-hour school who types 14:00 means
+ *   2 pm;
+ * - otherwise an hour of 1 to 12 takes `meridiem` when one is given (the half
+ *   the person picked on the box's toggle);
+ * - otherwise it is guessed by school hours (see {@link guessMeridiem}).
  */
 export function readTime(
   text: string,
   clock: ClockStyle,
-  meridiem: Meridiem = "am",
+  meridiem: Meridiem | null = null,
 ): ReadTime | null {
   let rest = text.trim();
   if (!rest) return null;
@@ -106,10 +109,22 @@ export function readTime(
     if (hour > 23) return null;
     hour24 = hour;
   } else {
-    hour24 = (hour % 12) + (meridiem === "pm" ? 12 : 0);
+    const half = meridiem ?? guessMeridiem(hour);
+    hour24 = (hour % 12) + (half === "pm" ? 12 : 0);
   }
 
   return { value: toValue(hour24 * 60 + minute), meridiem: hour24 >= 12 ? "pm" : "am" };
+}
+
+/**
+ * The half of the day a bare 12-hour hour most likely means at a school: 7 to
+ * 11 are the morning, 12 is noon and 1 to 6 are the afternoon or early
+ * evening. A school day runs from about 7 am to 6 pm, so "2" for an exam or
+ * "6:30" for a parents' evening means pm, and "7" for assembly means am. The
+ * box's toggle shows the guess, so an early or late exception is one tap.
+ */
+export function guessMeridiem(hour: number): Meridiem {
+  return hour >= 7 && hour <= 11 ? "am" : "pm";
 }
 
 /**
