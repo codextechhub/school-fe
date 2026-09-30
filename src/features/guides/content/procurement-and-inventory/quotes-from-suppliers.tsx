@@ -31,6 +31,7 @@ export default function QuotesFromSuppliersArticle() {
           "Extend: gives one supplier a later deadline without changing it for the others.",
           "Amend: publishes a change to every invited supplier, with a Change summary. Tick Require a new response if earlier quotes no longer fit.",
         ]} />
+        <p>A deadline is a day and a time. Pick the day, then the time on your school&apos;s clock; the line under it says whose time it is, for example <em>In Ikeja Branch&apos;s time.</em> When amending, a new deadline needs both a day and a time: a half-filled one reads <em>Give the new deadline both a day and a time, or leave both empty.</em></p>
       </GuideSection>
 
       <GuideSection id="record-quotations" title="Record the quotations">
