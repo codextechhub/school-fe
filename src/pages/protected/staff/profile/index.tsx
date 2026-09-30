@@ -38,6 +38,7 @@ import {
   useGetStaffDocumentsQuery,
   useGetStaffHistoryQuery,
   useGetStaffLeaveQuery,
+  useCancelStaffLeaveMutation,
   useGetStaffMemberQuery,
   useGetStaffQualificationsQuery,
   useGetStaffRolesQuery,
@@ -49,7 +50,9 @@ import type {
   StaffDetail,
   StaffProfileSection,
   StaffRestrictedDetail,
+  StaffLeaveRequest,
 } from "@/redux/services/staff/staff-types";
+import { ConfirmDialog } from "../../students/drawers/confirm-dialog";
 
 import { AccountBadge, EmploymentBadge } from "../badges";
 import { canManage } from "../can-manage";
@@ -478,6 +481,8 @@ function TabBody({
   const { hasPermission } = usePermissions();
   const asAt = useAsAt();
   const signedInUserId = useAppSelector(selectUser)?.id;
+  const [leaveToCancel, setLeaveToCancel] = useState<StaffLeaveRequest | null>(null);
+  const [cancelLeave, { isLoading: cancellingLeave }] = useCancelStaffLeaveMutation();
   // Whose record this is. `user_id` is the ACCOUNT, which is what the signed-in
   // user carries; the staff id is a different number and comparing the two
   // would make everybody's leave look like somebody else's.
@@ -489,6 +494,19 @@ function TabBody({
     (isSelf
       ? hasPermission(P.APPLY_FOR_LEAVE)
       : canManage(person) && hasPermission(P.UPDATE_LEAVE));
+  const mayEditLeave = !asAt && canManage(person) && hasPermission(P.UPDATE_LEAVE);
+  const mayCancelLeave = !asAt && canManage(person) && hasPermission(P.CANCEL_LEAVE);
+
+  async function confirmCancelLeave() {
+    if (!leaveToCancel) return;
+    try {
+      await cancelLeave(leaveToCancel.id).unwrap();
+      toast.success("Leave request cancelled.");
+      setLeaveToCancel(null);
+    } catch (error) {
+      toast.error(apiErrorMessage(error, "We could not cancel that request. Try again."));
+    }
+  }
 
   // `currentData` on every tab, so a day's answer is never drawn under another.
   const record = { id: person.id, asAt };
@@ -556,8 +574,12 @@ function TabBody({
     }
     if (!leave.currentData) return <TabSkeleton />;
     return (
+      <>
       <LeaveTab
         leave={leave.currentData.data}
+        onEdit={mayEditLeave ? (request) => onOpenDrawer({ kind: "leaveEdit", staffId: person.id, personName: person.full_name, request }) : undefined}
+        onCancel={mayCancelLeave ? setLeaveToCancel : undefined}
+        cancelling={cancellingLeave}
         onFile={
           mayFileLeave
             ? () =>
@@ -571,6 +593,16 @@ function TabBody({
         }
         fileLabel={isSelf ? "Apply for leave" : "Record leave"}
       />
+      <ConfirmDialog
+        open={leaveToCancel != null}
+        onCancel={() => setLeaveToCancel(null)}
+        onConfirm={() => void confirmCancelLeave()}
+        title="Cancel leave request?"
+        body={`${person.full_name}'s ${leaveToCancel?.leave_type_label.toLowerCase() ?? ""} leave will be marked cancelled. The request and its approval history remain visible.`}
+        confirmLabel="Cancel leave"
+        busy={cancellingLeave}
+      />
+      </>
     );
   }
   if (tab === "history") {

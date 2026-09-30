@@ -786,16 +786,24 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
  * Where the school has no session to count against, the balances are empty
  * and the tab falls back to the days taken across every session. With
  * balances shown, the all-session totals stay as one quiet line underneath.
+ * Each request opens in place to show the current approval holder, its note,
+ * and permitted actions without sending a reader to a second screen.
  */
 export function LeaveTab({
   leave,
   onFile,
   fileLabel,
+  onEdit,
+  onCancel,
+  cancelling,
 }: {
   leave: StaffLeave;
   /** Absent for a reader who may neither apply nor file on somebody's behalf. */
   onFile?: () => void;
   fileLabel?: string;
+  onEdit?: (request: StaffLeaveRequest) => void;
+  onCancel?: (request: StaffLeaveRequest) => void;
+  cancelling?: boolean;
 }) {
   const session = leave.balance_session ?? null;
   const shown = (leave.balances ?? []).filter(
@@ -868,9 +876,10 @@ export function LeaveTab({
             {leave.leave.map((row) => (
               <li
                 key={row.id}
-                className="rounded-lg border border-white-02 px-3.5 py-2.5"
+                className="min-w-0 rounded-lg border border-white-02 px-3.5 py-2.5"
               >
-                <div className="flex flex-wrap items-center gap-2.5">
+                <details className="group">
+                  <summary className="flex min-w-0 cursor-pointer list-none flex-wrap items-center gap-2.5 [&::-webkit-details-marker]:hidden">
                   <span className="text-sm font-medium text-black-01">
                     {row.leave_type_label}
                   </span>
@@ -893,10 +902,57 @@ export function LeaveTab({
                     {LEAVE_STATUS[row.display_status]?.label ??
                       row.display_status}
                   </span>
-                </div>
-                {row.note && (
-                  <p className="mt-1.5 text-xs text-gray-01">{row.note}</p>
-                )}
+                  <span className="text-xs text-primary group-open:hidden">Details</span>
+                  <span className="hidden text-xs text-primary group-open:inline">Hide details</span>
+                  </summary>
+                  <div className="mt-3 grid gap-3 border-t border-white-02 pt-3 text-[13px] sm:grid-cols-2">
+                    <div>
+                      <span className="block text-xs text-gray-05">Days</span>
+                      {dayCount(row.days)}
+                    </div>
+                    <div>
+                      <span className="block text-xs text-gray-05">Requested by</span>
+                      {row.requested_by?.name ?? "Not recorded"}
+                    </div>
+                  {row.status === "PENDING" && (
+                    <div className="sm:col-span-2">
+                      <span className="block text-xs text-gray-05">Pending with</span>
+                      {row.approval?.pending_with.length
+                        ? row.approval.pending_with.join(", ")
+                        : row.approval
+                          ? "No approver assigned yet"
+                          : "Approval details unavailable"}
+                    </div>
+                  )}
+                  {row.note && (
+                    <div className="min-w-0 whitespace-pre-wrap break-words sm:col-span-2">
+                      <span className="block text-xs text-gray-05">Note</span>
+                      {row.note}
+                    </div>
+                  )}
+                  {row.last_changed_by && (
+                    <div className="sm:col-span-2">
+                      <span className="block text-xs text-gray-05">Last changed by</span>
+                      {row.last_changed_by.name}
+                      {row.last_changed_at ? ` on ${formatDateTime(row.last_changed_at)}` : ""}
+                    </div>
+                  )}
+                  {((row.status === "PENDING" && onEdit) || ((row.status === "PENDING" || row.status === "APPROVED") && onCancel)) && (
+                    <div className="flex flex-wrap gap-2 sm:col-span-2">
+                      {row.status === "PENDING" && onEdit && (
+                        <Button variant="outline" size="sm" onClick={() => onEdit(row)}>
+                          Edit request
+                        </Button>
+                      )}
+                      {(row.status === "PENDING" || row.status === "APPROVED") && onCancel && (
+                        <Button variant="outline" size="sm" disabled={cancelling} onClick={() => onCancel(row)}>
+                          Cancel request
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  </div>
+                </details>
               </li>
             ))}
           </ul>

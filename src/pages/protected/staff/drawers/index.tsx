@@ -8,6 +8,7 @@ import { ClassTeacherDrawer } from "./class-teacher-drawer";
 import { EditDrawer } from "./edit-drawer";
 import { EmailDrawer } from "./email-drawer";
 import { LeaveDrawer } from "./leave-drawer";
+import type { StaffLeaveRequest } from "@/redux/services/staff/staff-types";
 import { PostingDrawer } from "./posting-drawer";
 import { RoleDrawer } from "./role-drawer";
 import { RolePreviewDrawer } from "./role-preview-drawer";
@@ -27,6 +28,7 @@ export type StaffDrawerRequest =
   | { kind: "email"; staffId: number }
   | { kind: "role"; staffId: number }
   | { kind: "leave"; staffId: number; personName: string; isSelf: boolean }
+  | { kind: "leaveEdit"; staffId: number; personName: string; request: StaffLeaveRequest }
   | { kind: "posting"; staffIds: number[]; personName?: string }
   | { kind: "bulkRole"; staffIds: number[] }
   | {
@@ -103,13 +105,14 @@ export function StaffDrawers({
       />
     );
   }
-  if (request.kind === "leave") {
+  if (request.kind === "leave" || request.kind === "leaveEdit") {
     return (
       <LeaveDrawer
-        key={`leave-${request.staffId}`}
+        key={`leave-${request.staffId}-${request.kind === "leaveEdit" ? request.request.id : "new"}`}
         staffId={request.staffId}
         personName={request.personName}
-        isSelf={request.isSelf}
+        isSelf={request.kind === "leave" ? request.isSelf : false}
+        request={request.kind === "leaveEdit" ? request.request : undefined}
         onClose={onClose}
       />
     );

@@ -885,6 +885,15 @@ export interface StaffLeaveRequest {
   decided_at: string | null;
   requested_by: StaffActor | null;
   created_at: string;
+  /** The active workflow step and its frozen list of eligible approvers. */
+  approval?: {
+    instance_id: string | null;
+    stage: string | null;
+    pending_with: string[];
+  };
+  /** The last administrator correction or cancellation, when present. */
+  last_changed_by?: StaffActor | null;
+  last_changed_at?: string | null;
 }
 
 /**
@@ -1026,4 +1035,3 @@ export type StaffRulesUpdate = Pick<
   leave: Pick<StaffRules["leave"], "allowances" | "working_days" | "exclude_closures">;
   reason?: string;
 };
-

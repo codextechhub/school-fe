@@ -17,6 +17,7 @@ import type {
   StaffLeave,
   StaffLeaveFiled,
   StaffLeaveRequest,
+  StaffLeaveWarning,
   StaffLeaveWrite,
   StaffListQuery,
   StaffListResponse,
@@ -371,12 +372,12 @@ export const staffApi = baseApi.injectEndpoints({
         body,
       }),
       extraOptions: { silent: true },
-      invalidatesTags: ["StaffLeave", "SchoolStaff", "WorkflowSubmissions"],
+      invalidatesTags: ["StaffLeave", "SchoolStaff", "WorkflowInstances", "WorkflowPending", "WorkflowSubmissions"],
     }),
 
     /** Correct a request that has not been decided. */
     updateStaffLeave: builder.mutation<
-      Envelope<StaffLeaveRequest>,
+      Envelope<{ leave: StaffLeaveRequest; warnings: StaffLeaveWarning[] }>,
       { leaveId: number; body: Partial<StaffLeaveWrite> }
     >({
       query: ({ leaveId, body }) => ({
@@ -385,15 +386,16 @@ export const staffApi = baseApi.injectEndpoints({
         body,
       }),
       extraOptions: { silent: true },
-      invalidatesTags: ["StaffLeave", "SchoolStaff"],
+      invalidatesTags: ["StaffLeave", "SchoolStaff", "WorkflowInstances", "WorkflowPending", "WorkflowSubmissions"],
     }),
 
-    cancelStaffLeave: builder.mutation<Envelope<null>, number>({
+    cancelStaffLeave: builder.mutation<Envelope<StaffLeaveRequest>, number>({
       query: (leaveId) => ({
         url: `/i/me/staff/leave/${leaveId}/`,
         method: "DELETE",
       }),
-      invalidatesTags: ["StaffLeave", "SchoolStaff", "WorkflowSubmissions"],
+      extraOptions: { silent: true },
+      invalidatesTags: ["StaffLeave", "SchoolStaff", "WorkflowInstances", "WorkflowPending", "WorkflowSubmissions"],
     }),
 
     // ── Teaching duties ────────────────────────────────────────────────────

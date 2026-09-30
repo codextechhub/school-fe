@@ -1,10 +1,22 @@
 import type {
   StaffLeaveBalance,
   StaffLeaveWarning,
+  StaffLeaveRequest,
+  StaffLeaveWrite,
   StaffRules,
 } from "@/redux/services/staff/staff-types";
 
 const WEEKDAY = ["", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+/** A correction sends only changed fields so saved days keep their original count when dates stay put. */
+export function leaveChanges(request: StaffLeaveRequest, next: StaffLeaveWrite): Partial<StaffLeaveWrite> {
+  return {
+    ...(next.leave_type !== request.leave_type && { leave_type: next.leave_type }),
+    ...(next.start_date !== request.start_date && { start_date: next.start_date }),
+    ...(next.end_date !== request.end_date && { end_date: next.end_date }),
+    ...(next.note !== request.note && { note: next.note }),
+  };
+}
 
 /**
  * How the school counts a request's days, in one sentence.

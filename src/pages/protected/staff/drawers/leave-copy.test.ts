@@ -1,6 +1,16 @@
 import { describe, expect, it } from "vitest";
+import type { StaffLeaveRequest } from "@/redux/services/staff/staff-types";
 
-import { balanceHint, countingNote, overAllowanceMessage } from "./leave-copy";
+import { balanceHint, countingNote, leaveChanges, overAllowanceMessage } from "./leave-copy";
+
+describe("leaveChanges", () => {
+  it("keeps unchanged dates out of a note correction so stored days are not recounted", () => {
+    const request = {
+      leave_type: "ANNUAL", start_date: "2026-10-05", end_date: "2026-10-08", note: "Old note",
+    } as StaffLeaveRequest;
+    expect(leaveChanges(request, { ...request, note: "Corrected note" })).toEqual({ note: "Corrected note" });
+  });
+});
 
 /**
  * What the leave drawer says about counting, balances and going over.

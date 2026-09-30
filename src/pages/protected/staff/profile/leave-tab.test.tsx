@@ -58,6 +58,21 @@ describe("LeaveTab", () => {
     expect(text()).toContain("2 days over allowance");
   });
 
+  it("opens each request to show its approver, day count and available actions", () => {
+    const request = OKAFOR.leave[0];
+    const markup = renderToStaticMarkup(<LeaveTab
+      leave={{ ...OKAFOR, leave: [{ ...request, approval: { instance_id: "abc", stage: "Leave approval", pending_with: ["Ngozi Eze"] } }] }}
+      onEdit={() => undefined}
+      onCancel={() => undefined}
+    />);
+    expect(markup).toContain("<details");
+    expect(markup).toContain("Pending with");
+    expect(markup).toContain("Ngozi Eze");
+    expect(markup).toContain("4 days");
+    expect(markup).toContain("Edit request");
+    expect(markup).toContain("Cancel request");
+  });
+
   it("falls back to days taken where there is no session to count against", () => {
     const markup = renderToStaticMarkup(
       <LeaveTab leave={{ ...OKAFOR, balances: [], balance_session: null }} />,
