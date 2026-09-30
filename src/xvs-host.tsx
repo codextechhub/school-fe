@@ -144,6 +144,13 @@ export function useReaderReach(): HostReaderReach {
   );
 }
 
+/** The reader's branch lens, the same one the header's branch switcher sets.
+ *
+ *  A finance create form at a school with several branches starts on the
+ *  branch this lens is working in, so a bursar who switched to Lekki raises
+ *  Lekki's documents without choosing it again. */
+export { useBranchLens } from "@/hooks/use-branch-lens";
+
 /** This app keeps no recently-opened trail, so noting one is a no-op.
  *
  *  A real answer rather than a gap: the console has a trail worth writing to
