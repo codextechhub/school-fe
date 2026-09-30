@@ -7,6 +7,7 @@ const DECISIONS = [
 ] as const;
 
 const PROBLEMS = [
+  ["\"Your role can't view running approvals. Ask your administrator.\"", "Your role cannot read the school's running approvals. Your own Pending Approvals still shows what waits for your vote."],
   ["The request left my queue", "It moved on, ended, was withdrawn, or you already voted. Items you have voted on are hidden from Pending Approvals."],
   ["\"You are not an eligible approver for this stage.\"", "The step is waiting on someone else. Ask whoever manages approvals in your school to check who the step is sent to."],
   ["\"This workflow is not awaiting votes.\"", "The request is already approved, rejected, returned or withdrawn. Read Activity to see what happened."],

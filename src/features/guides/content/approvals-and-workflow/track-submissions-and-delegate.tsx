@@ -50,6 +50,7 @@ export default function TrackSubmissionsAndDelegateArticle() {
 
       <GuideSection id="common-problems" title="Common problems">
         <GuideChecklist items={[
+          "\"Your role can't view your submissions. Ask your administrator.\": your role cannot open My submissions. It does not mean you have raised nothing.",
           "Resubmit is missing: only the person who raised a request can resubmit it, and only while it is Returned.",
           "My delegate cannot see my items: check that today is inside the dates and that Applies to covers that document.",
           "Both of us are still being asked: Exclusive delegation was left off, so either of you can act.",

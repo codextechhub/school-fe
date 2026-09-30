@@ -1,6 +1,8 @@
 import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } from "../../article-components";
 
 const PROBLEMS = [
+  ["\"Your role can't view approval steps. Ask your administrator.\"", "Your role cannot read the school's approval paths, so the list is not shown. It does not mean the school has none: a list that loaded empty says so in its own words."],
+  ["\"This list could not be loaded. Try again.\"", "The request failed rather than came back empty. Reload the page; if it keeps happening, report it."],
   ["A step waits for ever", "Its approvers resolve to nobody: an empty group, a switched-off Dynamic Role, or a role nobody holds. Fix the source on Approvers, or point the step at someone else."],
   ["A step was skipped", "Skip this step when nobody can approve was on and nobody could approve, or its Only run this step when condition did not fit the document."],
   ["A request already waiting did not change", "Requests keep the path they started on. Only new requests use your adjustment."],

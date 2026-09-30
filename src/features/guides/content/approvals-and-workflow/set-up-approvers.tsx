@@ -10,6 +10,7 @@ export default function SetUpApproversArticle() {
           "Write down who should approve what, and above which amounts, before you build anything.",
           "Prefer roles over named people, so the right person approves after staff change.",
         ]} />
+        <GuideCallout tone="info" title="A refusal is not an empty list">If <strong>Approver groups</strong> or <strong>Dynamic Roles</strong> says <em>Your role can&apos;t view approver groups. Ask your administrator.</em> (or Dynamic Roles), your role cannot read them. Only a list that loaded with nothing in it offers to create the first one.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="build-a-group" title="Build an approver group">
