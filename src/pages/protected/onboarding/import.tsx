@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { Check, Download, Search } from "lucide-react";
+import { Check, Eye, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,8 @@ import type {
 } from "@/redux/services/dashboard/import-types";
 import { PageShell } from "@/components/layout/page-shell";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
+import { showBlobPreview } from "@xvs/finance/components/finance-ui/file-preview-dialog";
+import { fetchAttachmentBlob } from "@/utils/attachment-download";
 
 /**
  * "Upload Initial Datasets", drawn as the design draws it.
@@ -339,20 +341,23 @@ export default function OnboardingImport() {
               }
               title="This template is not available yet"
             >
-              <Download className="size-3.5" />
+              <Eye className="size-3.5" />
               Template
             </span>
             {!locked && (
-              <a
-                href={importDownloadUrls.templateDownload(
-                  template.id,
-                  template.default_file_format === "xlsx" ? "xlsx" : "csv",
-                )}
+              <button
+                type="button"
+                onClick={() => {
+                  const format = template.default_file_format === "xlsx" ? "xlsx" : "csv";
+                  void fetchAttachmentBlob(importDownloadUrls.templateDownload(template.id, format))
+                    .then((blob) => showBlobPreview(`${template.code}_template.${format}`, blob))
+                    .catch(() => toast.error("Template could not be opened."));
+                }}
                 className="inline-flex items-center gap-1.5 text-[13px] font-medium text-primary hover:underline"
               >
-                <Download className="size-3.5" />
-                Template
-              </a>
+                <Eye className="size-3.5" />
+                View template
+              </button>
             )}
             {importable.split(",").includes(template.dataset_type) && (
               <Button

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
-import { ArrowRight, Download, FileSpreadsheet, X } from "lucide-react";
+import { ArrowRight, Eye, FileSpreadsheet, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -27,6 +27,8 @@ import type {
 } from "@/redux/services/dashboard/import-types";
 
 import { formatDate } from "../students/format";
+import { showBlobPreview } from "@xvs/finance/components/finance-ui/file-preview-dialog";
+import { fetchAttachmentBlob } from "@/utils/attachment-download";
 
 /**
  * What this school has imported, one chip wide, on the directory's toolbar.
@@ -232,14 +234,19 @@ export function RecentImports() {
                     ending it. */}
             <span className="mx-2.5 mb-1 flex flex-wrap items-center gap-3">
               {batch.error_count > 0 && (
-                <a
-                  href={importDownloadUrls.validationIssuesExport(batch.id)}
+                <button
+                  type="button"
+                  onClick={() => {
+                    void fetchAttachmentBlob(importDownloadUrls.validationIssuesExport(batch.id))
+                      .then((blob) => showBlobPreview(`batch_${batch.id}_issues.csv`, blob))
+                      .catch(() => toast.error("Issue file could not be opened."));
+                  }}
                   className="inline-flex items-center gap-1 text-xs text-primary underline-offset-2 hover:underline"
                 >
-                  <Download className="size-3" aria-hidden />
+                  <Eye className="size-3" aria-hidden />
                   {batch.error_count}{" "}
                   {batch.error_count === 1 ? "problem" : "problems"}
-                </a>
+                </button>
               )}
 
               {canEnd && CAN_END.has(batch.status) && (

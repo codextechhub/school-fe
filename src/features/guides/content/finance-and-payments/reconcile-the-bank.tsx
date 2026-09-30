@@ -38,7 +38,7 @@ export default function ReconcileTheBankArticle() {
         <p>Open the bank account and use <strong>Import statement</strong>.</p>
         <GuideSteps>
           <GuideStep title="Manual import">For a short statement: enter the <strong>Period label</strong> and <strong>Opening balance (₦)</strong>, then one line per entry. Amounts are from the school&apos;s side: positive for money in, negative for money out.</GuideStep>
-          <GuideStep title="Bulk import">For a full export: download the <strong>Excel template</strong> or <strong>CSV template</strong>, copy the bank&apos;s lines into it, then fill in the statement date, opening and closing balances and the file. <strong>Continue to import wizard</strong> checks the file before anything is published.</GuideStep>
+          <GuideStep title="Bulk import">For a full export: view the <strong>Excel template</strong> or <strong>CSV template</strong>, then use Download in the viewer. Copy the bank&apos;s lines into it, then fill in the statement date, opening and closing balances and the file. <strong>Continue to import wizard</strong> checks the file before anything is published.</GuideStep>
         </GuideSteps>
         <p>A wrong line that is not yet matched can be deleted from the <strong>Statement lines</strong> tab, and a manually imported statement can be corrected from the <strong>Statements</strong> tab.</p>
       </GuideSection>

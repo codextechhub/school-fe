@@ -18,7 +18,7 @@ export default function ImportFromASpreadsheetArticle() {
 
       <GuideSection id="prepare-the-file" title="Prepare the file">
         <GuideSteps>
-          <GuideStep title="Download the template">On the first step, the template card has <strong>Download template</strong>. Open <strong>How to fill this in</strong> to read what each column expects.</GuideStep>
+          <GuideStep title="View the template">On the first step, select <strong>View template</strong>, then Download in the file viewer. Open <strong>How to fill this in</strong> to read what each column expects.</GuideStep>
           <GuideStep title="Fill it in without changing its shape">Keep the column headings exactly as they are. Do not merge cells, add title rows or put two kinds of record in one file.</GuideStep>
           <GuideStep title="Tidy it">Remove blank rows at the bottom and duplicate people. Keep numbers with leading zeros, such as phone numbers, as text.</GuideStep>
         </GuideSteps>

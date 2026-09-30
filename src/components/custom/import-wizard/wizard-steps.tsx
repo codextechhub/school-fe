@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { Check, Upload, AlertTriangle, Download, ChevronRight, ChevronLeft, ChevronDown, X, FileSpreadsheet, Play, ExternalLink } from "lucide-react";
+import { Check, Upload, AlertTriangle, Eye, ChevronRight, ChevronLeft, ChevronDown, X, FileSpreadsheet, Play, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
@@ -22,6 +22,8 @@ import {
   importDownloadUrls,
 } from "@/redux/services/dashboard/import-api";
 import type { DatasetType, ImportBatch, ImportTemplate, ValidationSeverity } from "@/redux/services/dashboard/import-types";
+import { showBlobPreview } from "@xvs/finance/components/finance-ui/file-preview-dialog";
+import { fetchAttachmentBlob } from "@/utils/attachment-download";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -435,20 +437,16 @@ function TemplateCard({ template }: { template: ImportTemplate }) {
   const [downloadTemplate, { isLoading: isDownloading }] = useDownloadImportTemplateMutation();
   const format = template.default_file_format === "xls" ? "xlsx" : template.default_file_format;
 
-  const handleDownload = async () => {
+  const handlePreview = async () => {
     try {
       // Use the shared API client so the bearer token, impersonation header,
       // and mandatory tenant assertion are applied consistently.
       const blobUrl = await downloadTemplate({ id: template.id, format }).unwrap();
-      const a = document.createElement("a");
-      a.href = blobUrl;
-      a.download = `${template.code}_template.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const blob = await fetch(blobUrl).then((response) => response.blob());
       URL.revokeObjectURL(blobUrl);
+      showBlobPreview(`${template.code}_template.${format}`, blob);
     } catch {
-      toast.error("Download failed. Please try again.");
+      toast.error("Template could not be opened. Please try again.");
     }
   };
 
@@ -463,10 +461,10 @@ function TemplateCard({ template }: { template: ImportTemplate }) {
         <button
           type="button"
           className="inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-60"
-          onClick={handleDownload}
+          onClick={handlePreview}
           disabled={isDownloading}
         >
-          <Download className="size-3" /> {isDownloading ? "Downloading…" : "Download template"}
+          <Eye className="size-3" /> {isDownloading ? "Opening…" : "View template"}
         </button>
       </div>
       <div className="flex gap-4 flex-wrap text-xs text-gray-01">
@@ -533,24 +531,11 @@ function TemplateInstructions({ text }: { text: string }) {
   );
 }
 
-async function triggerDownload(url: string, filename: string) {
+async function triggerPreview(url: string, filename: string) {
   try {
-    const token = document.cookie.match(/(?:^|;\s*)token=([^;]*)/)?.[1];
-    const res = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
-    if (!res.ok) throw new Error(`${res.status}`);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(blobUrl);
+    showBlobPreview(filename, await fetchAttachmentBlob(url));
   } catch {
-    toast.error("Download failed. Please try again.");
+    toast.error("File could not be opened. Please try again.");
   }
 }
 
@@ -828,8 +813,8 @@ export function ReviewIssuesStep({
             {errorCount > 0 && " Fix every error before publishing."}
           </p>
         </div>
-        <Button variant="white" size="sm" onClick={() => triggerDownload(importDownloadUrls.validationIssuesExport(batchId), `batch_${batchId}_issues.csv`)}>
-          <Download className="size-3.5" /> Export Error Data
+        <Button variant="white" size="sm" onClick={() => triggerPreview(importDownloadUrls.validationIssuesExport(batchId), `batch_${batchId}_issues.csv`)}>
+          <Eye className="size-3.5" /> View Error Data
         </Button>
       </div>
 

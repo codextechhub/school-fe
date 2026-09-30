@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   ArrowDown,
@@ -25,7 +25,8 @@ import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/utils/relative-date";
 import { formatBytes } from "@/utils/format-bytes";
 import { apiErrorMessage } from "@/utils/api-error";
-import { fetchAttachmentObjectUrl, openAttachment } from "@/utils/attachment-download";
+import { fetchAttachmentBlob, fetchAttachmentObjectUrl } from "@/utils/attachment-download";
+import { FilePreviewDialog, type PreviewFile } from "@xvs/finance/components/finance-ui/file-preview-dialog";
 import { routesPath } from "@/routes/routesPath";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { requestSupportOpen } from "@/components/layout/support-open";
@@ -235,7 +236,7 @@ function TimedFiles({
     <div className="flex items-end gap-2">
       <div className="min-w-0 flex-1">
         {files.map((file) => (
-          <AttachmentCard key={file.id} file={file} compact />
+          <AttachmentCard key={file.id} file={file} siblings={files} compact />
         ))}
       </div>
       <MessageTime value={time} label={label} />
@@ -251,18 +252,28 @@ const isPrimaryEnter = (event: React.KeyboardEvent) =>
  *
  * Images show a thumbnail. The media route needs the caller's token, so the
  * picture is fetched as a blob rather than pointed at, and the blob is released
- * when the card leaves the screen. Clicking opens the file in a new tab.
+ * when the card leaves the screen. Clicking opens the file over the ticket.
  */
 function AttachmentCard({
   file,
+  siblings,
   compact = false,
 }: {
   file: TicketAttachment;
+  siblings: TicketAttachment[];
   compact?: boolean;
 }) {
   const isImage = file.content_type?.startsWith("image/") ?? false;
   const [previewUrl, setPreviewUrl] = useState("");
-  const [opening, setOpening] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const files = useMemo<PreviewFile[]>(() => siblings.map((row) => ({
+    id: row.id,
+    name: row.original_filename,
+    contentType: row.content_type,
+    size: row.size,
+    loadPreview: (signal) => fetchAttachmentBlob(row.url, signal),
+    loadDownload: () => fetchAttachmentBlob(row.url),
+  })), [siblings]);
 
   useEffect(() => {
     if (!isImage) return;
@@ -284,19 +295,11 @@ function AttachmentCard({
     };
   }, [file.url, isImage]);
 
-  const open = () => {
-    setOpening(true);
-    openAttachment(file.url, file.original_filename)
-      .catch((error) => {
-        toast.error(error instanceof Error ? error.message : "We could not open that file.");
-      })
-      .finally(() => setOpening(false));
-  };
-
   return (
+    <>
     <button
       type="button"
-      onClick={open}
+      onClick={() => setSelectedIndex(files.findIndex((row) => row.id === file.id))}
       className={cn(
         "flex w-full min-w-0 items-center overflow-hidden rounded-lg border border-white-02 bg-gray-03 text-left hover:border-primary/30 hover:bg-primary/5",
         compact ? "mt-1.5 max-w-xs gap-2 p-2" : "max-w-sm gap-3 p-2.5",
@@ -324,8 +327,9 @@ function AttachmentCard({
         </span>
         <span className="mt-0.5 block text-[11px] text-gray-01">{formatBytes(file.size)}</span>
       </span>
-      {opening && <Loader2 className="size-4 shrink-0 animate-spin text-gray-01" />}
     </button>
+    <FilePreviewDialog files={files} index={selectedIndex} onIndexChange={setSelectedIndex} onClose={() => setSelectedIndex(null)} />
+    </>
   );
 }
 
@@ -835,7 +839,7 @@ export default function SupportTicketDetail() {
               </p>
               <div className="mt-3 grid max-h-48 gap-2 overflow-y-auto pr-1">
                 {ticketAttachments.initial.map((file) => (
-                  <AttachmentCard key={file.id} file={file} />
+                  <AttachmentCard key={file.id} file={file} siblings={ticketAttachments.initial} />
                 ))}
               </div>
             </div>

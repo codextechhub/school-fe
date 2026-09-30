@@ -137,6 +137,7 @@ export interface ExportDownloadEntry {
   user_name: string;
   at: string;
   ip_address: string;
+  access_kind: "VIEW" | "DOWNLOAD";
   outcome: DownloadOutcome;
   refusal_reason: string;
 }

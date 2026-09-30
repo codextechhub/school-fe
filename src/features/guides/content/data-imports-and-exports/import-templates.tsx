@@ -8,7 +8,7 @@ export default function ImportTemplatesArticle() {
       <GuideSection id="before-you-start" title="Before you start">
         <p>An import template is the spreadsheet layout a file must follow for one kind of record: its columns, which are required, and what each one accepts. XVS publishes and maintains the templates; a school downloads them and fills them in.</p>
         <GuideChecklist items={[
-          "The quickest way to a template is the Download template button on the first step of any import.",
+          "The quickest way to a template is View template on the first step of any import. Download is inside the file viewer.",
           "To browse them all, type import templates into the search box and choose View import templates.",
         ]} />
       </GuideSection>
@@ -17,7 +17,7 @@ export default function ImportTemplatesArticle() {
         <GuideSteps>
           <GuideStep title="Search the list">On <strong>Import Templates</strong>, search by code, name or dataset. Each row shows the template&apos;s format, status and number of columns.</GuideStep>
           <GuideStep title="Open it">Select <strong>View Details</strong> to read the <strong>Description</strong>, <strong>Instructions</strong> and every column. Columns marked <strong>Required</strong> must be filled on every row; <strong>Unique</strong> ones cannot repeat in the file.</GuideStep>
-          <GuideStep title="Download it">Select <strong>Download CSV</strong> or <strong>Download XLSX</strong>.</GuideStep>
+          <GuideStep title="View it">Select <strong>View CSV</strong> or <strong>View XLSX</strong>, then Download in the file viewer.</GuideStep>
         </GuideSteps>
       </GuideSection>
 

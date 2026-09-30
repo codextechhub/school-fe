@@ -1583,7 +1583,7 @@ const PACKAGE_WALKTHROUGHS = [
         id: "heading",
         target: "data-import-templates.heading",
         title: "Find the template",
-        body: "Search by code, name or kind of record. Each row's menu offers View Details, to read what every column expects, and Download CSV or Download XLSX.",
+        body: "Search by code, name or kind of record. Each row's menu offers View Details, to read what every column expects, and View CSV or View XLSX. Download is inside the file viewer.",
         placement: "bottom",
         advance: "manual",
       },

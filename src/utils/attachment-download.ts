@@ -30,24 +30,26 @@ export function buildAttachmentUrl(storedUrl: string, base: string = apiBase): s
   return `${mediaOrigin(base)}${path}`;
 }
 
+/** Return protected media bytes to a caller that owns their preview lifetime. */
+export async function fetchAttachmentBlob(storedUrl: string, signal?: AbortSignal): Promise<Blob> {
+  const token = getAccessToken();
+  const response = await fetch(buildAttachmentUrl(storedUrl), {
+    headers: token && token !== "undefined" ? { Authorization: `Bearer ${token}` } : {},
+    signal,
+  });
+  if (!response.ok) {
+    throw new Error(response.status === 404 ? "That file is no longer available." : "Could not open the file.");
+  }
+  return response.blob();
+}
+
 /**
  * Fetch an attachment with the caller's token and return a blob URL for it.
  *
  * The caller owns the URL and revokes it when done with it.
  */
 export async function fetchAttachmentObjectUrl(storedUrl: string): Promise<string> {
-  const token = getAccessToken();
-  const response = await fetch(buildAttachmentUrl(storedUrl), {
-    headers: token && token !== "undefined" ? { Authorization: `Bearer ${token}` } : {},
-  });
-  if (!response.ok) {
-    throw new Error(
-      response.status === 404
-        ? "That file is no longer available."
-        : "Could not open the file.",
-    );
-  }
-  return URL.createObjectURL(await response.blob());
+  return URL.createObjectURL(await fetchAttachmentBlob(storedUrl));
 }
 
 /**
