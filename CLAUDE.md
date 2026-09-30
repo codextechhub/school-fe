@@ -29,6 +29,14 @@ apps therefore fail in opposite directions and neither notices alone:
 So move both applications in the same change, with `release.sh`, and commit both
 lockfiles.
 
+**A moved pin needs a reinstall, not an install.** The package's own version never
+changes between tags, so after the pin moves a plain `npm install` keeps the old
+copy, and the app fails with "Failed to resolve import" for whatever the new tag
+added. Run `rm -rf node_modules/@xvs/finance && npm install`. `npm run dev` and
+`npm test` check this first (`scripts/check-finance-install.mjs`), along with a
+linked copy and build tools installed for the wrong processor, and stop with the
+fix.
+
 **A school-only screen stays here.** Anything the console has no use for - the
 fee due policy is the example, because its endpoint is the FAL's and CodeX bills
 nobody school fees - lives under `src/pages/protected/school-finance/` and reaches
