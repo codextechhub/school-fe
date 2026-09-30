@@ -9,7 +9,7 @@
  * asks its tenant-admin services, this app asks its own.
  */
 
-import { type ComponentType } from "react";
+import { type ComponentType, useMemo } from "react";
 // The REAL contract types, from the package. Previously copied locally,
 // which meant this app satisfied a copy and the compile-time assertion
 // checked nothing here.
@@ -17,6 +17,21 @@ import type {
   HostAvatarProps, HostBranch, HostPerson, HostPosition, HostQueryResult, HostExportProps,
   HostRole,
 } from "@xvs/finance/host";
+
+/**
+ * The reader's branch reach, as the package's `useReaderReach` host member
+ * reads it. Declared here rather than imported, so this host still compiles
+ * against a package version that does not ask for the member yet: a member
+ * the contract does not name is simply unused.
+ */
+interface HostReaderReach {
+  /** Whether the reader acts for the whole school. */
+  wholeSchool: boolean;
+  /** The reader's branches, or null for a whole-school reader. */
+  branchIds: number[] | null;
+  /** Whether every branch in `ids` is one the reader covers; empty is the whole school. */
+  covers: (ids: number[]) => boolean;
+}
 import { ExportButton } from "@/components/custom/export-button";
 import { returnInitial } from "@/utils/helpers";
 
@@ -25,6 +40,7 @@ import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
 import { useGetOrgPositionsQuery } from "@/redux/services/staff/organogram-api";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useReaderReach as useSchoolReaderReach } from "@/hooks/use-reader-reach";
 import { P } from "@/permissions";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { SchoolMark } from "@/components/school-mark";
@@ -113,6 +129,19 @@ export function usePositions(): HostQueryResult<HostPosition> {
  */
 export function useCanUseOrganogram(): boolean {
   return usePermissions().hasPermission(P.VIEW_SCHOOL_ORGANOGRAM);
+}
+
+/** How far the reader's changes may reach, from the branch reach the session carries.
+ *
+ *  The same answer the school's own screens read (`useReaderReach`), so a
+ *  branch administrator finds the approval screens read-only exactly where the
+ *  roles and settings screens are. */
+export function useReaderReach(): HostReaderReach {
+  const { wholeSchool, branches, covers } = useSchoolReaderReach();
+  return useMemo(
+    () => ({ wholeSchool, branchIds: wholeSchool ? null : branches.map((b) => b.id), covers }),
+    [wholeSchool, branches, covers],
+  );
 }
 
 /** This app keeps no recently-opened trail, so noting one is a no-op.

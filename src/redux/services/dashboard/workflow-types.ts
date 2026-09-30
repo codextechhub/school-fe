@@ -217,6 +217,12 @@ export interface PublishTemplatePayload {
   notification_events?: Record<string, boolean>;
   stages: WorkflowStagePayload[];
   routes?: WorkflowRoutePayload[];
+  /**
+   * TENANT scope only: the branch the steps are for, null for the whole school.
+   * Left out, the server files them under the caller's one branch when they
+   * work in exactly one, and under the whole school otherwise.
+   */
+  branch?: number | null;
 }
 
 // ── Platform oversight (shared template vs a tenant's own) ───────────────────

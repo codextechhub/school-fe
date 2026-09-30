@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useReaderReach } from "@/hooks/use-reader-reach";
 import { P } from "@/permissions";
 import { useGetAllMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
@@ -33,6 +34,7 @@ import {
 import type { CatalogueModule, SchoolRoleDetail } from "@/redux/services/roles/roles-types";
 import { writeErrorMessage } from "@/utils/api-error";
 import { roleBasePath } from "./role-paths";
+import { roleBranchIds, roleReadOnly, roleReadOnlySentence } from "./role-reach";
 
 type RoleTab = "permissions" | "people" | "overview";
 
@@ -64,7 +66,14 @@ function grantedGroups(role: SchoolRoleDetail, modules: CatalogueModule[]) {
   return groups;
 }
 
-/** Full-page role record with a direct, searchable view of grants. */
+/**
+ * Full-page role record with a direct, searchable view of grants.
+ *
+ * Editing, retiring and deleting are offered only where the reader covers every
+ * branch the role reaches (see `roleReadOnly`); anyone else holding those keys
+ * reads the role with the reason instead. Giving the role to somebody is a
+ * grant, judged by the grant's own reach in `AssignRolePanel`.
+ */
 export default function RoleView() {
   const { key = "" } = useParams();
   const location = useLocation();
@@ -77,6 +86,7 @@ export default function RoleView() {
       ? "overview"
       : "permissions";
   const { hasPermission } = usePermissions();
+  const reach = useReaderReach();
   const canView = hasPermission(P.VIEW_ROLES);
   const role = useGetSchoolRoleQuery(key, { skip: !key || !canView });
   const catalogue = useGetAccessCatalogueQuery(undefined, { skip: !canView });
@@ -97,7 +107,10 @@ export default function RoleView() {
       .flatMap((resource) => resource.permissions).map((permission) => [permission.key, permission.label]));
     return (detail?.pending_additions ?? []).map((entry) => labels.get(entry.permission_key) ?? entry.permission_key);
   }, [detail, catalogue.data]);
-  const branchIds = detail?.branch_ids ?? (detail?.branch ? [detail.branch] : []);
+  const branchIds = detail ? roleBranchIds(detail) : [];
+  const readOnly = detail ? roleReadOnly(detail, reach) : null;
+  const mayModify = !readOnly && hasPermission(P.MODIFY_ROLE);
+  const mayDelete = !readOnly && hasPermission(P.DELETE_ROLE);
   const branchNames = branchIds.map((id) =>
     branches.data?.find((entry) => entry.id === id)?.name ?? `Branch ${id}`,
   );
@@ -165,9 +178,12 @@ export default function RoleView() {
           </div>
           {detail.description && <p className="mt-2 max-w-3xl text-sm text-gray-01">{detail.description}</p>}
           <p className="mt-2 text-xs text-gray-05">{reachLabel} · {detail.assigned_users_count} people · {detail.permissions_count} permissions</p>
+          {readOnly && !detail.is_locked && (hasPermission(P.MODIFY_ROLE) || hasPermission(P.DELETE_ROLE)) && (
+            <p className="mt-2 max-w-3xl text-xs text-gray-01">{roleReadOnlySentence(readOnly)}</p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
-          {!detail.is_locked && hasPermission(P.MODIFY_ROLE) && (
+          {!detail.is_locked && mayModify && (
             <>
               <Button variant="outline" onClick={() => void toggleStatus()} loading={statusState.isLoading}>
                 {detail.status === "ACTIVE" ? "Take out of use" : "Put back in use"}
@@ -226,7 +242,7 @@ export default function RoleView() {
             <h2 className="text-xs font-semibold uppercase tracking-[0.1em] text-gray-05">Role at a glance</h2>
             <dl className="mt-5 space-y-4 text-sm"><div><dt className="text-xs text-gray-05">Branch reach</dt><dd className="mt-1 font-medium text-black-01">{reachLabel}</dd></div><div><dt className="text-xs text-gray-05">Status</dt><dd className="mt-1 font-medium text-black-01">{detail.status === "ACTIVE" ? "Active" : "Out of use"}</dd></div><div><dt className="text-xs text-gray-05">People</dt><dd className="mt-1 font-medium text-black-01">{detail.assigned_users_count}</dd></div></dl>
             {detail.is_locked && <p className="mt-5 flex gap-2 rounded-lg bg-gray-04 p-3 text-xs text-gray-01"><Lock className="size-4 shrink-0" /> This role is locked.</p>}
-            {!location.pathname.startsWith("/onboarding/") && !detail.is_system_role && !detail.is_locked && hasPermission(P.DELETE_ROLE) && (
+            {!location.pathname.startsWith("/onboarding/") && !detail.is_system_role && !detail.is_locked && mayDelete && (
               <div className="mt-5 border-t border-border pt-4">
                 <Button variant="outline" className="w-full" disabled={detail.has_assignment_history} onClick={() => setDeleteOpen(true)}><Trash2 /> Delete role</Button>
                 {detail.has_assignment_history && <p className="mt-2 text-xs text-gray-05">This role has assignment history. Take it out of use to preserve that record.</p>}
@@ -252,7 +268,7 @@ export default function RoleView() {
               {!holders.isError && !holders.data?.length && <p className="rounded-lg bg-gray-04 p-4 text-sm text-gray-01">Nobody holds this role yet.</p>}
             </div>
           )}
-          {hasPermission(P.ASSIGN_ROLE) && <div className="mt-5"><AssignRolePanel roleId={detail.id} roleName={detail.name} heldBy={(holders.data ?? []).map((holder) => holder.user_id)} onAssigned={holders.refetch} /></div>}
+          {hasPermission(P.ASSIGN_ROLE) && <div className="mt-5"><AssignRolePanel roleId={detail.id} roleName={detail.name} roleBranchIds={branchIds} heldBy={(holders.data ?? []).map((holder) => holder.user_id)} onAssigned={holders.refetch} /></div>}
         </section>
       )}
 

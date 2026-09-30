@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useReaderReach } from "@/hooks/use-reader-reach";
 import { P } from "@/permissions";
 import { useGetAllMyBranchesQuery } from "@/redux/services/branches/branches-api";
 import {
@@ -24,6 +25,7 @@ import {
 import type { PendingAddition } from "@/redux/services/roles/roles-types";
 import { fieldErrors, writeErrorMessage } from "@/utils/api-error";
 import { roleBasePath, roleDetailPath } from "./role-paths";
+import { roleBranchIds, roleReadOnly, roleReadOnlySentence } from "./role-reach";
 
 interface Draft {
   key: string;
@@ -56,6 +58,12 @@ const sentForApproval = (pending: PendingAddition[]) =>
  * raises one approval request for the restricted ones, using the reason as its
  * justification, so the editor says before saving which boxes will wait and
  * lists the ones already waiting from an earlier save.
+ *
+ * A role's branch reach stays inside the reader's own. A whole-school reader is
+ * offered "School-wide" and every branch; a branch-bound reader is offered only
+ * their own branches, starts on the one they work in when there is one, and
+ * finds a role reaching past them read-only with the reason (`roleReadOnly`).
+ * The server refuses the same writes; this keeps the form from offering them.
  */
 export default function RoleEditor() {
   const { key = "" } = useParams();
@@ -65,6 +73,7 @@ export default function RoleEditor() {
   const creating = location.pathname.endsWith("/new");
   const draftKey = creating ? "new" : key;
   const { hasPermission } = usePermissions();
+  const reach = useReaderReach();
   const mayWrite = hasPermission(creating ? P.CREATE_ROLE : P.MODIFY_ROLE);
   const role = useGetSchoolRoleQuery(key, { skip: creating || !mayWrite || !key });
   const catalogue = useGetAccessCatalogueQuery(undefined, { skip: !mayWrite });
@@ -75,7 +84,12 @@ export default function RoleEditor() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const detail = role.data?.data;
-  const baselineIds = detail?.branch_ids ?? (detail?.branch ? [detail.branch] : []);
+  const baselineIds = detail ? roleBranchIds(detail) : [];
+  const readOnly = !creating && detail ? roleReadOnly(detail, reach) : null;
+  // A branch-bound reader names only their own branches, and never the whole school.
+  const offeredBranches = reach.wholeSchool
+    ? branches.data ?? []
+    : (branches.data ?? []).filter((branch) => reach.covers([branch.id]));
   const baseline = useMemo(
     () => new Set(detail?.role_permissions.filter((entry) => entry.granted).map((entry) => entry.permission) ?? []),
     [detail],
@@ -85,8 +99,10 @@ export default function RoleEditor() {
     name: detail?.name ?? "",
     description: detail?.description ?? "",
     reason: "",
-    branchMode: creating ? null : baselineIds.length ? "selected" : "school",
-    branchIds: baselineIds,
+    branchMode: creating
+      ? reach.wholeSchool ? null : "selected"
+      : baselineIds.length ? "selected" : "school",
+    branchIds: creating && reach.soleBranch ? [reach.soleBranch.id] : baselineIds,
     ticked: baseline,
   });
   const draft = edits?.key === draftKey ? edits : initial();
@@ -128,7 +144,11 @@ export default function RoleEditor() {
       return setErrors({ branch_ids: "Choose school-wide or selected branches." });
     }
     if (draft.branchMode === "selected" && selectedIds.length === 0) {
-      return setErrors({ branch_ids: "Choose at least one branch, or choose school-wide." });
+      return setErrors({
+        branch_ids: reach.wholeSchool
+          ? "Choose at least one branch, or choose school-wide."
+          : "Choose at least one of your branches.",
+      });
     }
     if ((creating || permissionChanged || branchChanged) && !draft.reason.trim()) {
       return setErrors({ reason: "Say why this access is needed or changing." });
@@ -176,6 +196,7 @@ export default function RoleEditor() {
       <button type="button" onClick={() => navigate(creating ? base : roleDetailPath(base, key))} className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"><ArrowLeft className="size-4" /> Back to {creating ? "roles" : "role"}</button>
       <div><h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">{creating ? "Create Role" : `Edit ${detail?.name}`}</h1><p className="mt-1 text-sm text-gray-01">Name the job, choose its branch reach, and grant the permissions it needs.</p></div>
       {errors.form && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{errors.form}</p>}
+      {readOnly && <p className="rounded-lg border border-border bg-gray-04 p-3 text-sm text-gray-01">{roleReadOnlySentence(readOnly)}</p>}
       <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">
         <section data-guide="roles-editor.details" className="min-w-0 rounded-xl border border-border bg-white p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-black-01">Role details</h2>
@@ -187,12 +208,14 @@ export default function RoleEditor() {
             {errors.description && <p role="alert" className="-mt-4 text-xs text-error">{errors.description}</p>}
             {canChooseBranches && (
               <div data-guide="roles-editor.branch-reach" className="space-y-3">
-                <div><p className="text-sm font-medium text-black-01">Branch reach</p><p className="mt-1 text-xs text-gray-05">People given this role automatically receive its full branch reach.</p></div>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  <button type="button" aria-pressed={draft.branchMode === "school"} onClick={() => patch({ branchMode: "school", branchIds: [] })} className={`rounded-lg border p-3 text-left text-sm ${draft.branchMode === "school" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}><span className="block font-semibold">School-wide</span><span className="mt-1 block text-xs text-gray-05">All branches, including future ones</span></button>
-                  <button type="button" aria-pressed={draft.branchMode === "selected"} onClick={() => patch({ branchMode: "selected" })} className={`rounded-lg border p-3 text-left text-sm ${draft.branchMode === "selected" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}><span className="block font-semibold">Selected branches</span><span className="mt-1 block text-xs text-gray-05">Only the branches you choose</span></button>
-                </div>
-                {draft.branchMode === "selected" && <BranchReachPicker branches={branches.data ?? []} selected={draft.branchIds} onChange={(branchIds) => patch({ branchIds })} />}
+                <div><p className="text-sm font-medium text-black-01">Branch reach</p><p className="mt-1 text-xs text-gray-05">{reach.wholeSchool ? "People given this role automatically receive its full branch reach." : "People given this role automatically receive its full branch reach. A role you shape reaches only branches you work in."}</p></div>
+                {reach.wholeSchool && (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <button type="button" aria-pressed={draft.branchMode === "school"} onClick={() => patch({ branchMode: "school", branchIds: [] })} className={`rounded-lg border p-3 text-left text-sm ${draft.branchMode === "school" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}><span className="block font-semibold">School-wide</span><span className="mt-1 block text-xs text-gray-05">All branches, including future ones</span></button>
+                    <button type="button" aria-pressed={draft.branchMode === "selected"} onClick={() => patch({ branchMode: "selected" })} className={`rounded-lg border p-3 text-left text-sm ${draft.branchMode === "selected" ? "border-primary bg-pry-01/40 text-primary" : "border-border"}`}><span className="block font-semibold">Selected branches</span><span className="mt-1 block text-xs text-gray-05">Only the branches you choose</span></button>
+                  </div>
+                )}
+                {draft.branchMode === "selected" && !readOnly && <BranchReachPicker branches={offeredBranches} selected={draft.branchIds} onChange={(branchIds) => patch({ branchIds })} />}
                 {errors.branch_ids && <p role="alert" className="text-xs text-error">{errors.branch_ids}</p>}
               </div>
             )}
@@ -210,7 +233,7 @@ export default function RoleEditor() {
           {errors.permission_keys && <p role="alert" className="mt-3 text-xs text-error">{errors.permission_keys}</p>}
         </section>
       </div>
-      <div data-guide="roles-editor.actions" className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-5"><Button variant="outline" onClick={() => navigate(creating ? base : roleDetailPath(base, key))}>Cancel</Button><Button onClick={() => void save()} loading={saving} disabled={!dirty || branches.isLoading || branches.isError || (creating && (catalogue.isLoading || catalogue.isError))}>{creating ? "Create role" : "Save changes"}</Button></div>
+      <div data-guide="roles-editor.actions" className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-5"><Button variant="outline" onClick={() => navigate(creating ? base : roleDetailPath(base, key))}>Cancel</Button><Button onClick={() => void save()} loading={saving} disabled={Boolean(readOnly) || !dirty || branches.isLoading || branches.isError || (creating && (catalogue.isLoading || catalogue.isError))}>{creating ? "Create role" : "Save changes"}</Button></div>
     </PageShell>
   );
 }

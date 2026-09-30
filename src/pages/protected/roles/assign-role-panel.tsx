@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Check, Search, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -11,6 +12,8 @@ import {
 } from "@/redux/services/roles/roles-api";
 import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import { writeErrorMessage } from "@/utils/api-error";
+import { useReaderReach } from "@/hooks/use-reader-reach";
+import { canManageRow } from "@/lib/can-manage";
 
 /**
  * Giving a role to somebody, from the role's own screen.
@@ -27,21 +30,31 @@ import { writeErrorMessage } from "@/utils/api-error";
  * `user_id` for this, which is why the picker is built from the directory list
  * rather than from the search endpoint - that one returns neither.
  *
- * **Whole-school, not per branch.** A branch-pinned grant is a real thing the
- * API supports and a rarer decision than this panel should force: somebody
- * adding a person to a role here means "they do this job", and the school-wide
- * answer is the one that stays right when a branch opens. Pinning stays on the
- * staff profile, where the branch is already in view.
+ * **The grant's reach is the role's, or the reader's branch.** A role with
+ * branches of its own grants all of them, so it is given without naming one.
+ * A school-wide role given by a whole-school reader stays school-wide: somebody
+ * adding a person here means "they do this job", and that answer stays right
+ * when a branch opens. A branch-bound reader cannot hand out the whole school,
+ * so their grant of a school-wide role is at their branch: the one they work
+ * in, or the one they pick when they work in several. A role reaching past
+ * their branches is not theirs to give at all, and the panel says so.
+ *
+ * A branch-bound reader also gives roles only to people posted inside their
+ * branches. Somebody who works across more than their branch is listed, since
+ * they appear in the directory, but without a Give button.
  */
 export function AssignRolePanel({
   roleId,
   roleName,
+  roleBranchIds,
   heldBy,
   onAssigned,
 }: {
   /** Numeric role id, which is what the assignment endpoint takes. */
   roleId: number;
   roleName: string;
+  /** The branches the role itself reaches; empty is school-wide. */
+  roleBranchIds: number[];
   /**
    * Account ids already holding it, so the list can say so instead of failing.
    *
@@ -56,6 +69,15 @@ export function AssignRolePanel({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [assign, { isLoading: assigning }] = useAssignRoleMutation();
+  const { wholeSchool, branches, soleBranch, covers } = useReaderReach();
+  const [pickedBranch, setPickedBranch] = useState("");
+  // A role with its own branches grants those; a school-wide one needs the reader's branch unless they cover the school.
+  const configured = roleBranchIds.length > 0;
+  const outOfReach = configured && !covers(roleBranchIds);
+  const grantBranch = configured || wholeSchool
+    ? null
+    : soleBranch?.id ?? (pickedBranch ? Number(pickedBranch) : null);
+  const needsBranch = !configured && !wholeSchool && grantBranch === null;
   // Only once the panel is open: the drawer's People tab is read first and
   // most of the time only read, and the directory is the larger request.
   const staff = useGetStaffListQuery({ page: 1 }, { skip: !open });
@@ -79,7 +101,7 @@ export function AssignRolePanel({
 
   const give = async (userId: number, name: string) => {
     try {
-      const result = await assign({ user: userId, role: roleId, branch: null }).unwrap();
+      const result = await assign({ user: userId, role: roleId, branch: grantBranch }).unwrap();
       if (isPendingGrant(result.data)) {
         toast.info(
           `${roleName} for ${name} is waiting for approval. It takes effect once approved in Approvals.`,
@@ -94,6 +116,15 @@ export function AssignRolePanel({
       );
     }
   };
+
+  if (outOfReach) {
+    return (
+      <p className="rounded-md bg-gray-04 px-3 py-2.5 text-xs text-gray-01">
+        This role reaches branches you do not work in, so only an administrator who covers
+        them can give it to somebody.
+      </p>
+    );
+  }
 
   if (!open) {
     return (
@@ -131,6 +162,24 @@ export function AssignRolePanel({
         </Button>
       </div>
 
+      {!configured && !wholeSchool && !soleBranch && (
+        <div className="border-b border-border px-3 py-2.5">
+          <NativeSelect
+            aria-label="Give it at"
+            value={pickedBranch}
+            onChange={(event) => setPickedBranch(event.target.value)}
+            className="h-9 w-full"
+          >
+            <option value="">Give it at which branch?</option>
+            {branches.map((branch) => (
+              <option key={branch.id} value={branch.id}>
+                {branch.name}
+              </option>
+            ))}
+          </NativeSelect>
+        </div>
+      )}
+
       {staff.isLoading && (
         <div className="space-y-2 p-3">
           {[0, 1, 2].map((row) => (
@@ -152,6 +201,7 @@ export function AssignRolePanel({
           <ul className="divide-y divide-border">
             {people.map((person) => {
               const already = held.has(String(person.user_id));
+              const reachable = wholeSchool || canManageRow(person);
               return (
                 <li
                   key={person.id}
@@ -172,11 +222,16 @@ export function AssignRolePanel({
                       <Check className="size-3.5" />
                       Holds it
                     </span>
+                  ) : !reachable ? (
+                    <span className="shrink-0 text-right text-xs text-gray-05">
+                      Works beyond your branch
+                    </span>
                   ) : (
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={assigning}
+                      disabled={assigning || needsBranch}
+                      title={needsBranch ? "Choose the branch to give it at" : undefined}
                       onClick={() => give(person.user_id, person.full_name)}
                     >
                       Give

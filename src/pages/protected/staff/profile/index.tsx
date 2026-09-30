@@ -513,6 +513,12 @@ function TabBody({
         staffId={person.id}
         userId={person.user_id}
         userName={person.full_name}
+        postingBranchIds={[
+          ...new Set([
+            ...(person.posting_branch_ids ?? []),
+            ...(person.branch_id != null ? [person.branch_id] : []),
+          ]),
+        ]}
         onOpenDrawer={onOpenDrawer}
       />
     );

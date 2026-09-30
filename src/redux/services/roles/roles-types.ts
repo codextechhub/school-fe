@@ -17,6 +17,14 @@ export interface SchoolRole {
   branch: number | null;
   /** Empty means school-wide; otherwise every listed branch is part of this role's reach. */
   branch_ids: number[];
+  /**
+   * Whether the reader may change what this role means: its name, status,
+   * permissions, field access and existence. False for a branch-bound reader
+   * on a school-wide role or on one reaching a branch they do not work in.
+   * Absent from a server that does not send it, where the reader's reach
+   * decides by the same rule.
+   */
+  can_edit?: boolean;
 }
 
 /** One grant on a role, as the detail payload carries it. */

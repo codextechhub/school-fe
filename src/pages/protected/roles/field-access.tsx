@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { usePermissions } from "@/hooks/use-permissions";
+import { useReaderReach } from "@/hooks/use-reader-reach";
 import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import { useLazyGetMeQuery } from "@/redux/services/auth/auth-api";
@@ -29,6 +30,7 @@ import {
 } from "@/redux/services/roles/roles-api";
 import type { RoleFieldAccessEntry } from "@/redux/services/roles/roles-types";
 import { writeErrorMessage } from "@/utils/api-error";
+import { roleReadOnly, roleReadOnlySentence } from "./role-reach";
 
 interface DraftState {
   read: boolean;
@@ -53,13 +55,17 @@ const valueFor = (field: RoleFieldAccessEntry, draft?: DraftState) =>
  * Draft switches keep Write as a subset of Read before the request is sent.
  * Saving refetches the server state before clearing the draft, because audit,
  * normalization, and reset semantics belong to the backend response.
+ *
+ * A role's field access follows the rule for what the role means
+ * (`roleReadOnly`): a branch-bound reader sets the switches on a role reaching
+ * only their branches, and reads the rest with the reason beside them.
  */
 export default function FieldAccess() {
   const { hasAnyPermission, hasPermission } = usePermissions();
   const canView =
     hasPermission(P.VIEW_ROLES) &&
     hasAnyPermission(P.VIEW_FIELD_ACCESS, P.UPDATE_FIELD_ACCESS);
-  const canManage = hasPermission(P.UPDATE_FIELD_ACCESS);
+  const reach = useReaderReach();
   const roles = useGetFieldAccessRolesQuery(undefined, { skip: !canView });
   const catalogue = useGetAccessCatalogueQuery(undefined, { skip: !canView });
   const [selectedRole, setSelectedRole] = useState("");
@@ -67,6 +73,9 @@ export default function FieldAccess() {
   const roleKey = roleRows.some((role) => role.key === selectedRole)
     ? selectedRole
     : roleRows[0]?.key ?? "";
+  const selectedRow = roleRows.find((role) => role.key === roleKey);
+  const readOnly = selectedRow ? roleReadOnly(selectedRow, reach) : null;
+  const canManage = hasPermission(P.UPDATE_FIELD_ACCESS) && !readOnly;
   const roleOptions = useMemo(
     () => (roles.data ?? []).map((entry) => ({ value: entry.key, label: entry.name })),
     [roles.data],
@@ -153,6 +162,9 @@ export default function FieldAccess() {
         <div className="max-w-[65ch]">
           <h1 className="text-xl font-semibold font-mont text-black-01">Field Access</h1>
           <p className="mt-1 text-sm text-gray-01">Set each role's Read and Write switches, field by field. Write always includes Read.</p>
+          {readOnly && hasPermission(P.UPDATE_FIELD_ACCESS) && (
+            <p className="mt-2 text-xs text-gray-01">{roleReadOnlySentence(readOnly, "see")}</p>
+          )}
         </div>
         {canManage && (
           <Button disabled={!Object.keys(drafts).length} loading={saving.isLoading} onClick={() => void submit()}>

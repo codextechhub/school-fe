@@ -13,6 +13,10 @@ import type { CatalogueModule, RoleFieldAccessEntry } from "@/redux/services/rol
  * still counted on Save, because moving between resources is looking, not
  * abandoning.
  *
+ * Mrs Bello works at Lekki (branch 2) only. She reads the school-wide Bursar
+ * role's switches and cannot change them; the Form Teacher role reaches Lekki
+ * alone, so its switches are hers to set.
+ *
  * The API hooks return fixed data and `SearchSelect` is a plain select, so the
  * page's own narrowing and draft rules are what these exercise.
  */
@@ -57,6 +61,14 @@ vi.mock("@/hooks/use-permissions", () => ({
 vi.mock("@/redux/store", () => ({ useAppSelector: () => null }));
 vi.mock("@/redux/features/auth/auth-slice", () => ({ selectUser: () => null }));
 vi.mock("@/redux/services/auth/auth-api", () => ({ useLazyGetMeQuery: () => [vi.fn()] }));
+
+const WHOLE_SCHOOL = { wholeSchool: true, covers: () => true };
+const LEKKI_ONLY = {
+  wholeSchool: false,
+  covers: (ids: number[]) => ids.length > 0 && ids.every((id) => id === 2),
+};
+let reader: typeof WHOLE_SCHOOL | typeof LEKKI_ONLY = WHOLE_SCHOOL;
+vi.mock("@/hooks/use-reader-reach", () => ({ useReaderReach: () => reader }));
 
 const PAYROLL_REASON = "Payroll is not part of this school's plan.";
 
@@ -133,8 +145,8 @@ const CATALOGUE: CatalogueModule[] = [
 
 const ROLES = {
   data: [
-    { key: "bursar", name: "Bursar" },
-    { key: "form-teacher", name: "Form Teacher" },
+    { key: "bursar", name: "Bursar", branch: null, branch_ids: [] },
+    { key: "form-teacher", name: "Form Teacher", branch: null, branch_ids: [2] },
   ],
   isLoading: false,
 };
@@ -169,6 +181,7 @@ describe("Field Access page", () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+    reader = WHOLE_SCHOOL;
   });
 
   const select = (id: string) => container.querySelector<HTMLSelectElement>(`#${id}`)!;
@@ -257,5 +270,24 @@ describe("Field Access page", () => {
     await choose("field-access-role", "form-teacher");
     expect(select("field-access-role").value).toBe("form-teacher");
     expect(saveLabel()).toBe("Save changes");
+  });
+
+  it("reads a school-wide role's switches for a branch reader, and sets her own branch's", async () => {
+    reader = LEKKI_ONLY;
+    await act(async () => root.render(<FieldAccess key="lekki" />));
+    await choose("field-access-module", "staff");
+    await choose("field-access-resource", "bank_details");
+
+    const switches = () => [...container.querySelectorAll<HTMLButtonElement>('[role="switch"]')];
+    expect(switches().every((element) => element.disabled)).toBe(true);
+    expect(saveLabel()).toBeUndefined();
+    expect(container.textContent).toContain(
+      "Only a school-wide administrator can change what this role can see.",
+    );
+
+    await choose("field-access-role", "form-teacher");
+    expect(switches().some((element) => !element.disabled)).toBe(true);
+    expect(saveLabel()).toBe("Save changes");
+    expect(container.textContent).not.toContain("Only a school-wide administrator");
   });
 });

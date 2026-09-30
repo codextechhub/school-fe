@@ -64,7 +64,35 @@ import { activeDisplayPrefs } from "@/lib/school-display";
 interface Props {
   userId: number;
   userName?: string | null;
+  /**
+   * True when the person's access reaches past the reader's branches (see
+   * `personBranchIds`). Stands in for the server's own answer until the list
+   * response carries one.
+   */
+  outsideReach?: boolean;
   className?: string;
+}
+
+/** Said where a branch-bound reader may read a person's exceptions but not change them. */
+export const EXCEPTIONS_READ_ONLY =
+  "This person's access reaches beyond your branch, so only a school-wide administrator can change their exceptions.";
+
+/**
+ * The branches a person's access reaches, the set their exceptions are judged by.
+ *
+ * An exception follows the person wherever they work, so it is measured by
+ * their postings and the branches their roles reach, together. No posting, or
+ * a role reaching the whole school, makes it the whole school (empty). A
+ * branch-bound reader may set an exception only when this is non-empty and
+ * every branch in it is theirs: a DENY written from Lekki on the school-wide
+ * bursar would otherwise take her access away at Ikeja too.
+ */
+export function personBranchIds(
+  postings: readonly number[],
+  reach: { school_wide: boolean; branches: readonly { id: number }[] },
+): number[] {
+  if (!postings.length || reach.school_wide) return [];
+  return [...new Set([...postings, ...reach.branches.map((b) => b.id)])];
 }
 
 /** The day an exception lapses, in the school's style and zone. */
@@ -130,10 +158,16 @@ function errorMessage(error: unknown): string | undefined {
  * On a profile read as at an earlier day the list is the one that stood that
  * day, read-only, without the comparison with the person's roles: role
  * switches keep no history, so there is nothing true to compare against.
+ *
+ * Adding and lifting also need the person inside the reader's branches. The
+ * list response's `can_change_exceptions` answers that where the server sends
+ * it, and `outsideReach` otherwise; a reader holding the keys without the reach
+ * reads the list with the reason.
  */
 export default function FieldAccessOverrides({
   userId,
   userName,
+  outsideReach = false,
   className,
 }: Props) {
   const { hasPermission, hasAnyPermission } = usePermissions();
@@ -153,6 +187,7 @@ export default function FieldAccessOverrides({
       asAt={asAt}
       canCreate={hasPermission(P.CREATE_USER_OVERRIDE) && !isSelf && !asAt}
       canDelete={hasPermission(P.DELETE_USER_OVERRIDE) && !isSelf && !asAt}
+      outsideReach={outsideReach}
       className={className}
     />
   );
@@ -162,8 +197,9 @@ function FieldExceptionsSection({
   userId,
   userName,
   asAt,
-  canCreate,
-  canDelete,
+  canCreate: holdsCreate,
+  canDelete: holdsDelete,
+  outsideReach,
   className,
 }: {
   userId: number;
@@ -171,6 +207,7 @@ function FieldExceptionsSection({
   asAt?: string;
   canCreate: boolean;
   canDelete: boolean;
+  outsideReach: boolean;
   className?: string;
 }) {
   const [addOpen, setAddOpen] = useState(false);
@@ -178,6 +215,10 @@ function FieldExceptionsSection({
     useState<UserFieldAccessOverride | null>(null);
   const query = useGetUserFieldAccessOverridesQuery({ userId, asAt });
   const rows = query.currentData?.data ?? [];
+  const mayChange = query.currentData?.can_change_exceptions ?? !outsideReach;
+  const canCreate = holdsCreate && mayChange;
+  const canDelete = holdsDelete && mayChange;
+  const readOnlyNote = (holdsCreate || holdsDelete) && !mayChange;
   const [lift, lifting] = useDeleteUserFieldAccessOverrideMutation();
 
   const confirmLift = async () => {
@@ -201,6 +242,7 @@ function FieldExceptionsSection({
               ? "Read or Write access changed for this person alone, as it stood that day."
               : "Read or Write access changed for this person alone, on top of their roles."}
           </p>
+          {readOnlyNote && <p className="mt-1 text-xs text-gray-01">{EXCEPTIONS_READ_ONLY}</p>}
         </div>
         {canCreate && (
           <Button variant="outline" size="sm" onClick={() => setAddOpen(true)}>

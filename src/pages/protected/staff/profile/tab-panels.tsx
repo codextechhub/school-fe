@@ -14,7 +14,8 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { ViewDocument } from "@/components/custom/view-document";
 import PermissionGate from "@/components/custom/permission-gate";
 import { LiveOnly } from "@/components/custom/as-at-control";
-import FieldAccessOverrides from "@/components/custom/field-access-overrides";
+import FieldAccessOverrides, { personBranchIds } from "@/components/custom/field-access-overrides";
+import { useReaderReach } from "@/hooks/use-reader-reach";
 import { P } from "@/permissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -116,21 +117,29 @@ function SectionNote({ children }: { children: React.ReactNode }) {
  * is already open on. The button opens the same drawer the directory's row menu
  * opens, so a grant made from either place is one act with one confirmation,
  * and it carries the same key the server checks rather than a looser one.
+ *
+ * `postingBranchIds` are the branches the person is posted to, empty for a
+ * school-wide posting. With their roles' reach they decide whether a
+ * branch-bound reader may change this person's field exceptions.
  */
 export function AccessTab({
   roles,
   staffId,
   userId,
   userName,
+  postingBranchIds,
   onOpenDrawer,
 }: {
   roles: StaffRoles;
   staffId: number;
   userId: number;
   userName: string;
+  postingBranchIds: number[];
   onOpenDrawer: (request: { kind: "role"; staffId: number }) => void;
 }) {
   const openRoles = () => onOpenDrawer({ kind: "role", staffId });
+  const { covers } = useReaderReach();
+  const outsideReach = !covers(personBranchIds(postingBranchIds, roles.reach));
 
   return (
     <div className="grid gap-6">
@@ -280,7 +289,7 @@ export function AccessTab({
         </section>
       )}
 
-      <FieldAccessOverrides userId={userId} userName={userName} />
+      <FieldAccessOverrides userId={userId} userName={userName} outsideReach={outsideReach} />
     </div>
   );
 }

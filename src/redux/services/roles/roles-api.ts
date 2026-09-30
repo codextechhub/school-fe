@@ -126,7 +126,10 @@ export const rolesApi = baseApi.injectEndpoints({
     }),
 
     getUserFieldAccessOverrides: builder.query<
-      PaginatedEnvelope<UserFieldAccessOverride>,
+      PaginatedEnvelope<UserFieldAccessOverride> & {
+        /** Whether the reader may add or lift this person's exceptions. Absent from a server that does not send it. */
+        can_change_exceptions?: boolean;
+      },
       { userId: number; access?: FieldAccessKind; mode?: FieldAccessMode; asAt?: string }
     >({
       query: ({ userId, asAt, ...params }) => ({
