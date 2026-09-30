@@ -353,9 +353,9 @@ const REGISTRY: Record<string, string> = {
 
   // ── workflow / templates  (MM=60, RR=01) ───────────────────────────────────
   // The approval screens belong to @xvs/finance and read this app's registry,
-  // so every workflow code a shared screen names has to resolve here. Only
-  // `workflow.template.view` arrives with the package; the rest are this app's
-  // to declare. The codes match the console's because they name the same
+  // so every workflow code a shared screen names has to resolve here.
+  // `workflow.template.view` and `workflow.approvers.assign` arrive with the
+  // package; the rest are this app's to declare. The codes match the console's because they name the same
   // backend keys: a school reading its own approval rules and CodeX reading a
   // school's are one permission.
   "600108": "workflow.template.update",

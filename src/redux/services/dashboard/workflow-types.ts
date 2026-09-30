@@ -408,6 +408,127 @@ export interface TeamLoadRow {
   active_count: number;
 }
 
+// ── Manage Approvals (the admin list and who approves a request) ─────────────
+
+/** A person as the approval admin endpoints name them: id and display name. */
+export interface NamedPerson {
+  id: string;
+  name: string;
+}
+
+/** Somebody with an undecided place on a request's active stage. */
+export interface WaitingApprover extends NamedPerson {
+  /** Set when they stand in as a delegate: the person they act for. */
+  on_behalf_of: NamedPerson | null;
+}
+
+/**
+ * One row of the admin list, GET /workflow/instances/.
+ *
+ * The extra fields are sent on this list only, never on the personal queues.
+ * Optional so a server without them still renders the list.
+ */
+export interface ManagedWorkflowInstance extends WorkflowInstance {
+  /** Who the request is about, for document types that name such a person
+   *  (a leave request names the person taking leave). */
+  request_for?: NamedPerson | null;
+  /** Empty when the request is not on an active stage. */
+  waiting_on?: WaitingApprover[];
+  /** When the active stage opened; null when there is none. */
+  waiting_since?: string | null;
+  stage_position?: { index: number; total: number } | null;
+  branch?: { id: number | string; name: string } | null;
+}
+
+/** GET /workflow/instances/filter-options/: the stages a document type runs through. */
+export interface InstanceFilterStage {
+  id: string;
+  label: string;
+  template_code: string;
+}
+
+export interface InstanceFilterOptions {
+  stages: InstanceFilterStage[];
+}
+
+export type StageApproversState = "DONE" | "ACTIVE" | "UPCOMING";
+
+export interface StageApproverEntry extends NamedPerson {
+  on_behalf_of: NamedPerson | null;
+  /** Their live vote on the stage's current attempt; null when undecided. */
+  vote: VoteAction | null;
+}
+
+/** An admin's choice of approvers for a stage that has not opened yet. */
+export interface StageAssignment {
+  approvers: NamedPerson[];
+  reason: string;
+  set_by: NamedPerson;
+  set_at: string;
+}
+
+export interface StageApprovers {
+  stage_id: string;
+  label: string;
+  order: number;
+  state: StageApproversState;
+  advance_rule: StageAdvanceRule;
+  quorum_count: number | null;
+  approvers: StageApproverEntry[];
+  /** True when `approvers` is who would approve if the stage opened now,
+   *  rather than a live or assigned list. */
+  preview: boolean;
+  assignment: StageAssignment | null;
+  may_change: boolean;
+}
+
+/** One change to who approves, kept for good. */
+export interface ApproverChange {
+  stage_label: string;
+  removed: NamedPerson | null;
+  added: NamedPerson | null;
+  reason: string;
+  by: NamedPerson;
+  at: string;
+}
+
+/** GET/POST /workflow/instances/{id}/approvers/. */
+export interface InstanceApprovers {
+  instance_id: string;
+  may_change: boolean;
+  blocked_reason: string | null;
+  stages: StageApprovers[];
+  history: ApproverChange[];
+}
+
+/** POST /workflow/instances/{id}/approvers/: the complete list for one stage. */
+export interface SetStageApproversPayload {
+  stage: string;
+  approvers: string[];
+  reason: string;
+}
+
+/** POST /workflow/instances/{id}/approvers/reset/. */
+export interface ResetStageApproversPayload {
+  stage: string;
+  reason: string;
+}
+
+/** POST /workflow/instances/replace-approver/. */
+export interface ReplaceApproverPayload {
+  from_user: string;
+  to_user: string;
+  /** 1 to 200 ids. */
+  instance_ids: string[];
+  reason: string;
+}
+
+export interface ReplaceApproverResult {
+  replaced: number;
+  skipped: number;
+  results: { instance_id: string; outcome: "replaced" | "skipped"; detail: string }[];
+}
+
 // ── Delegations ────────────────────────────────────────────────────────────────
 
 /** A document type a delegation can cover, as the server names it. */
@@ -429,9 +550,21 @@ export interface ApprovalDelegation {
   reason: string;
   created_at: string;
   revoked_at: string | null;
+  /** Who set it up: the delegator, or an admin acting for them. Absent from an
+   *  older server. */
+  created_by?: NamedPerson | null;
+}
+
+/** The create response: the delegation, and how many requests already waiting
+ *  on the delegator the delegate was added to because it starts now. */
+export interface CreatedDelegation extends ApprovalDelegation {
+  applied_to_waiting?: number;
 }
 
 export interface DelegationWritePayload {
+  /** Whose approvals are handed over. Omitted for the caller's own; naming
+   *  anybody else needs the approvers-manage permission. */
+  delegator?: string;
   delegate: string;
   starts_at: string;
   ends_at: string;
@@ -563,7 +696,7 @@ export interface ApproverGroupMemberPayload {
 export type WorkflowTemplatesResponse = PaginatedResponse<WorkflowTemplate>;
 export type ApproverGroupsResponse = PaginatedResponse<ApproverGroup>;
 export type StageApproverOverridesResponse = PaginatedResponse<StageApproverOverride>;
-export type WorkflowInstancesResponse = PaginatedResponse<WorkflowInstance>;
+export type WorkflowInstancesResponse = PaginatedResponse<ManagedWorkflowInstance>;
 export type ApprovalDelegationsResponse = PaginatedResponse<ApprovalDelegation>;
 
 // ── Approver preview (the engine's own resolver, unsaved config) ─────────────

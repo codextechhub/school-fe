@@ -775,9 +775,19 @@ export function AppSidebar({
             ),
           },
           // The three above are personal - your queue, your submissions, your
-          // delegations - and everybody signed in has them. This one is the
-          // school's own list of who approves what, and a teacher holds no key
-          // for it, so it is offered only to somebody who can read it.
+          // delegations - and everybody signed in has them. The rest are the
+          // school's: every request in flight, and who approves what. A teacher
+          // holds no key for either, so each is offered only to somebody who
+          // can read it.
+          ...(hasPermission(P.VIEW_WORKFLOW_INSTANCES)
+            ? [{
+                title: "Manage Approvals",
+                url: routesPath.PROTECTED.WORKFLOW.INSTANCES,
+                isActive: location.startsWith(
+                  routesPath.PROTECTED.WORKFLOW.INSTANCES,
+                ),
+              }]
+            : []),
           ...(hasPermission(P.VIEW_APPROVER_GROUPS)
             ? [{
                 title: "Approvers",

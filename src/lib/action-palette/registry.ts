@@ -934,10 +934,11 @@ const SCHOOL_ACTIONS: ActionDef[] = [
   },
 
   // ── Workflow ───────────────────────────────────────────────────────────────
-  // The first four carry no gate, exactly as the sidebar's own items do not: an
+  // The first three carry no gate, exactly as the sidebar's own items do not: an
   // approval queue is the reader's own post, and a key would hide a document
-  // waiting on them. Templates are the rule everybody else is judged by, so
-  // they are gated on the module the sidebar tests for the same item.
+  // waiting on them. The rest are the school's own (every request, its
+  // approvers, its templates), so each is gated on the key the sidebar tests
+  // for the same item.
   {
     id: "view-approvals",
     // "View approvals" belongs to the Procurement console, which has an
@@ -971,6 +972,16 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: null,
     run: { to: R.WORKFLOW.DELEGATIONS },
+  },
+  {
+    id: "view-workflow-instances",
+    label: "Manage Approvals",
+    aliases: ["approval requests", "stuck approvals", "change approver", "replace approver", "who approves"],
+    section: "Settings",
+    group: "Workflow",
+    kind: "view",
+    gate: { perm: P.VIEW_WORKFLOW_INSTANCES },
+    run: { to: R.WORKFLOW.INSTANCES },
   },
   {
     id: "view-approver-groups",

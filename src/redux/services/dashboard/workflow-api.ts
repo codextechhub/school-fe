@@ -3,6 +3,13 @@ import { baseApi } from "../base-api";
 import type {
   ApprovalDelegation,
   ApprovalDelegationsResponse,
+  CreatedDelegation,
+  InstanceApprovers,
+  InstanceFilterOptions,
+  ReplaceApproverPayload,
+  ReplaceApproverResult,
+  ResetStageApproversPayload,
+  SetStageApproversPayload,
   ApproverGroup,
   ApproverGroupMemberPayload,
   ApproverGroupResolution,
@@ -36,6 +43,30 @@ import type {
 } from "./workflow-types";
 
 type QueryParams = Record<string, string | number>;
+
+/**
+ * The payload of a response, whether or not it arrives in the standard
+ * `{ success, message, data }` envelope.
+ *
+ * Most workflow endpoints answer with the plain serializer dict; the approver
+ * admin endpoints are specified with the envelope. Reading both shapes keeps the
+ * screens indifferent to which one a server sends.
+ */
+function unwrapEnvelope<T>(response: unknown): T {
+  if (
+    response && typeof response === "object"
+    && "success" in response && "data" in response
+  ) {
+    return (response as { data: T }).data;
+  }
+  return response as T;
+}
+
+/** What a change to who approves a request can move: the request itself, the
+ *  queues it sits in, and, when it completes a stage, the document underneath. */
+const APPROVER_CHANGE_TAGS = [
+  "WorkflowInstances", "WorkflowPending", "WorkflowSubmissions", "WorkflowTeamLoad",
+] as const;
 
 /**
  * A workflow vote/withdraw/cancel/reverse changes the state of the *business
@@ -303,6 +334,59 @@ export const workflowApi = baseApi.injectEndpoints({
       providesTags: ["WorkflowInstances"],
     }),
 
+    /** The stages a document type runs through, for the list's stage filter. */
+    getInstanceFilterOptions: builder.query<InstanceFilterOptions, string>({
+      query: (documentType) => ({
+        url: `/workflow/instances/filter-options/${generateQueryString({ document_type: documentType })}`,
+        method: "GET",
+      }),
+      transformResponse: unwrapEnvelope<InstanceFilterOptions>,
+      providesTags: ["WorkflowInstances"],
+    }),
+
+    /**
+     * Who approves each stage of one request: done, active and upcoming.
+     *
+     * Silent, because the detail page reads it only for somebody who may change
+     * approvers and a refusal there means the section stays away, not a toast.
+     */
+    getInstanceApprovers: builder.query<InstanceApprovers, string>({
+      query: (id) => ({ url: `/workflow/instances/${id}/approvers/`, method: "GET" }),
+      transformResponse: unwrapEnvelope<InstanceApprovers>,
+      extraOptions: { silent: true },
+      providesTags: ["WorkflowInstances"],
+    }),
+
+    // Refusals name the person or stage, and the editor shows them inline.
+    setStageApprovers: builder.mutation<
+      InstanceApprovers, { id: string; body: SetStageApproversPayload }
+    >({
+      query: ({ id, body }) => ({ url: `/workflow/instances/${id}/approvers/`, method: "POST", body }),
+      transformResponse: unwrapEnvelope<InstanceApprovers>,
+      extraOptions: { silent: true },
+      invalidatesTags: [...APPROVER_CHANGE_TAGS, ...PROC_DOC_TAGS],
+    }),
+
+    resetStageApprovers: builder.mutation<
+      InstanceApprovers, { id: string; body: ResetStageApproversPayload }
+    >({
+      query: ({ id, body }) => ({
+        url: `/workflow/instances/${id}/approvers/reset/`, method: "POST", body,
+      }),
+      transformResponse: unwrapEnvelope<InstanceApprovers>,
+      extraOptions: { silent: true },
+      invalidatesTags: [...APPROVER_CHANGE_TAGS],
+    }),
+
+    // A request that cannot be changed is reported in `results`, never failed
+    // as a batch; only a refusal of the whole call reaches the error path.
+    replaceApprover: builder.mutation<ReplaceApproverResult, ReplaceApproverPayload>({
+      query: (body) => ({ url: `/workflow/instances/replace-approver/`, method: "POST", body }),
+      transformResponse: unwrapEnvelope<ReplaceApproverResult>,
+      extraOptions: { silent: true },
+      invalidatesTags: [...APPROVER_CHANGE_TAGS, ...PROC_DOC_TAGS],
+    }),
+
     // Approver vote - APPROVED / REJECTED / RETURNED.
     recordWorkflowAction: builder.mutation<
       WorkflowInstanceDetail,
@@ -416,9 +500,12 @@ export const workflowApi = baseApi.injectEndpoints({
       query: () => ({ url: `/workflow/delegations/document-types/`, method: "GET" }),
     }),
 
-    createDelegation: builder.mutation<ApprovalDelegation, DelegationWritePayload>({
+    // A delegation that starts now also reaches requests already waiting on the
+    // delegator, so the queues drop alongside the delegation list.
+    createDelegation: builder.mutation<CreatedDelegation, DelegationWritePayload>({
       query: (body) => ({ url: `/workflow/delegations/`, method: "POST", body }),
-      invalidatesTags: ["WorkflowDelegations"],
+      transformResponse: unwrapEnvelope<CreatedDelegation>,
+      invalidatesTags: ["WorkflowDelegations", ...APPROVER_CHANGE_TAGS],
     }),
 
     updateDelegation: builder.mutation<ApprovalDelegation, { id: string; body: Partial<DelegationWritePayload> }>({
@@ -431,9 +518,10 @@ export const workflowApi = baseApi.injectEndpoints({
       invalidatesTags: ["WorkflowDelegations"],
     }),
 
+    // Revoking pulls the delegate back from requests still waiting on them.
     revokeDelegation: builder.mutation<ApprovalDelegation, string>({
       query: (id) => ({ url: `/workflow/delegations/${id}/revoke/`, method: "POST" }),
-      invalidatesTags: ["WorkflowDelegations"],
+      invalidatesTags: ["WorkflowDelegations", ...APPROVER_CHANGE_TAGS],
     }),
 
     // Resolve "who would approve?" for an ad-hoc stage config + sample requester,
@@ -472,6 +560,11 @@ export const {
   useDeleteStageApproverOverrideMutation,
   useGetWorkflowInstancesQuery,
   useGetWorkflowInstanceQuery,
+  useGetInstanceFilterOptionsQuery,
+  useGetInstanceApproversQuery,
+  useSetStageApproversMutation,
+  useResetStageApproversMutation,
+  useReplaceApproverMutation,
   useRecordWorkflowActionMutation,
   useWithdrawWorkflowInstanceMutation,
   useResubmitWorkflowInstanceMutation,
