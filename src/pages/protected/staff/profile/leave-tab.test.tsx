@@ -21,10 +21,12 @@ const OKAFOR: StaffLeave = {
     {
       id: 7, staff_id: 12, staff_name: "Adaeze Okafor", leave_type: "ANNUAL",
       leave_type_label: "Annual", start_date: "2026-10-05", end_date: "2026-10-08",
+      resumption_date: "2026-10-09", resumption_is_estimate: false,
       days: 4, over_allowance_by: 2, note: "", status: "PENDING", display_status: "PENDING",
       decided_at: null, requested_by: null, created_at: "2026-09-28T10:00:00Z",
     },
   ],
+  leave_group: { id: "bc8b0cce-383f-48e1-8cb9-1187a35c5d09", name: "Senior staff" },
   days_taken: [{ leave_type: "ANNUAL", days: 18 }, { leave_type: "COMPASSIONATE", days: 3 }],
   balances: [
     { leave_type: "ANNUAL", label: "Annual", allowance: 20, taken: 18, pending: 4, remaining: -2 },
@@ -56,6 +58,9 @@ describe("LeaveTab", () => {
 
   it("marks a request that went past the allowance", () => {
     expect(text()).toContain("2 days over allowance");
+    expect(text()).toContain("Resumption date");
+    expect(text()).toContain("9 Oct 2026");
+    expect(text()).toContain("Senior staff");
   });
 
   it("opens each request to show its approver, day count and available actions", () => {

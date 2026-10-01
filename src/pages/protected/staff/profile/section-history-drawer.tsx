@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Clock3 } from "lucide-react";
+import { ArrowRight, ChevronDown, Clock3 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -99,7 +99,7 @@ export function SectionHistoryDrawer({
   );
 }
 
-/** A dated change with each visible field compared in reading order. */
+/** A compact dated event that reveals its field comparisons on demand. */
 function HistoryCard({ entry, time }: { entry: StaffSectionHistoryEntry; time: string }) {
   const tone = entry.action === "Removed"
     ? "border-rose-200 bg-rose-50 text-rose-800"
@@ -108,35 +108,40 @@ function HistoryCard({ entry, time }: { entry: StaffSectionHistoryEntry; time: s
       : "border-blue-200 bg-blue-50 text-blue-800";
 
   return (
-    <li className="relative pb-5 last:pb-0">
-      <span className="absolute -left-[1.61rem] top-4 size-2.5 rounded-full border-2 border-white bg-primary" aria-hidden />
-      <article className="min-w-0 rounded-xl border border-white-02 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="break-words text-sm font-semibold text-black-01">{entry.title}</p>
-            <p className="mt-0.5 text-xs text-gray-05">
-              {time}{entry.actor ? ` · ${entry.actor}` : " · System"}
-            </p>
+    <li className="relative pb-2.5 last:pb-0">
+      <span className="absolute -left-[1.61rem] top-5 size-2.5 rounded-full border-2 border-white bg-primary" aria-hidden />
+      <details className="group min-w-0 rounded-xl border border-white-02 bg-white shadow-sm">
+        <summary className="flex min-w-0 cursor-pointer list-none items-center gap-2 px-3.5 py-3 [&::-webkit-details-marker]:hidden">
+          <div className="min-w-0 flex-1">
+            <p className="text-xs text-gray-05">{time}</p>
+            <p className="truncate text-sm font-semibold text-black-01">{entry.title}</p>
           </div>
-          <span className={`rounded-full border px-2.5 py-1 text-[11px] font-medium ${tone}`}>
+          <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium ${tone}`}>
             {entry.action}
           </span>
-        </div>
-        {entry.changes.length > 0 && (
-          <div className="mt-4 grid gap-3">
-            {entry.changes.map((change) => (
-              <div key={change.field} className="min-w-0">
-                <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-05">{change.field}</p>
-                <div className="grid min-w-0 grid-cols-1 items-stretch gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
-                  <ValueBox label="Before" value={change.before} tone="before" />
-                  <ArrowRight className="hidden size-4 text-gray-05 sm:block" aria-hidden />
-                  <ValueBox label="After" value={change.after} tone="after" />
+          <ChevronDown className="size-4 shrink-0 text-gray-05 transition-transform group-open:rotate-180" aria-hidden />
+        </summary>
+        <div className="min-w-0 border-t border-white-02 px-3.5 pb-4 pt-3">
+          <p className="break-words text-sm font-medium text-black-01">{entry.title}</p>
+          <p className="text-xs text-gray-05">Changed by {entry.actor || "System"}</p>
+          {entry.changes.length > 0 ? (
+            <div className="mt-3 grid gap-3">
+              {entry.changes.map((change) => (
+                <div key={change.field} className="min-w-0">
+                  <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-gray-05">{change.field}</p>
+                  <div className="grid min-w-0 grid-cols-1 items-stretch gap-2 sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-center">
+                    <ValueBox label="Before" value={change.before} tone="before" />
+                    <ArrowRight className="hidden size-4 text-gray-05 sm:block" aria-hidden />
+                    <ValueBox label="After" value={change.after} tone="after" />
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-2 text-[13px] text-gray-01">No field details recorded.</p>
+          )}
+        </div>
+      </details>
     </li>
   );
 }

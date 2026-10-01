@@ -22,10 +22,10 @@ describe("leaveChanges", () => {
 describe("countingNote", () => {
   it("names the school's working days and whether closures count", () => {
     expect(
-      countingNote({ allowances: {}, leave_types: [], working_days: [5, 1, 2, 3, 4], exclude_closures: true }),
+      countingNote({ allowances: {}, leave_types: [], groups: [], overrides: [], branch_options: [], working_days: [5, 1, 2, 3, 4], exclude_closures: true }),
     ).toBe("Days are counted Monday to Friday, leaving out days the school is closed on its calendar.");
     expect(
-      countingNote({ allowances: {}, leave_types: [], working_days: [1, 2, 3, 4, 5, 6], exclude_closures: false }),
+      countingNote({ allowances: {}, leave_types: [], groups: [], overrides: [], branch_options: [], working_days: [1, 2, 3, 4, 5, 6], exclude_closures: false }),
     ).toBe(
       "Days are counted Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, including days the school is closed.",
     );

@@ -887,6 +887,8 @@ export interface StaffLeaveRequest {
   leave_type_label: string;
   start_date: string;
   end_date: string;
+  resumption_date: string | null;
+  resumption_is_estimate: boolean;
   /** The school's working days in the range, less its closures. */
   days: number;
   /**
@@ -954,6 +956,7 @@ export interface StaffLeaveSession {
  */
 export interface StaffLeave {
   leave: StaffLeaveRequest[];
+  leave_group: { id: string; name: string } | null;
   /** Per type, summed from approved requests only, across every session. */
   days_taken: { leave_type: LeaveType; days: number }[];
   balances: StaffLeaveBalance[];
@@ -1043,6 +1046,9 @@ export interface StaffRules {
   leave: {
     /** Days per leave type in one academic session; null is no limit. */
     allowances: Record<string, number | null>;
+    groups: { id: string; name: string }[];
+    overrides: { branch_id: number | null; group_id: string | null; leave_type: string; days: number | null }[];
+    branch_options: { id: number; name: string }[];
     leave_types: StaffOption[];
     /** ISO weekdays that count as working days, 1 is Monday. */
     working_days: number[];
@@ -1055,6 +1061,6 @@ export type StaffRulesUpdate = Pick<
   StaffRules,
   "starting_role" | "required_documents" | "self_editable_fields" | "hire_requires_approval"
 > & {
-  leave: Pick<StaffRules["leave"], "allowances" | "working_days" | "exclude_closures">;
+  leave: Pick<StaffRules["leave"], "allowances" | "groups" | "overrides" | "working_days" | "exclude_closures">;
   reason?: string;
 };

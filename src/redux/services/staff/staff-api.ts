@@ -367,6 +367,11 @@ export const staffApi = baseApi.injectEndpoints({
       providesTags: ["StaffLeave"],
     }),
 
+    assignStaffLeaveGroup: builder.mutation<Envelope<{ leave_group: StaffLeave["leave_group"] }>, { id: number; group_id: string | null }>({
+      query: ({ id, group_id }) => ({ url: `/i/me/staff/${id}/leave-group/`, method: "PUT", body: { group_id } }),
+      invalidatesTags: ["StaffLeave", "SchoolStaff"],
+    }),
+
     /**
      * File a request. Applying for your own needs `school.leave.apply`, which
      * every member of staff holds; filing somebody else's needs
@@ -643,6 +648,7 @@ export const {
   useUploadStaffDocumentMutation,
   useDeleteStaffDocumentMutation,
   useGetStaffLeaveQuery,
+  useAssignStaffLeaveGroupMutation,
   useFileStaffLeaveMutation,
   useUpdateStaffLeaveMutation,
   useCancelStaffLeaveMutation,

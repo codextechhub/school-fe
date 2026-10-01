@@ -95,6 +95,7 @@ describe("the staff row the app reads", () => {
  * the Leave tab reads as "No limit" rather than as zero days left.
  */
 const LEAVE: StaffLeave = {
+  leave_group: null,
   leave: [],
   days_taken: [],
   balances: [

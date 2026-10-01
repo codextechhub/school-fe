@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Link } from "react-router";
-import { CircleAlert, Lock } from "lucide-react";
+import { CircleAlert, Lock, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -98,6 +98,8 @@ function StaffForm({ rules }: { rules: StaffRules }) {
   const [selfEdit, setSelfEdit] = useState<string[]>(rules.self_editable_fields);
   const [approval, setApproval] = useState(rules.hire_requires_approval);
   const [allowances, setAllowances] = useState(() => allowanceDraft(rules));
+  const [groups, setGroups] = useState(rules.leave.groups);
+  const [overrides, setOverrides] = useState(rules.leave.overrides.map((row) => ({ ...row, days: row.days == null ? "" : String(row.days) })));
   const [workingDays, setWorkingDays] = useState<number[]>(rules.leave.working_days);
   const [excludeClosures, setExcludeClosures] = useState(rules.leave.exclude_closures);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -108,6 +110,11 @@ function StaffForm({ rules }: { rules: StaffRules }) {
     return Number.isInteger(days) && days >= 0 && days <= 366 ? "" : "Use 0 to 366 days, or leave it blank for no limit.";
   };
   const allowanceInvalid = Object.values(allowances).some((v) => allowanceProblem(v));
+  const groupInvalid = groups.some((row) => !row.name.trim() || row.name.length > 80) ||
+    new Set(groups.map((row) => row.name.trim().toLowerCase())).size !== groups.length;
+  const overrideInvalid = overrides.some((row) =>
+    (!row.branch_id && !row.group_id) || !!allowanceProblem(row.days),
+  ) || new Set(overrides.map((row) => `${row.branch_id ?? ""}:${row.group_id ?? ""}:${row.leave_type}`)).size !== overrides.length;
   const daysProblem = workingDays.length === 0 ? "Choose at least one working day." : "";
 
   const sorted = (list: (string | number)[]) => [...list].sort().join();
@@ -117,6 +124,8 @@ function StaffForm({ rules }: { rules: StaffRules }) {
     sorted(selfEdit) !== sorted(rules.self_editable_fields) ||
     approval !== rules.hire_requires_approval ||
     JSON.stringify(allowances) !== JSON.stringify(allowanceDraft(rules)) ||
+    JSON.stringify(groups) !== JSON.stringify(rules.leave.groups) ||
+    JSON.stringify(overrides) !== JSON.stringify(rules.leave.overrides.map((row) => ({ ...row, days: row.days == null ? "" : String(row.days) }))) ||
     sorted(workingDays) !== sorted(rules.leave.working_days) ||
     excludeClosures !== rules.leave.exclude_closures;
 
@@ -124,7 +133,7 @@ function StaffForm({ rules }: { rules: StaffRules }) {
     on ? [...list, item] : list.filter((x) => x !== item);
 
   const onSave = async () => {
-    if (!changed || allowanceInvalid || daysProblem) return;
+    if (!changed || allowanceInvalid || groupInvalid || overrideInvalid || daysProblem) return;
     setErrors({});
     try {
       await save({
@@ -136,6 +145,8 @@ function StaffForm({ rules }: { rules: StaffRules }) {
           allowances: Object.fromEntries(
             Object.entries(allowances).map(([type, text]) => [type, text.trim() === "" ? null : Number(text)]),
           ),
+          groups: groups.map((row) => ({ ...row, name: row.name.trim() })),
+          overrides: overrides.map((row) => ({ ...row, days: row.days.trim() === "" ? null : Number(row.days) })),
           working_days: [...workingDays].sort(),
           exclude_closures: excludeClosures,
         },
@@ -268,6 +279,63 @@ function StaffForm({ rules }: { rules: StaffRules }) {
       </SettingsPanel>
 
       <SettingsPanel
+        title="Leave groups"
+        description="Assign a group on each staff profile. An unassigned person follows the school or branch default."
+      >
+        <div className="space-y-3 px-4 py-4 sm:px-5">
+          {groups.map((group, index) => (
+            <div key={group.id} className="flex min-w-0 flex-wrap items-center gap-2">
+              <Input
+                className="min-w-0 flex-1 sm:max-w-72"
+                aria-label={`Leave group ${index + 1}`}
+                placeholder="Example: Senior staff"
+                maxLength={80}
+                value={group.name}
+                disabled={!canSave}
+                onChange={(event) => setGroups(groups.map((row) => row.id === group.id ? { ...row, name: event.target.value } : row))}
+              />
+              {canSave && <Button type="button" variant="outline" aria-label={`Remove ${group.name || "leave group"}`} onClick={() => {
+                setGroups(groups.filter((row) => row.id !== group.id));
+                setOverrides(overrides.filter((row) => row.group_id !== group.id));
+              }}><Trash2 className="size-4" /></Button>}
+            </div>
+          ))}
+          {groupInvalid && <ErrorLine text="Give each group a different name." />}
+          {canSave && <Button type="button" variant="outline" onClick={() => setGroups([...groups, { id: crypto.randomUUID(), name: "" }])}><Plus className="size-4" /> Add group</Button>}
+        </div>
+      </SettingsPanel>
+
+      <SettingsPanel
+        title="Leave exceptions"
+        description="Set a different allowance for a branch, a group, or both. A group rule takes priority over a branch rule; a combined rule takes priority over both. Leave days blank for no limit. Remove an exception to inherit the default."
+      >
+        <div className="space-y-3 px-4 py-4 sm:px-5">
+          {overrides.map((row, index) => (
+            <div key={index} className="grid min-w-0 grid-cols-1 gap-2 rounded-lg border border-white-02 p-3 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_8rem_auto]">
+              {rules.leave.branch_options.length > 1 && <NativeSelect aria-label={`Exception ${index + 1} branch`} disabled={!canSave} value={row.branch_id ?? ""} onChange={(event) => setOverrides(overrides.map((item, n) => n === index ? { ...item, branch_id: event.target.value ? Number(event.target.value) : null } : item))}>
+                <option value="">All branches</option>
+                {rules.leave.branch_options.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}
+              </NativeSelect>}
+              <NativeSelect aria-label={`Exception ${index + 1} group`} disabled={!canSave} value={row.group_id ?? ""} onChange={(event) => setOverrides(overrides.map((item, n) => n === index ? { ...item, group_id: event.target.value || null } : item))}>
+                <option value="">All staff</option>
+                {groups.map((group) => <option key={group.id} value={group.id}>{group.name || "Unnamed group"}</option>)}
+              </NativeSelect>
+              <NativeSelect aria-label={`Exception ${index + 1} leave type`} disabled={!canSave} value={row.leave_type} onChange={(event) => setOverrides(overrides.map((item, n) => n === index ? { ...item, leave_type: event.target.value } : item))}>
+                {rules.leave.leave_types.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+              </NativeSelect>
+              <Input aria-label={`Exception ${index + 1} days`} type="number" min={0} max={366} placeholder="No limit" disabled={!canSave} value={row.days} onChange={(event) => setOverrides(overrides.map((item, n) => n === index ? { ...item, days: event.target.value } : item))} />
+              {canSave && <Button type="button" variant="outline" aria-label={`Remove exception ${index + 1}`} onClick={() => setOverrides(overrides.filter((_, n) => n !== index))}><Trash2 className="size-4" /></Button>}
+            </div>
+          ))}
+          {overrideInvalid && <ErrorLine text="Each exception needs a branch or group, a valid day count, and a unique branch, group and leave type." />}
+          {canSave && <Button type="button" variant="outline" disabled={!groups.length && rules.leave.branch_options.length < 2} onClick={() => setOverrides([...overrides, { branch_id: groups.length ? null : rules.leave.branch_options[0]?.id ?? null, group_id: groups[0]?.id ?? null, leave_type: rules.leave.leave_types[0].value, days: "" }])}><Plus className="size-4" /> Add exception</Button>}
+          {canSave && !groups.length && rules.leave.branch_options.length < 2 && (
+            <p className="font-mont text-xs text-gray-05">Add a leave group to set a different allowance for some staff.</p>
+          )}
+        </div>
+      </SettingsPanel>
+
+      <SettingsPanel
         title="Counting leave days"
         description="Which days a leave request counts. A new request is counted this way; requests already filed keep their days."
       >
@@ -321,7 +389,7 @@ function StaffForm({ rules }: { rules: StaffRules }) {
           <Button
             onClick={onSave}
             loading={saving}
-            disabled={!changed || allowanceInvalid || !!daysProblem || saving}
+            disabled={!changed || allowanceInvalid || groupInvalid || overrideInvalid || !!daysProblem || saving}
           >
             Save staff rules
           </Button>

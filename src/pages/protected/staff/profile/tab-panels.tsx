@@ -3,6 +3,7 @@ import { useParams } from "react-router";
 import {
   AlertTriangle,
   CalendarPlus,
+  ChevronDown,
   FileText,
   ShieldCheck,
   Upload,
@@ -833,6 +834,9 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
  */
 export function LeaveTab({
   leave,
+  groupOptions,
+  onAssignGroup,
+  assigningGroup,
   onFile,
   fileLabel,
   onEdit,
@@ -841,6 +845,9 @@ export function LeaveTab({
   historyAction,
 }: {
   leave: StaffLeave;
+  groupOptions?: { id: string; name: string }[];
+  onAssignGroup?: (groupId: string | null) => void;
+  assigningGroup?: boolean;
   /** Absent for a reader who may neither apply nor file on somebody's behalf. */
   onFile?: () => void;
   fileLabel?: string;
@@ -859,14 +866,35 @@ export function LeaveTab({
 
   return (
     <div className="grid gap-5">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {onFile && (
-          <Button variant="outline" onClick={onFile}>
-            <CalendarPlus className="size-4" />
-            {fileLabel}
-          </Button>
-        )}
-        {historyAction}
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <div className="order-2 flex w-full min-w-0 items-center gap-2 sm:order-1 sm:mr-auto sm:w-auto">
+          <span className="shrink-0 text-sm font-medium text-black-01">Leave group</span>
+          {onAssignGroup && groupOptions ? (
+            <div className="min-w-0 flex-1 sm:w-44 sm:flex-none lg:w-56">
+              <NativeSelect
+                aria-label="Leave group"
+                size="sm"
+                value={leave.leave_group?.id ?? ""}
+                disabled={assigningGroup}
+                onChange={(event) => onAssignGroup(event.target.value || null)}
+              >
+                <option value="">Default allowance</option>
+                {groupOptions.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+              </NativeSelect>
+            </div>
+          ) : (
+            <span className="min-w-0 truncate text-[13px] text-gray-05">{leave.leave_group?.name ?? "Default allowance"}</span>
+          )}
+        </div>
+        <div className="order-1 flex w-full items-center justify-end gap-2 sm:order-2 sm:w-auto">
+          {onFile && (
+            <Button variant="outline" onClick={onFile}>
+              <CalendarPlus className="size-4" />
+              {fileLabel}
+            </Button>
+          )}
+          {historyAction}
+        </div>
       </div>
       {session ? (
         <section>
@@ -951,6 +979,10 @@ export function LeaveTab({
                   <span className="hidden text-xs text-primary group-open:inline">Hide details</span>
                   </summary>
                   <div className="mt-3 grid gap-3 border-t border-white-02 pt-3 text-[13px] sm:grid-cols-2">
+                    <div>
+                      <span className="block text-xs text-gray-05">{row.resumption_is_estimate ? "Estimated resumption" : "Resumption date"}</span>
+                      {row.resumption_date ? formatDate(row.resumption_date) : "Not set"}
+                    </div>
                     <div>
                       <span className="block text-xs text-gray-05">Days</span>
                       {dayCount(row.days)}
@@ -1044,17 +1076,12 @@ function BalanceCard({ row }: { row: StaffLeaveBalance }) {
   );
 }
 
-// ── History ────────────────────────────────────────────────────────────────
-
 /**
- * One timeline, two halves, told apart on sight.
+ * Dated employment and account events in a compact, expandable timeline.
  *
- * An employment event and an account event are drawn differently on purpose. A
- * lockout is the identity layer noticing three bad passwords; a suspension is a
- * school taking a decision about somebody's job. A school that reads one as the
- * other believes its teacher was disciplined for mistyping her password, so the
- * kind is a coloured rail down the left rather than a word somebody has to
- * notice.
+ * An account lockout and an employment suspension have different meanings.
+ * The coloured rail and event label keep that distinction visible while the
+ * reason, actor and status change stay inside the event until it is opened.
  */
 export function HistoryTab({
   entries,
@@ -1069,51 +1096,55 @@ export function HistoryTab({
 
   return (
     <ol className="grid gap-3">
-      {entries.map((entry, index) => (
-        <li
-          key={`${entry.kind}-${entry.at}-${index}`}
-          className={cn(
-            "border-l-2 pl-3.5",
-            entry.kind === "employment" ? "border-primary" : "border-gray-02",
-          )}
-        >
-          <div className="flex flex-wrap items-baseline gap-2">
-            <span className="text-sm text-black-01">
-              {entry.kind === "employment"
-                ? entry.from_status_label
-                  ? `${entry.from_status_label} to ${entry.to_status_label}`
-                  : entry.to_status_label
-                : entry.label}
-            </span>
-            <span
-              className={cn(
-                "rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
-                entry.kind === "employment"
-                  ? "bg-white-03 text-primary"
-                  : "bg-gray-04 text-gray-05",
-              )}
-            >
-              {entry.kind === "employment" ? "Employment" : "Account"}
-            </span>
-          </div>
-          {entry.kind === "employment" && entry.reason && (
-            <p className="mt-0.5 text-xs text-gray-01">{entry.reason}</p>
-          )}
-          {entry.kind === "account" && entry.note && (
-            <p className="mt-0.5 text-xs text-gray-01">{entry.note}</p>
-          )}
-          <p className="mt-0.5 text-xs text-gray-05">
-            {formatDateTime(entry.at, prefs)}
-            {entry.kind === "employment"
-              ? entry.changed_by
-                ? ` · ${entry.changed_by.name}`
-                : ""
-              : entry.actor
-                ? ` · ${entry.actor.name}`
-                : ""}
-          </p>
-        </li>
-      ))}
+      {entries.map((entry, index) => {
+        const employment = entry.kind === "employment";
+        const title = employment
+          ? entry.from_status_label
+            ? `${entry.from_status_label} to ${entry.to_status_label}`
+            : entry.to_status_label
+          : entry.label;
+        const actor = employment ? entry.changed_by?.name : entry.actor?.name;
+        return (
+          <li key={`${entry.kind}-${entry.at}-${index}`}>
+            <details className={cn(
+              "group min-w-0 rounded-lg border border-white-02 border-l-2 bg-white shadow-sm",
+              employment ? "border-l-primary" : "border-l-gray-02",
+            )}>
+              <summary className="flex min-w-0 cursor-pointer list-none items-center gap-2 px-3.5 py-3 [&::-webkit-details-marker]:hidden">
+                <div className="min-w-0 flex-1">
+                  <time dateTime={entry.at} className="block text-xs text-gray-05">{formatDateTime(entry.at, prefs)}</time>
+                  <p className="truncate text-sm font-medium text-black-01">{title}</p>
+                </div>
+                <span className={cn(
+                  "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide",
+                  employment ? "bg-white-03 text-primary" : "bg-gray-04 text-gray-05",
+                )}>
+                  {employment ? "Employment" : "Account"}
+                </span>
+                <ChevronDown className="size-4 shrink-0 text-gray-05 transition-transform group-open:rotate-180" aria-hidden />
+              </summary>
+              <div className="min-w-0 space-y-3 border-t border-white-02 px-3.5 py-3 text-[13px] text-gray-01">
+                <p className="break-words font-medium text-black-01">{title}</p>
+                {employment ? (
+                  <>
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <div><span className="block text-xs text-gray-05">Before</span>{entry.from_status_label ?? "Not set"}</div>
+                      <div><span className="block text-xs text-gray-05">After</span>{entry.to_status_label}</div>
+                    </div>
+                    {entry.reason && <p className="break-words"><span className="block text-xs text-gray-05">Reason</span>{entry.reason}</p>}
+                    {entry.note && <p className="break-words"><span className="block text-xs text-gray-05">Note</span>{entry.note}</p>}
+                    {entry.effective_date && <p><span className="block text-xs text-gray-05">Effective date</span>{formatDate(entry.effective_date)}</p>}
+                    {entry.last_working_day && <p><span className="block text-xs text-gray-05">Last working day</span>{formatDate(entry.last_working_day)}</p>}
+                  </>
+                ) : entry.note ? (
+                  <p className="break-words"><span className="block text-xs text-gray-05">Note</span>{entry.note}</p>
+                ) : null}
+                <p className="text-xs text-gray-05">Changed by {actor || "System"}</p>
+              </div>
+            </details>
+          </li>
+        );
+      })}
     </ol>
   );
 }

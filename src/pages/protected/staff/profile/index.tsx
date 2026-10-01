@@ -39,6 +39,8 @@ import {
   useGetStaffDocumentsQuery,
   useGetStaffHistoryQuery,
   useGetStaffLeaveQuery,
+  useGetStaffRulesQuery,
+  useAssignStaffLeaveGroupMutation,
   useCancelStaffLeaveMutation,
   useGetStaffMemberQuery,
   useGetStaffQualificationsQuery,
@@ -551,6 +553,9 @@ function TabBody({
     skip: tab !== "documents",
   });
   const leave = useGetStaffLeaveQuery(record, { skip: tab !== "leave" });
+  const mayAssignLeaveGroup = tab === "leave" && !asAt && canManage(person) && hasPermission(P.UPDATE_SETTINGS);
+  const leaveRules = useGetStaffRulesQuery(undefined, { skip: !mayAssignLeaveGroup });
+  const [assignLeaveGroup, { isLoading: assigningLeaveGroup }] = useAssignStaffLeaveGroupMutation();
   const history = useGetStaffHistoryQuery(record, {
     skip: tab !== "history",
   });
@@ -617,6 +622,16 @@ function TabBody({
       <>
       <LeaveTab
         leave={leave.currentData.data}
+        groupOptions={mayAssignLeaveGroup ? leaveRules.currentData?.data.leave.groups : undefined}
+        assigningGroup={assigningLeaveGroup}
+        onAssignGroup={mayAssignLeaveGroup ? async (groupId) => {
+          try {
+            await assignLeaveGroup({ id: person.id, group_id: groupId }).unwrap();
+            toast.success("Leave group saved.");
+          } catch (error) {
+            toast.error(apiErrorMessage(error, "We could not save the leave group."));
+          }
+        } : undefined}
         onEdit={mayEditLeave ? (request) => onOpenDrawer({ kind: "leaveEdit", staffId: person.id, personName: person.full_name, request }) : undefined}
         onCancel={mayCancelLeave ? setLeaveToCancel : undefined}
         cancelling={cancellingLeave}
