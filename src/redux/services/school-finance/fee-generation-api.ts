@@ -80,8 +80,10 @@ export interface CohortRunResult {
  * A pupil's fee account the run moves to the branch the pupil attends.
  *
  * Tunde attends Lekki and their account was filed at Ikeja: the run bills them
- * at Lekki and moves the account there. Bills raised before the move keep
- * their branch, so Ikeja still collects what it is owed.
+ * at Lekki and moves the account there with everything it holds, so Lekki now
+ * chases what Tunde owes and owes Ikeja for it. Income Ikeja already earned
+ * stays in Ikeja's books. Every figure is in kobo; on a preview it is what
+ * would move.
  */
 export interface AccountMove {
   customer: string;
@@ -91,6 +93,14 @@ export interface AccountMove {
   from_branch_id: string | number;
   to_branch: string;
   to_branch_id: string | number;
+  /** Net balance moved: owed when positive, in credit when negative. */
+  amount: number;
+  invoice_count: number;
+  debit_note_count: number;
+  /** Unapplied credit that moved with the account. */
+  credit_amount: number;
+  /** Income on the moved bills not yet earned. */
+  deferred_amount: number;
 }
 
 export interface CohortRunWrite {

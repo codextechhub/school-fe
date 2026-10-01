@@ -321,23 +321,28 @@ function PupilList({ pupils }: { pupils: CohortPupil[] }) {
  * The pupils whose fee accounts the run moves to the branch they attend.
  *
  * A pupil is billed where the class roll says they attend. When their account
- * is filed at another branch, the run moves it there with the bill, so the
- * bursar is told before running it, by name and branch. Their earlier bills
- * keep the branch that raised them.
+ * is filed at another branch, the run moves it there with the bill, and what
+ * they owe goes with it: the branch they attend chases the balance and owes
+ * the old branch for it. The bursar is told before running it, by name, branch
+ * and amount.
  */
-function AccountMoves({ moves }: { moves: AccountMove[] }) {
+function AccountMoves({ moves, currency }: { moves: AccountMove[]; currency?: string | null }) {
   if (moves.length === 0) return null;
+  const balance = (amount: number) => (
+    amount > 0 ? `${formatMoney(amount, currency)} owed`
+      : amount < 0 ? `${formatMoney(-amount, currency)} in credit` : "nothing owed"
+  );
   return (
     <div className="rounded-md border border-gray-03 bg-gray-03 px-3 py-2 font-mont text-[11px] leading-4 text-gray-05">
       <p>
         {plural(moves.length, "pupil")} {moves.length === 1 ? "is" : "are"} billed at the branch
         they attend, and {moves.length === 1 ? "their fee account moves" : "their fee accounts move"} there
-        too. Earlier bills stay with the branch that raised them.
+        too, with what they owe. The branch they attend collects it from now on.
       </p>
       <ul className="mt-1.5 space-y-0.5">
         {moves.map((move) => (
           <li key={move.customer} className="break-words">
-            {move.name}: {move.from_branch} to {move.to_branch}
+            {move.name}: {move.from_branch} to {move.to_branch}, {balance(move.amount ?? 0)}
           </li>
         ))}
       </ul>
@@ -381,7 +386,7 @@ function PreviewSummary({ result, pupils, currency }: {
         The due date comes from the school's fee due rule, under Finance settings.
       </p>
       <PupilList pupils={toBill} />
-      <AccountMoves moves={result.accounts_moved ?? []} />
+      <AccountMoves moves={result.accounts_moved ?? []} currency={currency} />
       {result.counts.skipped > 0 ? (
         <div className="space-y-2">
           <p className="font-mont text-xs text-gray-01">
@@ -483,7 +488,7 @@ export default function SchoolFeeGeneration({ structure, currency, onClose }: Ho
         created === 0
           ? "Nobody was billed: every pupil chosen had been billed already."
           : `Billed ${plural(created, "pupil")}, ${formatMoney(res.data.total_billed, currency)} in all.`
-            + (moved ? ` ${plural(moved, "fee account")} moved to the branch the pupil attends.` : ""),
+            + (moved ? ` ${plural(moved, "fee account")} moved to the branch the pupil attends, with what they owe.` : ""),
       );
       onClose();
     } catch (error) {
