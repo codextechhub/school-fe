@@ -71,7 +71,26 @@ export interface CohortRunResult {
   total_billed: number;
   /** The date every bill in the run falls due, from the school's rule. */
   due_date: string | null;
+  /** Pupils' fee accounts the run re-files at the branch they attend; on a dry run, would. */
+  accounts_moved?: AccountMove[];
   counts: { to_bill: number; skipped: number; created: number };
+}
+
+/**
+ * A pupil's fee account the run moves to the branch the pupil attends.
+ *
+ * Tunde attends Lekki and their account was filed at Ikeja: the run bills them
+ * at Lekki and moves the account there. Bills raised before the move keep
+ * their branch, so Ikeja still collects what it is owed.
+ */
+export interface AccountMove {
+  customer: string;
+  student: string;
+  name: string;
+  from_branch: string;
+  from_branch_id: string | number;
+  to_branch: string;
+  to_branch_id: string | number;
 }
 
 export interface CohortRunWrite {

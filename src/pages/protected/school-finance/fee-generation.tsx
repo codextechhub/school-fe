@@ -51,6 +51,7 @@ import {
   useLazyGetCohortPupilsQuery,
   useLinkFeeStructureTermMutation,
   usePreviewCohortInvoicesMutation,
+  type AccountMove,
   type CohortPupil,
   type CohortRunResult,
   type FeeStructureTerm,
@@ -316,6 +317,34 @@ function PupilList({ pupils }: { pupils: CohortPupil[] }) {
 }
 
 /** What the run will do, as the server priced it. */
+/**
+ * The pupils whose fee accounts the run moves to the branch they attend.
+ *
+ * A pupil is billed where the class roll says they attend. When their account
+ * is filed at another branch, the run moves it there with the bill, so the
+ * bursar is told before running it, by name and branch. Their earlier bills
+ * keep the branch that raised them.
+ */
+function AccountMoves({ moves }: { moves: AccountMove[] }) {
+  if (moves.length === 0) return null;
+  return (
+    <div className="rounded-md border border-gray-03 bg-gray-03 px-3 py-2 font-mont text-[11px] leading-4 text-gray-05">
+      <p>
+        {plural(moves.length, "pupil")} {moves.length === 1 ? "is" : "are"} billed at the branch
+        they attend, and {moves.length === 1 ? "their fee account moves" : "their fee accounts move"} there
+        too. Earlier bills stay with the branch that raised them.
+      </p>
+      <ul className="mt-1.5 space-y-0.5">
+        {moves.map((move) => (
+          <li key={move.customer} className="break-words">
+            {move.name}: {move.from_branch} to {move.to_branch}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 function PreviewSummary({ result, pupils, currency }: {
   result: CohortRunResult; pupils: Map<string, CohortPupil>; currency?: string | null;
 }) {
@@ -352,6 +381,7 @@ function PreviewSummary({ result, pupils, currency }: {
         The due date comes from the school's fee due rule, under Finance settings.
       </p>
       <PupilList pupils={toBill} />
+      <AccountMoves moves={result.accounts_moved ?? []} />
       {result.counts.skipped > 0 ? (
         <div className="space-y-2">
           <p className="font-mont text-xs text-gray-01">
@@ -448,10 +478,12 @@ export default function SchoolFeeGeneration({ structure, currency, onClose }: Ho
         students: preview.pupils.map((p) => String(p.id)),
       }).unwrap();
       const { created } = res.data.counts;
+      const moved = res.data.accounts_moved?.length ?? 0;
       toast.success(
         created === 0
           ? "Nobody was billed: every pupil chosen had been billed already."
-          : `Billed ${plural(created, "pupil")}, ${formatMoney(res.data.total_billed, currency)} in all.`,
+          : `Billed ${plural(created, "pupil")}, ${formatMoney(res.data.total_billed, currency)} in all.`
+            + (moved ? ` ${plural(moved, "fee account")} moved to the branch the pupil attends.` : ""),
       );
       onClose();
     } catch (error) {
