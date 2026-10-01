@@ -605,7 +605,7 @@ export interface StaffStatusResult {
  * mistyping a password.
  */
 export type StaffHistoryEntry =
-  | ({ kind: "employment"; at: string } & StaffEmploymentEvent)
+  | ({ kind: "employment"; at: string } & Omit<StaffEmploymentEvent, "reason" | "note"> & { reason?: string; note?: string })
   | {
       kind: "account";
       at: string;
@@ -615,6 +615,29 @@ export type StaffHistoryEntry =
       note?: string;
       actor: StaffActor | null;
     };
+
+export type StaffHistorySection =
+  | "overview" | "teaching" | "access" | "qualifications" | "documents" | "leave";
+
+export interface StaffSectionChange {
+  field: string;
+  before: string | null;
+  after: string | null;
+}
+
+export interface StaffSectionHistoryEntry {
+  id: number;
+  at: string;
+  title: string;
+  action: "Added" | "Changed" | "Removed" | "Recorded";
+  actor: string | null;
+  changes: StaffSectionChange[];
+}
+
+export interface StaffSectionHistoryPage {
+  entries: StaffSectionHistoryEntry[];
+  next_page: number | null;
+}
 
 // ── Roles and reach ────────────────────────────────────────────────────────
 

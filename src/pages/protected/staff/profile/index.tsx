@@ -8,6 +8,7 @@ import {
   CalendarClock,
   Check,
   Clock3,
+  History,
   AtSign,
   FileText,
   KeyRound,
@@ -48,6 +49,7 @@ import {
 } from "@/redux/services/staff/staff-api";
 import type {
   StaffDetail,
+  StaffHistorySection,
   StaffProfileSection,
   StaffRestrictedDetail,
   StaffLeaveRequest,
@@ -62,6 +64,7 @@ import { formatDate } from "../../students/format";
 import { Lifecycle } from "./lifecycle";
 import { tabsFor } from "./profile-sections";
 import { RestrictedStaffProfile } from "./restricted-profile";
+import { SectionHistoryDrawer } from "./section-history-drawer";
 import {
   AccessTab,
   DocumentsTab,
@@ -99,6 +102,7 @@ export default function StaffProfile() {
   const navigate = useNavigate();
   const tab = params.get("tab") ?? "overview";
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
+  const [historySection, setHistorySection] = useState<StaffHistorySection | null>(null);
   const [asAt, setAsAt] = useAsAtParam();
 
   // `currentData`, so another day's answer is never shown under this one.
@@ -188,10 +192,16 @@ export default function StaffProfile() {
           tab={tab}
           canSeeChart={canSeeChart}
           renderTab={(current) => (
-            <TabBody tab={current} person={person} onOpenDrawer={setDrawer} />
+            <TabBody tab={current} person={person} onOpenDrawer={setDrawer} onOpenHistory={setHistorySection} />
           )}
+          overviewAction={<SectionHistoryButton section="overview" onOpen={setHistorySection} />}
         />
         <StaffDrawers request={drawer} onClose={() => setDrawer(null)} onRequest={setDrawer} />
+        {historySection && <SectionHistoryDrawer
+          key={historySection} staffId={person.id} personName={person.full_name}
+          section={historySection} branch={person.branch_id}
+          onClose={() => setHistorySection(null)}
+        />}
       </PageShell>
     );
   }
@@ -439,10 +449,11 @@ export default function StaffProfile() {
             completeness={completeness}
             onOpenDrawer={setDrawer}
             onOpenTab={(nextTab) => navigate(`?tab=${nextTab}`)}
+            onOpenHistory={() => setHistorySection("overview")}
           />
         ) : (
           <Surface as="section" className="rounded-xl px-4 py-5 sm:px-6">
-            <TabBody tab={tab} person={person} onOpenDrawer={setDrawer} />
+            <TabBody tab={tab} person={person} onOpenDrawer={setDrawer} onOpenHistory={setHistorySection} />
           </Surface>
         )
       ) : (
@@ -452,6 +463,11 @@ export default function StaffProfile() {
       )}
 
       <StaffDrawers request={drawer} onClose={() => setDrawer(null)} onRequest={setDrawer} />
+      {person && historySection && <SectionHistoryDrawer
+        key={historySection} staffId={person.id} personName={person.full_name}
+        section={historySection} branch={person.branch_id} asAt={asAt}
+        onClose={() => setHistorySection(null)}
+      />}
     </PageShell>
     </AsAtContext.Provider>
   );
@@ -459,6 +475,17 @@ export default function StaffProfile() {
 
 function Dot() {
   return <span aria-hidden className="size-1 rounded-full bg-gray-02" />;
+}
+
+/** A compact, named action for the section the reader has opened. */
+function SectionHistoryButton({ section, onOpen }: {
+  section: StaffHistorySection;
+  onOpen: (section: StaffHistorySection) => void;
+}) {
+  return <Button
+    size="icon" variant="outline" title="View section history"
+    aria-label={`View ${section} history`} onClick={() => onOpen(section)}
+  ><History className="size-4" aria-hidden /></Button>;
 }
 
 /**
@@ -473,10 +500,12 @@ function TabBody({
   tab,
   person,
   onOpenDrawer,
+  onOpenHistory,
 }: {
   tab: string;
   person: StaffDetail;
   onOpenDrawer: (request: StaffDrawerRequest) => void;
+  onOpenHistory: (section: StaffHistorySection) => void;
 }) {
   const { hasPermission } = usePermissions();
   const asAt = useAsAt();
@@ -510,6 +539,9 @@ function TabBody({
 
   // `currentData` on every tab, so a day's answer is never drawn under another.
   const record = { id: person.id, asAt };
+  const historyAction = (
+    tab === "access" || tab === "teaching" || tab === "qualifications" || tab === "documents" || tab === "leave"
+  ) ? <SectionHistoryButton section={tab} onOpen={onOpenHistory} /> : null;
   const roles = useGetStaffRolesQuery(record, { skip: tab !== "access" });
   const teaching = useGetStaffTeachingQuery(record, { skip: tab !== "teaching" });
   const quals = useGetStaffQualificationsQuery(record, {
@@ -524,6 +556,7 @@ function TabBody({
   });
 
   if (tab === "access") {
+    if (roles.isError) return <Empty>{apiErrorMessage(roles.error, "We could not load access details.")}</Empty>;
     if (!roles.currentData) return <TabSkeleton />;
     return (
       <AccessTab
@@ -538,37 +571,44 @@ function TabBody({
           ]),
         ]}
         onOpenDrawer={onOpenDrawer}
+        historyAction={historyAction}
       />
     );
   }
   if (tab === "teaching") {
-    // Closed before go-live, and that is a refusal rather than an error: a
-    // school still being set up has no year to teach in yet.
     if (teaching.isError) {
       return (
         <Empty>
-          Teaching duties open when the school goes live and its academic year
-          is running.
+          {apiErrorMessage(teaching.error, "We could not load teaching duties. Try again.")}
         </Empty>
       );
     }
     if (!teaching.currentData) return <TabSkeleton />;
-    return <TeachingTab teaching={teaching.currentData.data} />;
+    return <TeachingTab teaching={teaching.currentData.data} historyAction={historyAction} onAssign={
+      !asAt && canManage(person) && hasPermission(P.ASSIGN_TEACHING)
+        ? () => onOpenDrawer({ kind: "duties", staffId: person.id, personName: person.full_name })
+        : undefined
+    } />;
   }
   if (tab === "qualifications") {
+    if (quals.isError) return <Empty>{apiErrorMessage(quals.error, "We could not load qualifications.")}</Empty>;
     if (!quals.currentData) return <TabSkeleton />;
-    return <QualificationsTab rows={quals.currentData.data} />;
+    return <QualificationsTab
+      rows={quals.currentData.data} staffId={person.id}
+      canEdit={!asAt && canManage(person) && hasPermission(P.UPDATE_STAFF_RECORD)}
+      historyAction={historyAction}
+    />;
   }
   if (tab === "documents") {
+    if (docs.isError) return <Empty>{apiErrorMessage(docs.error, "We could not load documents.")}</Empty>;
     if (!docs.currentData) return <TabSkeleton />;
-    return <DocumentsTab rows={docs.currentData.data} />;
+    return <DocumentsTab rows={docs.currentData.data} historyAction={historyAction} />;
   }
   if (tab === "leave") {
     if (leave.isError) {
       return (
         <Empty>
-          Leave opens when the school goes live. Nobody applies for time off
-          during setup.
+          {apiErrorMessage(leave.error, "We could not load leave. Try again.")}
         </Empty>
       );
     }
@@ -592,6 +632,7 @@ function TabBody({
             : undefined
         }
         fileLabel={isSelf ? "Apply for leave" : "Record leave"}
+        historyAction={historyAction}
       />
       <ConfirmDialog
         open={leaveToCancel != null}
@@ -606,6 +647,7 @@ function TabBody({
     );
   }
   if (tab === "history") {
+    if (history.isError) return <Empty>{apiErrorMessage(history.error, "We could not load history.")}</Empty>;
     if (!history.currentData) return <TabSkeleton />;
     return <HistoryTab entries={history.currentData.data.entries} branch={person.branch_id} />;
   }
@@ -626,16 +668,19 @@ function OverviewTab({
   completeness,
   onOpenDrawer,
   onOpenTab,
+  onOpenHistory,
 }: {
   person: StaffDetail;
   completeness?: ReturnType<typeof getStaffProfileCompleteness>;
   onOpenDrawer: (request: StaffDrawerRequest) => void;
   onOpenTab: (tab: string) => void;
+  onOpenHistory: () => void;
 }) {
   // Personal and employment details follow Field Access: one the viewer may not
   // read is not listed.
   const access = useFieldAccess(FIELD_RESOURCE.STAFF, person);
   const asAt = useAsAt();
+  const { hasPermission } = usePermissions();
   // A section this reader may not see is left out, never shown with a default.
   const shows = (section: StaffProfileSection) =>
     !person.visible_sections || person.visible_sections.includes(section);
@@ -700,7 +745,12 @@ function OverviewTab({
         </ProfilePanel>
 
         {shows("employment") && (
-          <ProfilePanel title="Employment" icon={BriefcaseBusiness}>
+          <ProfilePanel title="Employment" icon={BriefcaseBusiness} action={<div className="flex items-center gap-2">
+            {!asAt && person.posted_school_wide != null && canManage(person) && hasPermission(P.MODIFY_TEACHER) && (
+              <button type="button" className="text-xs font-medium text-primary hover:underline" onClick={() => onOpenDrawer({ kind: "posting", staffIds: [person.id], personName: person.full_name })}>Change posting</button>
+            )}
+            <SectionHistoryButton section="overview" onOpen={onOpenHistory} />
+          </div>}>
             <DetailGrid rows={employment} />
           </ProfilePanel>
         )}

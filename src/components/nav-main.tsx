@@ -215,7 +215,7 @@ export function NavMain({
                 : { defaultOpen: item.childActive })}
               className="group/collapsible"
             >
-              <SidebarMenuItem>
+              <SidebarMenuItem data-nav-group={item.title}>
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton
                     className="mx-auto h-9"

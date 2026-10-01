@@ -14,6 +14,8 @@ import type {
   StaffDetail,
   StaffDocument,
   StaffHistoryEntry,
+  StaffHistorySection,
+  StaffSectionHistoryPage,
   StaffLeave,
   StaffLeaveFiled,
   StaffLeaveRequest,
@@ -212,6 +214,18 @@ export const staffApi = baseApi.injectEndpoints({
     >({
       query: (arg) => recordQuery((id) => `/i/me/staff/${id}/history/`, arg),
       providesTags: ["StaffHistory"],
+    }),
+
+    getStaffSectionHistory: builder.query<
+      Envelope<StaffSectionHistoryPage>,
+      { id: number; section: StaffHistorySection; page: number; asAt?: string }
+    >({
+      query: ({ id, section, page, asAt }) => ({
+        url: `/i/me/staff/${id}/section-history/`,
+        method: "GET",
+        params: { section, page, ...(asAt ? { as_at: asAt } : {}) },
+      }),
+      providesTags: ["SchoolStaff", "StaffRecords", "StaffTeaching", "StaffLeave", "Roles"],
     }),
 
     // ── The account, which is the identity layer's and not this module's ────
@@ -617,6 +631,7 @@ export const {
   useGetStaffStatusOptionsQuery,
   useChangeStaffStatusMutation,
   useGetStaffHistoryQuery,
+  useGetStaffSectionHistoryQuery,
   useStaffAccountActionMutation,
   useChangeStaffEmailMutation,
   useGetStaffRolesQuery,

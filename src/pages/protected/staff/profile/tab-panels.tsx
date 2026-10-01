@@ -49,6 +49,7 @@ import { formatDate, formatDateTime } from "../../students/format";
 import { ConfirmDialog } from "../../students/drawers/confirm-dialog";
 import { Field, inputClass } from "../../students/drawers/drawer-shell";
 import { canManage } from "../can-manage";
+import { QualificationActions, QualificationEditor, QualificationRemove } from "./qualification-editor";
 
 /**
  * The profile's tab bodies, each with the empty state it is most often in.
@@ -129,6 +130,7 @@ export function AccessTab({
   userName,
   postingBranchIds,
   onOpenDrawer,
+  historyAction,
 }: {
   roles: StaffRoles;
   staffId: number;
@@ -136,6 +138,7 @@ export function AccessTab({
   userName: string;
   postingBranchIds: number[];
   onOpenDrawer: (request: { kind: "role"; staffId: number }) => void;
+  historyAction?: React.ReactNode;
 }) {
   const openRoles = () => onOpenDrawer({ kind: "role", staffId });
   const { covers } = useReaderReach();
@@ -146,13 +149,16 @@ export function AccessTab({
       <section>
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-black-01">Roles held</h3>
-          <LiveOnly>
-            <PermissionGate permission={P.ASSIGN_ROLE}>
-              <Button size="sm" variant="outline" onClick={openRoles}>
-                Grant or withdraw
-              </Button>
-            </PermissionGate>
-          </LiveOnly>
+          <div className="flex flex-wrap items-center gap-2">
+            <LiveOnly>
+              <PermissionGate permission={P.ASSIGN_ROLE}>
+                <Button size="sm" variant="outline" onClick={openRoles}>
+                  Grant or withdraw
+                </Button>
+              </PermissionGate>
+            </LiveOnly>
+            {historyAction}
+          </div>
         </div>
         <SectionNote>
           What a role can do is defined in access control, not here.
@@ -345,12 +351,16 @@ function RevokedRow({ grant }: { grant: StaffRevokedGrant }) {
  * a maximum and no subject records a weekly frequency, so a threshold here
  * would be a judgement nothing in the platform can make.
  */
-export function TeachingTab({ teaching }: { teaching: StaffTeaching }) {
+export function TeachingTab({ teaching, onAssign, historyAction }: { teaching: StaffTeaching; onAssign?: () => void; historyAction?: React.ReactNode }) {
   return (
     <section>
-      <h3 className="mb-1 text-sm font-semibold text-black-01">
-        {teaching.session.name}
-      </h3>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-black-01">{teaching.session.name}</h3>
+        <div className="flex flex-wrap items-center gap-2">
+          {onAssign && <Button size="sm" onClick={onAssign}>Assign teaching</Button>}
+          {historyAction}
+        </div>
+      </div>
       <SectionNote>{teaching.load_note}</SectionNote>
       {teaching.assignments.length ? (
         <ul className="grid gap-2.5">
@@ -385,9 +395,24 @@ export function TeachingTab({ teaching }: { teaching: StaffTeaching }) {
 
 // ── Qualifications and documents ───────────────────────────────────────────
 
-export function QualificationsTab({ rows }: { rows: StaffQualification[] }) {
+/** The school's recorded qualifications and the controls for a record editor. */
+export function QualificationsTab({
+  rows, staffId, canEdit = false, historyAction,
+}: {
+  rows: StaffQualification[];
+  staffId?: number;
+  canEdit?: boolean;
+  historyAction?: React.ReactNode;
+}) {
+  const [editing, setEditing] = useState<StaffQualification | "new" | null>(null);
+  const [removing, setRemoving] = useState<StaffQualification | null>(null);
+
   return (
     <section>
+      <div className="mb-4 flex flex-wrap items-center justify-end gap-2">
+        {canEdit && staffId != null && <Button size="sm" onClick={() => setEditing("new")}>Add qualification</Button>}
+        {historyAction}
+      </div>
       <SectionNote>
         Typed rows, as the school recorded them. Nothing in the platform checks
         a qualification, so nothing here says one was checked.
@@ -410,12 +435,24 @@ export function QualificationsTab({ rows }: { rows: StaffQualification[] }) {
               {row.note && (
                 <p className="mt-1 text-xs text-gray-01">{row.note}</p>
               )}
+              {canEdit && (
+                <QualificationActions onEdit={() => setEditing(row)} onRemove={() => setRemoving(row)} />
+              )}
             </li>
           ))}
         </ul>
       ) : (
-        <Empty>None recorded.</Empty>
+        <Empty>{canEdit ? "None recorded. Add the first qualification above." : "None recorded."}</Empty>
       )}
+      {staffId != null && editing && (
+        <QualificationEditor
+          key={editing === "new" ? "new" : editing.id}
+          staffId={staffId}
+          row={editing === "new" ? undefined : editing}
+          onClose={() => setEditing(null)}
+        />
+      )}
+      {removing && <QualificationRemove row={removing} onClose={() => setRemoving(null)} />}
     </section>
   );
 }
@@ -452,7 +489,7 @@ const ACCEPTED_DOCUMENTS = ".pdf,.png,.jpg,.jpeg,.gif,.webp,.csv,.xls,.xlsx";
  * block, and a reader who may upload gets a button per type that opens the
  * picker with that type already chosen.
  */
-export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
+export function DocumentsTab({ rows, historyAction }: { rows: StaffDocument[]; historyAction?: React.ReactNode }) {
   const { id } = useParams();
   const staffId = Number(id);
   const asAt = useAsAt();
@@ -472,6 +509,7 @@ export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
 
   return (
     <section>
+      {!canChange && <div className="mb-3 flex justify-end">{historyAction}</div>}
       <SectionNote>
         Files held against this person. There is no expiry and no approval
         state: nothing checks either, and a field somebody sets by hand reads as
@@ -496,6 +534,7 @@ export function DocumentsTab({ rows }: { rows: StaffDocument[] }) {
           type={type}
           onTypeChange={setType}
           input={input}
+          historyAction={historyAction}
         />
       )}
       {rows.length ? (
@@ -574,11 +613,13 @@ function DocumentUpload({
   type,
   onTypeChange,
   input,
+  historyAction,
 }: {
   staffId: number;
   type: DocumentType;
   onTypeChange: (type: DocumentType) => void;
   input: React.RefObject<HTMLInputElement | null>;
+  historyAction?: React.ReactNode;
 }) {
   const [upload, { isLoading }] = useUploadStaffDocumentMutation();
   const [title, setTitle] = useState("");
@@ -634,7 +675,7 @@ function DocumentUpload({
             className={inputClass}
           />
         </Field>
-        <div>
+        <div className="flex items-center gap-2">
           <input
             ref={input}
             type="file"
@@ -649,13 +690,14 @@ function DocumentUpload({
           <Button
             type="button"
             variant="outline"
-            className="w-full sm:w-auto"
+            className="min-w-0 flex-1 sm:flex-none"
             disabled={isLoading}
             onClick={() => input.current?.click()}
           >
             <Upload className="size-4" aria-hidden />
             {isLoading ? "Uploading…" : "Upload document"}
           </Button>
+          {historyAction}
         </div>
       </div>
       {error && (
@@ -796,6 +838,7 @@ export function LeaveTab({
   onEdit,
   onCancel,
   cancelling,
+  historyAction,
 }: {
   leave: StaffLeave;
   /** Absent for a reader who may neither apply nor file on somebody's behalf. */
@@ -804,6 +847,7 @@ export function LeaveTab({
   onEdit?: (request: StaffLeaveRequest) => void;
   onCancel?: (request: StaffLeaveRequest) => void;
   cancelling?: boolean;
+  historyAction?: React.ReactNode;
 }) {
   const session = leave.balance_session ?? null;
   const shown = (leave.balances ?? []).filter(
@@ -815,14 +859,15 @@ export function LeaveTab({
 
   return (
     <div className="grid gap-5">
-      {onFile && (
-        <div className="flex justify-end">
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        {onFile && (
           <Button variant="outline" onClick={onFile}>
             <CalendarPlus className="size-4" />
             {fileLabel}
           </Button>
-        </div>
-      )}
+        )}
+        {historyAction}
+      </div>
       {session ? (
         <section>
           <h3 className="mb-1 text-sm font-semibold text-black-01">

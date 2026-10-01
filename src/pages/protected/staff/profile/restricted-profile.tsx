@@ -22,14 +22,15 @@ import { tabsFor } from "./profile-sections";
 
 type Row = { label: string; value: string | undefined | null };
 
-function Panel({ title, icon: Icon, rows }: { title: string; icon: typeof Contact; rows: Row[] }) {
+function Panel({ title, icon: Icon, rows, action }: { title: string; icon: typeof Contact; rows: Row[]; action?: ReactNode }) {
   const shown = rows.filter((row) => row.value != null && row.value !== "");
   if (!shown.length) return null;
   return (
     <Surface as="section" className="rounded-xl p-4 sm:p-5">
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <Icon className="size-4.5 text-primary" />
         <h3 className="text-sm font-semibold text-black-01">{title}</h3>
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       <dl className="grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2">
         {shown.map((row) => (
@@ -51,12 +52,14 @@ export function RestrictedStaffProfile({
   tab,
   canSeeChart,
   renderTab,
+  overviewAction,
 }: {
   person: StaffRestrictedDetail;
   tab: string;
   canSeeChart: boolean;
   /** Draws one of the profile's tabs, the same as the full profile does. */
   renderTab: (tab: string) => ReactNode;
+  overviewAction?: ReactNode;
 }) {
   const sections = person.visible_sections;
   const has = (section: StaffRestrictedDetail["visible_sections"][number]) =>
@@ -126,6 +129,7 @@ export function RestrictedStaffProfile({
           <Panel
             title="Contact"
             icon={Contact}
+            action={overviewAction}
             rows={[
               { label: "Email", value: person.email },
               { label: "Phone", value: person.phone },

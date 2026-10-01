@@ -52,6 +52,7 @@ export default function Tabs({ tabKey, tabs, activeTab, setActiveTab }: TabsProp
   };
 
   const listRef = useRef<HTMLDivElement>(null);
+  const lastCentered = useRef<string | null>(null);
   const [highlight, setHighlight] = useState({ left: 0, width: 0 });
 
   /**
@@ -72,19 +73,37 @@ export default function Tabs({ tabKey, tabs, activeTab, setActiveTab }: TabsProp
     setHighlight({ left: active.offsetLeft, width: active.offsetWidth });
   }, []);
 
+  /** Keep the selected pill near the middle of its own strip without moving the page. */
+  const centerActive = useCallback(() => {
+    const list = listRef.current;
+    const selected = list?.querySelector<HTMLElement>('[aria-selected="true"]');
+    if (!list || !selected || list.scrollWidth <= list.clientWidth) return;
+    const target = selected.offsetLeft - (list.clientWidth - selected.offsetWidth) / 2;
+    list.scrollLeft = Math.max(0, target);
+  }, []);
+
   // Layout effect so the highlight is in place on the first paint rather than
   // sliding in from zero the moment the screen appears.
-  useLayoutEffect(measure, [measure, active, tabs]);
+  useLayoutEffect(() => {
+    measure();
+    if (lastCentered.current !== active) {
+      centerActive();
+      lastCentered.current = active;
+    }
+  }, [measure, centerActive, active, tabs]);
 
   useEffect(() => {
     const list = listRef.current;
     if (!list || typeof ResizeObserver === "undefined") return;
     // Fonts landing and the viewport changing both move the tabs, and neither
     // fires anything else this component would hear.
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(() => {
+      measure();
+      centerActive();
+    });
     observer.observe(list);
     return () => observer.disconnect();
-  }, [measure]);
+  }, [measure, centerActive]);
 
   return (
     <div

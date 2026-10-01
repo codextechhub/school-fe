@@ -107,6 +107,18 @@ function useFitToWindow(ref: RefObject<HTMLElement | null>, enabled: boolean, re
   return height;
 }
 
+/** Center a selected item inside its own scrolling rail. */
+function centerInRail(rail: HTMLElement, active: HTMLElement, axis: "x" | "y") {
+  const frame = rail.getBoundingClientRect();
+  const item = active.getBoundingClientRect();
+  if (axis === "x" && rail.scrollWidth > rail.clientWidth) {
+    rail.scrollLeft += item.left - frame.left - (rail.clientWidth - item.width) / 2;
+  }
+  if (axis === "y" && rail.scrollHeight > rail.clientHeight) {
+    rail.scrollTop += item.top - frame.top - (rail.clientHeight - item.height) / 2;
+  }
+}
+
 /**
  * A settings console: a rail of sections beside the open one.
  *
@@ -115,6 +127,8 @@ function useFitToWindow(ref: RefObject<HTMLElement | null>, enabled: boolean, re
  * open section is always open. Below xl the rail is a row of pills: groups
  * show as one pill each, and the open group's sections follow in a second
  * row, so a phone never scrolls sideways past a dozen pills to find one.
+ * The selected pill and expanded desktop group sit near the middle of their
+ * own scroll area, leaving adjacent choices visible without moving the page.
  *
  * **`fitScreen`.** At xl and up the rail and the open section sit in a box as
  * tall as the window, and each scrolls on its own, so a long section scrolls
@@ -147,6 +161,9 @@ export function ConsoleSettingsLayout({
 }) {
   const railRef = useRef<HTMLDivElement>(null);
   const subRailRef = useRef<HTMLDivElement>(null);
+  const desktopRailRef = useRef<HTMLDivElement>(null);
+  const lastExpandedGroup = useRef<string | null>(null);
+  const lastActiveSection = useRef<string | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
 
@@ -161,19 +178,28 @@ export function ConsoleSettingsLayout({
   const fittedHeight = useFitToWindow(boxRef, fitScreen, activeSection);
   const fitted = fittedHeight !== undefined;
 
-  // Below xl the rows scroll sideways, and a deep link can land on a pill off
-  // the right edge. Bring it into view by moving the row itself, never the page.
+  // Center the selected compact-rail pills.
   useEffect(() => {
     for (const rail of [railRef.current, subRailRef.current]) {
       const active = rail?.querySelector<HTMLElement>('[aria-current="page"], [data-active-group="true"]');
-      if (!rail || !active || rail.scrollWidth <= rail.clientWidth) continue;
-      const left = active.offsetLeft - rail.offsetLeft;
-      const right = left + active.offsetWidth;
-      if (left < rail.scrollLeft || right > rail.scrollLeft + rail.clientWidth) {
-        rail.scrollLeft = Math.max(0, left - 16);
-      }
+      if (rail && active) centerInRail(rail, active, "x");
     }
   }, [activeSection]);
+
+  // Center the active desktop section or expanded group.
+  useEffect(() => {
+    const rail = desktopRailRef.current;
+    if (!rail) return;
+    const sectionChanged = lastActiveSection.current !== activeSection;
+    lastActiveSection.current = activeSection;
+    const group = lastExpandedGroup.current;
+    const active = sectionChanged || !group
+      ? rail.querySelector<HTMLElement>('[aria-current="page"]')
+      : Array.from(rail.querySelectorAll<HTMLElement>("[data-settings-group]"))
+        .find((item) => item.dataset.settingsGroup === group);
+    lastExpandedGroup.current = null;
+    if (active) centerInRail(rail, active, "y");
+  }, [activeSection, opened, fitted]);
 
   // A new section starts at its top, as a new page would.
   useEffect(() => {
@@ -196,11 +222,14 @@ export function ConsoleSettingsLayout({
         const open = isOpen(group.key);
         const holdsActive = group.key === activeGroup;
         return (
-          <div key={group.key}>
+          <div key={group.key} data-settings-group={group.key}>
             <button
               type="button"
               aria-expanded={open}
-              onClick={() => setOpened((current) => ({ ...current, [group.key]: !open }))}
+              onClick={() => {
+                lastExpandedGroup.current = group.key;
+                setOpened((current) => ({ ...current, [group.key]: !open }));
+              }}
               disabled={holdsActive}
               className={cn(
                 "flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left transition-colors disabled:cursor-default",
@@ -325,7 +354,7 @@ export function ConsoleSettingsLayout({
           {fitted ? (
             // `xl:flex`, not `xl:block`: the scroll box is a flex column, and
             // as a block its viewport grows to the rail instead of scrolling.
-            <ScrollArea className={cn("hidden h-full overflow-hidden xl:flex", frame)}>{rail}</ScrollArea>
+            <ScrollArea className={cn("hidden h-full overflow-hidden xl:flex", frame)} viewportRef={desktopRailRef}>{rail}</ScrollArea>
           ) : (
             <div className="xl:sticky xl:top-4">{rail}</div>
           )}
