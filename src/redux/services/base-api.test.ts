@@ -181,3 +181,104 @@ describe("field_write_denied handling", () => {
     expect(result.error?.status).toBe(403);
   });
 });
+
+/**
+ * A refused action (409) is said out loud, or the click looks broken. Amaka,
+ * a bursar at Lagoon View, deletes last year's supplier bill; the law keeps it
+ * until the end of 2032, and they are told so in their school's date format. A
+ * conflict a screen already shows itself, or one on a read nobody asked for,
+ * stays quiet.
+ */
+describe("a refused action (409)", () => {
+  /** A mutation whose school writes dates as 31/12/2032. */
+  const actionStub = () => ({
+    ...apiStub("mutation"),
+    getState: () => ({
+      auth: { tenant: { slug: "lagoon-view", display: { date_format: "DD_MM_YYYY" } } },
+    }),
+  });
+
+  it("toasts the server's message", async () => {
+    respondWith(409, {
+      success: false,
+      message: "This period is being closed. Try again when the close has finished.",
+      error: { code: "PERIOD_CLOSE_ERROR", detail: {} },
+    });
+
+    const result = await baseQueryInterceptor("/finance/periods/4/close/", actionStub(), {});
+
+    expect(result.error?.status).toBe(409);
+    expect(toastError).toHaveBeenCalledOnce();
+    expect(toastError).toHaveBeenCalledWith(
+      "This period is being closed. Try again when the close has finished.",
+    );
+  });
+
+  it("words a kept record's refusal with the date in the school's format", async () => {
+    respondWith(409, {
+      success: false,
+      message: "Supplier bill VI-0042 is a record the law requires to be kept until 2032-12-31, so it cannot be deleted.",
+      error: { code: "RECORD_RETAINED", detail: { retained_until: "2032-12-31" } },
+    });
+
+    await baseQueryInterceptor(
+      { url: "/procurement/vendor-invoices/42/", method: "DELETE" },
+      actionStub(),
+      {},
+    );
+
+    expect(toastError).toHaveBeenCalledOnce();
+    expect(toastError).toHaveBeenCalledWith(
+      "This record is kept until 31/12/2032 and can't be deleted.",
+    );
+  });
+
+  it("falls back to a plain sentence when the body carries none", async () => {
+    respondWith(409, { success: false, error: { code: "SOMETHING_NEW", detail: {} } });
+
+    await baseQueryInterceptor("/students/7/", actionStub(), {});
+
+    expect(toastError).toHaveBeenCalledWith(
+      "That could not be done right now. Refresh the page and try again.",
+    );
+  });
+
+  it("stays quiet on a refused read", async () => {
+    respondWith(409, {
+      success: false,
+      message: "That record changed while it was being read.",
+      error: { code: "SOMETHING_CHANGED", detail: {} },
+    });
+
+    const result = await baseQueryInterceptor("/finance/periods/", apiStub("query"), {});
+
+    expect(result.error?.status).toBe(409);
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("stays quiet on a code the screen shows itself", async () => {
+    respondWith(409, {
+      success: false,
+      message: "There is already a department called Sciences.",
+      error: { code: "DUPLICATE_NAME", detail: { field: "name" } },
+    });
+
+    const result = await baseQueryInterceptor("/academics/departments/", actionStub(), {});
+
+    expect(result.error?.status).toBe(409);
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("recognises a screen's code in the top-level spelling as well", async () => {
+    // The fee generation routes answer with `code` beside `message`, not inside `error`.
+    respondWith(409, {
+      success: false,
+      message: "Fee structure 3 has no term.",
+      code: "TERM_NOT_LINKED",
+    });
+
+    await baseQueryInterceptor("/fal/fee-structures/3/generate/", actionStub(), {});
+
+    expect(toastError).not.toHaveBeenCalled();
+  });
+});

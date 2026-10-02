@@ -30,6 +30,9 @@ import {
 import { isIdentitySwapInProgress, runWithIdentitySwap } from "@/utils/identity-swap";
 import { FINANCE_TAG_TYPES } from "@xvs/finance/redux/tag-types";
 import { getAccessToken } from "@/utils/access-token";
+import { refusalMessage } from "@xvs/finance/lib/api-errors";
+import { selectSchoolDisplay, type DisplayState } from "@/lib/school-display";
+import { apiErrorMessage, parseApiError } from "@/utils/api-error";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -41,6 +44,62 @@ const baseUrl = import.meta.env.VITE_BACKEND_URL;
  * interceptor stays silent for it.
  */
 const FIELD_WRITE_DENIED = "field_write_denied";
+
+/**
+ * The 409 codes a screen already shows itself, so the interceptor does not
+ * toast them a second time.
+ *
+ * Every other refused action (409) toasts; see {@link conflictMessage}. A code
+ * belongs here only when the backend sends it as 409 AND a screen answers it,
+ * inline or in a toast of its own. Some of these ride on endpoints marked
+ * `silent` as well; they are listed regardless, so this set is the whole
+ * answer to "which conflicts do the screens own". Codes are matched in either
+ * envelope spelling (`error.code` or a top-level `code`).
+ *
+ * A code listed here is silent on every endpoint that sends it, so before
+ * adding one, check that no other screen receives it without showing it.
+ */
+export const SCREEN_OWNED_CONFLICTS: ReadonlySet<string> = new Set([
+  // Asked as a question before this rule runs; a declined question is the reader's own answer.
+  "APPROVAL_NOT_CONFIGURED",
+  // Approver Groups keeps its delete dialog open and offers deactivation.
+  "APPROVER_GROUP_IN_USE",
+  // Dynamic Roles says in its delete dialog which stage still uses the role.
+  "DYNAMIC_ROLE_IN_USE",
+  // The no-approver prompt reports it as good news: the document went for review.
+  "NOT_PARKED",
+  // The academics, class, session and room drawers put it under the field it names.
+  "DUPLICATE_NAME",
+  "DUPLICATE_CODE",
+  // The roll-forward dialog toasts the refusal itself, naming the year.
+  "TARGET_YEAR_NOT_EMPTY",
+  // Enrolment asks whether this is a different child.
+  "DUPLICATE_STUDENT",
+  // Class timetable publish lists each of these above the grid, with its lessons, and toasts it.
+  "TIMETABLE_HAS_CLASHES",
+  "TIMETABLE_INCOMPLETE",
+  "TIMETABLE_TEACHER_HAS_NO_DUTY",
+  "TIMETABLE_LESSON_ON_DAY_NOT_TAUGHT",
+  // Fee generation rewords these in the bursar's terms.
+  "TERM_NOT_LINKED",
+  "ENTITY_NOT_PROVISIONED",
+]);
+
+/** Said when a refused action carries no sentence of its own. */
+const CONFLICT_FALLBACK = "That could not be done right now. Refresh the page and try again.";
+
+/**
+ * The sentence for a refused action (HTTP 409).
+ *
+ * The finance package words the refusals its engines own, such as a delete of
+ * a record the law requires to be kept (`RECORD_RETAINED`), with the date in
+ * the school's own format, so that is asked first. Otherwise the server's
+ * message stands, being already written for the reader, and a plain fallback
+ * covers a body with none.
+ */
+const conflictMessage = (res: unknown, getState: () => unknown): string =>
+  refusalMessage(res, selectSchoolDisplay(getState() as DisplayState)) ??
+  apiErrorMessage(res, CONFLICT_FALLBACK);
 
 // The endpoint-name sets (auth / tenant-exempt / impersonation) live in
 // ./api-endpoints - see that module for why and how to extend them.
@@ -220,8 +279,8 @@ const isAuthRoute = (args: string | FetchArgs): boolean => {
 };
 
 /**
- * The app's response interceptor. Of its rules, one concerns permission
- * refusals: only a refused action raises the permission toast.
+ * The app's response interceptor. Of its rules, two concern refusals, and
+ * they share one principle: only a refused action raises a toast.
  *
  * Screens load more than their own list: a report asks for the fiscal periods,
  * cost centres and dimensions behind its filters, a drawer asks for related
@@ -230,6 +289,13 @@ const isAuthRoute = (args: string | FetchArgs): boolean => {
  * and a screen that works reads as broken. The query's own error state is
  * where a refused read belongs; a refused save, post or send still toasts,
  * because the reader asked for it.
+ *
+ * The same holds for a conflict (409), where the server refuses an action
+ * because of the state of the record: a kept record cannot be deleted, a
+ * closed period cannot take a posting. Screens leave the toast to this
+ * interceptor, so a conflict it dropped would be a click that does nothing.
+ * It toasts unless the code is one a screen shows itself
+ * ({@link SCREEN_OWNED_CONFLICTS}).
  */
 export const baseQueryInterceptor: BaseQueryFn<
   string | FetchArgs,
@@ -297,6 +363,14 @@ export const baseQueryInterceptor: BaseQueryFn<
     res?.status === "FETCH_ERROR" &&
     /abort|aborted/i.test(String(res?.error ?? ""))
   ) {
+    return result;
+  }
+
+  if (res?.status === 409) {
+    if (SCREEN_OWNED_CONFLICTS.has(parseApiError(res).code)) return result;
+    // A refused read is the screen's to answer: see the doc block above.
+    if (api.type === "query") return result;
+    if (!isAuthRoute(args)) notify(conflictMessage(res, api.getState));
     return result;
   }
 
