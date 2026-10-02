@@ -119,13 +119,8 @@ export default function Rooms() {
     try {
       const result = await remove(confirm.id).unwrap();
       toast.success(result.message || `${confirm.name} deleted.`);
-    } catch (error) {
-      // PROTECTED_REFERENCE, and its message names the lessons and papers in
-      // the room and tells the school to deactivate instead. Shown as it
-      // arrived: rewriting it would be a second version of the same count.
-      toast.error(
-        parseApiError(error).message || "That room could not be deleted.",
-      );
+    } catch {
+      // The refusal (409 PROTECTED_REFERENCE, naming the room's lessons and papers) is toasted centrally.
     }
     setConfirm(null);
   };
