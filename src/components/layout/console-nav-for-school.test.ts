@@ -7,7 +7,9 @@ import { routesPath } from "@/routes/routesPath";
 /**
  * The screens this app deliberately does not mount, so the sidebar deliberately
  * does not offer them: a school keeps one set of books, bills in naira, uses no
- * analytical tagging, and does not run the payment gateway's own payouts.
+ * analytical tagging, and leaves the platform's own held-money checks and tax
+ * tables to the operator console. Payouts and batches are mounted; the sidebar
+ * offers them only where the platform holds the school's money.
  *
  * Written out in full, and asserted to be the WHOLE of what gets dropped. The
  * filter cannot tell "we chose not to mount this" from "the nav is pointing at
@@ -19,11 +21,8 @@ const INTENTIONALLY_UNMOUNTED = [
   "/finance/setup/entities",
   "/finance/setup/currencies",
   "/finance/setup/dimensions",
-  "/finance/payments/payouts",
-  "/finance/payments/batches",
-  "/finance/payments/settlement",
-  "/finance/payments/transactions",
-  "/finance/payments/webhooks",
+  "/finance/setup/tax-tables",
+  "/finance/payments/held-reconciliations",
 ];
 
 describe("the school's finance sidebar", () => {
@@ -32,7 +31,7 @@ describe("the school's finance sidebar", () => {
   it("drops what this app does not mount", () => {
     const shown = urls(schoolFinanceNav);
     for (const gone of ["/finance/setup/entities", "/finance/setup/currencies",
-                        "/finance/setup/dimensions", "/finance/payments/payouts"]) {
+                        "/finance/setup/dimensions", "/finance/payments/held-reconciliations"]) {
       expect(shown, `${gone} should not be offered`).not.toContain(gone);
     }
   });
@@ -40,7 +39,8 @@ describe("the school's finance sidebar", () => {
   it("keeps what it does mount", () => {
     const shown = urls(schoolFinanceNav);
     for (const kept of ["/finance", "/finance/setup/accounts",
-                        "/finance/receivables/fee-structures", "/finance/payroll"]) {
+                        "/finance/receivables/fee-structures", "/finance/payroll",
+                        "/finance/payments/held-settlements", "/finance/payments/settlement"]) {
       expect(shown, `${kept} should be offered`).toContain(kept);
     }
   });

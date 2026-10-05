@@ -5,7 +5,7 @@ import { WorkspaceToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "../app-sidebar";
 import { schoolFinanceNav, schoolProcurementNav } from "./console-nav-for-school";
-import { ChevronLeft, Headset, IdCard, Loader2, LogOut, Search, Undo2, UsersRound } from "lucide-react";
+import { ChevronLeft, Headset, IdCard, Loader2, LogOut, ReceiptText, Search, Undo2, UsersRound } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
 import useToggleModal from "@/hooks/use-toggle";
@@ -299,7 +299,7 @@ export default function DashboardLayout() {
         <DashboardToaster />
         {sidebar === "finance" ? (
           <Suspense fallback={<ConsoleSidebarFallback />}>
-            <ConsoleSidebar title="Finance" nav={schoolFinanceNav} />
+            <ConsoleSidebar title="Finance" nav={schoolFinanceNav} gateOnCustody />
           </Suspense>
         ) : sidebar === "procurement" ? (
           <Suspense fallback={<ConsoleSidebarFallback />}>
@@ -452,6 +452,10 @@ export default function DashboardLayout() {
                   <DropdownMenuItem onClick={() => navigate(routesPath.PROTECTED.STAFF.ME)}>
                     <IdCard className="size-4" />
                     My staff record
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(routesPath.PROTECTED.STAFF.MY_PAYSLIPS)}>
+                    <ReceiptText className="size-4" />
+                    My payslips
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={toggleLogout}>

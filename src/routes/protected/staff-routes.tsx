@@ -14,6 +14,7 @@ const TeachingDuties = lazy(() => import("@/pages/protected/staff/teaching"));
 const Organogram = lazy(() => import("@/pages/protected/staff/organogram"));
 const OrganogramManage = lazy(() => import("@/pages/protected/staff/organogram/manage"));
 const MyStaffRecord = lazy(() => import("@/pages/protected/staff/my-record"));
+const MyPayslips = lazy(() => import("@/pages/protected/finance/my-payslips"));
 
 const S = routesPath.PROTECTED.STAFF;
 
@@ -131,6 +132,16 @@ export const staffRoutes = [
       title: "My staff record",
       lenses: "none",
       pendingSurface: true,
+    } satisfies DashboardHandle,
+  },
+  {
+    // Everybody's own payslips and tax summary, from the account menu. The
+    // server answers for the signed-in person alone and needs no payroll key.
+    path: S.MY_PAYSLIPS,
+    Component: MyPayslips,
+    handle: {
+      title: "My payslips",
+      lenses: "none",
     } satisfies DashboardHandle,
   },
   {

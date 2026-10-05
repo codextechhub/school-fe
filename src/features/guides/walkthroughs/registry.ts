@@ -29,8 +29,8 @@ const R = routesPath.PROTECTED;
  *
  * Finance, procurement, workflow and export screens come from the shared
  * package, and the tours point at the `data-guide` names it renders. Screens
- * this app does not mount (entities, currencies, dimensions, payouts,
- * webhooks, team load) are never named here.
+ * this app does not mount (entities, currencies, dimensions, team load) are
+ * never named here.
  *
  * Bump `version` whenever steps are added, removed or reordered: saved
  * progress from an older version is discarded rather than resumed at a step

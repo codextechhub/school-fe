@@ -289,6 +289,8 @@ export const routesPath = {
       ORGANOGRAM_MANAGE: "/staff/organogram/manage",
       // The signed-in person's own record, whatever its id.
       ME: "/staff/me",
+      // The signed-in person's own payslips and yearly tax summary.
+      MY_PAYSLIPS: "/staff/me/payslips",
       PROFILE: "/staff/:id",
       PROFILE_ID: (id: string | number) => `/staff/${id}`,
     },

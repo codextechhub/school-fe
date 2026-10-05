@@ -4,10 +4,10 @@ import { routesPath } from "../routesPath";
 import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 // Static lists, so declaring the paths does not pull in the lazy page chunks.
 import {
-  BUDGETS_SECTIONS, COLLECTIONS_SECTIONS, EXPENSES_SECTIONS,
+  BUDGETS_SECTIONS, COLLECTIONS_SECTIONS, EXPENSES_SECTIONS, INTER_BRANCH_PATH, INTER_BRANCH_SECTIONS,
   RECEIVABLES_SECTIONS, REPORTS_SECTIONS,
 } from "@/pages/protected/finance/console-sections";
-import { financeSettingsSections, setupSections } from "@/xvs-host-config";
+import { financeSettingsSections, paymentsSections, setupSections } from "@/xvs-host-config";
 
 /**
  * The school keeps its dashboard presentation beside its routes, while the
@@ -21,11 +21,13 @@ const Banking = lazy(() => import("@/pages/protected/finance/banking"));
 const BankReconciliation = lazy(() => import("@/pages/protected/finance/bank-reconciliation"));
 const Expenses = lazy(() => import("@/pages/protected/finance/expenses"));
 const Payroll = lazy(() => import("@/pages/protected/finance/payroll"));
+const InterBranch = lazy(() => import("@/pages/protected/finance/inter-branch"));
 const BudgetsAssetsTax = lazy(() => import("@/pages/protected/finance/budgets"));
 const Setup = lazy(() => import("@/pages/protected/finance/setup"));
 const Reports = lazy(() => import("@/pages/protected/finance/reports"));
 const FinanceAudit = lazy(() => import("@/pages/protected/finance/audit"));
 const FinanceSettings = lazy(() => import("@/pages/protected/finance/settings"));
+const Payments = lazy(() => import("@/pages/protected/finance/payments"));
 
 const F = routesPath.PROTECTED.FINANCE;
 
@@ -49,10 +51,11 @@ const F = routesPath.PROTECTED.FINANCE;
 const SCHOOL_SETUP_SECTIONS = setupSections;
 
 /**
- * The whole Payments area is unmounted for the same reason. Its sections are
- * payouts, batches, settlement, transactions and webhooks - the platform's own
- * gateway operations, not a school's. A school's money-in arrives through
- * Collections, which IS mounted.
+ * Payments is mounted section by section from `paymentsSections`: a school's
+ * own payouts (paid from its branch's bank), batches, settlement booking,
+ * transactions log, needs-attention events and the held settlements the
+ * platform pays its branches. The platform's held-money check is not a school's
+ * and stays unmounted.
  */
 export const financeRoutes: RouteObject[] = [
   {
@@ -90,6 +93,11 @@ export const financeRoutes: RouteObject[] = [
 
       { path: F.PAYROLL, element: <Payroll /> },
 
+      { path: INTER_BRANCH_PATH, element: <InterBranch /> },
+      ...INTER_BRANCH_SECTIONS.map((section) => ({
+        path: `${INTER_BRANCH_PATH}/${section}`, element: <InterBranch section={section} />,
+      })),
+
       { path: F.BUDGETS, element: <BudgetsAssetsTax /> },
       ...BUDGETS_SECTIONS.map((section) => ({
         path: `${F.BUDGETS}/${section}`, element: <BudgetsAssetsTax section={section} />,
@@ -98,6 +106,11 @@ export const financeRoutes: RouteObject[] = [
       { path: F.REPORTS, element: <Reports /> },
       ...REPORTS_SECTIONS.map((section) => ({
         path: `${F.REPORTS}/${section}`, element: <Reports section={section} />,
+      })),
+
+      { path: F.PAYMENTS, element: <Payments /> },
+      ...paymentsSections.map((section) => ({
+        path: `${F.PAYMENTS}/${section}`, element: <Payments section={section} />,
       })),
 
       { path: F.AUDIT, element: <FinanceAudit /> },

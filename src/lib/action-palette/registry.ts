@@ -242,6 +242,18 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.STAFF.ME },
   },
   {
+    // Everybody's own payslips and yearly tax summary. No gate: the server
+    // answers for the signed-in person alone and needs no payroll key.
+    id: "view-my-payslips",
+    label: "View my payslips",
+    aliases: ["my payslip", "my salary", "my pay", "payslip", "tax summary", "my tax"],
+    section: "People",
+    group: "Staff",
+    kind: "view",
+    gate: null,
+    run: { to: R.STAFF.MY_PAYSLIPS },
+  },
+  {
     // Lands on the Leave tab of the reader's own record, where the form is.
     id: "apply-for-leave",
     label: "Apply for leave",
@@ -1248,8 +1260,9 @@ const PENDING_SURFACE_PREFIXES: readonly string[] = [
  * excluding the module wholesale would hide working doors to spare these.
  * Teaching duties needs an academic year, which a school being set up has not
  * started. The organogram is drawn once a school is running, and its
- * endpoints answer 403 `TENANT_NOT_LIVE` until then. Their route handles say
- * the same.
+ * endpoints answer 403 `TENANT_NOT_LIVE` until then. A person's own payslips
+ * are written by payroll runs, which a school makes once it is live. Their
+ * route handles say the same.
  *
  * Subtracted HERE rather than in the action filter below, because this is the
  * one function that answers "does this path open before go-live" - and the
@@ -1260,6 +1273,7 @@ const LIVE_ONLY_PATHS: readonly string[] = [
   "/staff/teaching",
   "/staff/organogram",
   "/staff/organogram/manage",
+  "/staff/me/payslips",
 ];
 
 export const pathOpensBeforeGoLive = (to: string): boolean => {

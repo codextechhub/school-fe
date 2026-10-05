@@ -5,6 +5,33 @@ import { OWNER, R } from "./shared";
 
 export const STAFF_GUIDES = [
   {
+    id: "school.staff.my-payslips",
+    slug: "read-your-own-payslips",
+    title: "Read your own payslips",
+    summary: "Open your own payslips and yearly tax summary from your picture, read what each shows, and open the printable PDFs.",
+    category: "staff",
+    tags: ["payslip", "my payslips", "tax summary", "salary", "PAYE"],
+    aliases: ["my payslip", "my salary", "my pay", "payslip pdf", "tax summary", "how much tax did i pay", "my tax"],
+    audiences: ["all-users"],
+    routes: [R.STAFF.MY_PAYSLIPS],
+    access: { mode: "authenticated", permissions: [] },
+    primaryRoute: R.STAFF.MY_PAYSLIPS,
+    sections: [
+      { id: "open-your-payslips", title: "Open your payslips" },
+      { id: "what-a-payslip-shows", title: "What a payslip shows" },
+      { id: "your-tax-summary", title: "Your tax summary" },
+      { id: "common-problems", title: "Common problems" },
+      { id: "completion-check", title: "Completion check" },
+    ],
+    relatedGuideIds: ["school.staff.my-staff-record"],
+    estimatedMinutes: 3,
+    owner: OWNER,
+    reviewedAt: "2026-10-05",
+    risk: "low",
+    status: "published",
+    article: () => import("../content/staff/my-payslips"),
+  },
+  {
     id: "school.staff.my-staff-record",
     slug: "open-your-own-staff-record",
     title: "Open your own staff record",

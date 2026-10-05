@@ -115,11 +115,13 @@ const PACKAGE_CREATE_SCREENS: Record<string, string> = {
   "procurement/vendors/vendors-tab.tsx": "/procurement/vendors/vendors",
 };
 
-// Create flows on screens this app does not mount, so there is no job to offer.
-// See finance-routes.tsx: a school keeps one set of books, bills in naira, uses
-// no analytical tagging, and does not run the gateway's own payouts.
+// Create flows this app offers no job for. Most sit on screens it does not
+// mount (see finance-routes.tsx: a school keeps one set of books, bills in
+// naira and uses no analytical tagging). Payouts is mounted, but only a school
+// whose online money the platform holds may use it, and the palette gates on
+// permissions alone, so it would offer New payout at a school that cannot pay.
 const PACKAGE_CREATE_NOT_MOUNTED: Record<string, string> = {
-  "finance/payouts-tab.tsx": "the gateway's payouts are not a school's",
+  "finance/payouts-tab.tsx": "offered from the sidebar only where the platform holds the school's money",
   "finance/setup/currencies-tab.tsx": "a school bills in naira",
   "finance/setup/dimensions-tab.tsx": "analytical tagging it will not use",
   "finance/setup/entities-tab.tsx": "a school keeps one set of books",
