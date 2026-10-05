@@ -10,7 +10,7 @@ import { useGuideWords } from "../../guide-words";
 const PROBLEMS = [
   { title: "Release due income is missing", body: "A release covers every branch at once, so only someone who covers the whole school, and may release deferred income, runs or undoes it." },
   { title: "The month will not close", body: "Its share of fees billed ahead has not been released. Release due income up to the month's last day, then run the close again." },
-  { title: "Undo a month's release does not offer a month", body: "Only open months are offered. A closed month keeps its releases." },
+  { title: "Undo a month's release does not offer a month", body: "Only open months can be undone. The form says why a month is held: a branch has closed it, and a closed month keeps its releases." },
   { title: "New provision run is missing", body: "A provision run covers every branch, so only someone who covers the whole school raises one. A branch bursar sees the runs and their own branch's line." },
   { title: "The provision posted a different figure", body: "The figures are worked out again when the run posts, so receipts and write-offs made while it waited for approval are counted." },
   { title: "Forfeit unclaimed is missing", body: "Only someone who covers the whole school, and may forfeit deposits, is offered it." },

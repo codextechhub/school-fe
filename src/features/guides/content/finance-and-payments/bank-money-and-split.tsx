@@ -61,7 +61,7 @@ export default function BankMoneyAndSplitArticle() {
       </GuideSection>
 
       <GuideSection id="approval-and-void" title="Approval, and voiding a mistake">
-        <p>Bank transactions and transfers follow their own approval route. While one waits, opening it says it is waiting for approval under Workflow, Approvals, and it reaches the books once approved. One the approver turned down reads <strong>Rejected</strong> and never reached the books: record it again if the money still needs recording.</p>
+        <p>Bank transactions and transfers follow their own approval route. While one waits, opening it says it is waiting for approval under Workflow, Approvals, and it reaches the books once approved. One the approver turned down reads <strong>Rejected</strong> and never reached the books. Open it to put it right: <strong>Edit</strong> corrects it, <strong>Send again</strong> sends it back through the same approval route, and <strong>Cancel</strong> keeps it as cancelled and never posts it. These need the right to record that kind of document, and its branch must be one you work in.</p>
         <p>A posted one recorded in error is reversed with <strong>Void</strong> on its detail panel. A transfer&apos;s void reverses both sides.</p>
         <GuideCallout tone="warning" title="Unmatch before you void">
           A void is refused once its bank line is matched on a reconciliation, and a transfer&apos;s void is refused while either side is matched. Unmatch the line in Bank Reconciliation first.
