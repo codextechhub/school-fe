@@ -43,6 +43,7 @@ import {
   rankActions,
   rankDefaultActions,
 } from "./action-palette-model";
+import { usePaletteSchool } from "./use-palette-school";
 
 /** The one wording for this box: placeholder, aria-label and mobile trigger. */
 const SEARCH_LABEL = "Search your workspace";
@@ -78,11 +79,13 @@ type SearchVariant = "desktop" | "mobile";
  * at all (no person, no action, no guide) is recorded, words and route
  * pattern only, so guides get written for what people actually look for.
  *
- * What it can offer comes from four filters, each with its own owner:
+ * What it can offer comes from five filters, each with its own owner:
  * permissions (the registry's gate, same key the screen checks), tenant
  * readiness (a pending school is offered only what a pending school can open),
  * the school's plan (action-palette/plan.ts, the module each address needs),
- * and the typed query (the engine in src/lib/action-palette). Ranking learns
+ * the school's shape (branch count and custody, read as the finance sidebar
+ * reads them; see use-palette-school.ts), and the typed query (the engine in
+ * src/lib/action-palette). Ranking learns
  * from what this user picks, but only ever within a match tier - see
  * rankActions.
  */
@@ -145,6 +148,7 @@ export function AppSearch({
   const userId = user?.id == null ? undefined : String(user.id);
 
   const words = useSchoolWords();
+  const school = usePaletteSchool();
   const available = useMemo(
     () =>
       availableActions(
@@ -152,8 +156,9 @@ export function AppSearch({
         { permissions, actorPermissions },
         tenantIsPending,
         hasCapability,
+        school,
       ),
-    [permissions, actorPermissions, tenantIsPending, hasCapability, words],
+    [permissions, actorPermissions, tenantIsPending, hasCapability, words, school],
   );
 
   // Popularity is re-read while the dropdown is open rather than held in

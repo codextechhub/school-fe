@@ -43,9 +43,12 @@ import {
   schoolFinanceNav,
   schoolProcurementNav,
 } from "@/components/layout/console-nav-for-school";
+import { FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
+import { PROCUREMENT_MOUNTED_PATHS } from "@/routes/protected/procurement-routes";
 import {
   consoleActions,
   consoleCreateActions,
+  consoleSectionActions,
   type ConsoleSource,
 } from "./console-actions";
 import type { ActionDef, ActionRun } from "./types";
@@ -1191,8 +1194,17 @@ const CONSOLES = [
   },
 ] satisfies ConsoleSource[];
 
+/** Every console path the router serves, for the screens the nav does not list. */
+const CONSOLE_MOUNTED_PATHS: ReadonlySet<string> = new Set([
+  ...FINANCE_MOUNTED_PATHS,
+  ...PROCUREMENT_MOUNTED_PATHS,
+]);
+
 export const CONSOLE_ACTIONS: ActionDef[] = [
   ...consoleActions(CONSOLES),
+  // Settings sections, the close workbench and supplier credit notes: served,
+  // but not in either sidebar, so nothing above derives them.
+  ...consoleSectionActions(CONSOLES, CONSOLE_MOUNTED_PATHS),
   // The jobs. Gated on the create key rather than the screen's read key:
   // reading invoices and raising one are different capabilities, and the row
   // has to agree with the button.

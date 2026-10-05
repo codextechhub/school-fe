@@ -29,6 +29,7 @@ import {
   isAvailableAtReadiness,
   rankActions,
   rankDefaultActions,
+  UNKNOWN_SCHOOL,
 } from "./action-palette-model";
 
 // A user who holds every key in the registry, so these tests isolate the
@@ -68,6 +69,9 @@ describe("readiness filtering", () => {
         ACTIONS,
         { permissions: ALL_PERMISSIONS, actorPermissions: ALL_PERMISSIONS },
         false,
+        () => true,
+        // A school every screen fits, so only readiness is in question here.
+        { multiBranch: true, custody: "HELD" },
       ),
     );
     for (const id of LIVE_ONLY_ACTION_IDS) {
@@ -340,5 +344,70 @@ describe("plan filtering", () => {
   it("never plan-gates a header command", () => {
     const offered = ids(availableActions(ACTIONS, everyone, false, (key) => !key));
     expect(offered).toContain("get-help");
+  });
+});
+
+describe("the school's shape", () => {
+  const everyone = { permissions: ALL_PERMISSIONS, actorPermissions: ALL_PERMISSIONS };
+  const offered = (school: Parameters<typeof availableActions>[4]) =>
+    ids(availableActions(ACTIONS, everyone, false, () => true, school));
+
+  const BETWEEN_BRANCHES = [
+    "finance-inter-branch-transfers",
+    "finance-inter-branch-balances",
+    "finance-inter-branch-held-receipts",
+    "finance-inter-branch-recharges",
+    "finance-inter-branch-cost-rules",
+  ];
+  const HELD_MONEY = ["finance-payments-payouts", "finance-payments-batches"];
+
+  it("offers no Between Branches screen at a one-branch school", () => {
+    // Sunrise Academy has one branch. Its bursar holds every key, and the
+    // sidebar still has no Between Branches group, so neither does the box.
+    const sunrise = offered({ multiBranch: false, custody: "HELD" });
+    for (const id of BETWEEN_BRANCHES) expect(sunrise, id).not.toContain(id);
+    expect(sunrise).toContain("finance-payments-payouts");
+  });
+
+  it("offers them at a school with several branches", () => {
+    const brightStar = offered({ multiBranch: true, custody: "HELD" });
+    for (const id of BETWEEN_BRANCHES) expect(brightStar, id).toContain(id);
+  });
+
+  it("offers no Payouts or Batches where online payments go straight to the bank", () => {
+    // Greenfield runs DIRECT: there is no held money to pay a supplier from.
+    const greenfield = offered({ multiBranch: true, custody: "DIRECT" });
+    for (const id of HELD_MONEY) expect(greenfield, id).not.toContain(id);
+    expect(greenfield).toContain("finance-payments-settlement");
+    expect(greenfield).toContain("finance-inter-branch-transfers");
+  });
+
+  it("offers Payouts and Batches at a HELD school to a reader with the payout keys", () => {
+    const payoutReader = [resolvePermissionKey(P.PAY_VIEW_PAYOUTS)];
+    const shown = ids(
+      availableActions(
+        ACTIONS,
+        { permissions: payoutReader, actorPermissions: payoutReader },
+        false,
+        () => true,
+        { multiBranch: false, custody: "HELD" },
+      ),
+    );
+    for (const id of HELD_MONEY) expect(shown, id).toContain(id);
+  });
+
+  it("hides both kinds while the school is not yet known, as the sidebar does", () => {
+    const unknown = offered(UNKNOWN_SCHOOL);
+    for (const id of [...BETWEEN_BRANCHES, ...HELD_MONEY]) expect(unknown, id).not.toContain(id);
+    expect(ids(availableActions(ACTIONS, everyone, false))).toEqual(unknown);
+  });
+
+  it("takes every other screen to every kind of school", () => {
+    const shaped = new Set(
+      ACTIONS.filter((action) => action.schoolShape).map((action) => action.id),
+    );
+    const everywhere = offered(UNKNOWN_SCHOOL);
+    const full = offered({ multiBranch: true, custody: "HELD" });
+    expect(full.filter((id) => !shaped.has(id))).toEqual(everywhere);
   });
 });

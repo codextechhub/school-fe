@@ -37,7 +37,7 @@
 
 import { P, type PermissionCode } from "@/permissions";
 import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
-import type { ActionDef, ActionGate, ActionSection } from "./types";
+import type { ActionDef, ActionGate, ActionSchoolShape, ActionSection } from "./types";
 
 export interface ConsoleSource {
   /** Already narrowed to what this app mounts. */
@@ -61,10 +61,24 @@ export const EXTRA_ALIASES: Record<string, string[]> = {
   "/finance": ["money", "bursary", "accounts"],
   "/finance/setup/accounts": ["coa", "ledger accounts", "account codes"],
   "/finance/ledger": ["journals", "postings", "double entry"],
-  "/finance/setup/periods": ["open period", "close period", "financial year"],
+  "/finance/setup/periods": [
+    "open period",
+    "close period",
+    "financial year",
+    "reopen year",
+    "force close",
+    "archive year",
+    "branch close",
+  ],
   "/finance/setup/tax-codes": ["vat", "wht"],
   "/finance/setup/cost-centers": ["cost centres"],
-  "/finance/receivables/customers": ["payers", "who owes us"],
+  "/finance/receivables/customers": [
+    "payers",
+    "who owes us",
+    "import opening balances",
+    "arrears",
+    "payer links",
+  ],
   "/finance/receivables/invoices": ["bills", "school fees", "fee invoices"],
   "/finance/receivables/receipts": ["record payment", "allocate payment", "money received"],
   "/finance/receivables/credit-notes": ["debit notes", "adjustments"],
@@ -73,33 +87,91 @@ export const EXTRA_ALIASES: Record<string, string[]> = {
   "/finance/receivables/concessions": ["discounts", "waivers", "scholarships", "bursaries"],
   "/finance/receivables/dunning": ["reminders", "chase unpaid fees", "overdue"],
   "/finance/receivables/fee-structures": ["fees", "tuition", "fee schedule"],
-  "/finance/banking": ["banks", "cash accounts"],
+  "/finance/receivables/payer-payments": [
+    "sponsor payment",
+    "one payment for several children",
+    "split a payment",
+  ],
+  "/finance/receivables/credit-transfers": [
+    "move credit",
+    "sibling credit",
+    "transfer an overpayment",
+  ],
+  "/finance/receivables/deferred-income": [
+    "unearned fees",
+    "fees billed ahead",
+    "release income",
+  ],
+  "/finance/receivables/provisions": ["bad debt allowance", "provision"],
+  "/finance/receivables/deposits": ["caution deposit", "refundable deposit"],
+  "/finance/banking": [
+    "banks",
+    "cash accounts",
+    "split bank account by branch",
+    "owner capital",
+    "loan received",
+    "transfer between accounts",
+  ],
   "/finance/bank-reconciliation": ["reconcile", "bank statement"],
   "/finance/expenses/claims": ["reimbursements", "staff expenses"],
-  "/finance/expenses/petty-cash": ["float", "cash box"],
+  "/finance/expenses/petty-cash": [
+    "float",
+    "cash box",
+    "reduce float",
+    "close petty cash",
+    "bank petty cash",
+  ],
   "/finance/payroll": ["salaries", "wages", "staff pay", "payslips"],
   "/finance/budgets/budgets": ["forecast", "planning"],
   "/finance/budgets/assets": ["depreciation", "equipment register"],
-  "/finance/budgets/tax": ["remittance", "paye"],
+  "/finance/budgets/tax": ["remittance", "paye", "annual paye return", "branch share of tax"],
+  "/finance/inter-branch/transfers": [
+    "send money to a branch",
+    "ask a branch for money",
+    "move a pupil's balance",
+    "inter-branch",
+  ],
+  "/finance/inter-branch/balances": ["who owes whom", "branch balances"],
+  "/finance/inter-branch/held-receipts": [
+    "money collected for another branch",
+    "forward a receipt",
+  ],
+  "/finance/inter-branch/recharges": ["share a cost", "recharge"],
+  "/finance/inter-branch/cost-rules": ["cost split rules"],
+  "/finance/payments/settlement": ["book settlement", "paystack settlement"],
+  "/finance/payments/held-settlements": ["settlements to branches"],
   "/finance/collections": ["gateway", "online payments", "card payments"],
   "/finance/collections/virtual-accounts": ["dedicated accounts", "transfer accounts"],
   "/finance/reports/trial-balance": ["tb"],
   "/finance/reports/income-statement": ["profit and loss", "p&l", "surplus"],
   "/finance/reports/balance-sheet": ["financial position"],
+  "/finance/reports/seals": ["verify seals"],
   "/finance/audit": ["who changed what", "finance history"],
   "/procurement": ["purchasing", "buying", "supply"],
   "/procurement/requisitions": ["purchase requests", "ask to buy"],
   "/procurement/purchase-orders": ["po", "pos", "orders"],
-  "/procurement/goods-receipts": ["grn", "deliveries", "received goods"],
-  "/procurement/vendor-invoices": ["supplier bills", "what we owe"],
+  "/procurement/goods-receipts": ["grn", "deliveries", "received goods", "return goods"],
+  "/procurement/vendor-invoices": [
+    "supplier bills",
+    "what we owe",
+    "supplier credit note",
+    "void a bill",
+    "opening supplier bills",
+  ],
   "/procurement/vendor-payments": ["pay a supplier", "supplier payments"],
   "/procurement/approvals": ["awaiting me", "sign off", "authorise"],
   "/procurement/vendors/vendors": ["suppliers"],
   "/procurement/vendors/catalog": ["price list", "catalogue"],
-  "/procurement/sourcing/rfqs": ["request for quote", "tender"],
+  "/procurement/sourcing/rfqs": ["request for quote", "tender", "buy together", "shared rfq"],
   "/procurement/sourcing/quotations": ["quotes", "bids"],
   "/procurement/contracts": ["agreements"],
-  "/procurement/inventory/items": ["stock", "store", "supplies"],
+  "/procurement/inventory/items": [
+    "stock",
+    "store",
+    "supplies",
+    "transfer stock",
+    "move stock between stores",
+  ],
   "/procurement/inventory/movements": ["stock in", "stock out", "issues"],
   "/procurement/inventory/locations": ["stores", "warehouses"],
   "/procurement/analytics/ap-aging": ["ageing", "how old are our bills"],
@@ -344,6 +416,104 @@ export const CONSOLE_CREATE_ACTIONS: {
 ];
 
 /**
+ * Screens the consoles serve that their sidebars do not list.
+ *
+ * Each settings section, the close workbench and the supplier credit notes list
+ * opens at an address of its own, but the sidebar names only the page that
+ * holds them ("Settings", "Vendor Invoices"). Derived from the nav alone, the
+ * box could reach none of them: a bursar typing "provision bands" or "close the
+ * month" was offered nothing, because no sidebar title contains those words.
+ *
+ * Typed out, because nothing published says these sections exist under these
+ * names. Three things each entry fixes:
+ *
+ *   - the ID, written rather than built from the url: the credit notes list
+ *     shares its path with Vendor Invoices, and the url would give both rows
+ *     one id and so one popularity record.
+ *   - the GATE, the key the section itself checks before it reads anything.
+ *     Online payment settings takes both keys: the page opens on the finance
+ *     settings key and its panel reads under the payments settings key, so
+ *     either one alone lands on a page with nothing of the reader's on it.
+ *   - `beside`, the sidebar screen whose heading the row files under. An entry
+ *     whose `beside` screen this app does not offer, or whose own path the
+ *     router does not mount, is dropped (see consoleSectionActions).
+ */
+export const CONSOLE_SECTION_VIEWS: {
+  id: string;
+  url: string;
+  beside: string;
+  label: string;
+  aliases: string[];
+  gate: ActionGate;
+}[] = [
+  // ── Finance ────────────────────────────────────────────────────────────────
+  {
+    id: "finance-settings-receivables",
+    url: "/finance/settings/receivables",
+    beside: "/finance/settings",
+    label: "View receivables settings",
+    aliases: [
+      "credit on new bills",
+      "concession limit",
+      "provision bands",
+      "deposit rules",
+      "payer payment split",
+    ],
+    gate: { perm: P.FIN_VIEW_SETTINGS },
+  },
+  {
+    id: "finance-settings-payroll",
+    url: "/finance/settings/payroll",
+    beside: "/finance/settings",
+    // "finance" in the label: "View payroll settings" is the school's own
+    // payroll settings page, a different screen.
+    label: "View finance payroll settings",
+    aliases: [
+      "paye method",
+      "pension rates",
+      "earlier pay required",
+      "voluntary deductions",
+    ],
+    gate: { perm: P.FIN_VIEW_SETTINGS },
+  },
+  {
+    id: "finance-settings-fiscal-calendar",
+    url: "/finance/settings/fiscal-calendar",
+    beside: "/finance/settings",
+    label: "View record keeping",
+    aliases: ["retention", "archive age", "how the next year opens"],
+    gate: { perm: P.FIN_VIEW_SETTINGS },
+  },
+  {
+    id: "finance-settings-banking-cash",
+    url: "/finance/settings/banking-cash",
+    beside: "/finance/settings",
+    label: "View online payment settings",
+    aliases: ["custody", "held or direct", "collection accounts", "subaccount"],
+    gate: { all: [P.FIN_VIEW_SETTINGS, P.PAY_VIEW_PAYMENT_SETTINGS] },
+  },
+  {
+    id: "finance-reports-periods",
+    url: "/finance/reports/periods",
+    beside: "/finance/reports/seals",
+    label: "View periods and close",
+    aliases: ["month end", "close the month"],
+    gate: { perm: P.FIN_VIEW_PERIODS },
+  },
+
+  // ── Procurement ────────────────────────────────────────────────────────────
+  {
+    id: "procurement-vendor-credit-notes",
+    url: "/procurement/vendor-invoices?view=credit-notes",
+    beside: "/procurement/vendor-invoices",
+    label: "View supplier credit notes",
+    aliases: ["vendor credit note"],
+    // The key the Vendor Invoices screen checks before it opens this list.
+    gate: { perm: P.PROC_VIEW_VENDOR_CREDIT_NOTES },
+  },
+];
+
+/**
  * A url as a palette id: "/finance/receivables/invoices" ->
  * "finance-receivables-invoices".
  *
@@ -359,8 +529,24 @@ interface FlatItem {
   title: string;
   url: string;
   permissions?: PermissionCode[];
+  multiBranch?: boolean;
+  heldCustody?: boolean;
   group: string;
   source: ConsoleSource;
+}
+
+/**
+ * The `schoolShape` field for an action opening this item: the school shape
+ * its nav entry needs, so the palette can ask the sidebar's own question of it
+ * (see fitsSchoolShape in gate.ts). Nothing when the entry needs nothing.
+ */
+function shapeField(item: FlatItem): Pick<ActionDef, "schoolShape"> {
+  if (!item.multiBranch && !item.heldCustody) return {};
+  const shape: ActionSchoolShape = {
+    ...(item.multiBranch ? { multiBranch: true } : {}),
+    ...(item.heldCustody ? { heldCustody: true } : {}),
+  };
+  return { schoolShape: shape };
 }
 
 function flatten(sources: ConsoleSource[]): FlatItem[] {
@@ -381,6 +567,8 @@ function flatten(sources: ConsoleSource[]): FlatItem[] {
           title: item.title,
           url: item.url,
           permissions: item.permissions,
+          multiBranch: item.multiBranch,
+          heldCustody: item.heldCustody,
           group: group.label ?? source.name,
           source,
         });
@@ -431,6 +619,7 @@ export function consoleActions(sources: ConsoleSource[]): ActionDef[] {
         ? { any: item.permissions }
         : { console: item.source.nav },
       run: { to: item.url },
+      ...shapeField(item),
     } satisfies ActionDef;
   });
 }
@@ -463,6 +652,42 @@ export function consoleCreateActions(sources: ConsoleSource[]): ActionDef[] {
         // @xvs/finance, which re-checks the same key rather than trusting the
         // address.
         run: { to: `${entry.url}?action=new` },
+        // A job on a screen the school's shape closes is closed with it.
+        ...shapeField(item),
+      } satisfies ActionDef,
+    ];
+  });
+}
+
+/**
+ * The view actions for CONSOLE_SECTION_VIEWS this app serves.
+ *
+ * `mounted` is the router's own list of console paths (FINANCE_MOUNTED_PATHS
+ * and PROCUREMENT_MOUNTED_PATHS), because these screens are not in the nav and
+ * so cannot be narrowed by it the way the view and create actions are. The
+ * `beside` screen must still be in the nav: that is where the row takes its
+ * section and heading from, and a section of a page this app does not offer is
+ * not one to offer either.
+ */
+export function consoleSectionActions(
+  sources: ConsoleSource[],
+  mounted: ReadonlySet<string>,
+): ActionDef[] {
+  const byUrl = new Map(flatten(sources).map((item) => [item.url, item]));
+
+  return CONSOLE_SECTION_VIEWS.flatMap((entry) => {
+    const beside = byUrl.get(entry.beside);
+    if (!beside || !mounted.has(entry.url.split("?")[0])) return [];
+    return [
+      {
+        id: entry.id,
+        label: entry.label,
+        aliases: entry.aliases,
+        section: beside.source.section,
+        group: beside.group,
+        kind: "view",
+        gate: entry.gate,
+        run: { to: entry.url },
       } satisfies ActionDef,
     ];
   });

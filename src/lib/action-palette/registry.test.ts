@@ -275,15 +275,16 @@ describe("action registry destinations", () => {
 
   it("asks for a landing the app knows how to answer", () => {
     // A query string on an action is an instruction to the screen it lands on,
-    // and the only instructions any screen listens for are these two - `action`
-    // through useActionParam, `tab` on the roles and approvers screens. A row carrying
-    // anything else silently does nothing on arrival, which reads to the person
-    // who picked it as the palette being broken.
+    // and the only instructions any screen listens for are these three -
+    // `action` through useActionParam, `tab` on the roles and approvers screens,
+    // `view` on Vendor Invoices, which opens its credit notes list. A row
+    // carrying anything else silently does nothing on arrival, which reads to
+    // the person who picked it as the palette being broken.
     for (const action of navActions) {
       const query = action.run.to.split("?")[1];
       if (!query) continue;
       for (const key of new URLSearchParams(query).keys()) {
-        expect(["action", "tab"], `${action.id} -> ?${key}`).toContain(key);
+        expect(["action", "tab", "view"], `${action.id} -> ?${key}`).toContain(key);
       }
     }
   });

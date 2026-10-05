@@ -5,7 +5,7 @@
  * beside this file in registry.ts.
  */
 
-import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
+import type { ConsoleNavChild, ConsoleNavGate, ConsoleNavGroup } from "@/components/finance-ui/console-nav";
 import type { PermissionCode } from "@/permissions";
 
 /**
@@ -79,6 +79,22 @@ export type ActionGate =
  * an impersonation session is live, and that is runtime state, not a
  * permission, so a gate could not hide the action the rest of the time.
  */
+/**
+ * What a screen needs of the school before any permission counts, exactly as
+ * its console sidebar entry declares it: `multiBranch` for a screen about
+ * branches dealing with each other, `heldCustody` for one that pays out of
+ * money the platform holds for the school.
+ */
+export type ActionSchoolShape = Pick<ConsoleNavChild, "multiBranch" | "heldCustody">;
+
+/**
+ * The school the reader works in, as the console sidebar reads it: whether it
+ * runs more than one branch, and its custody mode. Unknown is answered the way
+ * the sidebar answers it: `multiBranch` false, custody "UNKNOWN", and both
+ * hide the screens that need them.
+ */
+export type PaletteSchool = Pick<ConsoleNavGate, "multiBranch" | "custody">;
+
 export type ActionRun =
   | { to: string }
   | { command: "proxy" | "logout" | "help" };
@@ -101,6 +117,12 @@ export interface ActionDef {
    * (see plan.ts). One settings address can hold parts sold separately.
    */
   capability?: string;
+  /**
+   * The school shape the screen needs (see ActionSchoolShape). Copied from the
+   * console nav entry, so an action is offered at exactly the schools whose
+   * sidebar offers its screen.
+   */
+  schoolShape?: ActionSchoolShape;
 }
 
 // A scored, permission-passed action ready to render.
