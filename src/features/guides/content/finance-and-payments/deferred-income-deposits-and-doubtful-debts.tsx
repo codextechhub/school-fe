@@ -5,16 +5,16 @@ import {
   GuideStep,
   GuideSteps,
 } from "../../article-components";
-import { useGuideWords, type TermWords } from "../../guide-words";
+import { useGuideWords } from "../../guide-words";
 
-const problems = (w: TermWords) => [
+const PROBLEMS = [
   { title: "Release due income is missing", body: "A release covers every branch at once, so only someone who covers the whole school, and may release deferred income, runs or undoes it." },
-  { title: "The month will not close", body: `Its share of fees billed ahead has not been released. Release due income up to the month's last day, then run the close again.` },
+  { title: "The month will not close", body: "Its share of fees billed ahead has not been released. Release due income up to the month's last day, then run the close again." },
   { title: "Undo a month's release does not offer a month", body: "Only open months are offered. A closed month keeps its releases." },
   { title: "New provision run is missing", body: "A provision run covers every branch, so only someone who covers the whole school raises one. A branch bursar sees the runs and their own branch's line." },
   { title: "The provision posted a different figure", body: "The figures are worked out again when the run posts, so receipts and write-offs made while it waited for approval are counted." },
   { title: "Forfeit unclaimed is missing", body: "Only someone who covers the whole school, and may forfeit deposits, is offered it." },
-  { title: "The receivables settings are greyed out", body: `They apply to every branch, so only someone who covers the whole school can change them. At a school with one branch, its bursar covers the whole school.` },
+  { title: "The receivables settings are greyed out", body: "They apply to every branch, so only someone who covers the whole school can change them. At a school with one branch, its bursar covers the whole school." },
 ] as const;
 
 /**
@@ -83,7 +83,7 @@ export default function DeferredIncomeDepositsAndDoubtfulDebtsArticle() {
 
       <GuideSection id="common-problems" title="Common problems">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {problems(w).map(({ title, body }) => (
+          {PROBLEMS.map(({ title, body }) => (
             <div key={title} className="rounded-2xl border border-gray-200 bg-white p-4">
               <p className="text-sm font-semibold text-black-01">{title}</p>
               <p className="mt-1 text-xs leading-5 text-gray-01">{body}</p>
