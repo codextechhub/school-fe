@@ -31,14 +31,30 @@ describe("student drawer permissions", () => {
       edit: "school.students.update",
       status: "school.students.transition",
       transfer: "academics.classes.assign",
+      branch: "school.students.change_branch",
       guardian: "school.students.update",
     });
   });
 
+  it("offers a branch move only for a pupil on the roll at a school with several branches", () => {
+    const mover = holding(P.MOVE_STUDENT_BRANCH);
+    const atIkeja = { branch: 3, status: "ACTIVE" };
+    expect(canOpenStudentDrawer("branch", mover, { student: atIkeja })).toBe(true);
+    // One branch: the record carries no branch, and the action is absent.
+    expect(canOpenStudentDrawer("branch", mover, { student: { status: "ACTIVE" } })).toBe(false);
+    expect(
+      canOpenStudentDrawer("branch", mover, { student: { branch: 3, status: "WITHDRAWN" } }),
+    ).toBe(false);
+    expect(canOpenStudentDrawer("branch", mover, { student: atIkeja, pastYear: true })).toBe(false);
+    expect(canOpenStudentDrawer("branch", holding(P.ASSIGN_CLASS), { student: atIkeja })).toBe(false);
+  });
+
   it("offers nothing on the view key alone", () => {
     const viewOnly = holding(P.BROWSE_STUDENTS);
-    for (const kind of ["edit", "status", "transfer", "guardian"] as const) {
-      expect(canOpenStudentDrawer(kind, viewOnly)).toBe(false);
+    for (const kind of ["edit", "status", "transfer", "branch", "guardian"] as const) {
+      expect(
+        canOpenStudentDrawer(kind, viewOnly, { student: { branch: 3, status: "ACTIVE" } }),
+      ).toBe(false);
     }
   });
 

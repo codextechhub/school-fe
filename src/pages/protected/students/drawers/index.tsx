@@ -1,11 +1,12 @@
 import { useGetStudentQuery } from "@/redux/services/students/students-api";
 
+import { BranchMoveDrawer } from "./branch-move-drawer";
 import { EditDrawer, type EditSectionKey } from "./edit-drawer";
 import { LinkGuardianDrawer } from "./link-guardian-drawer";
 import { StatusDrawer } from "./status-drawer";
 import { TransferDrawer } from "./transfer-drawer";
 
-export type DrawerKind = "edit" | "status" | "transfer" | "guardian";
+export type DrawerKind = "edit" | "status" | "transfer" | "branch" | "guardian";
 
 export type DrawerRequest =
   | { kind: "edit"; studentId: number; section?: EditSectionKey }
@@ -52,6 +53,8 @@ export function StudentDrawers({
       return <StatusDrawer student={student} open={open} onClose={onClose} />;
     case "transfer":
       return <TransferDrawer student={student} open={open} onClose={onClose} />;
+    case "branch":
+      return <BranchMoveDrawer student={student} open={open} onClose={onClose} />;
     case "guardian":
       return (
         <LinkGuardianDrawer student={student} open={open} onClose={onClose} />

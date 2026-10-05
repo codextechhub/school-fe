@@ -13,6 +13,9 @@ import type {
   PromotionRules,
   PromotionRulesUpdate,
   BulkResultRow,
+  BranchMoveOptions,
+  BranchMoveResult,
+  BranchMoveWrite,
   ClassSeats,
   PromotionBatch,
   PromotionOutcome,
@@ -367,6 +370,49 @@ export const studentsApi = baseApi.injectEndpoints({
       }),
       extraOptions: { silent: true },
       invalidatesTags: ["Students"],
+    }),
+
+    /**
+     * What the "Move to another branch" form needs: the pupil's branch and
+     * class, and the branches this reader may move them to.
+     */
+    getBranchMoveOptions: builder.query<Envelope<BranchMoveOptions>, number>({
+      query: (id) => ({ url: `/students/${id}/move-branch/`, method: "GET" }),
+      providesTags: ["Students"],
+    }),
+
+    /**
+     * What a move would carry, with nothing moved. The server runs the real
+     * finance move and rolls it back, so the figures are the ones the move
+     * books and a refusal the move would meet (a closed month) is met here.
+     */
+    previewBranchMove: builder.mutation<
+      Envelope<BranchMoveResult>,
+      { id: number; to_branch: string; effective_date?: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/move-branch/preview/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+    }),
+
+    /**
+     * Move the pupil, their class and their fee account in one act. A refusal
+     * changes nothing, the finance one included.
+     */
+    moveStudentBranch: builder.mutation<
+      Envelope<BranchMoveResult>,
+      { id: number } & BranchMoveWrite
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/students/${id}/move-branch/`,
+        method: "POST",
+        body,
+      }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["Students", "Classes"],
     }),
 
     /** Link an existing guardian by id, or create one inline by name + phone. */
@@ -795,6 +841,9 @@ export const {
   useUpdateStudentMutation,
   useChangeStudentStatusMutation,
   useAssignClassMutation,
+  useGetBranchMoveOptionsQuery,
+  usePreviewBranchMoveMutation,
+  useMoveStudentBranchMutation,
   useLinkGuardianMutation,
   useUnlinkGuardianMutation,
   useEnrolStudentMutation,

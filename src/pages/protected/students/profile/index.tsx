@@ -40,7 +40,7 @@ import type {
 } from "@/redux/services/students/students-types";
 
 import { StudentDrawers, type DrawerRequest } from "../drawers";
-import { STUDENT_DRAWER_PERMISSION } from "../drawers/access";
+import { STUDENT_DRAWER_PERMISSION, canOpenStudentDrawer } from "../drawers/access";
 import { ConfirmDialog } from "../drawers/confirm-dialog";
 import { formatDate, formatDateTime, titleCaseCode } from "../format";
 import PermissionGate from "@/components/custom/permission-gate";
@@ -101,6 +101,7 @@ export default function StudentProfile() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { pastYear } = useStudentsLens();
+  const { hasPermission } = usePermissions();
   const tab = (params.get("tab") as TabKey) ?? "overview";
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
   const [asAt, setAsAt] = useAsAtParam();
@@ -273,6 +274,17 @@ export default function StudentProfile() {
                     {student.class_name ? "Change class" : "Assign a class"}
                   </Button>
                 </PermissionGate>
+                {canOpenStudentDrawer("branch", hasPermission, { pastYear, student }) && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setDrawer({ kind: "branch", studentId: student.id })
+                    }
+                  >
+                    Move to another branch
+                  </Button>
+                )}
                 <PermissionGate permission={STUDENT_DRAWER_PERMISSION.status}>
                   <Button
                     size="sm"
@@ -1323,6 +1335,7 @@ function DocumentRow({
 const DOT: Record<string, string> = {
   status: "bg-primary",
   class: "bg-green-700",
+  branch: "bg-sky-700",
   guardian: "bg-amber-600",
   document: "bg-gray-400",
   edit: "bg-gray-400",
