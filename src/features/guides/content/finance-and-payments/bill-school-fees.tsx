@@ -39,7 +39,7 @@ export default function BillSchoolFeesArticle() {
         <p>You do not add pupils as customers yourself. The first time a pupil is billed, the run opens their account, named for the child, at the pupil&apos;s branch. Every later bill, receipt and statement for that pupil goes to the same account.</p>
         <p><strong>Customers / Payers</strong> lists those accounts with each one&apos;s balance and status. Use it to look a pupil up and to set the <strong>Billing email</strong>, which is where invoices, receipts and statements are sent.</p>
         <GuideCallout tone="warning" title="Do not add a pupil by hand">
-          A customer added with <strong>New customer</strong> is not linked to the pupil, so the fee run opens a second account for them and the family ends up with two balances. Add a customer by hand only for someone who is not a pupil, and ask your accountant before entering a balance a pupil owed from before.
+          A customer added with <strong>New customer</strong> is not linked to the pupil, so the fee run opens a second account for them and the family ends up with two balances. Add a customer by hand only for someone who is not a pupil. Fees a pupil owed from before the school used these books come in through <strong>Import opening balances</strong>, below.
         </GuideCallout>
       </GuideSection>
 
@@ -83,6 +83,19 @@ export default function BillSchoolFeesArticle() {
         <p>The status tabs on the list (<strong>All</strong>, <strong>Draft</strong>, <strong>Issued</strong>, <strong>Partial</strong>, <strong>Paid</strong>, <strong>Overdue</strong>) are the quickest way to see who owes what. <strong>Print PDF</strong> opens the invoice for printing.</p>
         <GuideCallout tone="warning" title="Void only a bill raised in error">
           <strong>Void invoice</strong> removes the debt and reverses its ledger entry. The original stays in history. To reduce a correct bill, for a scholarship or a sibling discount, use a concession or credit note instead.
+        </GuideCallout>
+      </GuideSection>
+
+      <GuideSection id="import-opening-balances" title="Bring in fees owed from before">
+        <p>When the school moves onto these books, some families still owe fees billed earlier, some of them years old. Bring each unpaid bill in as its own opening bill, dated as the original was, so it ages from that date and shows on reminders and the dashboard like any other.</p>
+        <GuideSteps>
+          <GuideStep title="Select Import opening balances">On <strong>Customers / Payers</strong>. The button needs its own permission; ask whoever manages roles if it is missing.</GuideStep>
+          <GuideStep title="Fill in the template">Select <strong>Download a template</strong>. One row per unpaid bill: <strong>customer</strong> (the code on Customers / Payers), <strong>invoice_date</strong>, <strong>due_date</strong>, <strong>amount</strong> (the naira still owed), <strong>reference</strong>, <strong>period</strong> and <strong>narration</strong>. At a school with more than one branch there is also a <strong>branch</strong> column, by name; leave it empty to use the customer&apos;s own branch. Dates are written 2025-09-08 or 08/09/2025.</GuideStep>
+          <GuideStep title="Choose the file">Select <strong>Choose a CSV file</strong>. Any bad row is named by its line under <strong>Fix these rows and choose the file again</strong>. A good file lists the bills and the total owed.</GuideStep>
+          <GuideStep title="Import">The button reads <strong>Import</strong> with the number of bills. At most 500 bills go in one import.</GuideStep>
+        </GuideSteps>
+        <GuideCallout tone="warning" title="All or nothing">
+          If any row is refused, nothing is imported: fix it and import the whole file again. Bills dated on or after the day the books went live are refused, because they are ordinary bills: raise them as invoices instead.
         </GuideCallout>
       </GuideSection>
 
