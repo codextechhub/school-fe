@@ -85,7 +85,15 @@ export type ActionGate =
  * branches dealing with each other, `heldCustody` for one that pays out of
  * money the platform holds for the school.
  */
-export type ActionSchoolShape = Pick<ConsoleNavChild, "multiBranch" | "heldCustody">;
+export type ActionSchoolShape = Pick<ConsoleNavChild, "multiBranch" | "heldCustody"> & {
+  /**
+   * The job is one the server takes only from a reader who covers the whole
+   * school (adding a ledger account, a cost centre, a catalogue item): its key
+   * is in `WHOLE_SCHOOL_KEYS`, and the screen it opens offers it to nobody
+   * else.
+   */
+  wholeSchool?: true;
+};
 
 /**
  * The school the reader works in, as the console sidebar reads it: whether it
@@ -93,7 +101,16 @@ export type ActionSchoolShape = Pick<ConsoleNavChild, "multiBranch" | "heldCusto
  * the sidebar answers it: `multiBranch` false, custody "UNKNOWN", and both
  * hide the screens that need them.
  */
-export type PaletteSchool = Pick<ConsoleNavGate, "multiBranch" | "custody">;
+export type PaletteSchool = Pick<ConsoleNavGate, "multiBranch" | "custody"> & {
+  /**
+   * Whether the reader covers the whole school, as `useReaderReach` answers
+   * it (a reader pinned to a one-branch school's only branch does). Only an
+   * explicit `false` hides a whole-school job: the session carries the reach,
+   * so a header that knows the reader always says, and a caller that does not
+   * track reach is not asking that question.
+   */
+  wholeSchool?: boolean;
+};
 
 export type ActionRun =
   | { to: string }

@@ -23,6 +23,7 @@ import {
   CONSOLE_CREATE_ACTIONS,
   CONSOLE_SECTION_VIEWS,
   EXTRA_ALIASES,
+  needsWholeSchool,
 } from "./console-actions";
 import { ACTIONS, CONSOLE_ACTIONS } from "./registry";
 import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
@@ -303,7 +304,9 @@ describe("screens that need a particular kind of school", () => {
   it("marks no other action", () => {
     const flaggedUrls = new Set(FLAGGED.map((entry) => entry.url));
     for (const action of ACTIONS) {
-      if (!action.schoolShape) continue;
+      // A whole-school job is a question of the reader's reach, not of the
+      // school's shape; it is checked under "whole-school jobs".
+      if (!action.schoolShape?.multiBranch && !action.schoolShape?.heldCustody) continue;
       const to = "to" in action.run ? pathOf(action.run.to) : "";
       expect(flaggedUrls.has(to), action.id).toBe(true);
     }
@@ -349,5 +352,42 @@ describe("titles that appear in both consoles", () => {
 
   it("offers an ungated screen when its console is offered", () => {
     expect(built.find((a) => a.id === "a")?.gate).toEqual({ console: NAV });
+  });
+});
+
+describe("whole-school jobs", () => {
+  // The chart of accounts, cost centres, tax codes, vendor categories and the
+  // catalogue are every branch's at once, so their create keys are in
+  // @xvs/finance's WHOLE_SCHOOL_KEYS and the screens offer them to nobody else.
+  const WHOLE_SCHOOL_URLS = [
+    "/finance/setup/accounts",
+    "/finance/setup/cost-centers",
+    "/finance/setup/tax-codes",
+    "/procurement/vendors/categories",
+    "/procurement/vendors/catalog",
+  ];
+
+  it("are exactly the create jobs whose key needs whole-school reach", () => {
+    const marked = CONSOLE_CREATE_ACTIONS.filter((entry) => needsWholeSchool(entry.gate)).map((entry) => entry.url);
+    expect(marked.sort()).toEqual([...WHOLE_SCHOOL_URLS].sort());
+  });
+
+  it("carry the need on the action, so the school's shape can close them", () => {
+    const actions = CREATES;
+    for (const url of WHOLE_SCHOOL_URLS) {
+      const action = actions.find((a) => a.id === `create-${consoleActionId(url)}`);
+      expect(action?.schoolShape?.wholeSchool, url).toBe(true);
+    }
+    const invoice = actions.find((a) => a.id === `create-${consoleActionId("/finance/receivables/invoices")}`);
+    expect(invoice?.schoolShape?.wholeSchool).toBeUndefined();
+  });
+
+  it("read an any-gate as whole-school only when every key in it is", () => {
+    expect(needsWholeSchool({ perm: P.FIN_CREATE_ACCOUNT })).toBe(true);
+    expect(needsWholeSchool({ any: [P.FIN_CREATE_ACCOUNT, P.FIN_CREATE_INVOICE] })).toBe(false);
+    expect(needsWholeSchool({ any: [P.FIN_CREATE_ACCOUNT, P.FIN_CREATE_COST_CENTER] })).toBe(true);
+    expect(needsWholeSchool({ all: [P.FIN_CREATE_INVOICE, P.FIN_CREATE_ACCOUNT] })).toBe(true);
+    expect(needsWholeSchool({ perm: P.FIN_CREATE_INVOICE })).toBe(false);
+    expect(needsWholeSchool(null)).toBe(false);
   });
 });

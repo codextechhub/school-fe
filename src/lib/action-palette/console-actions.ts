@@ -36,6 +36,7 @@
  */
 
 import { P, type PermissionCode } from "@/permissions";
+import { WHOLE_SCHOOL_KEYS } from "@xvs/finance/components/finance-ui/whole-school-access";
 import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
 import type { ActionDef, ActionGate, ActionSchoolShape, ActionSection } from "./types";
 
@@ -540,11 +541,12 @@ interface FlatItem {
  * its nav entry needs, so the palette can ask the sidebar's own question of it
  * (see fitsSchoolShape in gate.ts). Nothing when the entry needs nothing.
  */
-function shapeField(item: FlatItem): Pick<ActionDef, "schoolShape"> {
-  if (!item.multiBranch && !item.heldCustody) return {};
+function shapeField(item: FlatItem, wholeSchool = false): Pick<ActionDef, "schoolShape"> {
+  if (!item.multiBranch && !item.heldCustody && !wholeSchool) return {};
   const shape: ActionSchoolShape = {
     ...(item.multiBranch ? { multiBranch: true } : {}),
     ...(item.heldCustody ? { heldCustody: true } : {}),
+    ...(wholeSchool ? { wholeSchool: true } : {}),
   };
   return { schoolShape: shape };
 }
@@ -653,10 +655,30 @@ export function consoleCreateActions(sources: ConsoleSource[]): ActionDef[] {
         // address.
         run: { to: `${entry.url}?action=new` },
         // A job on a screen the school's shape closes is closed with it.
-        ...shapeField(item),
+        ...shapeField(item, needsWholeSchool(entry.gate)),
       } satisfies ActionDef,
     ];
   });
+}
+
+const WHOLE_SCHOOL_CODES: ReadonlySet<string> = new Set(WHOLE_SCHOOL_KEYS.map((key) => key.code));
+
+/**
+ * Whether a job's gate asks for a key the server keeps for whole-school reach
+ * (`WHOLE_SCHOOL_KEYS` in @xvs/finance, the list its screens gate on).
+ *
+ * A single key, or a key every holder must have (`all`, `required`), carries
+ * the need over; an `any` gate needs whole-school reach only when every one of
+ * its keys does, since the others still open the job to a branch reader.
+ */
+export function needsWholeSchool(gate: ActionGate): boolean {
+  if (gate === null) return false;
+  const whole = (code: PermissionCode) => WHOLE_SCHOOL_CODES.has(code);
+  if ("perm" in gate) return whole(gate.perm);
+  if ("required" in gate) return gate.required.some(whole) || gate.any.every(whole);
+  if ("all" in gate) return gate.all.some(whole);
+  if ("any" in gate) return gate.any.length > 0 && gate.any.every(whole);
+  return false;
 }
 
 /**

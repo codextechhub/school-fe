@@ -12,6 +12,7 @@ import type { PaletteSchool } from "@/lib/action-palette";
 
 const state = vi.hoisted(() => ({
   applies: false,
+  wholeSchool: true,
   held: [] as string[],
   entities: [] as { code: string }[],
   selected: null as string | null,
@@ -22,6 +23,10 @@ const state = vi.hoisted(() => ({
 
 vi.mock("@/hooks/use-branch-lens", () => ({
   useBranchLens: () => ({ applies: state.applies }),
+}));
+
+vi.mock("@/hooks/use-reader-reach", () => ({
+  useReaderReach: () => ({ wholeSchool: state.wholeSchool }),
 }));
 
 vi.mock("@/hooks/use-permissions", async () => {
@@ -72,6 +77,7 @@ function read(): PaletteSchool {
 
 beforeEach(() => {
   state.applies = false;
+  state.wholeSchool = true;
   state.held = [];
   state.entities = [{ code: "MAIN" }];
   state.selected = null;
@@ -108,5 +114,11 @@ describe("usePaletteSchool", () => {
     state.held = [resolvePermissionKey(P.PAY_VIEW_PAYMENT_SETTINGS)];
     state.mode = "DIRECT";
     expect(read().custody).toBe("DIRECT");
+  });
+
+  it("reads whether the reader covers the whole school off their reach", () => {
+    expect(read().wholeSchool).toBe(true);
+    state.wholeSchool = false;
+    expect(read().wholeSchool).toBe(false);
   });
 });

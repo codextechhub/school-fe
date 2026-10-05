@@ -404,10 +404,42 @@ describe("the school's shape", () => {
 
   it("takes every other screen to every kind of school", () => {
     const shaped = new Set(
-      ACTIONS.filter((action) => action.schoolShape).map((action) => action.id),
+      ACTIONS.filter((action) => action.schoolShape?.multiBranch || action.schoolShape?.heldCustody)
+        .map((action) => action.id),
     );
     const everywhere = offered(UNKNOWN_SCHOOL);
     const full = offered({ multiBranch: true, custody: "HELD" });
     expect(full.filter((id) => !shaped.has(id))).toEqual(everywhere);
+  });
+});
+
+describe("the reader's reach", () => {
+  const everyone = { permissions: ALL_PERMISSIONS, actorPermissions: ALL_PERMISSIONS };
+  const offered = (school: Parameters<typeof availableActions>[4]) =>
+    ids(availableActions(ACTIONS, everyone, false, () => true, school));
+  const WHOLE_SCHOOL_JOBS = ACTIONS.filter((action) => action.schoolShape?.wholeSchool).map((action) => action.id);
+
+  it("marks the whole-school jobs", () => {
+    expect(WHOLE_SCHOOL_JOBS).toContain("create-finance-setup-accounts");
+    expect(WHOLE_SCHOOL_JOBS.length).toBeGreaterThanOrEqual(5);
+  });
+
+  it("offers a branch's own bursar none of them, though she holds the keys", () => {
+    // Mrs Adeyemi keeps Lekki's books at Bright Star; the chart is every branch's.
+    const lekki = offered({ multiBranch: true, custody: "HELD", wholeSchool: false });
+    for (const id of WHOLE_SCHOOL_JOBS) expect(lekki, id).not.toContain(id);
+    expect(lekki).toContain("create-finance-receivables-invoices");
+  });
+
+  it("offers them to a whole-school reader, and at a one-branch school to its pinned bursar", () => {
+    const proprietor = offered({ multiBranch: true, custody: "HELD", wholeSchool: true });
+    for (const id of WHOLE_SCHOOL_JOBS) expect(proprietor, id).toContain(id);
+    const sunrise = offered({ multiBranch: false, custody: "HELD", wholeSchool: true });
+    for (const id of WHOLE_SCHOOL_JOBS) expect(sunrise, id).toContain(id);
+  });
+
+  it("leaves them alone for a caller that does not say", () => {
+    const silent = offered({ multiBranch: true, custody: "HELD" });
+    for (const id of WHOLE_SCHOOL_JOBS) expect(silent, id).toContain(id);
   });
 });

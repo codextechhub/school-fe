@@ -80,11 +80,20 @@ export function filterActionsForPermissions(
  * screens; at Greenfield, whose online payments go straight to its branches'
  * banks, neither offers Payouts or Batches. At Bright Star, with two branches
  * and HELD custody, both offer all seven to a reader holding their keys.
+ *
+ * A whole-school job (`schoolShape.wholeSchool`) is not offered to a reader who
+ * covers only some branches: Lekki's bursar holds the key to add a ledger
+ * account, but the chart is every branch's, so the server refuses her and the
+ * Accounts screen offers her no New account. At Sunrise, whose bursar is pinned
+ * to its only branch, she covers the whole school and is offered it.
  */
 export function fitsSchoolShape(action: ActionDef, school: PaletteSchool): boolean {
   if (!action.schoolShape) return true;
+  const { wholeSchool, ...shape } = action.schoolShape;
+  if (wholeSchool && school.wholeSchool === false) return false;
+  const { wholeSchool: _reach, ...gate } = school;
   return navEntryOpen(
-    { title: action.label, url: "", ...action.schoolShape },
-    { hasAnyPermission: () => true, hasModuleAccess: () => true, ...school },
+    { title: action.label, url: "", ...shape },
+    { hasAnyPermission: () => true, hasModuleAccess: () => true, ...gate },
   );
 }
