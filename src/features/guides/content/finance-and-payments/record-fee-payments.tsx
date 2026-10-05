@@ -38,6 +38,7 @@ export default function RecordFeePaymentsArticle() {
           <GuideStep title="From Receipts & Allocation">Best for everyday receipting. <strong>Record receipt</strong> captures the money first, then lets you choose which bills it pays.</GuideStep>
           <GuideStep title="From an invoice">Open the invoice, go to its <strong>Settlements</strong> tab and select <strong>Record payment</strong>. The money is applied to that invoice, and any excess is kept as credit on the pupil&apos;s account.</GuideStep>
           <GuideStep title="From a customer">Open the customer and select <strong>Record payment</strong>. The money is applied to their open invoices, oldest first. The button shows only while the customer owes money.</GuideStep>
+          <GuideStep title="From Payer Payments">When one parent or sponsor pays for several children at once, record it once on <strong>Payer Payments</strong>. It makes one receipt per child, and has a guide of its own.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
