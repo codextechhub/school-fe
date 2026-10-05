@@ -57,11 +57,12 @@ export default function RunPayrollArticle() {
           <GuideStep title="Enter the tax and pension details">Choose their <strong>State of residence</strong> (left as their branch&apos;s state if not chosen) and <strong>Pension administrator</strong>, and enter their <strong>Tax ID</strong>, <strong>Pension PIN</strong> and <strong>Annual rent</strong> for rent relief. PAYE is paid to the state they live in, and pension to their administrator.</GuideStep>
           <GuideStep title="Save">Select <strong>Add employee</strong>.</GuideStep>
         </GuideSteps>
-        <p>Each person has <strong>one active salary record</strong>. Adding someone already paid at a branch is refused. To move a person to another branch, edit their record, change the <strong>Branch</strong>, and set <strong>Takes effect on</strong>: their old branch keeps paying them and holding their record until that day, and the new branch from then on. Pay changes are dated the same way, and left empty a change applies from the first month not yet paid.</p>
+        <p>Each person has <strong>one active salary record</strong>, whichever branch pays them. Adding someone already paid at a branch is refused, so nobody is paid twice.</p>
+        <p>To move a person to another branch, edit their record, change the <strong>Branch</strong>, and set <strong>Takes effect on</strong> with a <strong>Reason for the change</strong>. Say Aisha moves from Ikeja to Lekki from 1 March: Ikeja keeps paying them and holding their record until that day, and Lekki pays them from then on. Pay, structure, cost centre and state changes are dated the same way. Left empty, a change applies from the first month not yet paid; a date ahead changes nothing until that day.</p>
         <p>Select a person to open their record: <strong>Pay history</strong> lists every version of their pay with the day it took effect and who changed it, and a change entered ahead is marked as still to come. To take someone off the payroll, select <strong>Remove</strong>: they stay listed as Inactive, with their history.</p>
         <p>To set a person&apos;s PAYE by hand, edit their record, tick <strong>Set their PAYE by hand</strong>, and give the amount and a reason. It is used on every run until it is cleared, and the reason is kept in the audit trail.</p>
         <GuideCallout tone="info" title="Some roles may read pay but not change it">
-          A role whose pay figures are read-only sees them greyed. Saving a change to one of them is refused and nothing is saved; correcting a name on the same record is not.
+          A role whose pay figures are read-only sees them greyed. Saving a change to one of them is refused and nothing is saved, and the form says which figure was refused. Correcting a name on the same record is not refused.
         </GuideCallout>
       </GuideSection>
 
@@ -102,8 +103,9 @@ export default function RunPayrollArticle() {
       </GuideSection>
 
       <GuideSection id="payslips-and-returns" title="Payslips and statutory returns">
-        <p>The <strong>Payslips</strong> tab lists every payslip; open one to read it, or select <strong>PDF</strong> for the printable payslip. It shows this school&apos;s year to date, and keeps any earlier pay apart. A person&apos;s yearly tax summary is under <strong>Tax year</strong> on their record. Staff read their own under <strong>My payslips</strong> on their account menu.</p>
-        <p>PAYE is owed to each person&apos;s state, so there is one PAYE return per state, and one pension return per pension administrator. In Tax Remittance, open a return to see the people behind it, and select <strong>Annual PAYE return</strong> for each person&apos;s year at this school.</p>
+        <p>The <strong>Payslips</strong> tab lists every payslip; open one to read it, or select <strong>PDF</strong> for the printable payslip. It shows this school&apos;s year to date, and keeps pay brought forward apart: a previous employer&apos;s figures under <strong>Earlier this tax year with</strong> that employer, and the school&apos;s own months before its payroll ran here under <strong>Before this payroll</strong>. A person&apos;s yearly tax summary is under <strong>Tax year</strong> on their record. Staff read their own payslips and tax summary under <strong>My payslips</strong>, from their picture at the top right.</p>
+        <p>PAYE is owed to the state each person lives in, so there is one PAYE return per state. Pension is owed to each person&apos;s pension administrator, so there is one pension return per administrator. NHF, NSITF and ITF have returns of their own. In <strong>Tax Remittance</strong>, open a return to see <strong>People on this return</strong>; it lists only what payroll deducted here, never pay brought forward.</p>
+        <p><strong>Annual PAYE return</strong>, on Tax Remittance, lists each person&apos;s year at this school: months here, gross, taxable pay, PAYE and pension. It includes the school&apos;s own months before its payroll ran here, and never a previous employer&apos;s pay, which that employer files. A bursar who covers one branch is shown their branch&apos;s part. Both lists need a role that sees every pay figure.</p>
       </GuideSection>
 
       <GuideSection id="correct-a-run" title="Correct a run">

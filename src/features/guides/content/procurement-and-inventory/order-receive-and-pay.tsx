@@ -44,7 +44,7 @@ export default function OrderReceiveAndPayArticle() {
           <GuideStep title="Note any problems">Under <strong>Inspection notes</strong>, record damage, short delivery or why items were rejected.</GuideStep>
           <GuideStep title="Post it">Select <strong>Create &amp; Post</strong>, or save a draft and later <strong>Post Receipt</strong>. Only accepted quantities count. For a part delivery, <strong>Receive Remaining</strong> on the posted receipt starts the next one.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="warning" title="A posted receipt cannot be edited">Count before you post. The screen has no way to reverse a receipt.</GuideCallout>
+        <GuideCallout tone="warning" title="A posted receipt cannot be edited">Count before you post. Goods that turn out to be wrong after posting are sent back with a goods return, below.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="record-the-invoice" title="Record and post the supplier's bill">
@@ -67,6 +67,40 @@ export default function OrderReceiveAndPayArticle() {
         <GuideCallout tone="danger" title="Reverse only when the money did not go">An approved payment that has not been posted can be cancelled with <strong>Cancel</strong>. A posted payment can be undone with <strong>Reverse</strong>, which restores the bill balances. Use it only for a payment that genuinely failed or was recorded in error.</GuideCallout>
       </GuideSection>
 
+      <GuideSection id="correct-a-bill" title="Correct a posted bill">
+        <p>A posted bill is never edited. How it is corrected depends on whether anything has been paid or credited on it.</p>
+        <GuideSteps>
+          <GuideStep title="Nothing paid or credited yet: void it">Open the bill and select <strong>Void</strong>, then <strong>Void bill</strong>. Its posting is reversed, the purchase order gets its billed quantities back, and the bill stays in history as voided. Use it for a bill keyed in error or sent twice.</GuideStep>
+          <GuideStep title="Something paid or credited: raise a credit note">Select <strong>Credit note</strong> on the bill. Give the <strong>Credit note date</strong>, the supplier&apos;s own number under <strong>Vendor reference</strong>, and a <strong>Reason</strong>, such as <em>10 reams returned damaged</em>. Under <strong>What to credit</strong>, choose <strong>Whole bill</strong> for everything it has left, <strong>By amount</strong> for a price allowance spread across it, or <strong>By line</strong> for a quantity or value on named lines.</GuideStep>
+          <GuideStep title="Approve and post the credit note">It is saved as a draft. Select <strong>Submit for approval</strong>; approvers decide it under Workflow, Approvals, where large credit notes (₦500,000 and above, unless your school changed it) also need a senior approver. Once approved, select <strong>Post credit note</strong>.</GuideStep>
+        </GuideSteps>
+        <p>Posting lowers what the bill owes. If the bill was already paid, the credit stays as that branch&apos;s credit with the supplier: say Ikeja is credited ₦50,000 on a paid stationery bill, the ₦50,000 waits for Ikeja&apos;s next bill from that supplier. Use <strong>Apply credit</strong> on the credit note to put it on an open bill, <strong>Oldest bills first</strong> or by choosing bills.</p>
+        <p>Every credit note is listed on <strong>Vendor Invoices</strong> under the <strong>Credit notes</strong> view, and a bill&apos;s own notes are on its <strong>Credit Notes</strong> tab. A posted credit note raised in error is undone with <strong>Void</strong>, which reverses it and every bill it was applied to.</p>
+      </GuideSection>
+
+      <GuideSection id="return-goods" title="Send goods back to the supplier">
+        <GuideSteps>
+          <GuideStep title="Open the posted goods receipt and select Return">Choose <strong>Choose quantities</strong> and enter how many of each line go back, or <strong>Everything still on it</strong> to undo a receipt entered in error.</GuideStep>
+          <GuideStep title="Date it and say why">Set the <strong>Return date</strong> and fill in <strong>Why the goods are going back</strong>, such as <em>20 chairs arrived broken</em>. Select <strong>Return goods</strong>.</GuideStep>
+        </GuideSteps>
+        <p>Stock falls by what goes back, at the receipt&apos;s cost. The receipt lists its returns under <strong>Returns</strong>.</p>
+        <GuideCallout tone="warning" title="Billed goods take a credit note, not a return">
+          A return cannot reach goods the supplier has already billed: raise a credit note on the bill instead. A goods return is never voided. If goods went back in error, or come back, receive them again against the order.
+        </GuideCallout>
+      </GuideSection>
+
+      <GuideSection id="opening-bills" title="Bring in bills owed from before">
+        <p>When the school moves onto these books, carry in each supplier bill still unpaid, so what the school owes and its aging start out right.</p>
+        <GuideSteps>
+          <GuideStep title="Select Opening bills">On <strong>Vendor Invoices</strong>. The button needs its own permission.</GuideStep>
+          <GuideStep title="Fill in the rows">Select <strong>Template</strong>, or paste rows into the box. One row per unpaid bill: <strong>vendor</strong> (the supplier&apos;s code), <strong>invoice_date</strong> (when the supplier raised it), <strong>due_date</strong>, <strong>vendor_reference</strong>, <strong>amount</strong> (still owed, in naira), and <strong>narration</strong>. Where you are asked for a branch, the template has a <strong>branch</strong> column too.</GuideStep>
+          <GuideStep title="Choose the file and import">Select <strong>Choose CSV file</strong>, check the list, and select <strong>Import</strong> with the number of bills. At most 500 go in one import.</GuideStep>
+        </GuideSteps>
+        <GuideCallout tone="warning" title="All or nothing, and no approval">
+          One bad row refuses the whole file and nothing is imported. Opening bills post straight to what the school owes, with no approval, so check them first. Bills dated on or after the day the books went live are refused: record those as ordinary bills.
+        </GuideCallout>
+      </GuideSection>
+
       <GuideSection id="common-problems" title="Common problems">
         <GuideChecklist items={[
           "The requisition is not offered for a purchase order: it is not yet Approved.",
@@ -74,6 +108,8 @@ export default function OrderReceiveAndPayArticle() {
           "Post Invoice is missing: the bill is not yet approved, or the match blocks posting.",
           "No bills appear on a new payment: the supplier has no posted invoice with a balance.",
           "A document waits with nobody to approve it: ask whoever manages approvals to add an approver rather than choosing Continue anyway.",
+          "Void on a bill offers a credit note instead: money has been paid, or a credit note has settled part of it. Credit what is left.",
+          "A goods return is refused for billed goods: raise a credit note on the bill first.",
         ]} />
       </GuideSection>
 
