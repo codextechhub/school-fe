@@ -13,8 +13,16 @@ export { scoreAction, TIER } from "./match";
 export type { MatchResult } from "./match";
 export { loadPopularity, loadFrecencyScores, recordPick } from "./popularity";
 export type { PopularityModel } from "./popularity";
-export { passesActionGate, filterActionsForPermissions } from "./gate";
-export type { ActionDef, ActionSection, ScoredAction, ActionRun, ActionGate } from "./types";
+export { passesActionGate, filterActionsForPermissions, fitsSchoolShape } from "./gate";
+export type {
+  ActionDef,
+  ActionSection,
+  ScoredAction,
+  ActionRun,
+  ActionGate,
+  ActionSchoolShape,
+  PaletteSchool,
+} from "./types";
 
 import type { ActionSection, ScoredAction } from "./types";
 

@@ -11,9 +11,9 @@
  * `consoleOffersScreens` the sidebar uses for its door.
  */
 
-import { consoleOffersScreens } from "@/components/finance-ui/console-nav";
+import { consoleOffersScreens, navEntryOpen } from "@/components/finance-ui/console-nav";
 import { resolvePermissionKey, type PermissionCode } from "@/permissions";
-import type { ActionDef, ActionGate } from "./types";
+import type { ActionDef, ActionGate, PaletteSchool } from "./types";
 
 /** Evaluate an action gate against raw permission keys returned by the API. */
 export function passesActionGate(
@@ -68,4 +68,23 @@ export function filterActionsForPermissions(
 ): ActionDef[] {
   const held = new Set(permissions);
   return actions.filter((action) => passesGateWithSet(action.gate, permissions, held));
+}
+
+/**
+ * Whether the reader's school has the shape the action's screen needs.
+ *
+ * Asked through the package's own `navEntryOpen`, with every permission
+ * granted so that only the shape is in question, so the palette and the
+ * console sidebar cannot disagree. At Sunrise Academy, with one branch, the
+ * sidebar has no Between Branches group and the box offers none of its five
+ * screens; at Greenfield, whose online payments go straight to its branches'
+ * banks, neither offers Payouts or Batches. At Bright Star, with two branches
+ * and HELD custody, both offer all seven to a reader holding their keys.
+ */
+export function fitsSchoolShape(action: ActionDef, school: PaletteSchool): boolean {
+  if (!action.schoolShape) return true;
+  return navEntryOpen(
+    { title: action.label, url: "", ...action.schoolShape },
+    { hasAnyPermission: () => true, hasModuleAccess: () => true, ...school },
+  );
 }

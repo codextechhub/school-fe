@@ -11,12 +11,14 @@
  */
 
 import {
+  fitsSchoolShape,
   groupBySection,
   LIVE_ONLY_ACTION_IDS,
   PENDING_ONLY_ACTION_IDS,
   passesActionGate,
   scoreAction,
   type ActionDef,
+  type PaletteSchool,
   type PopularityModel,
   type ScoredAction,
   type SectionGroup,
@@ -107,26 +109,40 @@ function permissionsForAction(action: ActionDef, identity: PaletteIdentity): rea
 }
 
 /**
+ * The school as a caller that cannot tell reads it: one branch, custody
+ * unknown. The console sidebar hides a screen that needs either until it
+ * knows, and so does the palette, because a row that lands on "this school has
+ * one branch" is worse than a row that appears a moment late.
+ */
+export const UNKNOWN_SCHOOL: PaletteSchool = { multiBranch: false, custody: "UNKNOWN" };
+
+/**
  * The actions this person may be offered right now: gated on permissions,
- * filtered by what the tenant's readiness actually serves, and by what the
- * school's plan reaches.
+ * filtered by what the tenant's readiness actually serves, by what the
+ * school's plan reaches, and by the school's shape.
  *
  * `hasCapability` is the plan question, asked of the address a navigation
  * action opens (see capabilityForPath). It defaults to "yes" so a caller that
  * does not know the plan yet offers everything the role allows, which is the
  * same optimistic default useCapabilities takes. A header command opens no
  * address and is never plan-gated.
+ *
+ * `school` is the shape question the console sidebar asks before it draws a
+ * screen (see fitsSchoolShape). Its default is the cautious one, unlike the
+ * plan's: the sidebar itself hides those screens until it knows.
  */
 export function availableActions(
   actions: readonly ActionDef[],
   identity: PaletteIdentity,
   tenantIsPending: boolean,
   hasCapability: (key: string | undefined) => boolean = () => true,
+  school: PaletteSchool = UNKNOWN_SCHOOL,
 ): ActionDef[] {
   return actions.filter(
     (action) =>
       isAvailableAtReadiness(action.id, tenantIsPending) &&
       passesActionGate(action.gate, permissionsForAction(action, identity)) &&
+      fitsSchoolShape(action, school) &&
       ("command" in action.run ||
         hasCapability(action.capability ?? capabilityForPath(action.run.to))),
   );
