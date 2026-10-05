@@ -60,7 +60,7 @@ export default function PayerPaymentsAndCreditTransfersArticle() {
       </GuideSection>
 
       <GuideSection id="other-branch" title="A child billed at another branch">
-        <p>No branch&apos;s receipt settles another branch&apos;s bill. If Emeka is billed at Lekki, his share of the money Ikeja received is <strong>held for Lekki</strong> and forwarded through the usual approval route. Opening the payment shows each share, and a held one reads as held for Lekki until it is forwarded. It settles Emeka&apos;s bills when it reaches Lekki.</p>
+        <p>No branch&apos;s receipt settles another branch&apos;s bill. If Emeka is billed at Lekki, Emeka&apos;s share of the money Ikeja received is <strong>held for Lekki</strong> and forwarded through the usual approval route. Opening the payment shows each share, and a held one reads as held for Lekki until it is forwarded. It settles Emeka&apos;s bills when it reaches Lekki.</p>
         <p>You see the bills only at branches you work in. For a child billed elsewhere, the preview shows the child and the amount, not their bills.</p>
       </GuideSection>
 
@@ -72,7 +72,7 @@ export default function PayerPaymentsAndCreditTransfersArticle() {
       </GuideSection>
 
       <GuideSection id="credit-transfer" title="Move credit from one child to another">
-        <p>Say Tunde overpaid by ₦15,000 and the family asks for it to go towards his sister Ada&apos;s fees.</p>
+        <p>Say Tunde overpaid by ₦15,000 and the family asks for it to go towards their sibling Ada&apos;s fees.</p>
         <GuideSteps>
           <GuideStep title="Open Credit Transfers and select New transfer">Choose the <strong>From customer</strong> and the <strong>To customer</strong>. The drawer shows the <strong>Unused credit available</strong> on the first.</GuideStep>
           <GuideStep title="Enter the amount and reason">Fill in the <strong>Amount</strong>, the <strong>Transfer date</strong> and the <strong>Reason</strong>.</GuideStep>
