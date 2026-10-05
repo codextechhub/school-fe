@@ -260,10 +260,19 @@ export type HistoryKind =
 /** The profile's History tab: the status log and the audit trail, merged. */
 export interface HistoryEntry {
   kind: HistoryKind;
+  /** The sentence for the entry; never carries the reason behind a move. */
   text: string;
   when: string;
   /** A name, never an email address, and "System" for automated moves. */
   actor: string;
+  /**
+   * Why a status move (or an admission-stage move) was made.
+   *
+   * Field Access `school.students.status_reason`: the key is absent for a
+   * reader whose roles do not grant Read on it, and on an entry that is not a
+   * move. It can be an empty string when a move was recorded without one.
+   */
+  reason?: string | null;
 }
 
 /**

@@ -58,6 +58,7 @@ import { AsAtContext, useAsAt, useAsAtParam } from "@/lib/as-at";
 import { PhotoPicker } from "../photo-picker";
 import { StudentStatusBadge } from "../status-badge";
 import { Dot } from "../guardians/person-card";
+import { HistoryEntryItem } from "./history-entry";
 import { Lifecycle } from "./lifecycle";
 import { EmptyRing } from "../empty-ring";
 import { Rows, type Row } from "./rows";
@@ -1332,15 +1333,6 @@ function DocumentRow({
 
 // ── History ─────────────────────────────────────────────────────────────────
 
-const DOT: Record<string, string> = {
-  status: "bg-primary",
-  class: "bg-green-700",
-  branch: "bg-sky-700",
-  guardian: "bg-amber-600",
-  document: "bg-gray-400",
-  edit: "bg-gray-400",
-};
-
 /** The record's history, timed in the student's branch zone (`branch`). */
 function HistoryTab({ studentId, branch }: { studentId: number; branch?: number }) {
   const asAt = useAsAt();
@@ -1357,18 +1349,7 @@ function HistoryTab({ studentId, branch }: { studentId: number; branch?: number 
     <Panel title={`${entries.length} ${entries.length === 1 ? "entry" : "entries"}, newest first`}>
       <ul className="grid gap-3">
         {entries.map((e, i) => (
-          <li key={`${e.when}-${i}`} className="flex min-w-0 gap-2.5">
-            <span
-              aria-hidden
-              className={`mt-1.5 size-2 shrink-0 rounded-full ${DOT[e.kind] ?? "bg-gray-400"}`}
-            />
-            <div className="min-w-0">
-              <p className="text-sm text-black-01">{e.text}</p>
-              <p className="text-xs text-gray-05">
-                {formatDateTime(e.when, prefs)} · {e.actor}
-              </p>
-            </div>
-          </li>
+          <HistoryEntryItem key={`${e.when}-${i}`} entry={e} prefs={prefs} />
         ))}
       </ul>
     </Panel>
