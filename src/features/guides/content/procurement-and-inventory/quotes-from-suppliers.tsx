@@ -54,6 +54,19 @@ export default function QuotesFromSuppliersArticle() {
         <p>The draft purchase order then goes through approval like any other. See the guide on ordering, receiving and paying.</p>
       </GuideSection>
 
+      <GuideSection id="buy-together" title="Buy together across branches">
+        <p>When two branches need the same thing, one RFQ gets one set of quotes. Say Ikeja has an approved requisition for 60 chairs and Lekki one for 40: suppliers see one line of 100 chairs, and the award raises one purchase order for each branch, 60 for Ikeja and 40 for Lekki, so each branch receives, owes and reports its own.</p>
+        <GuideSteps>
+          <GuideStep title="Select New RFQ and choose Several branches together">Under <strong>Who is buying</strong>. It is offered at a school with more than one branch, to a buyer who works in at least two of them.</GuideStep>
+          <GuideStep title="Pick the requisition lines">Under <strong>Approved requisition lines to buy together</strong>, tick each requisition, or single lines of it. Search by item or requisition number; what you have already picked stays picked. Lines from at least two branches are needed.</GuideStep>
+          <GuideStep title="Check what suppliers will see">The same items are put on one RFQ line, with each branch&apos;s quantity shown underneath. You may reword the line&apos;s description.</GuideStep>
+          <GuideStep title="Finish as usual">Set the dates, invite the suppliers, then save or issue. Quotes, comparing and the award work as for any RFQ.</GuideStep>
+        </GuideSteps>
+        <GuideCallout tone="info" title="What buying together cannot do">
+          Each requisition line goes on whole: part of a line cannot be shared. A line already on an open RFQ or purchase order is not offered, so nothing is put out to tender twice. Once saved, the RFQ&apos;s lines cannot be edited: to change them, cancel it and raise a new one.
+        </GuideCallout>
+      </GuideSection>
+
       <GuideSection id="close-or-cancel" title="Close or cancel without an award">
         <p><strong>Close</strong> finishes an open RFQ without an award and rejects the quotations on it. <strong>Cancel RFQ</strong> abandons a draft or open RFQ and cannot be undone. Neither asks for a reason, so note why in the RFQ before you do it.</p>
       </GuideSection>
@@ -64,6 +77,8 @@ export default function QuotesFromSuppliersArticle() {
           "A supplier is not offered: it is inactive, on hold, or KYC-rejected.",
           "Award is missing: the quotation is not Submitted, has expired, or the RFQ is already awarded.",
           "A supplier is missing from New Quotation: they were not invited, or have already quoted.",
+          "Several branches together is not offered: your school has one branch, or you work in only one.",
+          "A requisition line is missing from the shared list: it is not approved yet, or it is already on an RFQ or purchase order.",
         ]} />
       </GuideSection>
 
