@@ -25,7 +25,6 @@ import { routesPath } from "@/routes/routesPath";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
-import { parseApiError } from "@/utils/api-error";
 import {
   useCreateExamSlotMutation,
   usePreviewExamSlotMutation,
@@ -197,10 +196,8 @@ export default function ExamScheduling() {
     try {
       const result = await publish({ id: exam.id }).unwrap();
       toast.success(result.message);
-    } catch (error) {
-      toast.error(
-        parseApiError(error).message || "That schedule could not be published.",
-      );
+    } catch {
+      // Toasted centrally.
     }
   };
 
@@ -505,11 +502,8 @@ export default function ExamScheduling() {
                               id: slot.id,
                             }).unwrap();
                             toast.success(result.message || "Paper removed.");
-                          } catch (error) {
-                            toast.error(
-                              parseApiError(error).message ||
-                                "That paper could not be removed.",
-                            );
+                          } catch {
+                            // Toasted centrally.
                           }
                         },
                       },

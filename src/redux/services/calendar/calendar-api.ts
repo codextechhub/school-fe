@@ -139,11 +139,16 @@ export const calendarApi = baseApi.injectEndpoints({
       providesTags: ["CalendarRules"],
     }),
 
+    /**
+     * `silent`, like every settings section's save: the section puts a field's
+     * refusal under that field and toasts anything else itself.
+     */
     updateCalendarRules: builder.mutation<
       Envelope<CalendarRules>,
       CalendarRulesUpdate
     >({
       query: (body) => ({ url: CALENDAR_RULES_URLS.rules, method: "PUT", body }),
+      extraOptions: { silent: true },
       // Teaching days are the columns of every grid, and the invigilator roles
       // decide who the invigilator list holds.
       invalidatesTags: [

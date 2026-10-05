@@ -32,7 +32,6 @@ import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { cn } from "@/lib/utils";
-import { parseApiError } from "@/utils/api-error";
 import {
   useCreateSubjectMutation,
   useArchiveSubjectMutation,
@@ -146,8 +145,8 @@ export default function Subjects() {
       const run = confirm.is_active ? archive : restore;
       const result = await run(confirm.id).unwrap();
       toast.success(result.message);
-    } catch (error) {
-      toast.error(parseApiError(error).message || "That could not be updated.");
+    } catch {
+      // Toasted centrally.
     }
     setConfirm(null);
   };

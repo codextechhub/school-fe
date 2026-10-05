@@ -282,3 +282,50 @@ describe("a refused action (409)", () => {
     expect(toastError).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * A refused request (400, 422) toasts the sentence the reader can act on.
+ *
+ * Mrs Adeyemi at Bright Star adds "JSS1" and "JSS2" to Junior Secondary, where
+ * JSS1 already exists. The server refuses the batch with a typed refusal whose
+ * `detail` lists the offending names, and its `message` is the explanation; the
+ * toast is the explanation, not "JSS1". A serializer's field error, by
+ * contrast, is most specific in `detail`, so that one still wins there.
+ */
+describe("a refused request (400, 422)", () => {
+  it("says a typed refusal's message, not the first string in its detail", async () => {
+    respondWith(422, {
+      success: false,
+      message: "Some of these levels already exist in this programme.",
+      error: { code: "DUPLICATE_IN_BATCH", detail: { names: ["JSS1"] } },
+    });
+
+    await baseQueryInterceptor("/academics/programs/7/levels/bulk/", apiStub("mutation"), {});
+
+    expect(toastError).toHaveBeenCalledOnce();
+    expect(toastError).toHaveBeenCalledWith("Some of these levels already exist in this programme.");
+  });
+
+  it("says a serializer's field error from its detail", async () => {
+    respondWith(400, {
+      success: false,
+      message: "name: This field may not be blank.; code: Ensure this field has no more than 10 characters.",
+      error: {
+        code: "REQUEST_ERROR",
+        detail: { name: ["This field may not be blank."], code: ["Ensure this field has no more than 10 characters."] },
+      },
+    });
+
+    await baseQueryInterceptor("/academics/departments/", apiStub("mutation"), {});
+
+    expect(toastError).toHaveBeenCalledWith("This field may not be blank.");
+  });
+
+  it("raises no toast for a refusal that carries no sentence, rather than its code", async () => {
+    respondWith(400, { success: false, error: { code: "SOMETHING_NEW", detail: {} } });
+
+    await baseQueryInterceptor("/students/7/", apiStub("mutation"), {});
+
+    expect(toastError).not.toHaveBeenCalled();
+  });
+});

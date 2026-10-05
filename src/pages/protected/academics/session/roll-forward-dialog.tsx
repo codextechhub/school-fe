@@ -74,9 +74,11 @@ export function RollForwardDialog({
       setSource("");
       onClose();
     } catch (error) {
-      // Includes the server's own refusal when the year has been started
-      // already, which names the year and says how much is in it.
-      toast.error(parseApiError(error).message || "That could not be done.");
+      // The interceptor toasts every refusal but this one, which the dialog owns.
+      const parsed = parseApiError(error);
+      if (parsed.code === "TARGET_YEAR_NOT_EMPTY") {
+        toast.error(parsed.message || "That year already has levels, classes or subjects.");
+      }
     }
   };
 

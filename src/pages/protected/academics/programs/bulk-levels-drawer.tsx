@@ -11,7 +11,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { parseApiError } from "@/utils/api-error";
 import { useBulkCreateLevelsMutation } from "@/redux/services/academics/academics-api";
 import type { Program } from "@/redux/services/academics/academics-types";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
@@ -88,8 +87,8 @@ export function BulkLevelsDrawer({
       }).unwrap();
       toast.success(result.message);
       onClose();
-    } catch (error) {
-      toast.error(parseApiError(error).message || "Those could not be added.");
+    } catch {
+      // Toasted centrally, including the refusal naming the levels that exist.
     }
   };
 

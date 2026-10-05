@@ -628,8 +628,8 @@ function TabBody({
           try {
             await assignLeaveGroup({ id: person.id, group_id: groupId }).unwrap();
             toast.success("Leave group saved.");
-          } catch (error) {
-            toast.error(apiErrorMessage(error, "We could not save the leave group."));
+          } catch {
+            // Toasted centrally.
           }
         } : undefined}
         onEdit={mayEditLeave ? (request) => onOpenDrawer({ kind: "leaveEdit", staffId: person.id, personName: person.full_name, request }) : undefined}

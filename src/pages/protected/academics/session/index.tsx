@@ -31,7 +31,6 @@ import PermissionGate from "@/components/custom/permission-gate";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { cn, formatMonthYearShort } from "@/lib/utils";
-import { parseApiError } from "@/utils/api-error";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import {
@@ -139,8 +138,8 @@ export default function AcademicSessions() {
           ? await activate(confirm.session.id).unwrap()
           : await archive(confirm.session.id).unwrap();
       toast.success(result.message);
-    } catch (error) {
-      toast.error(parseApiError(error).message || "That could not be done.");
+    } catch {
+      // Toasted centrally.
     }
     setConfirm(null);
   };

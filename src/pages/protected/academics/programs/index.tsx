@@ -33,7 +33,6 @@ import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { cn } from "@/lib/utils";
-import { parseApiError } from "@/utils/api-error";
 import {
   useCreateLevelMutation,
   useCreateProgramMutation,
@@ -227,8 +226,8 @@ export default function Programs() {
     try {
       const result = await run().unwrap();
       toast.success(result.message);
-    } catch (error) {
-      toast.error(parseApiError(error).message || "That could not be done.");
+    } catch {
+      // Toasted centrally.
     }
     setConfirm(null);
   };

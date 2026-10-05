@@ -39,7 +39,6 @@ import { CardActions, ClickableCard, Panel } from "@/components/custom/surface";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
-import { parseApiError } from "@/utils/api-error";
 import {
   useCreateDepartmentMutation,
   useArchiveDepartmentMutation,
@@ -225,8 +224,7 @@ export default function Departments() {
       }
       setConfirm(null);
     } catch (error) {
-      const parsed = parseApiError(error);
-      toast.error(parsed.message || "That could not be done.");
+      // Toasted centrally; a narrowed edit also reports back to its drawer.
       if (confirm.kind === "narrow") confirm.reject(error);
       setConfirm(null);
     }

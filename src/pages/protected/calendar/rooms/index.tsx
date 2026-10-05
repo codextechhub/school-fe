@@ -12,7 +12,6 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
-import { parseApiError } from "@/utils/api-error";
 import {
   useCreateRoomMutation,
   useDeleteRoomMutation,
@@ -107,10 +106,8 @@ export default function Rooms() {
         is_active: !room.is_active,
       }).unwrap();
       toast.success(result.message);
-    } catch (error) {
-      toast.error(
-        parseApiError(error).message || "That room could not be changed.",
-      );
+    } catch {
+      // Toasted centrally.
     }
   };
 

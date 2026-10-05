@@ -96,8 +96,8 @@ export function QualificationRemove({ row, onClose }: { row: StaffQualification;
       await remove(row.id).unwrap();
       toast.success("Qualification removed. Its change history remains available.");
       onClose();
-    } catch (error) {
-      toast.error(apiErrorMessage(error, "We could not remove that qualification."));
+    } catch {
+      // Toasted centrally.
     }
   }
 

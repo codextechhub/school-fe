@@ -23,7 +23,7 @@ import {
   useGetWorkflowNotificationSettingQuery,
   useSetWorkflowNotificationSettingMutation,
 } from "@/redux/services/dashboard/workflow-api";
-import { parseApiError, writeErrorMessage } from "@/utils/api-error";
+import { parseApiError } from "@/utils/api-error";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 import { useSettingsBranches } from "../use-settings-branches";
 import { useSettingsWrite } from "../use-settings-write";
@@ -125,8 +125,8 @@ export function NotificationsSection() {
         branch: branch || undefined,
       }).unwrap();
       toast.success(done);
-    } catch (error) {
-      toast.error(writeErrorMessage(error, "We could not change that. Try again."));
+    } catch {
+      // Toasted centrally.
     } finally {
       setPending(null);
     }
@@ -267,7 +267,8 @@ function ApprovalEmails() {
       .then(() =>
         toast.success(next ? "Approvals will notify people again." : "Approvals will not notify anybody."),
       )
-      .catch((error) => toast.error(writeErrorMessage(error, "That could not be changed.")));
+      // Toasted centrally.
+      .catch(() => undefined);
   };
 
   return (

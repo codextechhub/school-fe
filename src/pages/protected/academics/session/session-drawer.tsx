@@ -218,7 +218,7 @@ export function SessionDrawer({
         });
         return;
       }
-      toast.error(parsed.message || "That could not be saved.");
+      // Anything else is toasted centrally.
     }
   };
 

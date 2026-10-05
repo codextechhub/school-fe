@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import PromptModal from "@/components/modal/prompt-modal";
 import { parseApiError } from "@/utils/api-error";
+import { errorStatus } from "@/utils/api-errors";
 import { useAppSelector } from "@/redux/store";
 import { selectTenantIsPending } from "@/redux/features/auth/auth-slice";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -78,9 +79,13 @@ export function ExportButton({
       if (!data.unmapped?.length) return execute(data);
       setPending(data);
     } catch (error) {
-      toast.error(
-        parseApiError(error).message || "That export could not be prepared.",
-      );
+      // A refused read (403, 409) is this screen's to say; the rest is toasted centrally.
+      const status = errorStatus(error);
+      if (status === 403 || status === 409) {
+        toast.error(
+          parseApiError(error).message || "That export could not be prepared.",
+        );
+      }
     }
   };
 
@@ -89,6 +94,7 @@ export function ExportButton({
       const result = await run({ ...data.config, sync: true }).unwrap();
       toast.success(result.message);
     } catch (error) {
+      // The run is silent, so its failure is this button's to say.
       toast.error(parseApiError(error).message || "That export could not be run.");
     }
     setPending(null);

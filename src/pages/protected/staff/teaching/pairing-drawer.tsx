@@ -174,10 +174,8 @@ export function PairingDrawer({
       await remove(toRemove.assignmentId).unwrap();
       toast.success(`${toRemove.name} no longer teaches ${where}.`);
       setToRemove(null);
-    } catch (error) {
-      toast.error(
-        apiErrorMessage(error, "We could not remove that. Try again."),
-      );
+    } catch {
+      // Toasted centrally.
     }
   }
 

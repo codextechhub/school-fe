@@ -492,11 +492,16 @@ export const academicsApi = baseApi.injectEndpoints({
       providesTags: ["AcademicRules"],
     }),
 
+    /**
+     * `silent`, like every settings section's save: the section puts a field's
+     * refusal under that field and toasts anything else itself.
+     */
     updateAcademicRules: builder.mutation<
       Envelope<AcademicRules>,
       AcademicRulesUpdate
     >({
       query: (body) => ({ url: ACADEMIC_RULES_URL, method: "PUT", body }),
+      extraOptions: { silent: true },
       invalidatesTags: ["AcademicRules"],
     }),
   }),

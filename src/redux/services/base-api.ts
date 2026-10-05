@@ -33,6 +33,7 @@ import { getAccessToken } from "@/utils/access-token";
 import { refusalMessage } from "@xvs/finance/lib/api-errors";
 import { selectSchoolDisplay, type DisplayState } from "@/lib/school-display";
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
+import { apiErrorMessage as envelopeMessage } from "@/utils/api-errors";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -260,6 +261,27 @@ const extractFirstDetailError = (detail: unknown): string | null => {
   return null;
 };
 
+/**
+ * The sentence for a refused request (HTTP 400 or 422), or "" when it has none.
+ *
+ * Read by the envelope's own rule (`apiErrorMessage` in `@/utils/api-errors`):
+ * a typed refusal's `message` is its whole explanation and its `detail` is
+ * machine context, so `detail` is read first only for DRF's REQUEST_ERROR.
+ * Reading `detail` first for a typed refusal shows whatever string it carries:
+ * a bulk level create refused with DUPLICATE_IN_BATCH would toast "JSS1", the
+ * first name it lists, instead of "Some of these levels already exist in this
+ * programme." Screens leave this toast to the interceptor, so it has to be the
+ * sentence. A body outside the envelope falls back to its first string,
+ * and an envelope with no sentence at all raises no toast rather than its code.
+ */
+const invalidRequestMessage = (res: unknown): string => {
+  const message = envelopeMessage(res, "");
+  if (message) return message;
+  const error = (res as { data?: { error?: unknown } })?.data?.error;
+  const coded = !!error && typeof error === "object" && "code" in error;
+  return coded ? "" : extractFirstDetailError(error) ?? "";
+};
+
 const AUTH_URLS = [
   "login",
   "reset-password",
@@ -380,10 +402,7 @@ export const baseQueryInterceptor: BaseQueryFn<
     // toast here - doing so leaks the raw backend detail (and even machine
     // codes like INVITATION_NOT_FOUND) into the UI beside the friendly panel.
     if (!isAuthRoute(args)) {
-      const message =
-        extractFirstDetailError(res?.data?.error?.detail) ||
-        extractFirstDetailError(res?.data?.error) ||
-        res?.data?.message;
+      const message = invalidRequestMessage(res);
       if (message) notify(message);
     }
     return result;

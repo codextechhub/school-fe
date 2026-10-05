@@ -23,6 +23,7 @@ import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import { parseApiError } from "@/utils/api-error";
+import { SCREEN_OWNED_CONFLICTS } from "@/redux/services/base-api";
 import {
   useClearTimetableMutation,
   useCreateSlotMutation,
@@ -232,10 +233,8 @@ export default function ClassTimetables() {
     try {
       const result = await clear({ id: current }).unwrap();
       toast.success(result.message);
-    } catch (error) {
-      toast.error(
-        parseApiError(error).message || "That timetable could not be cleared.",
-      );
+    } catch {
+      // Toasted centrally.
     }
     setConfirm(null);
   };
@@ -263,7 +262,8 @@ export default function ClassTimetables() {
         message,
         items: parsed.code === "TIMETABLE_HAS_CLASHES" ? [] : items,
       });
-      toast.error(message);
+      // The interceptor toasts every refusal but the ones this screen owns.
+      if (SCREEN_OWNED_CONFLICTS.has(parsed.code)) toast.error(message);
     }
   };
 

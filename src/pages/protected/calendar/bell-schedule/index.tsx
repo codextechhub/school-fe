@@ -163,10 +163,8 @@ export default function BellSchedule() {
     try {
       const result = await remove(confirm.id).unwrap();
       toast.success(result.message || `${confirm.label} removed.`);
-    } catch (error) {
-      toast.error(
-        parseApiError(error).message || "That period could not be removed.",
-      );
+    } catch {
+      // Toasted centrally.
     }
     setConfirm(null);
   };

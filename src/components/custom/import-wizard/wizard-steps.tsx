@@ -437,16 +437,26 @@ function TemplateCard({ template }: { template: ImportTemplate }) {
   const [downloadTemplate, { isLoading: isDownloading }] = useDownloadImportTemplateMutation();
   const format = template.default_file_format === "xls" ? "xlsx" : template.default_file_format;
 
+  /**
+   * Fetches the template through the shared API client, so the bearer token,
+   * impersonation header and tenant assertion apply, then previews it. A
+   * refused download is toasted centrally; only a file that arrived and could
+   * not be read is reported here.
+   */
   const handlePreview = async () => {
+    let blobUrl: string;
     try {
-      // Use the shared API client so the bearer token, impersonation header,
-      // and mandatory tenant assertion are applied consistently.
-      const blobUrl = await downloadTemplate({ id: template.id, format }).unwrap();
+      blobUrl = await downloadTemplate({ id: template.id, format }).unwrap();
+    } catch {
+      return; // Toasted centrally.
+    }
+    try {
       const blob = await fetch(blobUrl).then((response) => response.blob());
-      URL.revokeObjectURL(blobUrl);
       showBlobPreview(`${template.code}_template.${format}`, blob);
     } catch {
       toast.error("Template could not be opened. Please try again.");
+    } finally {
+      URL.revokeObjectURL(blobUrl);
     }
   };
 

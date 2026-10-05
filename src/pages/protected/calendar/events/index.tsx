@@ -12,7 +12,6 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
-import { parseApiError } from "@/utils/api-error";
 import {
   useCreateCalendarEventMutation,
   useDeleteCalendarEventMutation,
@@ -148,10 +147,8 @@ export default function CalendarEvents() {
     try {
       const result = await remove(confirm.id).unwrap();
       toast.success(result.message || `${confirm.name} removed.`);
-    } catch (error) {
-      toast.error(
-        parseApiError(error).message || "That event could not be removed.",
-      );
+    } catch {
+      // Toasted centrally.
     }
     setConfirm(null);
   };

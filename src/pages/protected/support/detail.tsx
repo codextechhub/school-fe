@@ -495,8 +495,8 @@ export default function SupportTicketDetail() {
         }
       }
       toast.success(text ? "Reply sent" : "Attachment uploaded");
-    } catch (error) {
-      toast.error(apiErrorMessage(error, "We could not post your reply."));
+    } catch {
+      // Toasted centrally.
     } finally {
       sendingRef.current = false;
     }

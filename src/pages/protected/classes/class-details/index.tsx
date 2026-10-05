@@ -42,7 +42,6 @@ import {
 import type { StudentRow } from "@/redux/services/students/students-types";
 import type { Pagination } from "@/redux/services/onboarding/onboarding-types";
 import { routesPath } from "@/routes/routesPath";
-import { parseApiError } from "@/utils/api-error";
 import { ClassDrawer } from "../class-drawer";
 import { canManageRow } from "@/lib/can-manage";
 
@@ -98,15 +97,9 @@ export default function ClassDetails() {
 
   async function saveClass(body: ClassWrite) {
     if (!klass) return;
-    try {
-      const result = await update({ id: klass.id, ...body }).unwrap();
-      toast.success(result.message);
-    } catch (error) {
-      toast.error(
-        parseApiError(error).message || "That class could not be saved.",
-      );
-      throw error;
-    }
+    // A failure is toasted centrally and shown inline by the drawer.
+    const result = await update({ id: klass.id, ...body }).unwrap();
+    toast.success(result.message);
   }
 
   if (isLoading) {

@@ -726,8 +726,8 @@ function DocumentRow({
       await remove(row.id).unwrap();
       toast.success(`${label} removed.`);
       setConfirming(false);
-    } catch (failure) {
-      toast.error(writeErrorMessage(failure, "We could not remove that file."));
+    } catch {
+      // Toasted centrally.
     }
   }
 

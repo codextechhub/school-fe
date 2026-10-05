@@ -11,7 +11,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { parseApiError } from "@/utils/api-error";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useGenerateArmsMutation } from "@/redux/services/academics/academics-api";
 import type {
@@ -140,10 +139,8 @@ export function GenerateArmsDrawer({
       }).unwrap();
       toast.success(result.message);
       onClose();
-    } catch (error) {
-      toast.error(
-        parseApiError(error).message || "Those could not be created.",
-      );
+    } catch {
+      // Toasted centrally.
     }
   };
 

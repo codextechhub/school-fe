@@ -15,7 +15,6 @@ import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import { usePermissions } from "@/hooks/use-permissions";
 import { routesPath } from "@/routes/routesPath";
-import { apiErrorMessage } from "@/utils/api-error";
 import {
   importDownloadUrls,
   useCancelImportBatchMutation,
@@ -175,10 +174,8 @@ export function RecentImports() {
       await cancelBatch(id).unwrap();
       toast.success(`${filename} was ended. Nothing from it was written.`);
       setEnding(null);
-    } catch (error) {
-      toast.error(
-        apiErrorMessage(error, "We could not end that import. Try again."),
-      );
+    } catch {
+      // Toasted centrally.
     }
   }
 

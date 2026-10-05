@@ -147,10 +147,8 @@ export function AssignDutiesDrawer({
       await remove(toRemove.id).unwrap();
       toast.success("Teaching duty removed.");
       setToRemove(null);
-    } catch (error) {
-      toast.error(
-        apiErrorMessage(error, "We could not remove that duty. Try again."),
-      );
+    } catch {
+      // Toasted centrally.
     }
   }
 
