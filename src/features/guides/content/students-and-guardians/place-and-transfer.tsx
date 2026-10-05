@@ -51,6 +51,7 @@ export default function PlaceAndTransferArticle() {
         <ProblemGrid items={[
           { title: "A class cannot be chosen", body: "It belongs to a different branch from the students you picked. Pick students from one branch at a time." },
           { title: "The class I want is not listed", body: "A student can only move to a class in the current year, in their own branch or open to the whole school. Check the class in Academic Structure." },
+          { title: "The class is at another branch", body: "The student must change branch first. Use Move to another branch on their profile, which also moves their fee account, and choose the class there." },
           { title: "Move out or Assign is missing", body: "Placing and moving students needs the class assignment permission." },
           { title: "Change class is disabled on a profile", body: "You are looking at a past year. Choose the current year in the sidebar to move a student." },
         ]} />

@@ -60,6 +60,9 @@ const REGISTRY: Record<string, string> = {
   "100310": "school.students.reactivate",
   "100317": "school.students.import",
   "100318": "school.students.export",
+  // Moving a pupil to another branch of the school, with their fee account.
+  // Its own key: "transfer" (100312) means leaving for another school.
+  "100320": "school.students.change_branch",
 
   // ── school / field access  (MM=10, RR=14) ─────────────────────────────────
   "101401": "school.field_access.view",
@@ -408,6 +411,7 @@ export const P = {
   IMPORT_STUDENTS:         "100317",  // load a roll from a spreadsheet
   EXPORT_STUDENTS:         "100318",  // export the directory as it is filtered
   PROMOTE_STUDENTS:        "100307",  // advance a cohort to the next level
+  MOVE_STUDENT_BRANCH:     "100320",  // move a pupil to another branch, fee account and all
 
   // ── Staff Management ───────────────────────────────────────────────────────
   // The backend resource is still `teachers`, and these keys govern every

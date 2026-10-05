@@ -249,7 +249,13 @@ export interface StudentDocumentRow {
   file_retired?: boolean;
 }
 
-export type HistoryKind = "status" | "class" | "guardian" | "document" | "edit";
+export type HistoryKind =
+  | "status"
+  | "class"
+  | "branch"
+  | "guardian"
+  | "document"
+  | "edit";
 
 /** The profile's History tab: the status log and the audit trail, merged. */
 export interface HistoryEntry {
@@ -770,4 +776,102 @@ export interface StudentListArgs {
   /** An admission stage id, or "none" for applicants at no stage yet. */
   stage?: number | "none";
   page?: number;
+}
+
+// ── Moving a pupil to another branch ────────────────────────────────────────
+
+/** A branch the reader may move this pupil to, with its own today. */
+export interface BranchMoveTarget {
+  id: number;
+  name: string;
+  /** Today at that branch, the default day of the move. */
+  today: string;
+}
+
+/**
+ * What the move form needs, from GET `/students/<id>/move-branch/`.
+ *
+ * `branches` lists only the branches the reader may move this pupil to: an
+ * empty list means the school has one branch, or the reader works only at the
+ * pupil's branch. `needs_class` is true when the pupil sits in a class of
+ * their own branch, which they leave; a pupil in a school-wide class may keep
+ * it, and an unplaced pupil may stay unplaced.
+ */
+export interface BranchMoveOptions {
+  branch: number;
+  branch_name: string;
+  status: StudentStatus;
+  school_class: number | null;
+  school_class_name: string | null;
+  class_is_shared: boolean;
+  needs_class: boolean;
+  /** Whether this reader is shown the money a move carries. */
+  figures_shown: boolean;
+  branches: BranchMoveTarget[];
+}
+
+/** One bill a move carries. Amounts are integer kobo. */
+export interface BranchMoveBill {
+  kind: "INVOICE" | "DEBIT_NOTE";
+  number: string;
+  amount: number;
+  deferred_amount: number;
+}
+
+/**
+ * One fee account's part of a move. The money keys are absent, not zero, for
+ * a reader who does not read invoices.
+ */
+export interface BranchMoveAccount {
+  name: string;
+  from_branch: number;
+  from_branch_name: string;
+  to_branch: number;
+  to_branch_name: string;
+  invoice_count: number;
+  debit_note_count: number;
+  /** The finance record of the move; null on a preview. */
+  transfer: number | null;
+  transfer_number: string;
+  amount?: number;
+  owed_amount?: number;
+  credit_amount?: number;
+  deferred_amount?: number;
+  /** What the new branch owes the old one; negative when the old owes the new. */
+  inter_branch_amount?: number;
+  bills?: BranchMoveBill[];
+}
+
+export interface BranchMoveTotals {
+  owed_amount: number;
+  credit_amount: number;
+  deferred_amount: number;
+  inter_branch_amount: number;
+  amount: number;
+}
+
+/** The answer of the preview and of the move: the same shape. */
+export interface BranchMoveResult {
+  /** The move's id; null on a preview. */
+  move: number | null;
+  from_branch: number;
+  from_branch_name: string;
+  to_branch: number;
+  to_branch_name: string;
+  effective_date: string;
+  school_class: number | null;
+  school_class_name: string | null;
+  over_capacity: boolean;
+  figures_shown: boolean;
+  accounts: BranchMoveAccount[];
+  /** Present only where `figures_shown`. */
+  totals?: BranchMoveTotals;
+}
+
+export interface BranchMoveWrite {
+  to_branch: string;
+  school_class?: number | null;
+  effective_date?: string;
+  reason: string;
+  allow_over_capacity?: boolean;
 }

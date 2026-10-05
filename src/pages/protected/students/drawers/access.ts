@@ -15,28 +15,50 @@ import type { DrawerKind } from "./index";
  * - `transfer`: POST `/students/<id>/assign-class/` needs
  *   `academics.classes.assign`, because seating a child is the class module's
  *   power rather than the roll's.
+ * - `branch`: POST `/students/<id>/move-branch/` needs
+ *   `school.students.change_branch`, and naming a class there needs
+ *   `academics.classes.assign` as well, which the server checks.
  * - `guardian`: POST `/students/<id>/guardians/` needs `school.students.update`.
  */
 export const STUDENT_DRAWER_PERMISSION: Record<DrawerKind, PermissionCode> = {
   edit: P.MODIFY_STUDENT,
   status: P.TRANSITION_STUDENT,
   transfer: P.ASSIGN_CLASS,
+  branch: P.MOVE_STUDENT_BRANCH,
   guardian: P.MODIFY_STUDENT,
 };
+
+/** The statuses of a pupil on the roll, the only ones who attend a branch. */
+const ON_ROLL = new Set(["ENROLLED", "ACTIVE", "SUSPENDED"]);
 
 /**
  * Whether a student drawer may be offered to this reader.
  *
  * A class placement belongs to a year, and a year that is not the active one
- * is read-only, so `transfer` is also withheld while a past year is being read.
- * Status, record and guardian edits carry no year and are unaffected by it.
+ * is read-only, so `transfer` and `branch` are withheld while a past year is
+ * being read. `branch` is also absent at a school with one branch, which the
+ * record shows by carrying no `branch` at all, and for a pupil who is not on
+ * the roll. Status, record and guardian edits carry no year and are
+ * unaffected by it.
  */
 export function canOpenStudentDrawer(
   kind: DrawerKind,
   hasPermission: (code: PermissionCode) => boolean,
-  { pastYear = false }: { pastYear?: boolean } = {},
+  {
+    pastYear = false,
+    student,
+  }: {
+    pastYear?: boolean;
+    student?: { branch?: number | null; status?: string };
+  } = {},
 ): boolean {
-  if (kind === "transfer" && pastYear) return false;
+  if ((kind === "transfer" || kind === "branch") && pastYear) return false;
+  if (
+    kind === "branch" &&
+    (student?.branch == null || !ON_ROLL.has(student.status ?? ""))
+  ) {
+    return false;
+  }
   return hasPermission(STUDENT_DRAWER_PERMISSION[kind]);
 }
 
