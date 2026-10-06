@@ -70,13 +70,15 @@ const APPROVER_CHANGE_TAGS = [
 
 /**
  * A workflow vote/withdraw/cancel/reverse changes the state of the *business
- * document* underneath (a requisition, PO or vendor invoice), so those consoles'
- * list / summary / detail caches must drop alongside the workflow caches -
- * otherwise a status only refreshes after a manual refetch. RTK only refetches
- * mounted queries, so the cross-domain tags are effectively free off-screen.
+ * document* underneath (a requisition, PO, vendor invoice, vendor payment or
+ * vendor credit note), so those consoles' list / summary / detail caches must
+ * drop alongside the workflow caches - otherwise a status only refreshes after
+ * a manual refetch. RTK only refetches mounted queries, so the cross-domain
+ * tags are effectively free off-screen.
  */
 const PROC_DOC_TAGS = [
   "ProcRequisitions", "ProcPurchaseOrders", "ProcVendorInvoices", "ProcVendorPayments",
+  "ProcVendorCreditNotes",
 ] as const;
 
 export const workflowApi = baseApi.injectEndpoints({
