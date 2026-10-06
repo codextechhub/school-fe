@@ -30,7 +30,7 @@ export default function BranchesWorkingTogetherArticle() {
         <GuideSteps>
           <GuideStep title="Open Inter-branch Transfers">Select <strong>Send money</strong> to send from your branch, or <strong>Ask for money</strong> to ask another branch.</GuideStep>
           <GuideStep title="Fill in the transfer">Choose the account it is paid from, the other branch, the amount and what it is for. A send follows your branch's approval route.</GuideStep>
-          <GuideStep title="The other branch answers">The branch asked can <strong>Send</strong> or <strong>Decline</strong>. Once its send is with the approvers, including after they send it back, neither is offered. The branch that receives the money selects <strong>Confirm it arrived</strong>.</GuideStep>
+          <GuideStep title="The other branch answers">The branch asked can <strong>Send</strong> or <strong>Decline</strong>. Until it does, the request says it is waiting for that branch, or, to staff there who may not send money, for someone there who may. Once its send is with the approvers, including after they send it back, neither is offered, and while the approvers have it the request says <em>With the approver.</em> The branch that receives the money selects <strong>Confirm it arrived</strong>.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
@@ -39,7 +39,7 @@ export default function BranchesWorkingTogetherArticle() {
       </GuideSection>
 
       <GuideSection id="held-receipts" title="Money collected for another branch">
-        <p>When a parent pays at one branch for another branch's bill, open <strong>Held Receipts</strong> and select <strong>Record money for another branch</strong>. Then <strong>Forward</strong> it. Once sent, it settles the bill at the other branch. If the approver sends the forward back, the receipt reads <strong>Sent back</strong>, and the status filter lists it under <strong>Sent back</strong>, not under <strong>Forwarding</strong>. Whoever sent it resumes it, or withdraws it, under Workflow, My Submissions.</p>
+        <p>When a parent pays at one branch for another branch's bill, open <strong>Held Receipts</strong> and select <strong>Record money for another branch</strong>. Then <strong>Forward</strong> it. Once sent, it settles the bill at the other branch. The status filter offers <strong>Held</strong>, <strong>Forwarding</strong>, <strong>Sent back</strong>, <strong>Forwarded</strong> and <strong>Voided</strong>, each listing only the receipts that read that word. If the approver sends the forward back, the receipt reads <strong>Sent back</strong>, and the status filter lists it under <strong>Sent back</strong>, not under <strong>Forwarding</strong>. Whoever sent it resumes it, or withdraws it, under Workflow, My Submissions.</p>
       </GuideSection>
 
       <GuideSection id="shared-costs" title="Share a cost">
