@@ -28,6 +28,15 @@ export default function TrackSubmissionsAndDelegateArticle() {
           <GuideStep title="Select Resubmit">Confirm in the <strong>Resubmit for approval?</strong> dialog. The request picks up again at the step that returned it, with the approvers who hold that step today.</GuideStep>
           <GuideStep title="Withdraw only to stop the request">While a request is submitted, in progress or returned, <strong>Withdraw</strong> ends it. To start again you submit a fresh request from the document&apos;s own screen.</GuideStep>
         </GuideSteps>
+        <p><strong>Finance and Procurement documents</strong> can be corrected and resumed on their own screen, without coming back here. Open the document, for example the requisition in Procurement or the credit note in Receivables. A note headed <strong>Sent back to you</strong> says who sent it back, when, and why. Under it:</p>
+        <GuideChecklist items={[
+          "Edit corrects the document in place. Your role must also be allowed to edit that kind of document.",
+          "Resume sends the corrected version back into the same approval, at the step that sent it back. The approvers then see the corrected version.",
+        ]} />
+        <p>Edit is offered on requisitions, purchase orders, vendor invoices, vendor payments, vendor credit notes, credit and debit notes, concessions, manual journals, and bank transactions and transfers. On an expense claim you attach or remove receipts instead. Refunds, write-offs, credit transfers, doubtful-debt provision runs, inter-branch sends and journals raised by another document can only be resumed as they are: to change one, withdraw it here and send it again from its own screen.</p>
+        <GuideCallout tone="info" title="Only the person who sent it gets Edit and Resume">
+          Ngozi sends back a stationery requisition that Tunde sent for approval, asking for a cheaper supplier. Tunde opens the requisition, selects <strong>Edit</strong>, changes the supplier, then selects <strong>Resume</strong>. Tunde&apos;s colleague Amaka, who may also edit requisitions, sees the note headed <strong>Sent back</strong> but neither button, and so does Ngozi. While a document is with its approvers, nobody can change it: its screen says <em>With the approver.</em>
+        </GuideCallout>
       </GuideSection>
 
       <GuideSection id="create-a-delegation" title="Delegate your approvals">
@@ -52,6 +61,7 @@ export default function TrackSubmissionsAndDelegateArticle() {
         <GuideChecklist items={[
           "\"Your role can't view your submissions. Ask your administrator.\": your role cannot open My submissions. It does not mean you have raised nothing.",
           "Resubmit is missing: only the person who raised a request can resubmit it, and only while it is Returned.",
+          "Edit and Resume are missing on a document sent back: only the person who sent it for approval gets them, and Edit also needs a role that may edit that kind of document.",
           "My delegate cannot see my items: check that today is inside the dates and that Applies to covers that document.",
           "Both of us are still being asked: Exclusive delegation was left off, so either of you can act.",
           "A colleague is not in the Delegate to list: only active accounts are offered.",

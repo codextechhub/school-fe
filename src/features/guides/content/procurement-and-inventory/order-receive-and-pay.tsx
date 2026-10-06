@@ -34,7 +34,8 @@ export default function OrderReceiveAndPayArticle() {
           <GuideStep title="Send it for approval">Select <strong>Create &amp; Review Approval</strong>, or <strong>Save Draft</strong> and later <strong>Submit for Approval</strong>. In the <strong>Raise this purchase order for approval?</strong> dialog you can tick <strong>Automatically email this PO to the vendor when fully approved</strong>. Select <strong>Raise for Approval</strong>.</GuideStep>
           <GuideStep title="Email the supplier">After full approval, <strong>Email Vendor</strong> sends the order as a PDF. The <strong>Vendor Email</strong> tab shows what was sent and to whom. <strong>Print</strong> gives a copy for the file.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="info" title="The badge can still read Draft">While a purchase order waits for approval, its drawer shows <strong>Locked while approval is pending</strong>, and it can still carry a Draft badge. Use the <strong>Pending Approval</strong> tab or the approval trail to see where it stands.</GuideCallout>
+        <GuideCallout tone="info" title="The badge can still read Draft">While a purchase order waits for approval, its drawer says <em>With the approver. Nobody can change it until they decide or send it back.</em> It can still carry a Draft badge. Use the <strong>Pending Approval</strong> tab or the approval trail to see where it stands.</GuideCallout>
+        <GuideCallout tone="info" title="When an approver sends a document back">This applies to purchase orders, vendor invoices, vendor payments and vendor credit notes alike. The person who sent it for approval sees <strong>Sent back to you</strong> in its drawer, with the approver&apos;s reason. <strong>Edit</strong> corrects it in place, and <strong>Resume</strong> sends the corrected version back into the same approval. Nobody else gets these buttons. On invoices, payments and credit notes the approval badge reads <strong>Sent back</strong> meanwhile.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="record-the-delivery" title="Record the delivery">
@@ -61,7 +62,7 @@ export default function OrderReceiveAndPayArticle() {
       <GuideSection id="pay-the-supplier" title="Pay the supplier">
         <GuideSteps>
           <GuideStep title="Select New Payment">On <strong>Vendor Payments</strong>, select <strong>New Payment</strong>, choose the <strong>Vendor</strong>, the <strong>Method</strong>, the <strong>Payment date</strong> and the account to <strong>Pay from</strong>, and add the bank <strong>Reference</strong>.</GuideStep>
-          <GuideStep title="Choose the bills">Under <strong>Outstanding invoices</strong>, enter how much of each posted bill this payment settles. The totals show <strong>Gross settled</strong>, <strong>WHT withheld</strong> and <strong>Net cash paid</strong>.</GuideStep>
+          <GuideStep title="Choose the bills">Under <strong>Outstanding invoices</strong>, enter how much of each posted bill this payment settles. The totals show <strong>Gross settled</strong>, <strong>WHT withheld</strong> and <strong>Net cash paid</strong>. WHT withheld is worked out from the WHT code on the bills. If you type a different figure, it reads <em>Entered by hand</em>; <strong>Work it out again</strong> puts the worked-out figure back, on a new payment or when you edit one.</GuideStep>
           <GuideStep title="Submit, then post">Select <strong>Create &amp; Submit</strong>. Once approved, select <strong>Post Payment</strong>. Bill balances change only when the payment is posted.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="danger" title="Reverse only when the money did not go">An approved payment that has not been posted can be cancelled with <strong>Cancel</strong>. A posted payment can be undone with <strong>Reverse</strong>, which restores the bill balances. Use it only for a payment that genuinely failed or was recorded in error.</GuideCallout>
@@ -106,6 +107,7 @@ export default function OrderReceiveAndPayArticle() {
           "The requisition is not offered for a purchase order: it is not yet Approved.",
           "The supplier is not offered: it is inactive, on hold, or failed its checks. See Vendors.",
           "Post Invoice is missing: the bill is not yet approved, or the match blocks posting.",
+          "Edit and Resume are missing on a document sent back: only the person who sent it for approval gets them, and Edit also needs a role that may edit that kind of document.",
           "No bills appear on a new payment: the supplier has no posted invoice with a balance.",
           "A document waits with nobody to approve it: ask whoever manages approvals to add an approver rather than choosing Continue anyway.",
           "Void on a bill offers a credit note instead: money has been paid, or a credit note has settled part of it. Credit what is left.",

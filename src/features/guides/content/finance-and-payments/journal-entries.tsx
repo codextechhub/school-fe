@@ -43,6 +43,7 @@ export default function JournalEntriesArticle() {
 
       <GuideSection id="drafts-and-approval" title="Drafts and approval">
         <p>A journal in <strong>Drafts</strong> shows a <strong>Submit</strong> button. Submitting sends it for approval, and it posts only once the final approver agrees.</p>
+        <p>If an approver sends a journal back, the person who sent it for approval sees <strong>Sent back to you</strong> on it, with the approver&apos;s reason. On a manual journal, <strong>Edit</strong> opens the entry to correct it; select <strong>Save changes</strong>, then <strong>Resume</strong> to send the corrected version back into the same approval. A journal raised by another document can only be resumed as it is. Nobody else gets these buttons.</p>
       </GuideSection>
 
       <GuideSection id="reverse-a-journal" title="Reverse a journal">

@@ -40,7 +40,7 @@ export default function RaiseARequisitionArticle() {
       <GuideSection id="follow-and-correct" title="Follow it and correct it">
         <GuideSteps>
           <GuideStep title="Follow progress">Open the requisition and read <strong>Approval Trail</strong>, or open it from <strong>My Submissions</strong> under Workflow to see which step it is waiting on.</GuideStep>
-          <GuideStep title="When it comes back for revision">It stays Pending Approval, so it cannot be edited yet. In <strong>My Submissions</strong>, <strong>Withdraw</strong> it: the requisition returns to Draft. Select <strong>Edit</strong>, make the correction, then <strong>Submit for Approval</strong> again. If nothing needs changing, <strong>Resubmit</strong> sends it straight back.</GuideStep>
+          <GuideStep title="When it comes back for revision">It stays Pending Approval, and its drawer shows <strong>Sent back to you</strong> with who sent it back and why. Select <strong>Edit</strong>, make the correction and select <strong>Save changes</strong>, then select <strong>Resume</strong>. The corrected requisition goes back into the same approval, at the step that sent it back, and the approvers see the corrected version. There is no need to withdraw it. Only the person who sent it for approval gets Edit and Resume.</GuideStep>
           <GuideStep title="When it is approved">The status reads <strong>Approved</strong>, and the bursar or procurement officer can raise a purchase order from it.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="info" title="A rejected requisition is closed">A final rejection shows <strong>Rejected</strong> and cannot be reopened. Raise a new requisition if the need remains.</GuideCallout>
@@ -49,7 +49,7 @@ export default function RaiseARequisitionArticle() {
       <GuideSection id="common-problems" title="Common problems">
         <GuideChecklist items={[
           "New Requisition is missing: your role does not include raising requisitions.",
-          "Edit is missing: only a Draft can be edited. Withdraw a pending one first.",
+          "Edit is missing: only a Draft, or a requisition sent back to you, can be edited. While it is with its approvers, nobody can change it.",
           "The budget panel says no budget is configured: ask the bursar, or continue and let the approvers decide.",
           "An item is not in the catalogue: type its description instead.",
         ]} />
