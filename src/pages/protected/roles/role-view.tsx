@@ -38,21 +38,28 @@ import { roleBranchIds, roleReadOnly, roleReadOnlySentence } from "./role-reach"
 
 type RoleTab = "permissions" | "people" | "overview";
 
-/** A role's grants are grouped from the school catalogue, with unknown keys visible. */
+/** What a grant reads as when neither the catalogue nor the server names it. */
+const UNNAMED_PERMISSION = "A permission no longer offered";
+
+/**
+ * A role's grants, grouped by the school catalogue's modules.
+ *
+ * A grant the catalogue does not list (one retired, or outside this school's
+ * plan) still shows, under "Other permissions", by the wording the server
+ * sends with the grant, and never by its key.
+ */
 function grantedGroups(role: SchoolRoleDetail, modules: CatalogueModule[]) {
-  const granted = new Set(
-    role.role_permissions.filter((entry) => entry.granted).map((entry) => entry.permission),
+  const granted = new Map(
+    role.role_permissions
+      .filter((entry) => entry.granted)
+      .map((entry) => [entry.permission, entry.permission_label] as const),
   );
-  const groups: { label: string; permissions: { key: string; label: string; action: string }[] }[] = [];
+  const groups: { label: string; permissions: { key: string; label: string }[] }[] = [];
   for (const module of modules) {
     const entries = module.resources.flatMap((resource) =>
       resource.permissions
         .filter((permission) => granted.has(permission.key))
-        .map((permission) => ({
-          key: permission.key,
-          label: permission.label,
-          action: permission.action,
-        })),
+        .map((permission) => ({ key: permission.key, label: permission.label })),
     );
     if (entries.length) groups.push({ label: module.label, permissions: entries });
     for (const entry of entries) granted.delete(entry.key);
@@ -60,7 +67,7 @@ function grantedGroups(role: SchoolRoleDetail, modules: CatalogueModule[]) {
   if (granted.size) {
     groups.push({
       label: "Other permissions",
-      permissions: [...granted].map((key) => ({ key, label: key.replaceAll(/[._]/g, " "), action: "" })),
+      permissions: [...granted].map(([key, label]) => ({ key, label: label || UNNAMED_PERMISSION })),
     });
   }
   return groups;
@@ -105,7 +112,8 @@ export default function RoleView() {
   const pendingLabels = useMemo(() => {
     const labels = new Map((catalogue.data?.data ?? []).flatMap((module) => module.resources)
       .flatMap((resource) => resource.permissions).map((permission) => [permission.key, permission.label]));
-    return (detail?.pending_additions ?? []).map((entry) => labels.get(entry.permission_key) ?? entry.permission_key);
+    return (detail?.pending_additions ?? []).map((entry) =>
+      labels.get(entry.permission_key) ?? (entry.permission_label || UNNAMED_PERMISSION));
   }, [detail, catalogue.data]);
   const branchIds = detail ? roleBranchIds(detail) : [];
   const readOnly = detail ? roleReadOnly(detail, reach) : null;
@@ -232,7 +240,7 @@ export default function RoleView() {
                 <div className="flex justify-between gap-2 bg-gray-04 px-4 py-3 text-sm font-semibold"><span>{group.label}</span><span className="text-xs font-normal text-gray-05">{group.permissions.length} permissions</span></div>
                 {group.permissions.map((entry) => (
                   <div key={entry.key} className="flex flex-wrap items-start justify-between gap-2 border-t border-border px-4 py-3 text-sm">
-                    <span className="min-w-0 font-medium text-black-01">{entry.label}</span><span className="text-xs text-gray-05">{entry.action}</span>
+                    <span className="min-w-0 font-medium text-black-01">{entry.label}</span>
                   </div>
                 ))}
               </section>

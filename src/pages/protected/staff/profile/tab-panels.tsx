@@ -278,8 +278,8 @@ export function AccessTab({
                   >
                     {row.mode === "ALLOW" ? "Allowed" : "Denied"}
                   </span>
-                  <span className="font-mono text-xs text-gray-01">
-                    {row.permission}
+                  <span className="text-xs text-gray-01">
+                    {row.permission_label || "A permission no longer offered"}
                   </span>
                 </div>
                 {row.reason && (

@@ -9,7 +9,9 @@ import {
 const PROBLEMS = [
   { title: "Nothing can be posted anywhere", body: "No fiscal period is open, or the calendar has run out. The finance dashboard warns about this. Someone who covers the whole school creates the next fiscal year." },
   { title: "New fiscal year is missing", body: "Opening a year changes every branch's calendar, so only someone who covers the whole school is offered it." },
-  { title: "Run close steps is refused", body: "A check marked Blocks the close has failed. Fix what it names, such as an unbalanced trial balance, a draft journal or fees billed ahead not yet released, and run it again." },
+  { title: "Run close steps is refused", body: "A check marked Blocks the close has failed. Fix what it names, such as an unbalanced trial balance or AR that does not match its control account, and run it again. A check marked Done by the close is not the reason: the close does that work itself." },
+  { title: "A month will not close although its checks pass", body: "An earlier month is still open. Months close in order, so September closes once August is closed, and January once December of the year before is. Close the month the message names first. Force close does not get past this." },
+  { title: "Re-open is refused on a month", body: "A later month is still closed. Months re-open from the latest back: to correct August while September is closed, re-open September first. A locked later month means the earlier one can no longer be re-opened." },
   { title: "The month still reads Open under All branches", body: "The school's month closes only once every branch has closed it. The Each branch rows show which branch is still open." },
   { title: "Lock period is greyed out", body: "It is the last period of a year that is not closed yet. Close the fiscal year first." },
   { title: "Close fiscal year is greyed out", body: "At least one period is still Open. Soft-close or close every period first." },
@@ -67,17 +69,23 @@ export default function CloseAPeriodArticle() {
 
       <GuideSection id="close-a-month" title="Close a month">
         <GuideSteps>
-          <GuideStep title="Select the period">Its panel shows the <strong>Close checklist</strong>, including whether the trial balance balances and whether draft journals remain. A check marked <strong>Blocks the close</strong> must pass; one marked <strong>Warning only</strong> will not stop it.</GuideStep>
+          <GuideStep title="Select the period">Its panel shows the <strong>Close checklist</strong>, including whether the trial balance balances and whether draft journals remain. A check marked <strong>Blocks the close</strong> must pass; one marked <strong>Warning only</strong> will not stop it. One marked <strong>Done by the close</strong> is work the close does itself, such as posting depreciation that has fallen due or releasing fees billed ahead, so it needs nothing from you.</GuideStep>
           <GuideStep title="Soft close, if you are still tidying up">Select <strong>Soft close</strong> to stop ordinary posting while you finish adjustments.</GuideStep>
           <GuideStep title="Run close steps">Select <strong>Run close steps</strong> and confirm with <strong>Run period close</strong>. Where you are asked, choose the branch. The period reads Closed.</GuideStep>
         </GuideSteps>
         <p><strong>Re-open</strong> on a soft-closed or closed month lets ordinary posting back in. It asks for a reason, which goes on the audit trail with your name. A month of a closed year cannot be re-opened until the year is. <strong>Periods &amp; Close</strong> under Reports opens the same workbench.</p>
       </GuideSection>
 
+      <GuideSection id="close-in-order" title="Months close in order">
+        <p>A month closes only once every earlier month is closed, and re-opens only while every later month is open. The order runs across the year end: January waits for December of the year before, although that year itself may stay open for the auditors. At a school with more than one branch each branch keeps its own order, so Ikeja can close September while Lekki is still on August.</p>
+        <p>Say Bright Star&apos;s bursar tries to close September while August is still open. The checklist shows <strong>Earlier months closed</strong> as Blocks the close, and names August. She closes August, then September. Later the accountant finds an August error: she re-opens September first, then August, corrects it, and closes both again.</p>
+        <p>The order is on by default. Someone who covers the whole school can turn it off under Finance Settings, <strong>Fiscal calendar</strong>, <strong>Closing months</strong>, with <strong>Close months in order</strong>.</p>
+      </GuideSection>
+
       <GuideSection id="force-close" title="Close past a failed check">
         <p>Sometimes a month must close while a check still fails, for example when the bank statement is late and the accountant has agreed the balance. Someone with the force close permission sees <strong>Force close</strong> on the month. The dialog lists the <strong>Checks you are overriding</strong> and asks for a reason; both go on the audit trail with your name.</p>
         <GuideCallout tone="warning" title="Force close is not a shortcut">
-          Use it only when the person responsible has agreed why the check can wait. Fix the failing check in the next month.
+          Use it only when the person responsible has agreed why the check can wait. Fix the failing check in the next month. Force close never gets past the order months close in: an earlier month that is still open has to be closed first.
         </GuideCallout>
       </GuideSection>
 

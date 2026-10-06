@@ -136,21 +136,16 @@ export function RolePreviewDrawer({
             {granted.length ? (
               <ul className="grid gap-1.5">
                 {granted.map((permission) => {
+                  // A permission this school's catalogue does not carry is a
+                  // real state worth seeing, so it is named by the server's
+                  // wording for the grant, muted, and never by its key.
                   const label = labels.get(permission.permission);
                   return (
                     <li
                       key={permission.permission}
-                      // The key is the fallback, in monospace so it reads as
-                      // the identifier it is rather than as a broken sentence.
-                      // It shows only for a permission this school's catalogue
-                      // does not carry, which is a real state worth seeing.
-                      className={
-                        label
-                          ? "text-[13px] text-gray-01"
-                          : "font-mono text-xs text-gray-05"
-                      }
+                      className={label ? "text-[13px] text-gray-01" : "text-[13px] italic text-gray-05"}
                     >
-                      {label ?? permission.permission}
+                      {label ?? (permission.permission_label || "A permission no longer offered")}
                     </li>
                   );
                 })}

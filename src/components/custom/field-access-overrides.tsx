@@ -531,7 +531,7 @@ function AddFieldExceptionDrawer({
 
             {alreadyExists && (
               <p className="rounded-md bg-yellow-01/10 px-3 py-2 text-xs text-yellow-01">
-                Saving replaces the existing {alreadyExists.mode.toLowerCase()} {alreadyExists.access.toLowerCase()} exception on this field.
+                Saving replaces the existing {alreadyExists.mode === "ALLOW" ? "allow" : "deny"} {alreadyExists.access === "READ" ? "read" : "write"} exception on this field.
               </p>
             )}
 

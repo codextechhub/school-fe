@@ -22,6 +22,8 @@ export interface NotificationSettingRow {
   event_type_key: string;
   event_type_label: string;
   source_module: string;
+  /** The product area the event belongs to ("Procurement"); the list groups by it. */
+  source_module_label: string;
   channel: NotificationChannel;
   is_enabled: boolean;
   is_transactional: boolean;

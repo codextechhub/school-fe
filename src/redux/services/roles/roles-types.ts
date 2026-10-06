@@ -30,12 +30,16 @@ export interface SchoolRole {
 /** One grant on a role, as the detail payload carries it. */
 export interface RolePermissionRow {
   permission: string;
+  /** The permission's readable wording, for a grant the catalogue does not list. */
+  permission_label?: string;
   granted: boolean;
 }
 
 /** A restricted permission waiting on approval, and the request carrying it. */
 export interface PendingAddition {
   permission_key: string;
+  /** The permission's readable wording, for one the catalogue does not list. */
+  permission_label?: string;
   request_id: string;
 }
 

@@ -360,7 +360,7 @@ const PACKAGE_WALKTHROUGHS = [
         id: "checklist",
         target: "finance-periods.checklist",
         title: "Blockers stop the close, warnings do not",
-        body: "A failed blocker must be fixed at its source before the period can close. A check marked Warning only stays visible for your judgement but does not stop the close.",
+        body: "A failed blocker must be fixed at its source before the period can close. A check marked Warning only stays visible for your judgement but does not stop the close. A check marked Done by the close is work the close does itself, such as posting depreciation that has fallen due. Months close in order, so an earlier month still open blocks this one.",
         placement: "left",
         advance: "manual",
       },

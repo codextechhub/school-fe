@@ -797,7 +797,8 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
       "month end close", "close period", "reopen period", "lock period", "close fiscal year",
       "new fiscal year", "nothing can post", "posting date refused", "reopen year", "force close",
       "archive year", "show archived years", "branch close", "verify seals", "sealed figures",
-      "record keeping", "retention",
+      "record keeping", "retention", "close months in order", "earlier month still open",
+      "done by the close",
     ],
     audiences: ["finance-officer", "school-administrator", "approver"],
     routes: [
@@ -815,6 +816,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
       { id: "branches", title: "Each branch closes its own books" },
       { id: "period-statuses", title: "What each status allows" },
       { id: "close-a-month", title: "Close a month" },
+      { id: "close-in-order", title: "Months close in order" },
       { id: "force-close", title: "Close past a failed check" },
       { id: "close-the-year", title: "Close the fiscal year" },
       { id: "archive-a-year", title: "Archive an old year" },

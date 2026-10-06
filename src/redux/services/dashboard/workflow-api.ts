@@ -87,6 +87,11 @@ export const workflowApi = baseApi.injectEndpoints({
       providesTags: ["WorkflowTemplates"],
     }),
 
+    // The document types a template may be built for, by name. Changes only with a release.
+    getWorkflowTemplateDocumentTypes: builder.query<DelegationDocumentType[], void>({
+      query: () => ({ url: `/workflow/templates/document-types/`, method: "GET" }),
+    }),
+
     getWorkflowTemplate: builder.query<WorkflowTemplate, string>({
       query: (id) => ({ url: `/workflow/templates/${id}/`, method: "GET" }),
       providesTags: ["WorkflowTemplates"],
@@ -578,6 +583,7 @@ export const {
   useGetTeamLoadQuery,
   useGetDelegationsQuery,
   useGetDelegationDocumentTypesQuery,
+  useGetWorkflowTemplateDocumentTypesQuery,
   useCreateDelegationMutation,
   useUpdateDelegationMutation,
   useDeleteDelegationMutation,

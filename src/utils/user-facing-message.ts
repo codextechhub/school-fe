@@ -1,10 +1,14 @@
 /**
  * Normalises server-written text before it reaches a person.
  *
- * APIs keep money in minor units and permissions in machine keys. Both are
- * useful contracts between systems, but neither belongs in interface copy.
+ * APIs name permissions by machine key, such as finance.invoice.create, which
+ * is a useful contract between systems but does not belong in interface copy.
  * Error helpers and the global request interceptor pass their final sentence
- * through this boundary so a new call site cannot accidentally expose either.
+ * through this boundary so a new call site cannot accidentally expose one.
+ *
+ * Money needs no rewriting here: the server writes every amount in a message in
+ * naira already. Text that says "kobo" means it, as a receipt's amount in words
+ * does ("One thousand naira, fifty kobo"), so it passes through unchanged.
  */
 
 const PERMISSION_ACTIONS: Record<string, string> = {
@@ -64,11 +68,7 @@ export function formatKoboAsNaira(value: number): string {
   })}`;
 }
 
-/** Remove API-only money units and permission keys from user-facing text. */
+/** Replace permission keys in server text with the labels a person reads. */
 export function userFacingMessage(message: string): string {
-  const money = message.replace(
-    /(-?\d[\d,]*(?:\.\d+)?)\s*kobo\b/gi,
-    (_match, amount: string) => formatKoboAsNaira(Number(amount.replace(/,/g, ""))),
-  );
-  return humanizePermissionKeys(money).replace(/\bkobo\b/gi, "naira");
+  return humanizePermissionKeys(message);
 }

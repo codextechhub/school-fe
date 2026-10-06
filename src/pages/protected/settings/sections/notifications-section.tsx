@@ -28,12 +28,6 @@ import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 import { useSettingsBranches } from "../use-settings-branches";
 import { useSettingsWrite } from "../use-settings-write";
 
-/** "vs_finance" reads as "Finance"; an unknown module still reads as words. */
-function moduleName(sourceModule: string) {
-  const words = sourceModule.replace(/^vs_/, "").replaceAll("_", " ").trim();
-  return words ? words[0].toUpperCase() + words.slice(1) : "Other";
-}
-
 interface EventLine {
   key: string;
   label: string;
@@ -105,7 +99,7 @@ export function NotificationsSection() {
 
   const groups = new Map<string, Map<string, EventLine>>();
   for (const row of rows ?? []) {
-    const group = moduleName(row.source_module);
+    const group = row.source_module_label;
     const events = groups.get(group) ?? new Map<string, EventLine>();
     const line = events.get(row.event_type_key) ?? {
       key: row.event_type_key,

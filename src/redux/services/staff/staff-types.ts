@@ -705,6 +705,8 @@ export interface StaffRoles {
   };
   overrides?: {
     permission: string;
+    /** The permission in words; `permission` is the key, for matching only. */
+    permission_label?: string;
     mode: "ALLOW" | "DENY";
     reason: string;
     expires_at: string | null;

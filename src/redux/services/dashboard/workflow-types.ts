@@ -83,6 +83,8 @@ export interface WorkflowStageDynamicRule {
   id: string;
   order: number;
   condition: WorkflowCondition;
+  /** The condition in words, from the server. Show this, never `condition`. */
+  condition_description?: string;
   role_key: string;
   role_name: string | null;
   label: string;
@@ -121,19 +123,28 @@ export interface WorkflowStage {
   organogram_target: OrganogramTarget | "";
   organogram_levels: number;
   organogram_position_code: string | null;
+  /** What the named post is called, to show in place of its code. */
+  organogram_position_name?: string | null;
   advance_rule: StageAdvanceRule;
   quorum_count: number;
   on_rejection: StageOnRejection;
   skip_if_no_approvers: boolean;
   inclusion_condition: WorkflowCondition;
+  /** When the stage runs, in words; null for a stage that always runs. */
+  inclusion_condition_description?: string | null;
 }
 
 export interface WorkflowRoutePath {
   id: string;
   from_stage_code: string | null;
   to_stage_code: string | null;
+  /** The stages' names; null is the start of the workflow and its approval. */
+  from_stage_label?: string | null;
+  to_stage_label?: string | null;
   order: number;
   condition: WorkflowCondition;
+  /** The route's condition in words, from the server. */
+  condition_description?: string;
 }
 
 export interface WorkflowTemplate {
@@ -153,6 +164,8 @@ export interface WorkflowTemplate {
   name: string;
   description: string;
   notification_events: Record<string, boolean>;
+  /** Each key of `notification_events` by the name notification settings use. Show this, never the key. */
+  notification_event_labels?: Record<string, string>;
   /**
    * A tenant that went back to the platform's version has its own switched off
    * rather than deleted: instances protect the template they ran under, so the
@@ -809,6 +822,8 @@ export interface ApprovalParkState {
    */
   approver_source?: string;
   role_key?: string;
+  /** The role's name in the document's tenant; show this, never `role_key`. */
+  role_name?: string;
   requirement?: string;
   document_type?: string;
 }
@@ -883,6 +898,8 @@ export interface DynamicRoleRule {
   order: number;
   /** Null on the Otherwise row, which is always last. */
   condition: WorkflowCondition;
+  /** The condition in words, from the server; absent on an unsaved rule. */
+  condition_description?: string;
   target_kind: DynamicRoleTargetKind;
   role_key: string;
   role_name: string | null;

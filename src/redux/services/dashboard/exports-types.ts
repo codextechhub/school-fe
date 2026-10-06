@@ -185,6 +185,9 @@ export interface DatasetFilter {
   choices: { value: string; label: string }[];
   description: string;
   is_primary_date: boolean;
+  /** A number_range over an amount: its bounds are naira, with at most two
+   *  decimal places, and the server converts them to kobo. */
+  money?: boolean;
 }
 
 /** One option's schema, discriminated by format - never a flat bag. */
@@ -225,6 +228,8 @@ export interface CatalogueModule {
  * The shape is the filter's kind, and the keys are the backend's:
  * date_range → {start, end}; choice → {values}; text/boolean → {value};
  * number_range → {min, max}. Getting these wrong fails silently at run time.
+ * A money filter's bounds are naira, sent as the typed string ("50000.50") so
+ * no float ever touches an amount; a saved one may come back as a number.
  */
 export interface FilterSpec {
   id: string;
@@ -232,8 +237,8 @@ export interface FilterSpec {
   end?: string;
   values?: string[];
   value?: string | boolean;
-  min?: number;
-  max?: number;
+  min?: number | string;
+  max?: number | string;
 }
 
 // ── Preview and estimate ──────────────────────────────────────────────────────

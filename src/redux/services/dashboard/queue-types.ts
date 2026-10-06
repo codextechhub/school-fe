@@ -10,8 +10,7 @@ export type JobKind = "import" | "export" | "email" | "system";
 export interface BackgroundJob {
   id: number;
   kind: string;
-  label: string;
-  task_name: string;
+  label: string; // always set: an unlabelled job is named by its kind
   status: JobStatus;
   progress: number | null; // 0–100 when the task reports progress
   owner: number | null; // null = system/scheduled run

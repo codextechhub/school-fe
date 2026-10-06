@@ -18,7 +18,6 @@ export interface ConsoleSettingsSection {
 
 export interface SettingsConsumerInfo {
   service: string;
-  consumer: string;
   impact: string;
 }
 
@@ -30,7 +29,6 @@ export function SettingsConsumer({ consumer }: { consumer?: SettingsConsumerInfo
         <CheckCircle2 className="size-3 shrink-0" />
         <span className="truncate">Used by {consumer.service}</span>
       </Badge>
-      <code className="max-w-full truncate rounded bg-gray-02 px-1.5 py-0.5 text-gray-05" title={consumer.consumer}>{consumer.consumer}</code>
       <span className="basis-full leading-4 text-gray-05">{consumer.impact}</span>
     </span>
   );
@@ -502,20 +500,6 @@ export function SettingsOverviewCard({ icon: Icon, title, description, to, statu
   );
 }
 
-const displayValue = (value: unknown) => {
-  if (value === true) return "Allowed";
-  if (value === false) return "Blocked";
-  if (value == null || value === "") return "Not set";
-  if (typeof value === "object" && !Array.isArray(value)) {
-    const named = value as { name?: unknown; code?: unknown };
-    if (typeof named.name === "string") {
-      return typeof named.code === "string" ? `${named.code} · ${named.name}` : named.name;
-    }
-    return JSON.stringify(value);
-  }
-  return String(value);
-};
-
 export interface SettingsAuditRow {
   id: string | number;
   message: string;
@@ -523,7 +507,27 @@ export interface SettingsAuditRow {
   created_at: string;
   before?: Record<string, unknown> | null;
   after?: Record<string, unknown> | null;
+  /**
+   * Each setting the change touched, labelled by the server with its before and
+   * after in words. `field` is the machine key and is never shown.
+   */
+  changes?: SettingsAuditChange[] | null;
 }
+
+export interface SettingsAuditChange {
+  field: string;
+  label: string;
+  before: string;
+  after: string;
+}
+
+/**
+ * How many settings a row touched, for a server that sends no labelled
+ * `changes`: the panel then says how many changed rather than naming them by
+ * their field keys.
+ */
+const touchedCount = (row: SettingsAuditRow) =>
+  new Set([...Object.keys(row.before || {}), ...Object.keys(row.after || {})]).size;
 
 export function SettingsAuditHistory({ rows }: { rows: SettingsAuditRow[] }) {
   const { formatDateTime } = useSchoolDisplay(null);
@@ -532,7 +536,8 @@ export function SettingsAuditHistory({ rows }: { rows: SettingsAuditRow[] }) {
       {rows.length === 0 ? (
         <SettingsRow icon={History} label="No settings changes yet" description="The first successful save will appear here with its author and before-and-after values." />
       ) : rows.map((row) => {
-        const keys = Array.from(new Set([...Object.keys(row.before || {}), ...Object.keys(row.after || {})]));
+        const changes = row.changes ?? [];
+        const unlabelled = changes.length === 0 ? touchedCount(row) : 0;
         return (
           <div key={row.id} className="px-4 py-4 sm:px-5">
             <div className="flex flex-wrap items-start justify-between gap-2">
@@ -542,14 +547,18 @@ export function SettingsAuditHistory({ rows }: { rows: SettingsAuditRow[] }) {
               </div>
               <PolicyBadge kind="configured">Saved</PolicyBadge>
             </div>
-            <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-              {keys.map((key) => (
-                <div key={key} className="min-w-0 rounded-lg bg-gray-02/60 px-3 py-2 font-mont text-xs">
-                  <p className="truncate font-semibold text-gray-01">{key.replaceAll("_", " ")}</p>
-                  <p className="mt-1 break-words text-gray-05">{displayValue(row.before?.[key])} → {displayValue(row.after?.[key])}</p>
-                </div>
-              ))}
-            </div>
+            {changes.length > 0 ? (
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {changes.map((change) => (
+                  <div key={change.field} className="min-w-0 rounded-lg bg-gray-02/60 px-3 py-2 font-mont text-xs">
+                    <p className="truncate font-semibold text-gray-01">{change.label}</p>
+                    <p className="mt-1 break-words text-gray-05">{change.before} → {change.after}</p>
+                  </div>
+                ))}
+              </div>
+            ) : unlabelled > 0 ? (
+              <p className="mt-2 font-mont text-xs text-gray-05">{unlabelled === 1 ? "1 setting changed" : `${unlabelled} settings changed`}</p>
+            ) : null}
           </div>
         );
       })}
