@@ -8,6 +8,8 @@ import {
 
 const PROBLEMS = [
   { title: "A parent paid but the row says Pending", body: "The provider has not confirmed yet. Open the row and select Re-verify to ask the provider again." },
+  { title: "A parent says they paid but nothing shows", body: "Open Payment provider activity under Payments and choose Failed or refused. A Failed row for that checkout gives the provider's reason in red: no money moved, so send a new link rather than recording anything." },
+  { title: "Payment provider activity is missing", body: "It needs the permission to view payment reports, the same one Transactions Log needs. Ask whoever manages roles." },
   { title: "The money landed as credit, not against the bill", body: "The checkout had no invoice. Open Receipts & Allocation, find the receipt and allocate it to the bill." },
   { title: "No collections access", body: "Collections and Virtual Accounts need the collections view permission. Ask whoever manages roles." },
   { title: "A virtual account should stop taking money", body: "Open it and select Deactivate. Reactivate turns it back on." },
@@ -47,8 +49,20 @@ export default function OnlineFeePaymentsArticle() {
       <GuideSection id="follow-a-payment" title="Follow a payment">
         <p><strong>Collections</strong> lists every online payment as <strong>Pending</strong>, <strong>Paid</strong>, <strong>Failed</strong> or <strong>Refunded</strong>, with cards for what has been collected, what is pending and the success rate. Open a row for its <strong>Status timeline</strong>: when the checkout was created, whether the link is ready, and when the payment was confirmed. Once paid, it names the receipt it created.</p>
         <p>While a payment is still pending, <strong>Re-verify</strong> asks the provider for its latest answer, and <strong>Copy link</strong> copies the checkout link again.</p>
-        <p>When the provider refused a checkout or a payment failed, open <strong>Payment provider activity</strong> under Payments. It lists every request made to the payment provider, the refused and failed ones included, with the reason in full. Select the copy button beside a reference to quote it to the provider.</p>
         <p>A paid online payment waits with the provider until it reaches the branch&apos;s bank. How it gets there, and how the provider&apos;s deposit is booked, has a guide of its own.</p>
+      </GuideSection>
+
+      <GuideSection id="provider-activity" title="See what the payment provider said">
+        <p><strong>Payment provider activity</strong>, under Payments, lists every request XVS made to the payment provider, the refused and failed ones included. Each row shows <strong>When</strong>, <strong>What</strong> was asked for, the <strong>Reference</strong> with a copy button, the <strong>Result</strong> (<strong>Succeeded</strong> or <strong>Failed</strong>), the <strong>Message</strong> and <strong>Who</strong> asked, or System when XVS acted by itself. On a failed row the message is the provider&apos;s full reason, in red. It needs the permission to view payment reports, and a bursar who works in one branch sees only that branch&apos;s activity.</p>
+        <p>Use it when something went wrong with a request: a checkout that would not open, a payment that failed, or a payout the provider turned down. Money that actually moved in and out is on <strong>Transactions Log</strong> instead.</p>
+        <GuideSteps>
+          <GuideStep title="Narrow the list">Choose what happened from the first list, such as <strong>Collection failed</strong>, and <strong>Failed or refused</strong> from the result list. <strong>Everything</strong> and <strong>Any result</strong> show it all again.</GuideStep>
+          <GuideStep title="Read the reason">The message on a Failed row says why the provider refused or what went wrong.</GuideStep>
+          <GuideStep title="Quote the reference">Select the copy button beside the reference to paste it into a message to the provider.</GuideStep>
+        </GuideSteps>
+        <GuideCallout tone="info" title="An example">
+          Mrs Adeyemi says she paid Tola&apos;s second-term fees on Monday evening, but Collections shows nothing new. Ada, the bursar, chooses Failed or refused and finds a <strong>Collection failed</strong> row from Monday evening whose message says the card was declined. No money moved, so there is nothing to record: Ada sends a new payment link. Had the row read <strong>Collection confirmed</strong> and Succeeded, the money arrived, and Ada would open that payment on Collections to find its receipt.
+        </GuideCallout>
       </GuideSection>
 
       <GuideSection id="virtual-accounts" title="Give a pupil a virtual account">

@@ -389,6 +389,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
       { id: "send-a-payment-link", title: "Send a payment link for one bill" },
       { id: "create-a-checkout", title: "Create a checkout from Collections" },
       { id: "follow-a-payment", title: "Follow a payment" },
+      { id: "provider-activity", title: "See what the payment provider said" },
       { id: "virtual-accounts", title: "Give a pupil a virtual account" },
       { id: "common-problems", title: "Common problems" },
       { id: "completion-check", title: "Completion check" },

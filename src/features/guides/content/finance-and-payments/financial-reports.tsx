@@ -21,7 +21,7 @@ export default function FinancialReportsArticle() {
         <GuideChecklist items={[
           "The month's fees, receipts, payroll and spending are posted.",
           "The bank is reconciled for the period.",
-          "You know which period, or which date, the report is for.",
+          "You know which period, or which date, the report is for. Period lists name each month in words, such as September 2026.",
         ]} />
       </GuideSection>
 

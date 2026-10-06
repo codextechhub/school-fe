@@ -40,7 +40,7 @@ export default function SettingsDisplayArticle() {
           <li><strong>29/09/2026</strong>, day first, then month, then year.</li>
           <li><strong>2026-09-29</strong>, year first, which sorts in order in a list.</li>
         </ul>
-        <p>Every date on screen follows the choice: lists, profiles, the calendar, date boxes and the dates in Finance and Procurement. A month on its own always shows its name, such as <strong>Sep 2026</strong>, whichever style is chosen, so a heading never reads like a card expiry date.</p>
+        <p>Every date on screen follows the choice: lists, profiles, the calendar, date boxes and the dates in Finance and Procurement. So does a date inside a Finance message, such as a refusal that names the date a shared bank account is split. A month on its own always shows its name, such as <strong>Sep 2026</strong>, whichever style is chosen, so a heading never reads like a card expiry date.</p>
       </GuideSection>
 
       <GuideSection id="times" title="Times">

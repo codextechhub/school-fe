@@ -30,7 +30,7 @@ export default function JournalEntriesArticle() {
       </GuideSection>
 
       <GuideSection id="find-a-journal" title="Find a journal">
-        <p>Open <strong>General Ledger</strong>. The <strong>Journal Entries</strong> screen lists every journal, with tabs for <strong>All</strong>, <strong>Drafts</strong>, <strong>Pending</strong>, <strong>Approved</strong>, <strong>Posted</strong>, <strong>Reversed</strong>, <strong>Cancelled</strong> and <strong>Sent back</strong>. Narrow it by <strong>Source</strong> (Manual, Sales, Bank, Payroll and so on) and by period, or search by journal number or reference. Select a row to see its lines.</p>
+        <p>Open <strong>General Ledger</strong>. The <strong>Journal Entries</strong> screen lists every journal, with tabs for <strong>All</strong>, <strong>Drafts</strong>, <strong>Pending</strong>, <strong>Approved</strong>, <strong>Posted</strong>, <strong>Reversed</strong>, <strong>Cancelled</strong> and <strong>Sent back</strong>. Narrow it by <strong>Source</strong> (Manual, Sales, Bank, Payroll and so on) and by period, or search by journal number or reference. The <strong>Period</strong> column names each journal&apos;s month in words, such as September 2026. Select a row to see its lines.</p>
       </GuideSection>
 
       <GuideSection id="post-a-journal" title="Post a journal">

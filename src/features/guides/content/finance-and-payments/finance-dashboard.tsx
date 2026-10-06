@@ -23,9 +23,9 @@ export default function FinanceDashboardArticle() {
       <GuideSection id="set-the-view" title="Set the view">
         <GuideSteps>
           <GuideStep title="Choose the window">Where offered, the switch at the top changes the collection figures between windows such as <strong>This {w.term}</strong> and <strong>This month</strong>.</GuideStep>
-          <GuideStep title="Choose the date">The date list shows figures as of <strong>Today</strong> or the end of a fiscal period.</GuideStep>
+          <GuideStep title="Choose the date">The date list shows figures as of <strong>Today</strong> or the end of a fiscal period, such as <strong>End of September 2026</strong>.</GuideStep>
           <GuideStep title="Choose the tab">
-            <strong>Overview</strong> is the summary. <strong>Receivables &amp; collections</strong> is about fees and parents. <strong>Cash, spend &amp; compliance</strong> covers the bank, spending, payroll and tax. You see the tabs your role allows.
+            <strong>Overview</strong> is the summary. <strong>Receivables &amp; collections</strong> is about fees and parents. <strong>Cash, spend &amp; compliance</strong> covers the bank, spending, payroll and tax. You see the tabs your role allows. On the <strong>Payroll</strong> card, the last line says where the latest run stands: <em>draft, not yet posted</em>, <em>posted, not yet paid</em> (the pay is in the books but has not left the bank), or <em>paid</em>.
           </GuideStep>
         </GuideSteps>
       </GuideSection>

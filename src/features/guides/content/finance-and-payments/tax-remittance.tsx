@@ -7,7 +7,7 @@ import {
 } from "../../article-components";
 
 const PROBLEMS = [
-  { title: "Accrued reads zero", body: "Accrued is what the period built up in the obligation's payable account, and nothing was posted there in that period. Check payroll was posted, and that the obligation points at the right account." },
+  { title: "Owed reads zero", body: "Owed is what the period built up in this tax's account in the books, and nothing was booked there in that period. Check payroll was posted, and that the obligation points at the right account." },
   { title: "New filing, Mark as filed or Un-file is missing", body: "A return covers every branch, so only someone who covers the whole school sets up, files or un-files one. At a school with one branch, its bursar covers the whole school." },
   { title: "Some lines have no branch yet", body: "At a school with more than one branch, each branch's share is filed. Lines marked No branch yet must be given a branch before the return is filed." },
   { title: "Un-file is missing", body: "Something has already been paid on the return, so it can no longer go back to draft. Reverse the payment first if it was recorded in error." },
@@ -38,12 +38,12 @@ export default function TaxRemittanceArticle() {
       </GuideSection>
 
       <GuideSection id="create-the-obligation" title="Set up an obligation">
-        <p>Do this once per tax. Select <strong>New obligation</strong>, enter the <strong>Code</strong> and <strong>Name</strong>, choose the <strong>Type</strong>: VAT, WHT (withholding tax), PAYE, Pension or Other levy. Then choose the <strong>Liability (payable) account</strong> it builds up in, the <strong>Authority</strong>, the <strong>Frequency</strong> and the <strong>Filing day</strong>. Select <strong>Create obligation</strong>. Only someone who covers the whole school is offered it.</p>
+        <p>Do this once per tax. Select <strong>New obligation</strong>, enter the <strong>Code</strong> and <strong>Name</strong>, choose the <strong>Type</strong>: VAT, Withholding tax, PAYE, Pension or Other levy. Then choose the <strong>Liability (payable) account</strong> it builds up in, the <strong>Authority</strong>, the <strong>Frequency</strong> and the <strong>Filing day</strong>. Select <strong>Create obligation</strong>. Only someone who covers the whole school is offered it.</p>
       </GuideSection>
 
       <GuideSection id="prepare-and-file" title="Prepare and file a return">
         <GuideSteps>
-          <GuideStep title="Select New filing">Pick the <strong>Tax obligation</strong>, the <strong>Period start</strong> and <strong>Period end</strong>, and the <strong>Due date</strong>. <strong>Prepare filing</strong> reads the amount owed for the period from the ledger.</GuideStep>
+          <GuideStep title="Select New filing">Pick the <strong>Tax obligation</strong>, the <strong>Period start</strong> and <strong>Period end</strong>, and the <strong>Due date</strong>. <strong>Prepare filing</strong> reads the amount owed for the period from this tax&apos;s account in the books. The list shows it as <strong>Owed</strong>, and the return as <strong>Owed for the period</strong>.</GuideStep>
           <GuideStep title="Check what it declares">Open the return. <strong>What it declares</strong> counts the transactions on it. A September bill posted in October is declared on October&apos;s return as a late item from September, so September&apos;s filed figure never moves and October is not short.</GuideStep>
           <GuideStep title="Submit it to the authority">File the return with the tax office or pension administrator as you normally do.</GuideStep>
           <GuideStep title="Select Mark as filed">Enter the <strong>Filed date</strong> and <strong>Filing reference</strong>, and any <strong>Adjustment / penalty</strong> with its account. At a school with more than one branch, choose the <strong>Branch that bears it</strong>, or leave it shared by each branch&apos;s share of the tax.</GuideStep>
