@@ -65,14 +65,15 @@ vi.mock("@/components/finance-ui/held-custody", async () => {
 
 const { usePaletteSchool } = await import("./use-palette-school");
 
+function Probe({ onRead }: { onRead: (school: PaletteSchool) => void }) {
+  onRead(usePaletteSchool());
+  return null;
+}
+
 function read(): PaletteSchool {
-  let school: PaletteSchool | undefined;
-  function Probe() {
-    school = usePaletteSchool();
-    return null;
-  }
-  renderToStaticMarkup(<Probe />);
-  return school!;
+  const reads: PaletteSchool[] = [];
+  renderToStaticMarkup(<Probe onRead={(school) => reads.push(school)} />);
+  return reads[0];
 }
 
 beforeEach(() => {
