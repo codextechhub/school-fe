@@ -44,6 +44,7 @@ export default function ReduceAFeeBillArticle() {
           <GuideStep title="Give the reason">Fill in <strong>Basis / reason</strong>, for example <em>Sibling discount 10%</em>. Leave <strong>Allowance account</strong> on its default unless your accountant says otherwise.</GuideStep>
           <GuideStep title="Post, submit or save">The main button reads <strong>Post concession</strong> or <strong>Submit for approval</strong>, depending on the amount. <strong>Save draft</strong> keeps it for later; a draft is posted or submitted from its detail panel.</GuideStep>
         </GuideSteps>
+        <p>The tiles above the list give <strong>Posted (YTD)</strong>, <strong>Draft (pending)</strong>, <strong>Sent back</strong> and <strong>Active concessions</strong>. Active concessions counts only the concessions in force: posted and not voided. One that is a draft, waiting for approval, sent back or voided is not counted.</p>
       </GuideSection>
 
       <GuideSection id="issue-a-note" title="Issue a credit or debit note">

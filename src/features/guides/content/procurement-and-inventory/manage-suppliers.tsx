@@ -17,7 +17,7 @@ export default function ManageSuppliersArticle() {
           <GuideStep title="Select Add Vendor">Fill in <strong>Company</strong>: the <strong>Company name</strong>, <strong>Category</strong> and <strong>Payment terms</strong>.</GuideStep>
           <GuideStep title="Add contact and tax details">Under <strong>Contact &amp; tax</strong>, enter the email, phone, <strong>Tax identifier</strong> and <strong>Registered address</strong>.</GuideStep>
           <GuideStep title="Add the people you deal with">Under <strong>Vendor contacts</strong>, select <strong>Add contact</strong>. Tick <strong>Receives RFQs</strong> and <strong>Receives purchase orders</strong> for whoever should get quote requests and orders, and mark one as <strong>Primary</strong>.</GuideStep>
-          <GuideStep title="Set accounting defaults and bank details">Choose the <strong>Payable account</strong>, <strong>Default expense account</strong> and <strong>Default WHT code</strong> if your bursar uses them, then the <strong>Bank details</strong>.</GuideStep>
+          <GuideStep title="Set accounting defaults and bank details">Choose the <strong>Payable account</strong>, <strong>Default expense account</strong> and <strong>Default withholding tax code</strong> if your bursar uses them, then the <strong>Bank details</strong>.</GuideStep>
           <GuideStep title="Create">Select <strong>Create Vendor</strong>. A new supplier starts with its checks (KYC) pending.</GuideStep>
         </GuideSteps>
       </GuideSection>

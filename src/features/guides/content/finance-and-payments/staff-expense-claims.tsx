@@ -10,7 +10,8 @@ const PROBLEMS = [
   { title: "A receipt shows Missing", body: "Receipts can be attached only while the claim is a draft, or by whoever sent it for approval once it is sent back to them. Select Missing on the line to upload one." },
   { title: "The claim was saved as a draft instead", body: "A receipt did not attach, or no approval route is set up. Open the draft and submit it again, or approve it directly if the screen offers Approve." },
   { title: "There are no buttons on a claim", body: "It is Awaiting approval. The decision is made in the approvals queue, not here." },
-  { title: "Void is missing", body: "A claim can be voided only while nothing has been paid on it." },
+  { title: "Void is missing", body: "A claim can be voided only while nothing has been paid on it, so a Part-paid claim cannot be voided." },
+  { title: "The Pay button stays greyed out", body: "No payment date is chosen, or the amount is more than is left on the claim, or nothing. The line under Amount to pay says which, for example Only ₦35,000.00 is left to pay on this claim." },
 ] as const;
 
 export default function StaffExpenseClaimsArticle() {
@@ -44,8 +45,10 @@ export default function StaffExpenseClaimsArticle() {
       <GuideSection id="pay-the-claim" title="Pay the member of staff">
         <GuideSteps>
           <GuideStep title="Open the approved claim and select Pay">Choose the <strong>Bank account</strong> it is paid from and the <strong>Payment date</strong>.</GuideStep>
-          <GuideStep title="Confirm the amount">The button reads <strong>Pay</strong> with the balance due. The whole balance is paid in one go, and the claim reads <strong>Paid</strong>.</GuideStep>
+          <GuideStep title="Check the amount"><strong>Amount to pay</strong> starts at the whole balance due. Pay all of it, or type less to pay part now and the rest later; the line under the box says how much will be left. More than is due, or nothing, is refused. The button reads <strong>Pay</strong> with the amount typed.</GuideStep>
+          <GuideStep title="Pay the rest later">A claim paid in part reads <strong>Part-paid</strong> with what is left, and its button reads <strong>Pay again</strong>. Inside the claim the amount tile reads <strong>Left to pay</strong>, with what has been paid so far beneath it. Once the whole balance is paid the claim reads <strong>Paid</strong>.</GuideStep>
         </GuideSteps>
+        <GuideCallout tone="info" title="An example">Funke Adeyemi&apos;s claim for exam materials is ₦50,000. The school pays ₦15,000 this week, so the claim reads <strong>Part-paid, ₦35,000.00 left</strong>. Next week the bursar opens it, selects <strong>Pay again</strong>, and Amount to pay starts at ₦35,000. Typing ₦40,000 is refused, because only ₦35,000 is left.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="void-a-mistake" title="Void a claim approved in error">
@@ -67,7 +70,7 @@ export default function StaffExpenseClaimsArticle() {
 
       <GuideSection id="completion-check" title="Completion check">
         <GuideCallout tone="tip" title="The claim is done when">
-          Every line has its receipt, the claim was approved, the member of staff was paid once, and the claim reads Paid.
+          Every line has its receipt, the claim was approved, the member of staff was paid the whole amount, in one payment or several, and the claim reads Paid.
         </GuideCallout>
       </GuideSection>
     </div>
