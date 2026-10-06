@@ -57,7 +57,7 @@ export default function ReduceAFeeBillArticle() {
       </GuideSection>
 
       <GuideSection id="approval" title="When approval is needed">
-        <p>Credit notes and concessions need a second person&apos;s approval at or above the school&apos;s threshold, and the form says so before you save. A submitted document waits in the approvals queue and reaches the ledger only once it is approved. Its status reads <strong>Awaiting approval</strong> or <strong>Pending Approval</strong> until then.</p>
+        <p>Credit notes and concessions need a second person&apos;s approval at or above the school&apos;s threshold, and the form says so before you save. A submitted document waits in the approvals queue and reaches the ledger only once it is approved. Its status reads <strong>Awaiting approval</strong> until then. A draft credit note is sent with <strong>Submit for approval</strong>, and a draft or rejected concession can be corrected with <strong>Edit</strong> before it is sent again.</p>
         <GuideCallout tone="warning" title="Void undoes the adjustment">
           <strong>Void concession</strong> and <strong>Void credit note</strong> put the pupil&apos;s balance back as it was and reverse the ledger entry. The original stays in history. Use them for mistakes, not to change your mind quietly.
         </GuideCallout>

@@ -80,7 +80,7 @@ export default function BillSchoolFeesArticle() {
 
       <GuideSection id="check-an-invoice" title="Check an invoice">
         <p>Select any row on <strong>Customer Invoices</strong> to open it. The cards show <strong>Total</strong>, <strong>Paid (cash)</strong>, <strong>Credited</strong>, <strong>Settled</strong>, <strong>Balance due</strong> and <strong>Aging</strong>. The tabs underneath hold the <strong>Lines</strong>, the <strong>Settlements</strong> applied to it, its <strong>GL postings</strong>, <strong>Reminders</strong> and <strong>Activity</strong>.</p>
-        <p>The status tabs on the list (<strong>All</strong>, <strong>Draft</strong>, <strong>Issued</strong>, <strong>Partial</strong>, <strong>Paid</strong>, <strong>Overdue</strong>) are the quickest way to see who owes what. <strong>Print PDF</strong> opens the invoice for printing.</p>
+        <p>The status tabs on the list (<strong>All</strong>, <strong>Draft</strong>, <strong>Issued</strong>, <strong>Partly paid</strong>, <strong>Paid</strong>, <strong>Overdue</strong>) are the quickest way to see who owes what. <strong>Print PDF</strong> opens the invoice for printing.</p>
         <GuideCallout tone="warning" title="Void only a bill raised in error">
           <strong>Void invoice</strong> removes the debt and reverses its ledger entry. The original stays in history. To reduce a correct bill, for a scholarship or a sibling discount, use a concession or credit note instead.
         </GuideCallout>
