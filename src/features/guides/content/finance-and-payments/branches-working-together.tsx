@@ -9,7 +9,7 @@ import {
 const PROBLEMS = [
   { title: "Between Branches is not in the menu", body: "It appears only at a school with more than one branch, and only to someone who may view inter-branch transfers." },
   { title: "Void is missing on a transfer", body: "A void changes both branches' books, so only someone who works in both may do it. A shared bank split, a recharge share and income given back are never voided from the register; the transfer says what to do instead." },
-  { title: "A send came back from the approver", body: "Whoever sent it for approval sees Sent back to you and Resume, which sends it back to the approver as it is. A send has no Edit: to change one, withdraw it under Workflow, My Submissions and send it again." },
+  { title: "A send came back from the approver", body: "It reads Sent back in the register, where the stage filter lists it under Requested or sent back. Whoever sent it for approval sees Sent back to you and Resume, which sends it back to the approver as it is. A send has no Edit: to change one, withdraw it under Workflow, My Submissions and send it again." },
   { title: "The month will not close", body: "The close checklist shows when two branches disagree about what they owe each other. Open Inter-branch Balances: a pair marked Disagree has a transfer booked on one side only." },
 ] as const;
 

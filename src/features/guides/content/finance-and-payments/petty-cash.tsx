@@ -13,6 +13,7 @@ const PROBLEMS = [
   { title: "Edit fund will not lower the float", body: "The tin holds more than the new float. Use Reduce float, which banks the cash above it. Switching off a fund that still holds cash is the same: use Close fund." },
   { title: "This fund cannot close yet", body: "A voucher is not yet posted, or another return of the fund is waiting for approval. Post or cancel the voucher, or settle the return, then count the tin again." },
   { title: "Void is greyed out on a return", body: "A later return of the same fund still stands, the float has changed since, or the fund was reopened. The box says which. A return whose deposit is matched on a bank reconciliation is refused too: unmatch it first." },
+  { title: "Cancel return is missing on a draft return", body: "Its approval request is still open, perhaps because an approver sent it back. Withdraw the request under Workflow, My Submissions first, then cancel the return." },
   { title: "A return is waiting and nobody can approve it", body: "The school adopted the approval route but its approver group is empty. Someone who manages approver groups must add people to it." },
 ] as const;
 
@@ -89,7 +90,7 @@ export default function PettyCashArticle() {
 
       <GuideSection id="returns-and-void" title="Returns, and voiding one">
         <p>Each reduction and closure is a <strong>return</strong>, listed on the <strong>Returns</strong> tab with what was banked and any difference. Open one for the full count: what the books said, what was counted, the reason for any difference, the bank account, the float before and after, and who counted it and who raised it.</p>
-        <p>A return raised in error is reversed with <strong>Void</strong>, then <strong>Void return</strong>. The cash comes back on the fund&apos;s books and its float is restored; voiding a closure also reopens the fund. A draft return never reached the books, so it is dropped with <strong>Cancel return</strong> instead, which writes nothing.</p>
+        <p>A return raised in error is reversed with <strong>Void</strong>, then <strong>Void return</strong>. The cash comes back on the fund&apos;s books and its float is restored; voiding a closure also reopens the fund. A draft return never reached the books, so it is dropped with <strong>Cancel return</strong> instead, which writes nothing. Cancel return is not offered while the return&apos;s approval request is open, including after an approver sends it back: to drop one, first withdraw the request under Workflow, My Submissions.</p>
         <GuideCallout tone="warning" title="When a void is refused">
           A void is refused while its deposit is matched on a bank reconciliation (unmatch it first), while a later return of the same fund still stands (void that one first), or once the fund&apos;s float has changed or a closed fund has been reopened.
         </GuideCallout>
@@ -103,6 +104,7 @@ export default function PettyCashArticle() {
           <GuideStep title="Fill the approver group">Adopting creates the approver group <strong>Finance Petty Cash Approver</strong> with nobody in it. Open <strong>Approver groups</strong> and add the people who approve returns. Until you do, a return the route stops waits with nobody able to approve it.</GuideStep>
         </GuideSteps>
         <p>Once adopted, the card shows the figure the route holds and how many people can approve. A return waiting for them says so when you open it on the Returns tab, and reaches the books once approved.</p>
+        <p>If the approver sends a return back, opening it shows <strong>Sent back</strong> as its status. The person who sent it for approval sees <strong>Sent back to you</strong>, with the approver&apos;s reason, and <strong>Resume</strong>, which sends it back to the approver as it is. A return has no Edit: to change one, withdraw it under Workflow, My Submissions, cancel it and raise it again. Nobody else gets Resume.</p>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">
