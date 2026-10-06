@@ -513,7 +513,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
     tags: ["expense claim", "reimbursement", "staff", "receipt", "out of pocket"],
     aliases: [
       "staff claim", "reimburse staff", "expense claim", "attach receipt", "approve claim",
-      "pay claim", "void claim",
+      "pay claim", "pay part of a claim", "part-paid claim", "void claim",
     ],
     audiences: ["finance-officer", "approver"],
     routes: [R.FINANCE.EXPENSES, `${R.FINANCE.EXPENSES}/claims`],
@@ -724,7 +724,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
     title: "File and pay PAYE, pension and other taxes",
     summary: "Set up each tax the school owes, prepare and file the return, pay each branch's share, and read the payroll schedules and annual PAYE return.",
     category: "finance-and-payments",
-    tags: ["tax", "PAYE", "pension", "remittance", "filing", "WHT", "VAT", "NHF", "branch"],
+    tags: ["tax", "PAYE", "pension", "remittance", "filing", "WHT", "withholding tax", "VAT", "NHF", "branch"],
     aliases: [
       "remit paye", "pay pension", "file tax return", "tax remittance", "tax obligation",
       "un-file return", "filing reference", "annual paye return", "branch share of tax", "reverse tax payment",

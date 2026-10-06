@@ -239,7 +239,7 @@ export const PROCUREMENT_AND_INVENTORY_GUIDES = [
     title: "Read the procurement overview and reports",
     summary: "See what is waiting, owed and running low, and use the payables, matching, spend and supplier reports.",
     category: "procurement-and-inventory",
-    tags: ["dashboard", "overview", "analytics", "AP aging", "GR/IR", "spend", "vendor performance", "assessment"],
+    tags: ["dashboard", "overview", "analytics", "AP aging", "unpaid bills by age", "GR/IR", "goods not yet billed", "spend", "vendor performance", "assessment"],
     aliases: ["procurement dashboard", "what do we owe", "overdue bills", "spend report", "supplier scorecard", "rate supplier", "purchase report"],
     audiences: ["procurement-officer", "finance-officer", "approver"],
     routes: [

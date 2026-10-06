@@ -883,7 +883,7 @@ const PACKAGE_WALKTHROUGHS = [
         id: "summary",
         target: "finance-expense-claims.summary",
         title: "Read the queue by stage",
-        body: "Open claims are drafts and claims not yet paid back. Awaiting payment is approved but not yet reimbursed: the cost is booked, but no money has left the bank.",
+        body: "Open claims counts drafts, claims awaiting approval and claims awaiting payment, part-paid ones included. A claim sent back is not counted. Awaiting payment is what is still owed on approved claims: the cost is booked, but that money has not left the bank.",
         placement: "bottom",
         advance: "manual",
       },

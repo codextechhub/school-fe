@@ -7,7 +7,7 @@ import {
 } from "../../article-components";
 
 const PROBLEMS = [
-  { title: "The accrued amount is zero", body: "Nothing was posted to the obligation's payable account in that period. Check payroll was posted, and that the obligation points at the right account." },
+  { title: "Accrued reads zero", body: "Accrued is what the period built up in the obligation's payable account, and nothing was posted there in that period. Check payroll was posted, and that the obligation points at the right account." },
   { title: "New filing, Mark as filed or Un-file is missing", body: "A return covers every branch, so only someone who covers the whole school sets up, files or un-files one. At a school with one branch, its bursar covers the whole school." },
   { title: "Some lines have no branch yet", body: "At a school with more than one branch, each branch's share is filed. Lines marked No branch yet must be given a branch before the return is filed." },
   { title: "Un-file is missing", body: "Something has already been paid on the return, so it can no longer go back to draft. Reverse the payment first if it was recorded in error." },
@@ -38,7 +38,7 @@ export default function TaxRemittanceArticle() {
       </GuideSection>
 
       <GuideSection id="create-the-obligation" title="Set up an obligation">
-        <p>Do this once per tax. Select <strong>New obligation</strong>, enter the <strong>Code</strong> and <strong>Name</strong>, choose the <strong>Type</strong> (VAT, WHT, PAYE, Pension or Other levy), the <strong>Liability (payable) account</strong> it builds up in, the <strong>Authority</strong>, the <strong>Frequency</strong> and the <strong>Filing day</strong>. Select <strong>Create obligation</strong>. Only someone who covers the whole school is offered it.</p>
+        <p>Do this once per tax. Select <strong>New obligation</strong>, enter the <strong>Code</strong> and <strong>Name</strong>, choose the <strong>Type</strong>: VAT, WHT (withholding tax), PAYE, Pension or Other levy. Then choose the <strong>Liability (payable) account</strong> it builds up in, the <strong>Authority</strong>, the <strong>Frequency</strong> and the <strong>Filing day</strong>. Select <strong>Create obligation</strong>. Only someone who covers the whole school is offered it.</p>
       </GuideSection>
 
       <GuideSection id="prepare-and-file" title="Prepare and file a return">

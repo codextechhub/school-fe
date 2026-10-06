@@ -74,7 +74,7 @@ export default function BillSchoolFeesArticle() {
           <GuideStep title="Select New invoice">On <strong>Customer Invoices</strong>, choose the <strong>Customer</strong> and <strong>Invoice date</strong>. <strong>Reference</strong> and <strong>Narration</strong> are optional and print on the invoice.</GuideStep>
           <GuideStep title="Start from a fee structure, if one fits">Picking one under <strong>Start from a fee structure (optional)</strong> fills the lines, which you can still change, add to or remove.</GuideStep>
           <GuideStep title="Check each line">Each line needs an income account and a unit price. The drawer shows Subtotal, Tax and Total as you type.</GuideStep>
-          <GuideStep title="Issue or save a draft">With <strong>Issue now (post the AR journal)</strong> ticked the button reads <strong>Issue invoice</strong> and the bill is posted. Untick it to <strong>Save draft</strong> and post later.</GuideStep>
+          <GuideStep title="Issue or save a draft">With <strong>Issue now (post it to the books)</strong> ticked the button reads <strong>Issue invoice</strong> and the bill is posted. Untick it to <strong>Save draft</strong> and post later.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
