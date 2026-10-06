@@ -60,7 +60,7 @@ export default function RefundOrWriteOffArticle() {
       </GuideSection>
 
       <GuideSection id="approval-and-posting" title="Approval and posting">
-        <p>Where your school has an approval path for them, every refund and write-off needs a second person&apos;s approval, whatever the amount, and nothing reaches the ledger until it is approved. A draft is submitted from its detail panel. Once posted, a refund can be voided with <strong>Void refund</strong>, which gives the pupil their credit back and reverses the entry.</p>
+        <p>Where your school has an approval path for them, every refund and write-off needs a second person&apos;s approval, whatever the amount, and nothing reaches the ledger until it is approved. A draft is submitted from its detail panel. If an approver sends one back, the person who sent it for approval sees <strong>Sent back to you</strong> and <strong>Resume</strong>, which sends it back to the approver as it is. A refund or write-off has no Edit: to change one, withdraw it under Workflow, My Submissions and submit it again. Once posted, a refund can be voided with <strong>Void refund</strong>, which gives the pupil their credit back and reverses the entry.</p>
         <GuideCallout tone="danger" title="Pay the refund once">
           The refund records cash leaving the bank. Make sure the transfer to the parent is made exactly once, and that the bank line is matched in bank reconciliation.
         </GuideCallout>

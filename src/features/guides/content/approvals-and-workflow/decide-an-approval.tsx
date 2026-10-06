@@ -3,7 +3,7 @@ import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } fro
 const DECISIONS = [
   ["Approve", "Counts your vote towards the step. Whether one vote clears it, or it needs a set number or everybody, is shown above the buttons."],
   ["Reject", "Needs a reason. The step decides whether a rejection ends the request or sends it back to the person who raised it, and the reason label says which."],
-  ["Return to requester", "Needs a reason. The request goes back for corrections, and the person who raised it can resubmit at this step."],
+  ["Return to requester", "Needs a reason. The request goes back for corrections, and the person who sent it for approval can correct it and resubmit at this step."],
 ] as const;
 
 const PROBLEMS = [
@@ -68,7 +68,7 @@ export default function DecideAnApprovalArticle() {
           "Rejected - workflow ended, or Rejected - returned to the requester.",
           "Returned to the requester for corrections.",
         ]} />
-        <p>A returned request comes back to your queue only after the requester corrects it and resubmits.</p>
+        <p>A returned request comes back to your queue only after the requester corrects it and resubmits. A Finance or Procurement document is corrected on its own screen with <strong>Edit</strong> and sent back with <strong>Resume</strong>, and only the person who sent it for approval gets those buttons, not you and not their colleagues. When it reaches you again, the request shows the corrected version, so read it again before you decide.</p>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">

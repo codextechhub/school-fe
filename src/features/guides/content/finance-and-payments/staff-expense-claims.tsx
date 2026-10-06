@@ -7,7 +7,7 @@ import {
 } from "../../article-components";
 
 const PROBLEMS = [
-  { title: "A receipt shows Missing", body: "Receipts can be attached only while the claim is a draft. Select Missing on the line to upload one." },
+  { title: "A receipt shows Missing", body: "Receipts can be attached only while the claim is a draft, or by whoever sent it for approval once it is sent back to them. Select Missing on the line to upload one." },
   { title: "The claim was saved as a draft instead", body: "A receipt did not attach, or no approval route is set up. Open the draft and submit it again, or approve it directly if the screen offers Approve." },
   { title: "There are no buttons on a claim", body: "It is Awaiting approval. The decision is made in the approvals queue, not here." },
   { title: "Void is missing", body: "A claim can be voided only while nothing has been paid on it." },
@@ -37,6 +37,7 @@ export default function StaffExpenseClaimsArticle() {
       <GuideSection id="approve-the-claim" title="Approve the claim">
         <p>A submitted claim reads <strong>Awaiting approval</strong> and is decided in the approvals queue. Where the school has no approval route for claims, a draft shows <strong>Approve</strong> and <strong>Reject</strong> buttons instead.</p>
         <p>Once approved, the claim reads <strong>Approved</strong> and the amount is owed to the member of staff. The <strong>Approval workflow</strong> steps inside the claim show where it is.</p>
+        <p>If the approver sends a claim back, the person who sent it for approval sees <strong>Sent back to you</strong> on it, with the approver&apos;s reason. They can attach or remove receipts on its lines, then select <strong>Resume</strong> to send it back into the same approval. To change anything else, withdraw it under Workflow, My Submissions. Nobody else can change the receipts or resume it.</p>
       </GuideSection>
 
       <GuideSection id="pay-the-claim" title="Pay the member of staff">

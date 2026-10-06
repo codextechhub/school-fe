@@ -79,6 +79,7 @@ export default function PayerPaymentsAndCreditTransfersArticle() {
           <GuideStep title="Submit for approval">Select <strong>Submit for approval</strong>, or <strong>Save draft</strong> to submit it later. Neither child&apos;s credit changes until a second person approves it under Workflow, Approvals.</GuideStep>
         </GuideSteps>
         <p>Once approved, Tunde&apos;s credit drops by ₦15,000 and Ada&apos;s rises by the same. A transfer belongs to the first child&apos;s branch, and both children must be filed under that branch or shared by every branch. A posted transfer made in error is undone with <strong>Void</strong>, which gives the credit back.</p>
+        <p>If the approver sends a transfer back, the person who sent it for approval sees <strong>Sent back to you</strong> and <strong>Resume</strong>, which sends it back to the approver as it is. A credit transfer has no Edit: to change one, withdraw it under Workflow, My Submissions and submit it again.</p>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">
