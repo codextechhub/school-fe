@@ -32,8 +32,11 @@ import type { FromScreen } from "@/redux/services/exports/exports-types";
  *
  * So when a filter cannot be carried, this stops and says which - in the
  * school's own words rather than the parameter's - and lets the person decide.
- * When everything IS carried it does not interrupt: a confirmation nobody needs
- * is a confirmation nobody reads.
+ * It stops too when the file covers only the recent part of the list (the
+ * ledger's last 31 days, `date_window.whole_list` false), saying so in the
+ * server's sentence as written. When everything IS carried and the file holds
+ * the whole list it does not interrupt: a confirmation nobody needs is a
+ * confirmation nobody reads.
  *
  * **Absent while the school is still being set up.** Academic structure is open
  * to a PENDING tenant because building it is a required onboarding task; the
@@ -52,6 +55,11 @@ import type { FromScreen } from "@/redux/services/exports/exports-types";
  * `exports.catalogue.view` and `exports.run.create` these six buttons appear
  * with no further work.
  */
+
+/** The date window when the file covers only the recent part of the list, else null. */
+export function partWindow(data: FromScreen): NonNullable<FromScreen["date_window"]> | null {
+  return data.date_window && !data.date_window.whole_list ? data.date_window : null;
+}
 
 export function ExportButton({
   screen,
@@ -75,8 +83,8 @@ export function ExportButton({
     try {
       const prepared = await prepare({ screen, params }).unwrap();
       const data = prepared.data;
-      // Nothing lost: run it rather than asking a question with one answer.
-      if (!data.unmapped?.length) return execute(data);
+      // Nothing lost and nothing left out: run it rather than asking a question with one answer.
+      if (!data.unmapped?.length && !partWindow(data)) return execute(data);
       setPending(data);
     } catch (error) {
       // A refused read (403, 409) is this screen's to say; the rest is toasted centrally.
@@ -105,6 +113,8 @@ export function ExportButton({
   // The server's own sentences: only the module owning the binding knows why
   // a filter could not be carried, and a copy here would drift from it.
   const why = (pending?.unmapped ?? []).map((u) => u.reason).join(" ");
+  const part = pending ? partWindow(pending) : null;
+  const wider = !!pending?.unmapped?.length;
 
   return (
     <>
@@ -128,8 +138,8 @@ export function ExportButton({
         onConfirm={() => pending && execute(pending)}
         loading={running}
         canCancel
-        title="This file will show more than the screen"
-        description={`${why} Everything else you have filtered by is carried.`}
+        title={wider ? "This file will show more than the screen" : "This file covers part of the list"}
+        description={[wider ? `${why} Everything else you have filtered by is carried.` : "", part?.sentence ?? ""].filter(Boolean).join(" ")}
         onConfirmText="Export anyway"
         containerClass="min-h-[320px] lg:w-[430px]"
         srcClass="size-25"

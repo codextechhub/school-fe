@@ -18,6 +18,7 @@ export default function ExportAndDownloadArticle() {
           <GuideStep title="Set your filters">For example, choose one class and the active students only.</GuideStep>
           <GuideStep title="Select Export">A message confirms the export has been queued.</GuideStep>
           <GuideStep title="If the file will show more than the screen">Some screen filters cannot be carried into a file. A dialog titled <strong>This file will show more than the screen</strong> says which, and that everything else you filtered by is carried. Select <strong>Export anyway</strong>, or cancel and narrow the list another way.</GuideStep>
+          <GuideStep title="If the file covers part of the list">A list with no dates of its own exports everything it shows. The general ledger is the exception: with no dates set it exports the last 31 days, and a dialog titled <strong>This file covers part of the list</strong> gives the dates. Select <strong>Export anyway</strong>, or set the dates in the Export Centre builder to include earlier ones.</GuideStep>
           <GuideStep title="Finance and Procurement lists">Their status tabs and filters are carried, <strong>Sent back</strong> included, so the file holds what the list shows. The exception is purchase orders on <strong>Partly received</strong>, which the export cannot filter by, so that dialog appears.</GuideStep>
         </GuideSteps>
       </GuideSection>

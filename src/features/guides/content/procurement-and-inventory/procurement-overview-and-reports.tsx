@@ -35,7 +35,7 @@ export default function ProcurementOverviewAndReportsArticle() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[
             ["AP Aging", "What the school owes suppliers, grouped by how late it is. Choose an As of date, and select a supplier to see its open bills."],
-            ["GR/IR & Control", "Goods received but not yet billed, and bills for goods not yet received. A difference to investigate usually means a missing receipt or invoice."],
+            ["GR/IR (goods not yet billed)", "Goods received but not yet billed, and bills for goods not yet received. A difference to investigate usually means a missing receipt or invoice."],
             ["Spend", "Posted bills by category, by supplier and by month, between the From and To dates."],
             ["Vendor Performance", "On-time delivery and payment times from posted records, and each supplier's latest assessment."],
           ].map(([title, body]) => (

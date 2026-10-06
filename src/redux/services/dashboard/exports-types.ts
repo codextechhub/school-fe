@@ -285,6 +285,20 @@ export interface AddedScreenFilter {
   reason: string;
 }
 
+/** The dates a screen export covers when its dataset needs a date range and the
+ *  screen sent none. `whole_list` is true when it runs from the first row the
+ *  reader can see to today, so the file holds everything the list shows; false
+ *  when the screen is bounded on purpose (the ledger's last 31 days). The
+ *  `sentence` is the server's, in the school's date format, shown as written. */
+export interface ScreenDateWindow {
+  id: string;
+  label: string;
+  start: string;
+  end: string;
+  whole_list: boolean;
+  sentence: string;
+}
+
 /** The configuration `from-screen` prepared, ready to hand straight to /quick/. */
 export interface ScreenExportConfig {
   dataset_key: string;
@@ -299,7 +313,7 @@ export interface ScreenExportConfig {
  *  Extends PreviewResult because the view spreads the same `estimate()` figures
  *  and sample into its payload. */
 export interface ScreenExportPlan extends PreviewResult {
-  screen: { key: string; label: string; dataset: string; default_window_days: number };
+  screen: { key: string; label: string; dataset: string; default_window_days: number | null };
   config: ScreenExportConfig;
   /** The dataset's own list, not the FE's assumption about it. */
   supported_formats: ExportFormat[];
@@ -310,6 +324,8 @@ export interface ScreenExportPlan extends PreviewResult {
   carried: string[];
   unmapped: UnmappedScreenFilter[];
   added: AddedScreenFilter[];
+  /** The dates covered when the screen sent none; null when it sent its own. */
+  date_window?: ScreenDateWindow | null;
   /** True only when nothing was dropped: the file will match the table. */
   exact: boolean;
   /** Server-authored sentence, present only when `exact` is false. */
