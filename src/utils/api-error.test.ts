@@ -74,8 +74,9 @@ describe("apiErrorMessage", () => {
     );
   });
 
-  it("converts minor-unit amounts before returning the sentence", () => {
-    const error = rejection(422, "AMOUNT_TOO_SMALL", "The minimum is 850 kobo.");
+  it("leaves a server sentence's own units alone", () => {
+    // The server words amounts in naira; a receipt's "fifty kobo" must stay kobo.
+    const error = rejection(422, "AMOUNT_TOO_SMALL", "The minimum is ₦8.50.");
     expect(apiErrorMessage(error, "fallback")).toBe("The minimum is ₦8.50.");
   });
 
