@@ -15,8 +15,10 @@ import { userFacingMessage } from "./user-facing-message";
  *
  * Typed domain failures use the top-level `message` as their complete,
  * actionable explanation and keep machine context under `error.code/detail`.
- * DRF request-validation failures use `REQUEST_ERROR` and put the useful
- * field-level message in `error.detail`, so those deliberately prefer detail.
+ * DRF request-validation failures use `REQUEST_ERROR`; their `message` names
+ * each failing field in words, so it is read first, and the field-level
+ * `error.detail` stands in only when the message is the generic one
+ * (requestErrorSentence).
  *
  * Never inspect the whole `error` object for a string: its first string is often
  * the machine code (`POSTING_ERROR`, `PERIOD_CLOSED`, …), which must not be shown
@@ -78,8 +80,30 @@ export function apiErrorMessage(
 
   const chosen = code && code !== "REQUEST_ERROR"
     ? message || detail || fallback
-    : detail || message || fallback;
+    : requestErrorSentence(message, detail) || fallback;
   return humanizeApiMessage(chosen);
+}
+
+/**
+ * The server's generic sentence for a request error that carried no message
+ * of its own. Only then is the first field detail the better sentence.
+ */
+const GENERIC_REQUEST_ERROR = "An error occurred. Check the error details for more information.";
+
+/**
+ * The sentence for a request-validation refusal (`REQUEST_ERROR`).
+ *
+ * The server writes `message` from the field errors themselves: one error on
+ * its own, several each named in words ("Line 2, gross amount: Enter an amount
+ * above zero; Line 3, account: Choose an account"). Reading the first field's
+ * detail instead dropped every name and every error after the first, so a
+ * bursar fixing a bulk refund saw "Enter an amount above zero." and not which
+ * line it was. So `message` wins, and the first detail stands in only for the
+ * generic sentence or a body with no message.
+ */
+function requestErrorSentence(message: string, detail: string | null): string {
+  if (message && message !== GENERIC_REQUEST_ERROR) return message;
+  return detail || message;
 }
 
 export function apiFieldError(error: unknown, field: string): string | null {

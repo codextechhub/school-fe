@@ -306,14 +306,26 @@ describe("a refused request (400, 422)", () => {
     expect(toastError).toHaveBeenCalledWith("Some of these levels already exist in this programme.");
   });
 
-  it("says a serializer's field error from its detail", async () => {
+  it("says a serializer's field errors as the server wrote them, each field named in words", async () => {
     respondWith(400, {
       success: false,
-      message: "name: This field may not be blank.; code: Ensure this field has no more than 10 characters.",
+      message: "Name: This field may not be blank.; Code: Ensure this field has no more than 10 characters.",
       error: {
         code: "REQUEST_ERROR",
         detail: { name: ["This field may not be blank."], code: ["Ensure this field has no more than 10 characters."] },
       },
+    });
+
+    await baseQueryInterceptor("/academics/departments/", apiStub("mutation"), {});
+
+    expect(toastError).toHaveBeenCalledWith("Name: This field may not be blank.; Code: Ensure this field has no more than 10 characters.");
+  });
+
+  it("says a field error from its detail when the server's sentence is the generic one", async () => {
+    respondWith(400, {
+      success: false,
+      message: "An error occurred. Check the error details for more information.",
+      error: { code: "REQUEST_ERROR", detail: { name: ["This field may not be blank."] } },
     });
 
     await baseQueryInterceptor("/academics/departments/", apiStub("mutation"), {});
