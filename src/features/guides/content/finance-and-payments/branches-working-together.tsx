@@ -9,7 +9,8 @@ import {
 const PROBLEMS = [
   { title: "Between Branches is not in the menu", body: "It appears only at a school with more than one branch, and only to someone who may view inter-branch transfers." },
   { title: "Void is missing on a transfer", body: "A void changes both branches' books, so only someone who works in both may do it. A shared bank split, a recharge share and income given back are never voided from the register; the transfer says what to do instead." },
-  { title: "A send came back from the approver", body: "It reads Sent back in the register, where the stage filter lists it under Requested or sent back. Whoever sent it for approval sees Sent back to you and Resume, which sends it back to the approver as it is. A send has no Edit: to change one, withdraw it under Workflow, My Submissions and send it again." },
+  { title: "A send came back from the approver", body: "It reads Sent back in the register. The stage filter lists it under Sent back, which shows only sends an approver sent back, and under Requested or sent back. Whoever sent it for approval sees Sent back to you and Resume, which sends it back to the approver as it is. A send has no Edit: to change one, withdraw it under Workflow, My Submissions. Money sent without being asked is then cancelled, so send it again; money another branch asked for goes back to waiting to be sent." },
+  { title: "Send and Decline are missing on a request", body: "Someone at your branch has already sent it, and the send is with its approvers or was sent back. To decline the request instead, they withdraw the approval request under Workflow, My Submissions first. The request goes back to waiting, with Send and Decline." },
   { title: "The month will not close", body: "The close checklist shows when two branches disagree about what they owe each other. Open Inter-branch Balances: a pair marked Disagree has a transfer booked on one side only." },
 ] as const;
 
@@ -29,7 +30,7 @@ export default function BranchesWorkingTogetherArticle() {
         <GuideSteps>
           <GuideStep title="Open Inter-branch Transfers">Select <strong>Send money</strong> to send from your branch, or <strong>Ask for money</strong> to ask another branch.</GuideStep>
           <GuideStep title="Fill in the transfer">Choose the account it is paid from, the other branch, the amount and what it is for. A send follows your branch's approval route.</GuideStep>
-          <GuideStep title="The other branch answers">The branch asked can <strong>Send</strong> or <strong>Decline</strong>. The branch that receives the money selects <strong>Confirm it arrived</strong>.</GuideStep>
+          <GuideStep title="The other branch answers">The branch asked can <strong>Send</strong> or <strong>Decline</strong>. Once its send is with the approvers, including after they send it back, neither is offered. The branch that receives the money selects <strong>Confirm it arrived</strong>.</GuideStep>
         </GuideSteps>
       </GuideSection>
 

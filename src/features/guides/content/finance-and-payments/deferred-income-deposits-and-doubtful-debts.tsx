@@ -67,7 +67,7 @@ export default function DeferredIncomeDepositsAndDoubtfulDebtsArticle() {
           <GuideStep title="Submit for approval">Select <strong>Submit for approval</strong>. A second person approves it under Workflow, Approvals, and it posts as one journal per branch. Where the school&apos;s approval rules do not ask for a second person, the button reads <strong>Post provision</strong> instead.</GuideStep>
         </GuideSteps>
         <p>The figures are worked out again when the run posts, so receipts and write-offs made while it waited are counted. A run covers every branch, so only someone who covers the whole school raises, submits or posts one; a branch bursar sees the runs and their own branch&apos;s line.</p>
-        <p>If the approver sends a run back, its status reads <strong>Sent back</strong>, on its row and when you open it. The person who sent it for approval sees <strong>Sent back to you</strong> and <strong>Resume</strong>, which sends it back to the approver as it is. A run has no Edit: to change one, withdraw it under Workflow, My Submissions and submit it again.</p>
+        <p>If the approver sends a run back, its status reads <strong>Sent back</strong>, on its row and when you open it. The filter above the runs offers <strong>All runs</strong> or <strong>Sent back</strong>, to list only those. The person who sent it for approval sees <strong>Sent back to you</strong> and <strong>Resume</strong>, which sends it back to the approver as it is. A run has no Edit: to change one, withdraw it under Workflow, My Submissions and submit it again.</p>
       </GuideSection>
 
       <GuideSection id="receivables-settings" title="Receivables settings">

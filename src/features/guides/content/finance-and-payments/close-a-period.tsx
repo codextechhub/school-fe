@@ -12,6 +12,7 @@ const PROBLEMS = [
   { title: "Run close steps is refused", body: "A check marked Blocks the close has failed. Fix what it names, such as an unbalanced trial balance or AR that does not match its control account, and run it again. A check marked Done by the close is not the reason: the close does that work itself." },
   { title: "A month will not close although its checks pass", body: "An earlier month is still open. Months close in order, so September closes once August is closed, and January once December of the year before is. Close the month the message names first. Force close does not get past this." },
   { title: "Re-open is refused on a month", body: "A later month is still closed. Months re-open from the latest back: to correct August while September is closed, re-open September first. A locked later month means the earlier one can no longer be re-opened." },
+  { title: "A document is refused for a closed month", body: "A journal, credit note or other finance document is checked against its own branch's month when it is sent for approval or resumed. If Ikeja Branch has closed September 2026, an Ikeja document dated in September is refused at once, with a message naming Ikeja Branch and September 2026, while Lekki's still go. Re-open the month for that branch, or date the document in a month it still has open. At a school with one branch the message names only the month." },
   { title: "The month still reads Open under All branches", body: "The school's month closes only once every branch has closed it. The Each branch rows show which branch is still open." },
   { title: "Lock period is greyed out", body: "It is the last period of a year that is not closed yet. Close the fiscal year first." },
   { title: "Close fiscal year is greyed out", body: "At least one period is still Open. Soft-close or close every period first." },
@@ -69,7 +70,7 @@ export default function CloseAPeriodArticle() {
 
       <GuideSection id="close-a-month" title="Close a month">
         <GuideSteps>
-          <GuideStep title="Select the period">Its panel shows the <strong>Close checklist</strong>, including whether the trial balance balances and whether draft journals remain. A check marked <strong>Blocks the close</strong> must pass; one marked <strong>Warning only</strong> will not stop it. One marked <strong>Done by the close</strong> is work the close does itself, such as posting depreciation that has fallen due or releasing fees billed ahead, so it needs nothing from you.</GuideStep>
+          <GuideStep title="Select the period">Its panel shows the <strong>Close checklist</strong>, including whether the trial balance balances and whether draft journals remain. Each check is named in plain words, such as <strong>Trial balance balances</strong> or <strong>Payables agree with the ledger</strong>. A check marked <strong>Blocks the close</strong> must pass; one marked <strong>Warning only</strong> will not stop it. One marked <strong>Done by the close</strong> is work the close does itself, such as posting depreciation that has fallen due or releasing fees billed ahead, so it needs nothing from you.</GuideStep>
           <GuideStep title="Soft close, if you are still tidying up">Select <strong>Soft close</strong> to stop ordinary posting while you finish adjustments.</GuideStep>
           <GuideStep title="Run close steps">Select <strong>Run close steps</strong> and confirm with <strong>Run period close</strong>. Where you are asked, choose the branch. The period reads Closed.</GuideStep>
         </GuideSteps>
@@ -79,13 +80,14 @@ export default function CloseAPeriodArticle() {
       <GuideSection id="close-in-order" title="Months close in order">
         <p>A month closes only once every earlier month is closed, and re-opens only while every later month is open. The order runs across the year end: January waits for December of the year before, although that year itself may stay open for the auditors. At a school with more than one branch each branch keeps its own order, so Ikeja can close September while Lekki is still on August.</p>
         <p>Say Bright Star&apos;s bursar tries to close September while August is still open. The checklist shows <strong>Earlier months closed</strong> as Blocks the close, and names August. She closes August, then September. Later the accountant finds an August error: she re-opens September first, then August, corrects it, and closes both again.</p>
+        <p>Under <strong>All branches</strong>, Earlier months closed answers branch by branch. Say Ikeja has closed August and Lekki has not. Viewing September under All branches, the check names Lekki and its open August, and says Ikeja can close September now. It is then a warning, not a block: Ikeja&apos;s close, and a force close of it, stay available. It blocks the close only when no branch still to close the month can close it.</p>
         <p>The order is on by default. Someone who covers the whole school can turn it off under Finance Settings, <strong>Fiscal calendar</strong>, <strong>Closing months</strong>, with <strong>Close months in order</strong>.</p>
       </GuideSection>
 
       <GuideSection id="force-close" title="Close past a failed check">
         <p>Sometimes a month must close while a check still fails, for example when the bank statement is late and the accountant has agreed the balance. Someone with the force close permission sees <strong>Force close</strong> on the month. The dialog lists the <strong>Checks you are overriding</strong> and asks for a reason; both go on the audit trail with your name.</p>
         <GuideCallout tone="warning" title="Force close is not a shortcut">
-          Use it only when the person responsible has agreed why the check can wait. Fix the failing check in the next month. Force close never gets past the order months close in: an earlier month that is still open has to be closed first.
+          Use it only when the person responsible has agreed why the check can wait. Fix the failing check in the next month. Force close never gets past the order months close in: an earlier month that is still open at that branch has to be closed first. Under All branches it stays available for a branch that can close.
         </GuideCallout>
       </GuideSection>
 
