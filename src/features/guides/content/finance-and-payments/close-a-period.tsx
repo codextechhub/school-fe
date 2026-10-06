@@ -9,7 +9,7 @@ import {
 const PROBLEMS = [
   { title: "Nothing can be posted anywhere", body: "No fiscal period is open, or the calendar has run out. The finance dashboard warns about this. Someone who covers the whole school creates the next fiscal year." },
   { title: "New fiscal year is missing", body: "Opening a year changes every branch's calendar, so only someone who covers the whole school is offered it." },
-  { title: "Run close steps is refused", body: "A check marked Blocks the close has failed. Fix what it names, such as Debits and credits balance or Receivables agree with the ledger, and run it again. A check marked Done by the close is not the reason: the close does that work itself." },
+  { title: "Run close steps is refused", body: "A check marked Blocks the close has failed. Fix what it names, such as Trial balance agrees (debits equal credits) or AR reconciled (what customers owe), and run it again. A check marked Done by the close is not the reason: the close does that work itself." },
   { title: "A month will not close although its checks pass", body: "An earlier month is still open. Months close in order, so September closes once August is closed, and January once December of the year before is. Close the month the message names first. Force close does not get past this." },
   { title: "Re-open is refused on a month", body: "A later month is still closed. Months re-open from the latest back: to correct August while September is closed, re-open September first. A locked later month means the earlier one can no longer be re-opened." },
   { title: "A document is refused for a closed month", body: "A journal, credit note or other finance document is checked against its own branch's month when it is sent for approval or resumed. If Ikeja Branch has closed September 2026, an Ikeja document dated in September is refused at once, with a message naming Ikeja Branch and September 2026, while Lekki's still go. Re-open the month for that branch, or date the document in a month it still has open. At a school with one branch the message names only the month." },
@@ -49,7 +49,7 @@ export default function CloseAPeriodArticle() {
           <GuideStep title="Select Create fiscal calendar">All the new periods start open.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="warning" title="Never let the calendar run out">
-          When the last period passes and no next year exists, every posting is refused. Finance Settings, <strong>Fiscal calendar</strong>, under <strong>Opening the next year</strong>, chooses what happens as the end nears: <strong>Open the next year automatically</strong> (the default), or <strong>Warn only</strong>, which emails whoever may open a year. <strong>Days ahead</strong> sets how early, from 7 to 180 days.
+          When the last period passes and no next year exists, every posting is refused. Finance Settings, <strong>Fiscal calendar</strong>, under <strong>Opening the next year</strong>, chooses what happens as the end nears: <strong>Open the next fiscal year automatically</strong> (the default), or <strong>Warn finance staff only</strong>, which emails whoever may open a year. <strong>Days ahead</strong> sets how early, from 7 to 180 days.
         </GuideCallout>
       </GuideSection>
 
@@ -70,7 +70,7 @@ export default function CloseAPeriodArticle() {
 
       <GuideSection id="close-a-month" title="Close a month">
         <GuideSteps>
-          <GuideStep title="Select the period">Its panel shows the <strong>Close checklist</strong>, including whether the trial balance balances and whether draft journals remain. Each check is named in plain words, such as <strong>Debits and credits balance</strong> or <strong>Payables agree with the ledger</strong>. A check marked <strong>Blocks the close</strong> must pass; one marked <strong>Warning only</strong> will not stop it. One marked <strong>Done by the close</strong> is work the close does itself, such as posting depreciation that has fallen due or releasing fees billed ahead, so it needs nothing from you.</GuideStep>
+          <GuideStep title="Select the period">Its panel shows the <strong>Close checklist</strong>, including whether the trial balance balances and whether draft journals remain. Each check is named with its accounting term and the plain words beside it, such as <strong>Trial balance agrees (debits equal credits)</strong> or <strong>AP reconciled (what is owed to suppliers)</strong>. A check marked <strong>Blocks the close</strong> must pass; one marked <strong>Warning only</strong> will not stop it. One marked <strong>Done by the close</strong> is work the close does itself, such as posting depreciation that has fallen due or releasing fees billed ahead, so it needs nothing from you.</GuideStep>
           <GuideStep title="Soft close, if you are still tidying up">Select <strong>Soft close</strong> to stop ordinary posting while you finish adjustments.</GuideStep>
           <GuideStep title="Run close steps">Select <strong>Run close steps</strong> and confirm with <strong>Run period close</strong>. Where you are asked, choose the branch. The period reads Closed.</GuideStep>
         </GuideSteps>

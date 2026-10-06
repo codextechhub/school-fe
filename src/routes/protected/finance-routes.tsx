@@ -53,7 +53,8 @@ const SCHOOL_SETUP_SECTIONS = setupSections;
 /**
  * Payments is mounted section by section from `paymentsSections`: a school's
  * own payouts (paid from its branch's bank), batches, settlement booking,
- * transactions log, needs-attention events and the held settlements the
+ * transactions log, the requests made to the payment provider (provider
+ * activity), needs-attention events and the held settlements the
  * platform pays its branches. The platform's held-money check is not a school's
  * and stays unmounted.
  */

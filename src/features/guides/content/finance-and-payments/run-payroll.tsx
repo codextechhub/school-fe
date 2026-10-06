@@ -37,7 +37,7 @@ export default function RunPayrollArticle() {
       <GuideSection id="payroll-settings" title="Choose the payroll settings">
         <p>Someone who covers the whole school sets these once, in <strong>Finance Settings</strong> under <strong>Payroll</strong>. Anyone else can read them.</p>
         <GuideSteps>
-          <GuideStep title="Where PAYE comes from"><strong>Computed from the tax table</strong> works PAYE out over the whole tax year, so the year&apos;s tax comes out right when pay changes. <strong>Supplied by the school</strong> takes it from each person&apos;s salary structure or roster figures.</GuideStep>
+          <GuideStep title="Where PAYE comes from"><strong>Computed from the national tax table</strong> works PAYE out over the whole tax year, so the year&apos;s tax comes out right when pay changes. <strong>Taken from the salary structure or roster</strong> uses each person&apos;s figures there instead.</GuideStep>
           <GuideStep title="Deductions and contributions">Switch employee pension, employer pension, NHF, NSITF and ITF on or off, and change their rates.</GuideStep>
           <GuideStep title="Payslips">Choose whether staff see their payslips in the app, are emailed them, or both.</GuideStep>
           <GuideStep title="Earlier pay">Switch on <strong>Earlier pay required</strong> to refuse a run that pays a joiner with nothing recorded. If the school&apos;s payroll ran elsewhere earlier in the year, set <strong>Payroll moved here on</strong> to the day it moved.</GuideStep>

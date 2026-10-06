@@ -47,6 +47,7 @@ export default function OnlineFeePaymentsArticle() {
       <GuideSection id="follow-a-payment" title="Follow a payment">
         <p><strong>Collections</strong> lists every online payment as <strong>Pending</strong>, <strong>Paid</strong>, <strong>Failed</strong> or <strong>Refunded</strong>, with cards for what has been collected, what is pending and the success rate. Open a row for its <strong>Status timeline</strong>: when the checkout was created, whether the link is ready, and when the payment was confirmed. Once paid, it names the receipt it created.</p>
         <p>While a payment is still pending, <strong>Re-verify</strong> asks the provider for its latest answer, and <strong>Copy link</strong> copies the checkout link again.</p>
+        <p>When the provider refused a checkout or a payment failed, open <strong>Payment provider activity</strong> under Payments. It lists every request made to the payment provider, the refused and failed ones included, with the reason in full. Select the copy button beside a reference to quote it to the provider.</p>
         <p>A paid online payment waits with the provider until it reaches the branch&apos;s bank. How it gets there, and how the provider&apos;s deposit is booked, has a guide of its own.</p>
       </GuideSection>
 

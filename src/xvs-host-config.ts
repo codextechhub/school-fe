@@ -45,6 +45,7 @@ export const paymentsSections: readonly PaymentsSection[] = [
   "batches",
   "settlement",
   "transactions",
+  "provider-activity",
   "webhooks",
   "held-settlements",
 ] as const;

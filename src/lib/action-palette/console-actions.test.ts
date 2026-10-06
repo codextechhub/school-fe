@@ -26,6 +26,7 @@ import {
   needsWholeSchool,
 } from "./console-actions";
 import { ACTIONS, CONSOLE_ACTIONS } from "./registry";
+import { scoreAction } from "./match";
 import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
 
 const NAV_URLS = [...schoolFinanceNav, ...schoolProcurementNav]
@@ -389,5 +390,45 @@ describe("whole-school jobs", () => {
     expect(needsWholeSchool({ all: [P.FIN_CREATE_INVOICE, P.FIN_CREATE_ACCOUNT] })).toBe(true);
     expect(needsWholeSchool({ perm: P.FIN_CREATE_INVOICE })).toBe(false);
     expect(needsWholeSchool(null)).toBe(false);
+  });
+});
+
+/**
+ * The menus say "Invoices", "Unpaid bills by age" and "Goods not yet billed"
+ * in plain words. Mrs Bello, who learned them as AR Invoices, AP Aging and
+ * GR/IR, still finds each by the old words, and by the new ones.
+ */
+describe("screens renamed into plain words", () => {
+  const view = (url: string) => VIEWS.find((a) => a.id === consoleActionId(url));
+
+  it("are found by their old words and their new ones", () => {
+    const cases: [string, string[]][] = [
+      ["/finance/receivables/invoices", ["ar invoices", "invoices"]],
+      ["/procurement/analytics/ap-aging", ["ap aging", "unpaid bills by age"]],
+      ["/procurement/analytics/grir", ["gr/ir", "goods not yet billed"]],
+    ];
+    for (const [url, queries] of cases) {
+      const action = view(url);
+      expect(action, url).toBeDefined();
+      for (const query of queries) expect(scoreAction(action!, query), `${url} by "${query}"`).not.toBeNull();
+    }
+  });
+});
+
+/**
+ * Mr Eze looks for why Paystack refused a checkout. "paystack log" and
+ * "failed payment" find Payment provider activity, and "money in and out"
+ * finds the Transactions Log, so the two screens are not confused.
+ */
+describe("the payment provider's activity", () => {
+  const view = (url: string) => VIEWS.find((a) => a.id === consoleActionId(url));
+
+  it("is found by the words a bursar types for it", () => {
+    const activity = view("/finance/payments/provider-activity");
+    expect(activity).toBeDefined();
+    for (const query of ["paystack log", "failed payment", "payment attempts", "payment provider activity"]) {
+      expect(scoreAction(activity!, query), query).not.toBeNull();
+    }
+    expect(scoreAction(view("/finance/payments/transactions")!, "money in and out")).not.toBeNull();
   });
 });

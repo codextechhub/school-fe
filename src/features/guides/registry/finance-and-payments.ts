@@ -367,6 +367,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
     aliases: [
       "pay online", "payment link", "request payment", "parent paid online", "payment pending",
       "dedicated account", "virtual account number", "collections",
+      "payment provider activity", "paystack log", "failed payment", "payment refused",
     ],
     audiences: ["finance-officer"],
     routes: [
@@ -377,6 +378,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
       `${R.FINANCE.PAYMENTS}/payouts`,
       `${R.FINANCE.PAYMENTS}/batches`,
       `${R.FINANCE.PAYMENTS}/transactions`,
+      `${R.FINANCE.PAYMENTS}/provider-activity`,
       `${R.FINANCE.PAYMENTS}/webhooks`,
     ],
     access: { mode: "any", permissions: [P.PAY_VIEW_COLLECTIONS, P.PAY_VIEW_PAYOUTS, P.PAY_VIEW_PAYMENT_REPORTS, P.PAY_VIEW_WEBHOOKS] },
