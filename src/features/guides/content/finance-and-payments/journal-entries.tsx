@@ -11,6 +11,7 @@ const PROBLEMS = [
   { title: "The date cannot be picked", body: "Only dates in an open fiscal period are offered. If none is open, the field says so; ask whoever runs period close." },
   { title: "Reverse is missing on a journal", body: "The journal came from an invoice, receipt or other document. Void that document instead, so the pupil's account and the ledger stay together." },
   { title: "New journal is missing", body: "Posting a journal directly needs its own permission. Ask whoever manages roles." },
+  { title: "Submit or Resume is refused for a closed month", body: "A journal is checked against its own branch's month when it is sent or resumed. If Ikeja Branch has closed September 2026, an Ikeja journal dated in September is refused at once, and the message names Ikeja Branch and September 2026; a Lekki journal with the same date still goes. Re-open the month for that branch, or use a date in a month it still has open. At a school with one branch the message names only the month." },
 ] as const;
 
 export default function JournalEntriesArticle() {
@@ -29,7 +30,7 @@ export default function JournalEntriesArticle() {
       </GuideSection>
 
       <GuideSection id="find-a-journal" title="Find a journal">
-        <p>Open <strong>General Ledger</strong>. The <strong>Journal Entries</strong> screen lists every journal, with tabs for <strong>All</strong>, <strong>Drafts</strong>, <strong>Pending</strong>, <strong>Approved</strong>, <strong>Posted</strong>, <strong>Reversed</strong> and <strong>Cancelled</strong>. Narrow it by <strong>Source</strong> (Manual, Sales, Bank, Payroll and so on) and by period, or search by journal number or reference. Select a row to see its lines.</p>
+        <p>Open <strong>General Ledger</strong>. The <strong>Journal Entries</strong> screen lists every journal, with tabs for <strong>All</strong>, <strong>Drafts</strong>, <strong>Pending</strong>, <strong>Approved</strong>, <strong>Posted</strong>, <strong>Reversed</strong>, <strong>Cancelled</strong> and <strong>Sent back</strong>. Narrow it by <strong>Source</strong> (Manual, Sales, Bank, Payroll and so on) and by period, or search by journal number or reference. Select a row to see its lines.</p>
       </GuideSection>
 
       <GuideSection id="post-a-journal" title="Post a journal">
@@ -43,7 +44,7 @@ export default function JournalEntriesArticle() {
 
       <GuideSection id="drafts-and-approval" title="Drafts and approval">
         <p>A journal in <strong>Drafts</strong> shows a <strong>Submit</strong> button. Submitting sends it for approval, and it posts only once the final approver agrees.</p>
-        <p>If an approver sends a journal back, the person who sent it for approval sees <strong>Sent back to you</strong> on it, with the approver&apos;s reason. On a manual journal, <strong>Edit</strong> opens the entry to correct it; select <strong>Save changes</strong>, then <strong>Resume</strong> to send the corrected version back into the same approval. A journal raised by another document can only be resumed as it is. Nobody else gets these buttons. Meanwhile its status reads <strong>Sent back</strong>, on its row and when you open it, and it stays under <strong>Drafts</strong>.</p>
+        <p>If an approver sends a journal back, the person who sent it for approval sees <strong>Sent back to you</strong> on it, with the approver&apos;s reason. On a manual journal, <strong>Edit</strong> opens the entry to correct it; select <strong>Save changes</strong>, then <strong>Resume</strong> to send the corrected version back into the same approval. A journal raised by another document can only be resumed as it is. Nobody else gets these buttons. Meanwhile its status reads <strong>Sent back</strong>, on its row and when you open it, and it is listed under the <strong>Sent back</strong> tab as well as under <strong>Drafts</strong>.</p>
       </GuideSection>
 
       <GuideSection id="reverse-a-journal" title="Reverse a journal">
