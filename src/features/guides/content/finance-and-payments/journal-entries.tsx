@@ -37,7 +37,7 @@ export default function JournalEntriesArticle() {
           <GuideStep title="Select New journal">Choose the <strong>Date</strong>. Add a <strong>Reference</strong> and a <strong>Narration</strong> that says what the entry is for.</GuideStep>
           <GuideStep title="Add the lines">Under <strong>Postings</strong>, pick an account on each line, set it to <strong>Debit</strong> or <strong>Credit</strong>, and enter the amount. A cost centre is optional. Use <strong>Add line</strong> for more.</GuideStep>
           <GuideStep title="Check it balances">The bar at the bottom shows the debit and credit totals and reads <strong>Balanced</strong> when they agree.</GuideStep>
-          <GuideStep title="Select Post entry">The journal posts straight away. There is no draft step on this form.</GuideStep>
+          <GuideStep title="Select Post entry">There is no draft step on this form. Where the school has no approval route for journals, the journal posts straight away. Where it has one, the journal waits for approval instead, and the message says so.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
