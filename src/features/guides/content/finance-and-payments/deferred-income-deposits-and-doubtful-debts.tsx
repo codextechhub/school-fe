@@ -9,7 +9,7 @@ import { useGuideWords } from "../../guide-words";
 
 const PROBLEMS = [
   { title: "Release due income is missing", body: "A release covers every branch at once, so only someone who covers the whole school, and may release deferred income, runs or undoes it." },
-  { title: "The month will not close", body: "Its share of fees billed ahead has not been released. Release due income up to the month's last day, then run the close again." },
+  { title: "Deferred income released reads Done by the close", body: "Nothing is wrong. Closing the month releases its share of fees billed ahead before the checks run, so the check needs nothing from you." },
   { title: "Undo a month's release does not offer a month", body: "Only open months can be undone. The form says why a month is held: a branch has closed it, and a closed month keeps its releases." },
   { title: "New provision run is missing", body: "A provision run covers every branch, so only someone who covers the whole school raises one. A branch bursar sees the runs and their own branch's line." },
   { title: "The provision posted a different figure", body: "The figures are worked out again when the run posts, so receipts and write-offs made while it waited for approval are counted." },
@@ -45,8 +45,8 @@ export default function DeferredIncomeDepositsAndDoubtfulDebtsArticle() {
           <GuideStep title="Select Release due income">Choose <strong>Release up to</strong>, a day that has passed, and select <strong>Release</strong>. Every month&apos;s share due by that day moves to revenue, one journal per branch. Running it again never releases anything twice.</GuideStep>
           <GuideStep title="Undo a release, if needed">Select <strong>Undo a month&apos;s release</strong>, pick an open month, named in words such as September 2026, and select <strong>Undo release</strong>. Its shares go back to Deferred income to be released again.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="warning" title="Release before you close the month">
-          A month cannot close while its share is unreleased. The close checklist says so under <strong>Deferred income released (fees billed ahead, now earned)</strong>. Releasing and undoing act for every branch at once, so only someone who covers the whole school runs them.
+        <GuideCallout tone="info" title="The close releases what is due">
+          Closing a month releases its share of fees billed ahead before the checks run, so the close checklist shows <strong>Deferred income released (fees billed ahead, now earned)</strong> as <strong>Done by the close</strong>. Release due income does the same whenever you choose. Releasing and undoing here act for every branch at once, so only someone who covers the whole school runs them.
         </GuideCallout>
       </GuideSection>
 
