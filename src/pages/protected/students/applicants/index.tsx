@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
-import { toast } from "sonner";
 import {
   Archive,
   ArrowRight,
@@ -24,23 +23,15 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 import { P } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
 import { useStudentsLens } from "@/hooks/use-students-lens";
-import { writeErrorMessage } from "@/utils/api-error";
 import {
-  useConfirmApplicantMutation,
-  useGetAdmissionPolicyQuery,
   useGetAdmissionRulesQuery,
   useGetStudentsQuery,
-  useMoveApplicantStageMutation,
-  useRejectApplicantMutation,
 } from "@/redux/services/students/students-api";
 import type {
   AdmissionStage,
   StudentRow,
 } from "@/redux/services/students/students-types";
-import { NativeSelect } from "@/components/ui/native-select";
 
-import { ConfirmDialog } from "../drawers/confirm-dialog";
-import { DrawerShell, Field, inputClass } from "../drawers/drawer-shell";
 import { StudentDrawers, type DrawerRequest } from "../drawers";
 import {
   ENROL_PERMISSIONS,
@@ -51,7 +42,13 @@ import { Pager } from "../pager";
 import { PersonAvatar } from "../person-avatar";
 import { StudentStatusBadge } from "../status-badge";
 import { todayIso } from "@/lib/as-at";
-import { daysBetween, shiftDay } from "@/lib/dates";
+import { daysBetween } from "@/lib/dates";
+
+import {
+  CloseApplication,
+  ConfirmEnrolment,
+  StageControls,
+} from "./applicant-moves";
 
 type StageKey = "waiting" | "placement" | "closed";
 
@@ -576,156 +573,6 @@ function waitingLine(s: StudentRow): string {
 }
 
 /**
- * Put an applicant on the roll.
- *
- * It does not place them in a class, and the drawer says so. That is the model:
- * an enrolled student with no class is the "unassigned" state the whole module
- * tracks, and the placement is a separate move with its own reason and audit
- * line. Pretending otherwise here would mean inventing a seat.
- */
-function ConfirmEnrolment({
-  student,
-  onClose,
-}: {
-  student: StudentRow;
-  onClose: () => void;
-}) {
-  // The rule of the applicant's own branch, which is the one the server checks.
-  const { data: policyData } = useGetAdmissionPolicyQuery(
-    student.branch != null ? { branch: String(student.branch) } : undefined,
-  );
-  const policy = policyData?.data;
-  const [number, setNumber] = useState("");
-  const [confirm, { isLoading }] = useConfirmApplicantMutation();
-
-  // Blank is fine where the applicant already has a number, or where the
-  // server issues the next one itself.
-  const required =
-    Boolean(policy?.required) && !student.student_number && !policy?.auto_issue;
-  const valid = !required || number.trim().length > 0;
-
-  async function save() {
-    try {
-      await confirm({
-        id: student.id,
-        ...(number.trim() ? { student_number: number.trim() } : {}),
-      }).unwrap();
-      toast.success(`${student.full_name} is now enrolled.`);
-      onClose();
-    } catch (error) {
-      toast.error(writeErrorMessage(error, "We could not enrol that applicant."));
-    }
-  }
-
-  return (
-    <DrawerShell
-      open
-      onClose={onClose}
-      title="Put on the roll"
-      subtitle={`${student.full_name} becomes an enrolled student.`}
-      saveLabel="Enrol"
-      onSave={save}
-      canSave={valid}
-      saving={isLoading}
-    >
-      <div className="grid gap-4">
-        <Field
-          label={required ? "Admission number" : "Admission number (optional)"}
-          hint={
-            policy?.hint ||
-            (required
-              ? undefined
-              : "Leave blank to issue one later. The school has set no format.")
-          }
-        >
-          <input
-            value={number}
-            onChange={(e) => setNumber(e.target.value)}
-            className={inputClass}
-          />
-        </Field>
-
-        <p className="rounded-lg bg-gray-04 px-3 py-2 text-xs text-gray-05">
-          This puts {student.first_name} on the roll. It does not place them in a
-          class - do that next, so the move carries its own reason and appears on
-          their history.
-        </p>
-      </div>
-    </DrawerShell>
-  );
-}
-
-/** Close an application, which is not the same as withdrawing a student. */
-function CloseApplication({
-  student,
-  onClose,
-}: {
-  student: StudentRow;
-  onClose: () => void;
-}) {
-  const [reason, setReason] = useState("");
-  const [confirming, setConfirming] = useState(false);
-  const [reject, { isLoading }] = useRejectApplicantMutation();
-
-  async function save() {
-    try {
-      await reject({ id: student.id, reason: reason.trim() }).unwrap();
-      toast.success(`${student.full_name}'s application is closed.`);
-      setConfirming(false);
-      onClose();
-    } catch (error) {
-      setConfirming(false);
-      toast.error(writeErrorMessage(error, "We could not close that application."));
-    }
-  }
-
-  return (
-    <>
-      <DrawerShell
-        open={!confirming}
-        onClose={onClose}
-        title="Close this application"
-        subtitle={`${student.full_name} will not be enrolled.`}
-        saveLabel="Continue"
-        onSave={() => setConfirming(true)}
-        canSave={reason.trim().length > 0}
-        saving={isLoading}
-        destructive
-      >
-        <div className="grid gap-4">
-          <Field
-            label="Reason"
-            hint="Kept on the record so the school can see the decision later."
-          >
-            <textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              rows={3}
-              className="w-full rounded-lg border border-white-02 bg-white px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </Field>
-          <p className="rounded-lg bg-gray-04 px-3 py-2 text-xs text-gray-05">
-            The record is kept. Closing an application is not withdrawing a
-            student - {student.first_name} was never on the roll, and the school
-            needs the two apart.
-          </p>
-        </div>
-      </DrawerShell>
-
-      <ConfirmDialog
-        open={confirming}
-        onCancel={() => setConfirming(false)}
-        onConfirm={save}
-        title={`Close ${student.full_name}'s application?`}
-        body="The record is kept so the decision can be looked up later, but they will not be enrolled."
-        confirmLabel="Close application"
-        busy={isLoading}
-      />
-    </>
-  );
-}
-
-/**
  * Narrow the waiting list to one admission step.
  *
  * "Not started" is an applicant no step has been given yet. Counts are the
@@ -791,66 +638,3 @@ function StageLine({ student }: { student: StudentRow }) {
     </>
   );
 }
-
-/**
- * Move an applicant to another step, or give an expired offer seven more days.
- *
- * Entering an offer step starts its window on the server, from the school's
- * own day; extending sets a new last day explicitly.
- */
-function StageControls({
-  student,
-  stages,
-}: {
-  student: StudentRow;
-  stages: AdmissionStage[];
-}) {
-  const [move, { isLoading }] = useMoveApplicantStageMutation();
-  const ordered = [...stages].sort((a, b) => a.position - b.position);
-
-  const send = (stage: number | null, offerExpiresOn?: string, done?: string) =>
-    move({ id: student.id, stage, ...(offerExpiresOn ? { offer_expires_on: offerExpiresOn } : {}) })
-      .unwrap()
-      .then(() => toast.success(done ?? `${student.full_name} moved.`))
-      .catch((error) => toast.error(writeErrorMessage(error, "That move could not be made.")));
-
-  const extend = () => {
-    const iso = shiftDay(todayIso(), 7);
-    return send(
-      student.admission_stage ?? null,
-      iso,
-      `${student.full_name}'s offer is open until ${formatDate(iso)}.`,
-    );
-  };
-
-  return (
-    <>
-      {/* The select's own wrapper is full width; this box sets its size. */}
-      <div className="w-40">
-      <NativeSelect
-        size="sm"
-        aria-label={`Move ${student.full_name} to a step`}
-        value={student.admission_stage == null ? "" : String(student.admission_stage)}
-        disabled={isLoading}
-        onChange={(event) => {
-          const value = event.target.value;
-          const stage = value === "" ? null : Number(value);
-          const name = ordered.find((s) => s.id === stage)?.name ?? "Not started";
-          send(stage, undefined, `${student.full_name} moved to ${name}.`);
-        }}
-      >
-        <option value="">Not started</option>
-        {ordered.map((s) => (
-          <option key={s.id} value={String(s.id)}>{s.name}</option>
-        ))}
-      </NativeSelect>
-      </div>
-      {student.offer_expired ? (
-        <Button size="sm" variant="outline" disabled={isLoading} onClick={extend}>
-          Extend 7 days
-        </Button>
-      ) : null}
-    </>
-  );
-}
-
