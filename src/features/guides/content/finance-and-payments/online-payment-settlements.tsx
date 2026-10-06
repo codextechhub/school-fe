@@ -29,7 +29,7 @@ export default function OnlinePaymentSettlementsArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>When a parent pays online, the payment provider holds the money first. The receipt is recorded as soon as the payment is confirmed, and the money waits in <strong>gateway clearing</strong> until it reaches a branch&apos;s bank. How it gets there depends on who holds the school&apos;s online payments.</p>
+        <p>When a parent pays online, the payment provider holds the money first. The receipt is recorded as soon as the payment is confirmed, and the money waits in <strong>Gateway clearing (online payments not yet in the bank)</strong>, an account in the books, until it reaches a branch&apos;s bank. How it gets there depends on who holds the school&apos;s online payments.</p>
         <GuideChecklist items={[
           "Each branch has a bank account ticked as its collection account.",
           "The bank statement for the period is imported, so the provider's deposits show as bank lines.",
@@ -43,7 +43,7 @@ export default function OnlinePaymentSettlementsArticle() {
           <GuideStep title="Held, then paid to each branch">The usual choice. Payments are held for the school and paid into each branch&apos;s bank every few days, set by <strong>Settlement interval (days)</strong>, from 1 to 7. <strong>Payouts</strong> and <strong>Batches</strong> appear in the menu, because online payouts draw on what is held for each branch.</GuideStep>
           <GuideStep title="Straight to each branch's bank">Each branch&apos;s collection account takes its payments directly, and nothing is held. There are no online payouts or online refunds: pay suppliers and refund parents from each branch&apos;s bank.</GuideStep>
         </GuideSteps>
-        <p>A change never takes effect at once: it starts on the first day of next month. A move to straight-to-bank also waits until nothing is held for the school, and is refused until every branch&apos;s collection account is set up with the provider. Choosing the mode already in force cancels a change still waiting. <strong>Clearing warning (days)</strong> makes the month-end checklist warn about payments waiting in gateway clearing longer than that. Select <strong>Save online payments</strong>.</p>
+        <p>A change never takes effect at once: it starts on the first day of next month. A move to straight-to-bank also waits until nothing is held for the school, and is refused until every branch&apos;s collection account is set up with the provider. Choosing the mode already in force cancels a change still waiting. <strong>Clearing warning (days)</strong> makes the month-end checklist&apos;s <strong>Gateway clearing current (online payments paid into the bank)</strong> check warn about payments waiting in gateway clearing longer than that. Select <strong>Save online payments</strong>.</p>
         <GuideCallout tone="info" title="Whole school only">
           Who holds payments applies to every branch, so only someone who covers the whole school, with permission to change payment settings, can change it. Anyone else who may read the panel sees it read-only.
         </GuideCallout>

@@ -19,7 +19,7 @@ export default function ProcurementOverviewAndReportsArticle() {
           "Committed vs spent: what the school has ordered against what it has actually been billed.",
           "Waiting on your approval: your own queue, with a link to Approvals.",
           "Control exceptions: failed matches, prices above the order, bills from suppliers on hold, and deliveries with no bill after 30 days.",
-          "Bills falling due, whose Unpaid bills by age link opens AP Aging, and Contracts ending soon.",
+          "Bills falling due, whose Unpaid bills by age link opens that report, and Contracts ending soon.",
         ]} />
         <p><strong>New requisition</strong> and <strong>New purchase order</strong> at the top start either task straight away, if your role allows it.</p>
       </GuideSection>
@@ -34,8 +34,8 @@ export default function ProcurementOverviewAndReportsArticle() {
       <GuideSection id="use-the-reports" title="Use the Analytics reports">
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[
-            ["AP Aging", "What the school owes suppliers, grouped by how late it is. Choose an As of date, and select a supplier to see its open bills."],
-            ["GR/IR (goods not yet billed)", "Goods received but not yet billed, and bills for goods not yet received. The report opens as GR/IR & Control (goods received, not yet billed). A difference to investigate usually means a missing receipt or invoice."],
+            ["Unpaid bills by age", "What the school owes suppliers, grouped by how late it is. The report opens as Unpaid bills by age (AP aging). Choose an As of date, and select a supplier to see its open bills."],
+            ["Goods not yet billed", "Goods received but not yet billed, and bills for goods not yet received. The report opens as GR/IR & Control (goods received, not yet billed). A difference to investigate usually means a missing receipt or invoice."],
             ["Spend", "Posted bills by category, by supplier and by month, between the From and To dates."],
             ["Vendor Performance", "On-time delivery and payment times from posted records, and each supplier's latest assessment."],
           ].map(([title, body]) => (

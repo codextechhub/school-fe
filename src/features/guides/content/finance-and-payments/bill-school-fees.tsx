@@ -57,7 +57,7 @@ export default function BillSchoolFeesArticle() {
 
       <GuideSection id="generate-invoices" title={`Generate the ${w.term}'s invoices`}>
         <GuideSteps>
-          <GuideStep title="Open the structure and select Generate invoices">Or use <strong>Batch generate</strong> on the Customer Invoices screen, pick the structure and select <strong>Continue</strong>. Both open the same drawer.</GuideStep>
+          <GuideStep title="Open the structure and select Generate invoices">Or use <strong>Batch generate</strong> on the Customer Invoices screen (<strong>Invoices</strong> in the sidebar), pick the structure and select <strong>Continue</strong>. Both open the same drawer.</GuideStep>
           <GuideStep title={`Check the ${w.term}`}>The drawer says which {w.term} the structure bills, such as <em>Bills First Term, 2026/2027</em>. A structure that is not linked yet cannot bill anyone: choose the <strong>Academic year</strong> and <strong>{w.Term}</strong> and select <strong>Link to this {w.term}</strong>. Leave {w.Term} on <strong>The whole year</strong> for fees charged once a year.</GuideStep>
           <GuideStep title="Choose who to bill">Tick the classes this structure is for, or <strong>Every class</strong>. The classes offered are that year&apos;s. A structure that belongs to one branch offers only that branch&apos;s classes and pupils.</GuideStep>
           <GuideStep title="Select Preview">Nothing is billed yet. The preview shows how many pupils will be billed, the total with tax, the due date, and the list of names. Pupils already billed from this structure are counted separately and left alone.</GuideStep>

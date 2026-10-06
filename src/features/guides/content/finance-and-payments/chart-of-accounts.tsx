@@ -27,7 +27,8 @@ export default function ChartOfAccountsArticle() {
       </GuideSection>
 
       <GuideSection id="read-the-chart" title="Read the chart">
-        <p>Open <strong>Chart of Accounts</strong>. <strong>Tree</strong> shows accounts under their groups; <strong>Flat</strong> lists them one per row. Filter by type or search by code or name. Accounts tagged <strong>CTRL</strong> are control accounts, such as the one holding what parents owe: they are fed by Receivables and similar screens, not by hand.</p>
+        <p>Open <strong>Chart of Accounts</strong>. <strong>Tree</strong> shows accounts under their groups; <strong>Flat</strong> lists them one per row. Filter by type or search by code or name. Accounts tagged <strong>CTRL</strong> are control accounts, such as <strong>Accounts receivable (what customers owe)</strong>, which holds what parents owe: they are fed by Receivables and similar screens, not by hand.</p>
+        <p>A starter account known by an accounting term has the plain words beside it: <strong>Accounts receivable (what customers owe)</strong>, <strong>Accounts payable (what is owed to suppliers)</strong>, <strong>WHT payable (withholding tax)</strong> and <strong>Gateway clearing (online payments not yet in the bank)</strong>. An account the school has renamed keeps its own name.</p>
         <p>Select an account to see its balance and its <strong>Activity</strong>, a <strong>T-account</strong> view, and any <strong>Sub-accounts</strong>. A group account shows the balance of everything under it.</p>
       </GuideSection>
 

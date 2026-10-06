@@ -9,7 +9,7 @@ import { useGuideWords } from "../../guide-words";
 
 const PROBLEMS = [
   { title: "Release due income is missing", body: "A release covers every branch at once, so only someone who covers the whole school, and may release deferred income, runs or undoes it." },
-  { title: "The month will not close", body: "Its share of fees billed ahead has not been released. Release due income up to the month's last day, then run the close again." },
+  { title: "Deferred income released reads Done by the close", body: "Nothing is wrong. Closing the month releases its share of fees billed ahead before the checks run, so the check needs nothing from you." },
   { title: "Undo a month's release does not offer a month", body: "Only open months can be undone. The form says why a month is held: a branch has closed it, and a closed month keeps its releases." },
   { title: "New provision run is missing", body: "A provision run covers every branch, so only someone who covers the whole school raises one. A branch bursar sees the runs and their own branch's line." },
   { title: "The provision posted a different figure", body: "The figures are worked out again when the run posts, so receipts and write-offs made while it waited for approval are counted." },
@@ -43,10 +43,10 @@ export default function DeferredIncomeDepositsAndDoubtfulDebtsArticle() {
         <p>Say Tunde&apos;s ₦400,000 First {w.Term} bill is raised in August. It is not income yet: it sits in Deferred income, and each month of the {w.term} moves its share to revenue. The screen shows what is <strong>Waiting to be released</strong>, what has been <strong>Released to income</strong>, and what falls due under <strong>Due by month</strong>.</p>
         <GuideSteps>
           <GuideStep title="Select Release due income">Choose <strong>Release up to</strong>, a day that has passed, and select <strong>Release</strong>. Every month&apos;s share due by that day moves to revenue, one journal per branch. Running it again never releases anything twice.</GuideStep>
-          <GuideStep title="Undo a release, if needed">Select <strong>Undo a month&apos;s release</strong>, pick an open month, and select <strong>Undo release</strong>. Its shares go back to Deferred income to be released again.</GuideStep>
+          <GuideStep title="Undo a release, if needed">Select <strong>Undo a month&apos;s release</strong>, pick an open month, named in words such as September 2026, and select <strong>Undo release</strong>. Its shares go back to Deferred income to be released again.</GuideStep>
         </GuideSteps>
-        <GuideCallout tone="warning" title="Release before you close the month">
-          A month cannot close while its share is unreleased. The close checklist says so. Releasing and undoing act for every branch at once, so only someone who covers the whole school runs them.
+        <GuideCallout tone="info" title="The close releases what is due">
+          Closing a month releases its share of fees billed ahead before the checks run, so the close checklist shows <strong>Deferred income released (fees billed ahead, now earned)</strong> as <strong>Done by the close</strong>. Release due income does the same whenever you choose. Releasing and undoing here act for every branch at once, so only someone who covers the whole school runs them.
         </GuideCallout>
       </GuideSection>
 
@@ -74,10 +74,10 @@ export default function DeferredIncomeDepositsAndDoubtfulDebtsArticle() {
         <p>Finance Settings, <strong>Receivables</strong>, holds the choices behind these screens and behind payer payments. They apply to every branch, so only someone who covers the whole school can change them; anyone else who may open settings reads them.</p>
         <GuideSteps>
           <GuideStep title="Credit and concessions"><strong>Apply customer credit to new bills automatically</strong> lets a pupil&apos;s unused credit settle each new bill as it posts. <strong>Concessions above this need a second person</strong> sets the amount, counted per bill, above which a concession waits for approval. Select <strong>Save credit and concessions</strong>.</GuideStep>
-          <GuideStep title="Fees billed ahead"><strong>Release method</strong>: spread monthly releases an equal share each month of the {w.term}; at period start releases the whole fee in the {w.term}&apos;s first month.</GuideStep>
+          <GuideStep title="Fees billed ahead"><strong>Release method</strong>: <strong>Spread evenly over each month of the service period</strong> releases an equal share each month of the {w.term}; <strong>All in the month the service period starts</strong> releases the whole fee in the {w.term}&apos;s first month.</GuideStep>
           <GuideStep title="Doubtful debts">The age bands, each <strong>Over (days)</strong> with a <strong>Provide (%)</strong>. Up to ten bands; an older band cannot provide less than a younger one.</GuideStep>
           <GuideStep title="Deposits"><strong>Set a leaver&apos;s deposit against their unpaid bills</strong>, off by default, and <strong>Forfeit unclaimed deposits after (years)</strong>, counted from the day the pupil left.</GuideStep>
-          <GuideStep title="Payments from a payer"><strong>Split the payment</strong> sets how a payer&apos;s payment is shared among the children they pay for, and <strong>What no bill takes becomes credit of</strong> says who keeps what is left over. The bursar can always type amounts by hand.</GuideStep>
+          <GuideStep title="Payments from a payer"><strong>Split the payment</strong> sets how a payer&apos;s payment is shared among the children they pay for: <strong>Oldest bill first, across every customer</strong>, <strong>In proportion to what each customer owes</strong>, or <strong>As the bursar enters it for each customer</strong>. <strong>What no bill takes becomes credit of</strong> says who keeps what is left over: <strong>The customer with the most recent bill</strong> or <strong>The payer&apos;s own account</strong>. The bursar can always type amounts by hand.</GuideStep>
         </GuideSteps>
         <p>The last four are saved together with <strong>Save receivables policy</strong>. Each change is listed under the section&apos;s recent changes and in the finance audit trail.</p>
       </GuideSection>
