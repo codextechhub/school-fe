@@ -25,7 +25,7 @@ const PROBLEMS = [
  * The fiscal calendar, closing by branch, and the records kept behind a close.
  *
  * At a school with one branch nothing here asks for a branch. Opening and
- * re-opening a fiscal year, archiving a year and checking the sealed figures
+ * re-opening a fiscal year, archiving a year and checking the closed figures
  * are offered only to a reader who covers the whole school; force close needs
  * its own permission.
  */
@@ -74,7 +74,7 @@ export default function CloseAPeriodArticle() {
           <GuideStep title="Soft close, if you are still tidying up">Select <strong>Soft close</strong> to stop ordinary posting while you finish adjustments.</GuideStep>
           <GuideStep title="Run close steps">Select <strong>Run close steps</strong> and confirm with <strong>Run period close</strong>. Where you are asked, choose the branch. The period reads Closed.</GuideStep>
         </GuideSteps>
-        <p><strong>Re-open</strong> on a soft-closed or closed month lets ordinary posting back in. It asks for a reason, which goes on the audit trail with your name. A month of a closed year cannot be re-opened until the year is. <strong>Periods &amp; Close</strong> under Reports opens the same workbench.</p>
+        <p><strong>Re-open</strong> on a soft-closed or closed month lets ordinary posting back in. It asks for a reason, which goes on the audit trail with your name. A month of a closed year cannot be re-opened until the year is. Typing &quot;periods and close&quot; into the search box in the header opens the same workbench, as <strong>Periods &amp; Close</strong>.</p>
       </GuideSection>
 
       <GuideSection id="close-in-order" title="Months close in order">
@@ -108,8 +108,8 @@ export default function CloseAPeriodArticle() {
         <p>A year may be archived once enough time has passed since it ended: two years unless the school changed it under Finance Settings, <strong>Fiscal calendar</strong>.</p>
       </GuideSection>
 
-      <GuideSection id="sealed-figures" title="Check the sealed figures">
-        <p>Every month close, month lock and year close stores each account&apos;s balance, branch by branch. <strong>Closed figures</strong> under Reports recomputes them from the ledger and compares. Choose a year, or <strong>Every closed year</strong>, and select <strong>Verify sealed figures</strong>. Each closed month and year reads as matching, or names the balances that moved: what was sealed and what the ledger says now.</p>
+      <GuideSection id="sealed-figures" title="Check the closed figures">
+        <p>Every month close, month lock and year close stores each account&apos;s balance, branch by branch. <strong>Closed figures</strong> under Reports &amp; Close recomputes them from the ledger and compares. Choose a year, or <strong>Every closed year</strong>, and select <strong>Verify sealed figures</strong>. Each closed month and year reads as matching, or names the balances that moved: what was sealed and what the ledger says now.</p>
         <p>The check covers every branch, so only someone who covers the whole school can run it. It runs when asked, and it changes and repairs nothing. If a figure moved, tell your accountant.</p>
       </GuideSection>
 
