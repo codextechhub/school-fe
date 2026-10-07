@@ -4,6 +4,7 @@ import "./index.css";
 import App from "./App.tsx";
 import AppProvider from "./redux/provider.tsx";
 import { installStaleChunkReload } from "@/utils/stale-chunk";
+import { initSentry } from "@/utils/sentry";
 // Geist is the app's typeface, the same one the CodeX console uses. Two
 // variable files rather than ten static weights across two families, so this
 // is fewer bytes as well as one voice across both products. Mono carries
@@ -13,6 +14,7 @@ import "@fontsource-variable/geist-mono/index.css";
 
 // Recover from stale dynamic-import chunks after a redeploy (guarded reload).
 installStaleChunkReload();
+initSentry();
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

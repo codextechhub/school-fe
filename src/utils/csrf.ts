@@ -1,4 +1,7 @@
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
+// A deployment that shares a parent domain with its twin names its own CSRF
+// cookie; this matches the backend's CSRF_COOKIE_NAME.
+const csrfCookieName = import.meta.env.VITE_CSRF_COOKIE_NAME || "csrftoken";
 let cachedCsrfToken = "";
 
 function readCookie(name: string): string {
@@ -11,7 +14,7 @@ function readCookie(name: string): string {
 }
 
 export function readCsrfToken(): string {
-  return readCookie("csrftoken") || cachedCsrfToken;
+  return readCookie(csrfCookieName) || cachedCsrfToken;
 }
 
 /** Ensure browser-auth mutations can send Django's double-submit CSRF token. */
@@ -27,7 +30,7 @@ export async function getCsrfToken(): Promise<string> {
     });
     if (!response.ok) return "";
     const data = await response.json() as { data?: { csrf_token?: string } };
-    cachedCsrfToken = readCookie("csrftoken") || data?.data?.csrf_token || "";
+    cachedCsrfToken = readCookie(csrfCookieName) || data?.data?.csrf_token || "";
   } catch {
     return "";
   }
