@@ -34,6 +34,7 @@ export default function FinancialReportsArticle() {
           <GuideStep title="Changes in Equity">How the school&apos;s reserves moved from the start of the period to the end.</GuideStep>
           <GuideStep title="Cost &amp; Dimension Analysis">Activity per account for each cost centre, such as a department or branch.</GuideStep>
         </GuideSteps>
+        <p>Above its figures, each report names the time it covers. A month is named in words, such as <strong>September 2026</strong>. With no month chosen, the Trial Balance and Cost &amp; Dimension Analysis read <strong>All periods</strong>, and Cash Flow and Changes in Equity read <strong>Year to date</strong>. The Income Statement names a whole year as <strong>FY 2026</strong>, and the year so far as <strong>2026 fiscal year</strong>.</p>
       </GuideSection>
 
       <GuideSection id="check-the-signals" title="Check the built-in checks">
@@ -44,7 +45,7 @@ export default function FinancialReportsArticle() {
       </GuideSection>
 
       <GuideSection id="export" title="Export and share">
-        <p>Every report has <strong>CSV</strong>, <strong>XLSX</strong> and <strong>PDF</strong> buttons. Export after the period is closed, so the figures you send to the board or your auditor cannot change afterwards.</p>
+        <p>Every report has <strong>CSV</strong>, <strong>XLSX</strong> and <strong>PDF</strong> buttons. The file&apos;s heading names the month in words, as the screen does. Export after the period is closed, so the figures you send to the board or your auditor cannot change afterwards.</p>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">
