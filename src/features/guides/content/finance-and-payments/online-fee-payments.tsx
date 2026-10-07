@@ -54,7 +54,7 @@ export default function OnlineFeePaymentsArticle() {
 
       <GuideSection id="provider-activity" title="See what the payment provider said">
         <p><strong>Payment provider activity</strong>, under Payments, lists every request XVS made to the payment provider, the refused and failed ones included. Each row shows <strong>When</strong>, <strong>What</strong> was asked for, the <strong>Reference</strong> with a copy button, the <strong>Result</strong> (<strong>Succeeded</strong> or <strong>Failed</strong>), the <strong>Message</strong> and <strong>Who</strong> asked, or System when XVS acted by itself. On a failed row the message is the provider&apos;s full reason, in red. It needs the permission to view payment reports, and a bursar who works in one branch sees only that branch&apos;s activity.</p>
-        <p>Use it when something went wrong with a request: a checkout that would not open, a payment that failed, or a payout the provider turned down. Money that actually moved in and out is on <strong>Transactions Log</strong> instead.</p>
+        <p>Use it when something went wrong with a request: a checkout that would not open, a payment that failed, or a payout the provider turned down. <strong>Transactions Log</strong> instead lists the money coming in and going out.</p>
         <GuideSteps>
           <GuideStep title="Narrow the list">Choose what happened from the first list, such as <strong>Collection failed</strong>, and <strong>Failed or refused</strong> from the result list. <strong>Everything</strong> and <strong>Any result</strong> show it all again.</GuideStep>
           <GuideStep title="Read the reason">The message on a Failed row says why the provider refused or what went wrong.</GuideStep>
