@@ -9,7 +9,7 @@
  * It does not cover the finance and procurement areas. Those are dozens of
  * screens under two route parents, and the parent declares "Finance" for all of
  * them: without this the header read "Finance" on the dashboard, on Chart of
- * Accounts, on AR Invoices and on every other screen in the area, so the one
+ * Accounts, on Invoices and on every other screen in the area, so the one
  * piece of chrome that says where you are said nothing. @xvs/finance already
  * computes the right name from its own nav and calls `useDashboardTitle` with
  * it; this is the end of that wire.

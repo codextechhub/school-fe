@@ -148,7 +148,7 @@ export const EXTRA_ALIASES: Record<string, string[]> = {
   "/finance/reports/trial-balance": ["tb"],
   "/finance/reports/income-statement": ["profit and loss", "p&l", "surplus"],
   "/finance/reports/balance-sheet": ["financial position"],
-  "/finance/reports/seals": ["verify seals"],
+  "/finance/reports/seals": ["verify seals", "sealed figures"],
   "/finance/audit": ["who changed what", "finance history"],
   "/procurement": ["purchasing", "buying", "supply"],
   "/procurement/requisitions": ["purchase requests", "ask to buy"],

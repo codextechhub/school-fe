@@ -109,7 +109,7 @@ export default function CloseAPeriodArticle() {
       </GuideSection>
 
       <GuideSection id="sealed-figures" title="Check the sealed figures">
-        <p>Every month close, month lock and year close stores each account&apos;s balance, branch by branch. <strong>Sealed Figures</strong> under Reports recomputes them from the ledger and compares. Choose a year, or <strong>Every closed year</strong>, and select <strong>Verify sealed figures</strong>. Each closed month and year reads as matching, or names the balances that moved: what was sealed and what the ledger says now.</p>
+        <p>Every month close, month lock and year close stores each account&apos;s balance, branch by branch. <strong>Closed figures</strong> under Reports recomputes them from the ledger and compares. Choose a year, or <strong>Every closed year</strong>, and select <strong>Verify sealed figures</strong>. Each closed month and year reads as matching, or names the balances that moved: what was sealed and what the ledger says now.</p>
         <p>The check covers every branch, so only someone who covers the whole school can run it. It runs when asked, and it changes and repairs nothing. If a figure moved, tell your accountant.</p>
       </GuideSection>
 

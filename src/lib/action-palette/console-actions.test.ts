@@ -432,3 +432,20 @@ describe("the payment provider's activity", () => {
     expect(scoreAction(view("/finance/payments/transactions")!, "money in and out")).not.toBeNull();
   });
 });
+
+/**
+ * The check that closed months have not moved is the menu's Closed figures.
+ * Mrs Bello, who learned it as Sealed Figures, still finds it by those words.
+ */
+describe("the closed figures screen", () => {
+  const view = (url: string) => VIEWS.find((a) => a.id === consoleActionId(url));
+
+  it("is found as Closed figures, and by its old name Sealed Figures", () => {
+    const closed = view("/finance/reports/seals");
+    expect(closed).toBeDefined();
+    expect(closed!.label.toLowerCase()).toContain("closed figures");
+    for (const query of ["closed figures", "sealed figures", "verify seals"]) {
+      expect(scoreAction(closed!, query), query).not.toBeNull();
+    }
+  });
+});
