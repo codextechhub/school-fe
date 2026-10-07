@@ -34,7 +34,11 @@ export default function FinancialReportsArticle() {
           <GuideStep title="Changes in Equity">How the school&apos;s reserves moved from the start of the period to the end.</GuideStep>
           <GuideStep title="Cost &amp; Dimension Analysis">Activity per account for each cost centre, such as a department or branch.</GuideStep>
         </GuideSteps>
-        <p>Above its figures, each report names the time it covers. A month is named in words, such as <strong>September 2026</strong>. With no month chosen, the Trial Balance and Cost &amp; Dimension Analysis read <strong>All periods</strong>, Cash Flow reads <strong>Year to date</strong>, and Changes in Equity reads <strong>Inception to date</strong>, because it starts from the first entry on record. The Income Statement names its year as <strong>FY2026</strong>. Each downloaded file is headed with the same words as its screen.</p>
+        <p>Above its figures, each report names the time it covers. A month is named in words, such as <strong>September 2026</strong>. With no month chosen, the Trial Balance and Cost &amp; Dimension Analysis read <strong>All periods</strong>, and Changes in Equity reads <strong>Inception to date</strong>, because it starts from the first entry on record. The Income Statement and Cash Flow cover this fiscal year so far and name it, such as <strong>FY2026</strong>, although their period lists call that choice <strong>Year to date</strong>. A school with no fiscal year sees <strong>Year to date</strong> on the heading too. Each downloaded file is headed with the same words as its screen.</p>
+        <p>Cash Flow starts from the cash the school really held. With no month chosen it covers this fiscal year, not every year on record, and <strong>Cash at start of period</strong> is the cash held when the year began. Choose a month and it starts from the cash held on that month&apos;s first day, so March starts where February ended.</p>
+        <GuideCallout tone="info" title="An example">
+          Bright Star ends February with ₦4,200,000 in the bank, and in March takes in ₦1,500,000 more than it spends. March&apos;s Cash Flow reads ₦4,200,000 at the start and ₦5,700,000 at the end, the cash it really holds. It does not start March at zero.
+        </GuideCallout>
       </GuideSection>
 
       <GuideSection id="check-the-signals" title="Check the built-in checks">
