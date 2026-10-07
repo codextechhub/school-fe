@@ -109,7 +109,7 @@ export default function CloseAPeriodArticle() {
       </GuideSection>
 
       <GuideSection id="sealed-figures" title="Check the closed figures">
-        <p>Every month close, month lock and year close stores each account&apos;s balance, branch by branch. <strong>Closed figures</strong> under Reports &amp; Close recomputes them from the ledger and compares. Choose a year, or <strong>Every closed year</strong>, and select <strong>Verify closed figures</strong>. Each closed month and year reads as matching, or names the balances that moved: the <strong>Closed debit</strong> and <strong>Closed credit</strong> stored when it closed, and what the ledger says now.</p>
+        <p>Every month close, month lock and year close stores each account&apos;s balance, branch by branch. <strong>Closed figures</strong> under Reports &amp; Close recomputes them from the ledger and compares. Choose a year, or <strong>Every closed year</strong>, and select <strong>Verify closed figures</strong>. Each closed month and year reads <strong>Matches</strong>, or <strong>Differs</strong> and names the balances that moved: the <strong>Closed debit</strong> and <strong>Closed credit</strong> stored when it closed, beside <strong>Debit now</strong> and <strong>Credit now</strong>, what the ledger says today.</p>
         <p>The check covers every branch, so only someone who covers the whole school can run it. It runs when asked, and it changes and repairs nothing. If a figure moved, tell your accountant.</p>
       </GuideSection>
 
