@@ -148,6 +148,7 @@ export const EXTRA_ALIASES: Record<string, string[]> = {
   "/finance/reports/trial-balance": ["tb"],
   "/finance/reports/income-statement": ["profit and loss", "p&l", "surplus"],
   "/finance/reports/balance-sheet": ["financial position"],
+  "/finance/reports/statutory-pack": ["IFRS", "filing", "annual accounts"],
   "/finance/reports/seals": ["verify seals", "sealed figures"],
   "/finance/audit": ["who changed what", "finance history"],
   "/procurement": ["purchasing", "buying", "supply"],
@@ -534,6 +535,7 @@ interface FlatItem {
   permissions?: PermissionCode[];
   multiBranch?: boolean;
   heldCustody?: boolean;
+  wholeSchool?: boolean;
   group: string;
   source: ConsoleSource;
 }
@@ -544,11 +546,12 @@ interface FlatItem {
  * (see fitsSchoolShape in gate.ts). Nothing when the entry needs nothing.
  */
 function shapeField(item: FlatItem, wholeSchool = false): Pick<ActionDef, "schoolShape"> {
-  if (!item.multiBranch && !item.heldCustody && !wholeSchool) return {};
+  const needsWholeSchool = item.wholeSchool || wholeSchool;
+  if (!item.multiBranch && !item.heldCustody && !needsWholeSchool) return {};
   const shape: ActionSchoolShape = {
     ...(item.multiBranch ? { multiBranch: true } : {}),
     ...(item.heldCustody ? { heldCustody: true } : {}),
-    ...(wholeSchool ? { wholeSchool: true } : {}),
+    ...(needsWholeSchool ? { wholeSchool: true } : {}),
   };
   return { schoolShape: shape };
 }
@@ -573,6 +576,7 @@ function flatten(sources: ConsoleSource[]): FlatItem[] {
           permissions: item.permissions,
           multiBranch: item.multiBranch,
           heldCustody: item.heldCustody,
+          wholeSchool: item.wholeSchool,
           group: group.label ?? source.name,
           source,
         });

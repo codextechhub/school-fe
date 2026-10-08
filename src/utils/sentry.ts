@@ -26,7 +26,13 @@ export function initSentry(): void {
     dsn,
     environment,
     release: import.meta.env.VITE_SENTRY_RELEASE || undefined,
-    sendDefaultPii: false,
+    dataCollection: {
+      userInfo: false,
+      cookies: false,
+      httpHeaders: false,
+      httpBodies: [],
+      urlQueryParams: false,
+    },
     tracesSampleRate: 0,
     beforeBreadcrumb: () => null,
     beforeSend(event) {

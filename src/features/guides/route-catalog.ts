@@ -160,6 +160,7 @@ export const GUIDE_ROUTE_PATTERNS = [
   `${R.FINANCE.REPORTS}/balance-sheet`,
   `${R.FINANCE.REPORTS}/cash-flow`,
   `${R.FINANCE.REPORTS}/changes-in-equity`,
+  `${R.FINANCE.REPORTS}/statutory-pack`,
   `${R.FINANCE.REPORTS}/analytics`,
   `${R.FINANCE.REPORTS}/periods`,
   `${R.FINANCE.REPORTS}/seals`,

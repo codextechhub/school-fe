@@ -8,7 +8,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import { filterActionsForPermissions, passesActionGate } from "./gate";
+import { filterActionsForPermissions, fitsSchoolShape, passesActionGate } from "./gate";
 import {
   schoolFinanceNav,
   schoolProcurementNav,
@@ -430,6 +430,19 @@ describe("the payment provider's activity", () => {
       expect(scoreAction(activity!, query), query).not.toBeNull();
     }
     expect(scoreAction(view("/finance/payments/transactions")!, "money in and out")).not.toBeNull();
+  });
+});
+
+describe("the statutory pack", () => {
+  const action = VIEWS.find((candidate) => candidate.id === consoleActionId("/finance/reports/statutory-pack"));
+
+  it("is found by its filing words and stays with whole-school readers", () => {
+    expect(action).toBeDefined();
+    for (const query of ["statutory pack", "IFRS", "filing", "annual accounts"]) {
+      expect(scoreAction(action!, query), query).not.toBeNull();
+    }
+    expect(fitsSchoolShape(action!, { wholeSchool: true })).toBe(true);
+    expect(fitsSchoolShape(action!, { wholeSchool: false })).toBe(false);
   });
 });
 

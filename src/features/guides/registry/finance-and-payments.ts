@@ -970,6 +970,7 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
       `${R.FINANCE.REPORTS}/balance-sheet`,
       `${R.FINANCE.REPORTS}/cash-flow`,
       `${R.FINANCE.REPORTS}/changes-in-equity`,
+      `${R.FINANCE.REPORTS}/statutory-pack`,
       `${R.FINANCE.REPORTS}/analytics`,
     ],
     access: { mode: "any", permissions: [P.FIN_VIEW_REPORTS] },
