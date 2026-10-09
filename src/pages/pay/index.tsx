@@ -134,11 +134,9 @@ export default function PayInvoice() {
           for ₦546,000 is one nobody should pay.
 
           CodeX billing a school is XVS itself, so that case heads with the
-          product mark instead. The mark is taller than it is wide (233x296),
-          so height drives the size: at h-7 it rendered 22px across and read as
-          a favicon. The auth layout uses h-8/h-12 for this same asset. */}
+          transparent blue product mark instead. */}
       {invoice.issuer_is_platform ? (
-        <img src="/image/logo.png" alt="XVS" className="h-10 w-auto" />
+        <img src="/svg/logo-blue.svg" alt="XVS" className="h-10 w-auto" />
       ) : invoice.logo_url ? (
         <img
           src={invoice.logo_url}

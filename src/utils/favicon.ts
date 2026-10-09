@@ -6,7 +6,7 @@
  */
 
 /** The bundled XVS logo, served from /public. */
-export const DEFAULT_FAVICON = "/image/logo.png";
+export const DEFAULT_FAVICON = "/svg/logo-blue.svg";
 
 const MIME_BY_EXT: Record<string, string> = {
   png: "image/png",

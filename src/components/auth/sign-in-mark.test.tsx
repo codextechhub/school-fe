@@ -36,15 +36,23 @@ describe("SignInMark", () => {
     const html = render("holy-cross");
 
     expect(html).toContain("/i/public/schools/holy-cross/logo/");
-    expect(html).not.toContain("/image/logo.png");
+    expect(html).not.toContain("/svg/logo-blue.svg");
   });
 
   it("shows the XVS mark on an address that names no school", () => {
     // The bare product host has no school to show, and must not ask for one.
     const html = render("");
 
-    expect(html).toContain('src="/image/logo.png"');
+    expect(html).toContain('src="/svg/logo-blue.svg"');
     expect(html).toContain('alt="XVS"');
+  });
+
+  it("uses the white XVS mark on a blue surface", () => {
+    slug.mockReturnValue("");
+    const html = renderToStaticMarkup(<SignInMark surface="blue" />);
+
+    expect(html).toContain('src="/svg/logo-white.svg"');
+    expect(html).toContain("text-white");
   });
 
   it("keeps the class it was given either way", () => {

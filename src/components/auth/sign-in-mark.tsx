@@ -15,7 +15,7 @@ import { schoolLogoUrl } from "@/utils/school-brand";
  * resolve the crest from the address alone.
  *
  * A school's own crest where the address names a school and that school has
- * uploaded one, and the XVS shield otherwise. Which matters because this is the
+ * uploaded one, and the XVS mark otherwise. Which matters because this is the
  * page where somebody decides whether they are in the right place: staff at
  * Holy Cross reaching holy-cross.xvs.codexng.com should see their own badge,
  * and the bare product address has no school to show.
@@ -29,9 +29,11 @@ import { schoolLogoUrl } from "@/utils/school-brand";
 export default function SignInMark({
   /** Height of the crest, in px. */
   size = 32,
+  surface = "other",
   className,
 }: {
   size?: number;
+  surface?: "blue" | "other";
   className?: string;
 }) {
   // Read once per mount: the address cannot change without a page load.
@@ -46,9 +48,10 @@ export default function SignInMark({
         logo={url || null}
         // Named from the address rather than from which image won: on a school's
         // own host the mark stands for that school whether its badge loaded or
-        // the shield stood in, and the bare product host has no school to name.
+        // the product mark stood in, and the bare product host has no school to name.
         alt={url ? "School logo" : "XVS"}
         size={size}
+        surface={surface}
       />
     </div>
   );

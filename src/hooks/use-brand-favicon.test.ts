@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const setFavicon = vi.fn();
 vi.mock("@/utils/favicon", () => ({
-  DEFAULT_FAVICON: "/image/logo.png",
+  DEFAULT_FAVICON: "/svg/logo-blue.svg",
   setFavicon: (href: string) => setFavicon(href),
 }));
 
@@ -38,7 +38,7 @@ describe("useBrandFavicon", () => {
 
   it("falls back to the product mark when there is no crest to point at", () => {
     useBrandFavicon("");
-    expect(setFavicon).toHaveBeenCalledWith("/image/logo.png");
+    expect(setFavicon).toHaveBeenCalledWith("/svg/logo-blue.svg");
   });
 
   it("points the tab at a crest that loads", async () => {
@@ -55,7 +55,7 @@ describe("useBrandFavicon", () => {
     FakeImage.outcome = "error";
     useBrandFavicon("http://api.test/missing/");
     await flush();
-    expect(setFavicon).toHaveBeenLastCalledWith("/image/logo.png");
+    expect(setFavicon).toHaveBeenLastCalledWith("/svg/logo-blue.svg");
     expect(setFavicon).not.toHaveBeenCalledWith("http://api.test/missing/");
   });
 });

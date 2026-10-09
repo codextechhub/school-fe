@@ -192,7 +192,7 @@ export { default as FeeGenerationPanel } from "@/pages/protected/school-finance/
  *  The same component the school's own sidebar uses, deliberately: crossing
  *  into Finance should not change who the header says you are looking at, and a
  *  school whose crest is missing from storage - never uploaded, or the file gone
- *  - falls back to the XVS shield rather than leaving the sidebar's top blank.
+ *  - falls back to the XVS mark rather than leaving the sidebar's top blank.
  */
 export const AppLogo: ComponentType<{ animate?: boolean; className?: string }> = ({
   animate = true,

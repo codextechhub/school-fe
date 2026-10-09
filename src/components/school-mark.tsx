@@ -30,13 +30,16 @@ const DEFAULT_SIZE = 30;
  * The wordmark's height, as a multiple of the crest's.
  *
  * A little shorter than the crest, so the calligraphy does not tower over the
- * shield. The box is sized from the wordmark, which is the wider of the two
+ * crest. The box is sized from the wordmark, which is the wider of the two
  * faces, so the row cannot shift as the card turns.
  */
 const WORDMARK_SCALE = 0.8;
 
-/** The mark shown for a school with no crest of its own. */
-const FALLBACK_SRC = "/image/logo.png";
+/** Product marks used when a school has no crest of its own. */
+const FALLBACK_SRC = {
+  blue: "/svg/logo-blue.svg",
+  white: "/svg/logo-white.svg",
+} as const;
 
 export function SchoolMark({
   logo,
@@ -52,12 +55,14 @@ export function SchoolMark({
    * icon rail being the case that matters. The crest still renders.
    */
   animate = true,
+  surface = "other",
   className,
 }: {
   logo?: string | null;
   alt?: string;
   size?: number;
   animate?: boolean;
+  surface?: "blue" | "other";
   className?: string;
 }) {
   // Masks are referenced by id, and the mark renders more than once per page.
@@ -67,7 +72,8 @@ export function SchoolMark({
   // for a slug that is not a school. Both land on the product's own mark, so
   // neither leaves a blank space where a badge belongs.
   const [failed, setFailed] = useState(false);
-  const src = failed || !logo ? FALLBACK_SRC : logo;
+  const fallback = surface === "blue" ? FALLBACK_SRC.white : FALLBACK_SRC.blue;
+  const src = failed || !logo ? fallback : logo;
 
   const crest = (className?: string) => (
     <img
@@ -85,7 +91,11 @@ export function SchoolMark({
 
   return (
     <span
-      className={cn("school-mark text-primary", className)}
+      className={cn(
+        "school-mark",
+        surface === "blue" ? "text-white" : "text-primary",
+        className,
+      )}
       style={{ height: size, width: wordmarkHeight * WORDMARK_RATIO }}
     >
       <span className="school-mark__card">

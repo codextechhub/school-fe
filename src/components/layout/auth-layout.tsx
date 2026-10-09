@@ -65,7 +65,7 @@ export default function AuthLayout() {
         </div>
         <div className="relative flex min-h-[100dvh] min-w-0 flex-col px-4 py-8 sm:px-6 lg:px-8">
           <div className="mx-auto my-auto w-full max-w-107.5 shrink-0">
-            <SignInMark size={32} className="mb-6 lg:hidden" />
+            <SignInMark size={32} surface="blue" className="mb-6 lg:hidden" />
             <div className="rounded-2xl bg-white px-5 py-8 shadow-[0_22px_55px_#03132e55] sm:px-7 lg:rounded-none lg:px-0 lg:py-0 lg:shadow-none">
               <SignInMark size={48} className="mb-6 hidden lg:flex" />
               <Outlet />

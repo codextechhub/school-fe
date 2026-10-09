@@ -24,7 +24,7 @@ import { ReadinessChip } from "./components/onboarding-chips";
  * true for every school, and the control room counts it for the one reading it.
  *
  * The mark above the card is the school's own logo once one is uploaded, and
- * the plain XVS shield until then. It carries no wordmark: this is the school's
+ * the plain XVS mark until then. It carries no wordmark: this is the school's
  * first screen, so it shows either the school or the product, never the name of
  * the company behind it.
  */

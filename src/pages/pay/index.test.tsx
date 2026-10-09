@@ -54,7 +54,7 @@ describe("the invoice pay page", () => {
     const html = render({ data: { data: PAYABLE }, isLoading: false, isError: false });
 
     expect(html).toContain("Corona Secondary School");
-    expect(html).not.toContain("/image/logo.png");
+    expect(html).not.toContain("/svg/logo-blue.svg");
   });
 
   it("heads a CodeX invoice with the XVS mark", () => {
@@ -64,7 +64,7 @@ describe("the invoice pay page", () => {
       isError: false,
     });
 
-    expect(html).toContain("/image/logo.png");
+    expect(html).toContain("/svg/logo-blue.svg");
     expect(html).not.toContain("CodeX");
   });
 
