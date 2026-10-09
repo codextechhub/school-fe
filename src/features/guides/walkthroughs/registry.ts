@@ -1571,7 +1571,7 @@ const PACKAGE_WALKTHROUGHS = [
     route: R.DATA_IMPORTS.TEMPLATES.INDEX,
     permissions: [P.VIEW_IMPORT_TEMPLATES],
     prerequisites: ["Know which kind of record you are importing, such as students or staff."],
-    version: 1,
+    version: 2,
     steps: [
       {
         id: "welcome",
@@ -1591,7 +1591,7 @@ const PACKAGE_WALKTHROUGHS = [
         id: "summary",
         target: "data-import-templates.summary",
         title: "Only active templates can be used",
-        body: "The cards count the templates you can use. An upload accepts only an Active template, so always download a fresh copy rather than reusing an old file.",
+        body: "The cards count the school-owned templates you can use. CodeX platform templates are hidden and cannot be run from a school account. An upload accepts only an Active template, so always download a fresh copy rather than reusing an old file.",
         placement: "bottom",
         advance: "manual",
       },
@@ -1609,7 +1609,7 @@ const PACKAGE_WALKTHROUGHS = [
     route: R.EXPORT.SAVED,
     permissions: [P.VIEW_SAVED_EXPORTS, P.CREATE_EXPORT],
     prerequisites: ["Know what the file is for, who will receive it, and the fewest columns it needs."],
-    version: 1,
+    version: 2,
     steps: [
       {
         id: "welcome",
@@ -1638,7 +1638,7 @@ const PACKAGE_WALKTHROUGHS = [
         id: "steps",
         target: "data-export-builder.steps",
         title: "Four steps, in order",
-        body: "Data chooses what to export. Columns picks the fields and filters: take as few as you need, and note that fields marked Sensitive need extra permission. File sets the format. Review shows exactly what will be produced.",
+        body: "Data lists only school-owned datasets your role may use; CodeX staff, organogram and cross-school records stay out of this catalogue. Columns picks the fields and filters: take as few as you need, and note that fields marked Sensitive need extra permission. File sets the format. Review shows exactly what will be produced.",
         placement: "bottom",
         advance: "manual",
       },

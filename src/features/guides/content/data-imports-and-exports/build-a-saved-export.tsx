@@ -19,6 +19,7 @@ export default function BuildASavedExportArticle() {
           <GuideStep title="Select New export">The builder has four steps: <strong>Data</strong>, <strong>Columns</strong>, <strong>File</strong> and <strong>Review</strong>.</GuideStep>
           <GuideStep title="Pick the module and dataset">Only the datasets you are allowed to export are listed. If <strong>Entity scope</strong> appears, as it can for finance data, choose the one listed.</GuideStep>
         </GuideSteps>
+        <GuideCallout tone="info" title="Platform records stay out of the school catalogue">CodeX staff, the CodeX organogram, the school register and the cross-school user directory are platform-owned datasets. They do not appear in a school&apos;s export builder, even when an administrator has broad school permissions.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="choose-columns-and-filters" title="Choose columns and filters">

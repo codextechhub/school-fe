@@ -20,6 +20,9 @@ export type DatasetType =
   | "schools"
   | "branches"
   | "cx_users"
+  | "org_units"
+  | "positions"
+  | "matrix_reports"
   | "bank_statements"
   // A school loads these itself.
   | "students"
