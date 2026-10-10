@@ -32,6 +32,9 @@ export const mediaApi = baseApi.injectEndpoints({
         return { data: URL.createObjectURL(result.data as Blob) };
       },
       keepUnusedDataFor: 3600,
+      providesTags: (_result, _error, mediaUrl) => [
+        { type: "AuthMedia", id: mediaUrl },
+      ],
     }),
   }),
 });

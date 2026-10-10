@@ -568,6 +568,10 @@ export const baseApi = createApi({
     "Users",
     "Branches",
     "Students",
+    // JWT-protected photographs and logos are cached as local blob URLs. The
+    // source path can stay unchanged when its bytes are replaced, so uploads
+    // invalidate that path explicitly rather than showing the old image.
+    "AuthMedia",
     // Separate from Students, because a guardian is reachable from more than
     // one child: linking one changes both students' pages and the guardian's
     // own, and folding it into Students would refetch the whole directory

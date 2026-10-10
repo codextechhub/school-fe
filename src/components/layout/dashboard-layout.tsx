@@ -49,6 +49,7 @@ import { P, resolvePermissionKey } from "@/permissions";
 import { exitProxySession } from "@/utils/proxy-session";
 import { useSchoolWords } from "@/hooks/use-school-words";
 import { labelInSchoolWords } from "@/lib/school-words";
+import { HeaderAccountAvatar } from "./header-account-avatar";
 
 const AppSearch = lazy(() =>
   import("./app-search").then((module) => ({ default: module.AppSearch })),
@@ -245,7 +246,6 @@ export default function DashboardLayout() {
     user?.full_name ||
     [user?.first_name, user?.last_name].filter(Boolean).join(" ").trim();
   const roleLabel = humanizeRole(user?.role);
-  const avatarFallback = initials(fullName);
 
   // The bell badge. A failed count shows no badge, which is what zero shows
   // anyway, so this never needs an error state of its own.
@@ -412,9 +412,9 @@ export default function DashboardLayout() {
                   <button
                     type="button"
                     aria-label="Open account menu"
-                    className="grid size-9 shrink-0 place-content-center rounded-full bg-pry-01 font-mont text-[13px] font-semibold text-primary outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    className="shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                   >
-                    {avatarFallback}
+                    <HeaderAccountAvatar name={fullName} />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -595,14 +595,4 @@ function humanizeRole(value?: string | null): string {
     .trim()
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-// Derive up to two uppercase initials from a full name for the avatar fallback.
-function initials(name?: string | null): string {
-  if (!name) return "";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "";
-  const first = parts[0][0] ?? "";
-  const last = parts.length > 1 ? parts[parts.length - 1][0] ?? "" : "";
-  return (first + last).toUpperCase();
 }

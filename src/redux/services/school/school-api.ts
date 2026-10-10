@@ -53,8 +53,9 @@ export const schoolApi = baseApi.injectEndpoints({
       query: (body) => ({ url: `/i/me/profile/`, method: "PATCH", body }),
       extraOptions: { silent: true },
       // The onboarding gate re-reads the profile to decide whether the school
-      // metadata step can close, so a save here can change the checklist.
-      invalidatesTags: ["SchoolProfile", "Onboarding"],
+      // metadata step can close. Academic rules also fall back to the profile's
+      // term structure, so changing it must replace the cached session template.
+      invalidatesTags: ["SchoolProfile", "Onboarding", "AcademicRules"],
     }),
 
     /**

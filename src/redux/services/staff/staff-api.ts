@@ -129,6 +129,20 @@ export const staffApi = baseApi.injectEndpoints({
       }),
       extraOptions: { silent: true },
       invalidatesTags: ["SchoolStaff", "StaffHistory"],
+      async onQueryStarted({ body }, { dispatch, queryFulfilled }) {
+        if (!(body instanceof FormData) || !body.has("photo")) return;
+        try {
+          const { data } = await queryFulfilled;
+          const photoUrl = data.data.photo_url;
+          if (photoUrl) {
+            dispatch(baseApi.util.invalidateTags([
+              { type: "AuthMedia", id: photoUrl },
+            ]));
+          }
+        } catch {
+          // A refused upload leaves both the record and cached photograph valid.
+        }
+      },
     }),
 
     /**
