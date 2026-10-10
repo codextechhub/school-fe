@@ -16,7 +16,7 @@ export default function ImportStudentsArticle() {
 
       <GuideSection id="open-the-import" title="Open the import">
         <p>On the Student Directory, select <strong>Import</strong>. The <strong>Import students</strong> drawer opens. The template is fixed for this import, so you only choose the file.</p>
-        <p>Select <strong>View template</strong> to check the file, then use Download in the viewer. The template card shows how many columns there are and how many are required.</p>
+        <p>Select <strong>Download template</strong> to save the spreadsheet. The template card shows how many columns there are and how many are required.</p>
       </GuideSection>
 
       <GuideSection id="upload-and-check" title="Upload and check the file">

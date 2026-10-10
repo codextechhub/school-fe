@@ -8,7 +8,7 @@ export default function ImportTemplatesArticle() {
       <GuideSection id="before-you-start" title="Before you start">
         <p>An import template is the spreadsheet layout a file must follow for one kind of record: its columns, which are required, and what each one accepts. XVS publishes and maintains the templates; a school downloads them and fills them in.</p>
         <GuideChecklist items={[
-          "The quickest way to a template is View template on the first step of any import. Download is inside the file viewer.",
+          "The quickest way to a template is Download template on the first step of any import.",
           "To browse them all, type import templates into the search box and choose View import templates.",
         ]} />
         <GuideCallout tone="info" title="The list is matched to your school">The service shows only school-owned datasets that your account may use. CodeX platform templates for schools, branches, CX users, organogram units, positions, matrix reporting lines and bank statements do not appear here and cannot be run from a school account.</GuideCallout>

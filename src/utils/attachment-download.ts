@@ -52,6 +52,26 @@ export async function fetchAttachmentObjectUrl(storedUrl: string): Promise<strin
   return URL.createObjectURL(await fetchAttachmentBlob(storedUrl));
 }
 
+/** Save an existing object URL under the supplied filename. */
+export function downloadObjectUrl(url: string, filename: string): void {
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+}
+
+/** Save in-memory file bytes under the supplied filename. */
+export function downloadBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  try {
+    downloadObjectUrl(url, filename);
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 /**
  * Fetch an attachment with the caller's token and open it in a new tab.
  *
@@ -97,12 +117,5 @@ export async function downloadAuthorisedFile(path: string, filename: string): Pr
     throw new Error(apiErrorMessage(body, "That file could not be downloaded."));
   }
 
-  const url = URL.createObjectURL(await response.blob());
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  downloadBlob(await response.blob(), filename);
 }
