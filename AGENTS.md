@@ -1,5 +1,48 @@
 # AGENTS.md - school-fe
 
+## Field Access is part of every feature contract
+
+Every new or changed user-visible business field must receive an explicit
+Field Access decision in the same change. This includes fields in forms,
+drawers, detail panels, tables, cards, exports, imports, documents, emails and
+derived summaries. A screen permission answers whether somebody may open the
+resource; it does not answer which fields inside that resource they may read or
+change.
+
+Default to including the field. Give a stored or submitted field separate Read
+and Write control. Give a computed, generated, status, audit or other
+server-owned field Read control and mark it non-writable. Do not create switches
+for transport-only values such as internal IDs, pagination data or protocol
+metadata, but make sure a display label, nested object or derived value cannot
+leak a hidden field under another response name.
+
+When the correct boundary is genuinely unclear, ask the user directly before
+building it. Show one concrete case and ask whether the fields should have
+separate switches or one deliberately grouped switch. For example: "Bright
+Star School records an inter-branch transfer from Ikeja Branch to Lekki Branch.
+Should Amount, Purpose and the two bank accounts each have their own switches,
+or should the bank accounts share one Banking details switch?" Do not silently
+exclude a field because it seems harmless.
+
+Field Access work is end-to-end:
+
+- Register and enforce the backend field in the same product change. A hidden
+  control in this app is not access control.
+- Make each school-only screen use the shared Field Access hook: remove hidden
+  fields completely, grey read-only fields, omit them from submitted bodies and
+  remove paired table headers and empty sections.
+- Shared finance, procurement and workflow screens belong in FinPro. Change the
+  package, release it, and move both school-fe and console-fe to the same tag.
+- Add regression coverage for hidden, read-only and writable states, including
+  aliases, nested values, exports and imports as applicable.
+- Update the school Field Access guide and coverage record when choices, labels,
+  grouping or affected screens change.
+
+Before finishing any product change, report `Field Access impact:` followed by
+the fields added, changed or reviewed. If there is no impact, say
+`Field Access impact: none` and give the reason. Documentation-only and Git-only
+requests do not require this statement.
+
 ## Pre-ship review (`ship-check`)
 
 When I say **`ship-check`** (or "run the ship-check") on a change, answer these

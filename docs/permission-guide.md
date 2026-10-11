@@ -299,6 +299,23 @@ await enrol(access.writableOnly(body, CREATING));
 - A field the viewer cannot see is neither complete nor a gap: completeness scores count only the fields a record carries.
 - The request interceptor stays silent on `field_write_denied`; the form shows each message under its field.
 
+### Every business field gets a decision
+
+Treat Field Access as part of the feature contract, not as a later security
+pass. Every new or changed field a person can see or submit gets an explicit
+decision in the same change. Include it by default:
+
+- stored and submitted fields get Read and Write switches;
+- computed, generated, status, audit and other server-owned fields get a Read
+  switch and are declared non-writable;
+- internal IDs, pagination values and protocol metadata do not get switches;
+- a label, nested object, export column or derived value that carries a field's
+  meaning follows the same switch through the backend alias or response guard.
+
+When grouping is ambiguous, ask before implementation. The backend registry,
+school-only screen or shared FinPro screen, exports, imports, documents and
+tests move together.
+
 ---
 
 ## Architecture Diagram
