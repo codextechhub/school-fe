@@ -1,12 +1,12 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "./shadcn-tailwind.css";
 
 /* The finance and procurement screens live in @xvs/finance, and Tailwind v4
    does not scan node_modules. Without this line every class those screens use
    and this app does not is silently never generated: the markup is right and
    the CSS simply is not there. */
 @source "../node_modules/@xvs/finance/src";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 

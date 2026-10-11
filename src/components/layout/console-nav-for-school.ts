@@ -11,18 +11,33 @@
  * hand-kept list drifts the first time somebody mounts a screen and forgets the
  * nav, and that failure reads as a broken product rather than a missing edit.
  */
-import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
+import type { ConsoleNavGroup, ConsoleNavItem } from "@/components/finance-ui/console-nav";
 import { financeNav } from "@/pages/protected/finance/finance-nav";
 import { procurementNav } from "@/pages/protected/procurement/procurement-nav";
 import { FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
 import { PROCUREMENT_MOUNTED_PATHS } from "@/routes/protected/procurement-routes";
+
+function narrowItem(item: ConsoleNavItem, mounted: ReadonlySet<string>): ConsoleNavItem | null {
+  if (!item.children?.length) return mounted.has(item.url) ? item : null;
+  const children = item.children.flatMap((child) => {
+    const kept = narrowItem(child, mounted);
+    return kept ? [kept] : [];
+  });
+  return children.length ? { ...item, children } : null;
+}
 
 const narrow = (
   groups: ConsoleNavGroup[],
   mounted: ReadonlySet<string>,
 ): ConsoleNavGroup[] =>
   groups
-    .map((group) => ({ ...group, items: group.items.filter((i) => mounted.has(i.url)) }))
+    .map((group) => ({
+      ...group,
+      items: group.items.flatMap((item) => {
+        const kept = narrowItem(item, mounted);
+        return kept ? [kept] : [];
+      }),
+    }))
     // A group whose every item is unmounted would otherwise render as a
     // heading with nothing under it.
     .filter((group) => group.items.length > 0);

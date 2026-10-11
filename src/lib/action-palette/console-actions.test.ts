@@ -27,10 +27,10 @@ import {
 } from "./console-actions";
 import { ACTIONS, CONSOLE_ACTIONS } from "./registry";
 import { scoreAction } from "./match";
-import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
+import { navLeaves, type ConsoleNavGroup } from "@/components/finance-ui/console-nav";
 
 const NAV_URLS = [...schoolFinanceNav, ...schoolProcurementNav]
-  .flatMap((group) => group.items)
+  .flatMap((group) => group.items.flatMap(navLeaves))
   .map((item) => item.url);
 
 /**

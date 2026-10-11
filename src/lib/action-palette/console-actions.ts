@@ -37,7 +37,7 @@
 
 import { P, type PermissionCode } from "@/permissions";
 import { WHOLE_SCHOOL_KEYS } from "@xvs/finance/components/finance-ui/whole-school-access";
-import type { ConsoleNavGroup } from "@/components/finance-ui/console-nav";
+import { navLeaves, type ConsoleNavGroup } from "@/components/finance-ui/console-nav";
 import type { ActionDef, ActionGate, ActionSchoolShape, ActionSection } from "./types";
 
 export interface ConsoleSource {
@@ -561,25 +561,11 @@ function flatten(sources: ConsoleSource[]): FlatItem[] {
   for (const source of sources) {
     for (const group of source.nav) {
       for (const item of group.items) {
-        // A parent with children does not navigate - you click a child. Neither
-        // console uses that shape today, but the type allows it and a palette
-        // row that goes nowhere is worse than a missing one.
-        if (item.children?.length) {
-          for (const child of item.children) {
-            out.push({ ...child, group: group.label ?? source.name, source });
-          }
-          continue;
+        // Parents only organise the sidebar. Every navigable descendant becomes
+        // its own action, regardless of how deeply the menu groups are nested.
+        for (const leaf of navLeaves(item)) {
+          out.push({ ...leaf, group: group.label ?? source.name, source });
         }
-        out.push({
-          title: item.title,
-          url: item.url,
-          permissions: item.permissions,
-          multiBranch: item.multiBranch,
-          heldCustody: item.heldCustody,
-          wholeSchool: item.wholeSchool,
-          group: group.label ?? source.name,
-          source,
-        });
       }
     }
   }

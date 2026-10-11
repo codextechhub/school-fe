@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { schoolFinanceNav } from "@/components/layout/console-nav-for-school";
+import { navLeaves } from "@/components/finance-ui/console-nav";
 import { financeNav } from "@/pages/protected/finance/finance-nav";
 import { FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
 import { routesPath } from "@/routes/routesPath";
@@ -26,7 +27,8 @@ const INTENTIONALLY_UNMOUNTED = [
 ];
 
 describe("the school's finance sidebar", () => {
-  const urls = (g: typeof financeNav) => g.flatMap((x) => x.items).map((i) => i.url);
+  const urls = (groups: typeof financeNav) =>
+    groups.flatMap((group) => group.items.flatMap(navLeaves)).map((item) => item.url);
 
   it("drops what this app does not mount", () => {
     const shown = urls(schoolFinanceNav);
