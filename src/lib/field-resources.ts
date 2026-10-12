@@ -14,6 +14,11 @@ export const FIELD_RESOURCE = {
   STUDENTS: "school.students",
   GUARDIANS: "school.guardians",
   STAFF: "school.teachers",
+  /** A child's mark on a class register, wherever it is shown. */
+  ATTENDANCE_REGISTER: "attendance.register",
+  ATTENDANCE_CORRECTION: "attendance.correction",
+  ATTENDANCE_LESSON: "attendance.lesson",
+  ATTENDANCE_STAFF: "attendance.staff",
 } as const;
 
 /** A student's medical fields, in the order every screen shows them. */

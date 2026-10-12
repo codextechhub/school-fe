@@ -14,7 +14,8 @@ import {
  * key format from the constant name alone.
  *
  * ── Code format: MM RR AA (6 digits) ─────────────────────────────────────────
- *   MM = module group   10=school  20=onboarding  30=academics  40=import
+ *   MM = module group   10=school  20=onboarding  30=academics  31=attendance
+ *                       40=import
  *                       50=communication
  *                       92=exports (the Export Centre, shared with console-fe)
  *   RR = resource       01 02 03 … (assigned sequentially per module)
@@ -23,6 +24,7 @@ import {
  *                       10=reactivate
  *                       11=assign  12=start   13=end   14=run   15=execute
  *                       16=publish 17=import  18=export  19=apply
+ *                       20=mark    21=mark any class    22=remind
  *
  * ── Adding a permission ───────────────────────────────────────────────────────
  *   1. Pick the next free code in the right MM RR range.
@@ -336,6 +338,27 @@ const REGISTRY: Record<string, string> = {
   "300708": "academics.exam.delete",
   "300716": "academics.exam.publish",
 
+  // ── attendance  (MM=31) ────────────────────────────────────────────────────
+  // A module of its own on the backend (`attendance.*`), so a group of its own
+  // here. Three verbs this module alone uses take the next free action codes:
+  // 20 = mark (your own class or lesson), 21 = mark any class in your
+  // branches, 22 = remind a class teacher. Which class `mark` covers is a rule
+  // the server enforces, not a key: a teacher holding it takes only their own.
+  //
+  // A lesson register needs no keys of its own: it is read with the register
+  // view key and marked with the register mark keys.
+  "310101": "attendance.register.view",
+  "310120": "attendance.register.mark",
+  "310121": "attendance.register.mark_any",
+  "310122": "attendance.register.remind",
+  "310202": "attendance.correction.create",
+  "310205": "attendance.correction.approve",
+  "310301": "attendance.staff.view",
+  "310320": "attendance.staff.mark",
+  "310401": "attendance.report.view",
+  "310418": "attendance.report.export",
+  "310503": "attendance.settings.update",
+
   // ── platform surfaces the shared screens reach  (MM=11) ────────────────────
   // Platform keys, deliberately outside the school namespace at MM=10, and the
   // only two here. The approval screens come from @xvs/finance and read this
@@ -602,6 +625,19 @@ export const P = {
   MODIFY_EXAM:             "300703",  // edit a paper, its room or its slot
   DELETE_EXAM:            "300708",  // delete a paper, clear an exam timetable
   PUBLISH_EXAM_TIMETABLE:  "300716",  // publish the exam timetable to the school
+
+  // ── Attendance ─────────────────────────────────────────────────────────────
+  VIEW_ATTENDANCE:         "310101",  // read registers, the Today screens and a student's attendance
+  TAKE_OWN_REGISTER:       "310120",  // mark the class you lead and the lessons you teach
+  TAKE_ANY_REGISTER:       "310121",  // mark any class's register in your branches
+  REMIND_CLASS_TEACHER:    "310122",  // remind a class teacher whose register is not taken
+  REQUEST_ATTENDANCE_CORRECTION: "310202",  // ask for a mark on a closed day to change
+  DECIDE_ATTENDANCE_CORRECTION:  "310205",  // approve or reject such a request
+  VIEW_STAFF_REGISTER:     "310301",  // read the staff register
+  TAKE_STAFF_REGISTER:     "310320",  // mark and submit the staff register
+  VIEW_ATTENDANCE_REPORTS: "310401",  // read the term's attendance summaries
+  EXPORT_ATTENDANCE_REPORTS: "310418",  // download them as a file
+  MANAGE_ATTENDANCE_SETTINGS: "310503",  // change attendance settings and reason codes
 
   // ── Export Centre ──────────────────────────────────────────────────────────
   // Named as the shared Export Centre screens name them, for the same reason
