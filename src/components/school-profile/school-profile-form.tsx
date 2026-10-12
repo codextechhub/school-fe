@@ -17,6 +17,8 @@ import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { zoneLongName } from "@/lib/dates";
 import { schoolProfileSchema } from "@/schema/onboarding";
 import { writeErrorMessage } from "@/utils/api-error";
+import { fieldWriteErrors, useFieldAccess } from "@/components/finance-ui/field-access";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 
 type ProfileField = keyof SchoolProfileUpdate;
 
@@ -37,6 +39,9 @@ type ProfileField = keyof SchoolProfileUpdate;
  * Locked, the term structure is only where the school started: the word it
  * uses (Term or Semester) and the parts of its year are its own to change in
  * Settings, Academic structure, and the note under the field says so.
+ * Choice options travel with the record so the form uses values the server
+ * accepts. Field Access can hide Address and Registration number entirely or
+ * leave them visible and read-only; submissions contain only writable changes.
  */
 export function SchoolProfileForm({
   profile,
@@ -53,8 +58,10 @@ export function SchoolProfileForm({
 }) {
   const [update, { isLoading }] = useUpdateSchoolProfileMutation();
   const display = useSchoolDisplay(null);
+  const access = useFieldAccess(FIELD_RESOURCE.SCHOOL_PROFILE, profile);
   const editable = new Set(profile.editable_fields);
-  const open = (field: ProfileField) => canEdit && editable.has(field);
+  const open = (field: ProfileField) =>
+    canEdit && editable.has(field) && !access.isReadOnly(field);
   const lockedByServer = (field: ProfileField) =>
     canEdit && !editable.has(field);
 
@@ -71,9 +78,7 @@ export function SchoolProfileForm({
     validationSchema: schoolProfileSchema,
     enableReinitialize: true,
     onSubmit: async (values, helpers) => {
-      // Only what moved, and only what the server accepts. The endpoint refuses
-      // a payload that changes nothing, and an untouched field sent back would
-      // read as an edit in the audit trail this save writes.
+      // Send only changed fields the caller may write.
       const changed: SchoolProfileUpdate = {};
       for (const [key, value] of Object.entries(values) as [ProfileField, string][]) {
         if (!editable.has(key)) continue;
@@ -81,11 +86,19 @@ export function SchoolProfileForm({
       }
       if (Object.keys(changed).length === 0) return;
 
+      const writable = access.writableOnly(changed);
+      if (Object.keys(writable).length === 0) return;
+
       try {
-        await update(changed).unwrap();
+        await update(writable).unwrap();
         toast.success("Saved. Your changes are recorded.");
         helpers.resetForm({ values });
       } catch (error) {
+        const fieldErrors = fieldWriteErrors(error);
+        if (fieldErrors) {
+          helpers.setErrors(fieldErrors);
+          return;
+        }
         toast.error(writeErrorMessage(error, "We could not save your profile. Try again."));
       }
     },
@@ -104,7 +117,6 @@ export function SchoolProfileForm({
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {/* Options ship with the record, so no value here is one the server refuses. */}
         <CustomNativeSelect
           id="ownership_type"
           disabled={!open("ownership_type")}
@@ -141,23 +153,27 @@ export function SchoolProfileForm({
           />
           {lockNote("currency")}
         </div>
-        <CustomInput
-          id="registration_id"
-          disabled={!open("registration_id")}
-          label="Registration number"
-          placeholder="Optional"
-          {...formik.getFieldProps("registration_id")}
-          error={formik.touched.registration_id ? formik.errors.registration_id : ""}
-        />
-        <CustomInput
-          id="address"
-          disabled={!open("address")}
-          label="Address"
-          placeholder="Optional"
-          containerClass="sm:col-span-2"
-          {...formik.getFieldProps("address")}
-          error={formik.touched.address ? formik.errors.address : ""}
-        />
+        {!access.isHidden("registration_id") ? (
+          <CustomInput
+            id="registration_id"
+            disabled={!open("registration_id")}
+            label="Registration number"
+            placeholder="Optional"
+            {...formik.getFieldProps("registration_id")}
+            error={formik.touched.registration_id ? formik.errors.registration_id : ""}
+          />
+        ) : null}
+        {!access.isHidden("address") ? (
+          <CustomInput
+            id="address"
+            disabled={!open("address")}
+            label="Address"
+            placeholder="Optional"
+            containerClass="sm:col-span-2"
+            {...formik.getFieldProps("address")}
+            error={formik.touched.address ? formik.errors.address : ""}
+          />
+        ) : null}
         <CustomInput
           id="website"
           disabled={!open("website")}

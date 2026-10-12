@@ -19,6 +19,7 @@ export interface MissingProfileField {
 }
 
 export interface SchoolProfile {
+  _read_only_fields?: string[];
   // Allocated by CodeX when the school is created. Shown, never sent back.
   name: string;
   slug: string;
@@ -29,10 +30,10 @@ export interface SchoolProfile {
   ownership_type: string;
   term_structure: string;
   currency: string;
-  address: string;
+  address?: string;
   website: string;
   motto: string;
-  registration_id: string;
+  registration_id?: string;
   logo: string;
 
   /**

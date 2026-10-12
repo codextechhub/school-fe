@@ -37,7 +37,8 @@ export default function FieldAccessArticle() {
       </GuideSection>
 
       <GuideSection id="where-switches-apply" title="Where the switches apply">
-        <p>Registered school, staff, guardian, finance, procurement, and payment fields follow these switches wherever they appear. In Finance, the Inter-branch resource covers transfers, balances, held receipts, recharges, and shared-cost rules. Its choices separately cover branches, accounts, customer, amount, dates, purpose, reference, shares, results, and audit fields.</p>
+        <p>Registered school, staff, guardian, finance, procurement, and payment fields follow these switches wherever they appear. Under <strong>School profile</strong>, Address and Registration number each have Read and Write switches. A hidden profile field disappears from onboarding and Settings; a read-only one stays visible and grey.</p>
+        <p>In Finance, the Inter-branch resource covers transfers, balances, held receipts, recharges, and shared-cost rules. Its choices separately cover branches, accounts, customer, amount, dates, purpose, reference, shares, results, and audit fields.</p>
         <GuideCallout tone="info" title="Screen access and field access are different">A finance permission may let a bursar open Between Branches while Field Access still hides the amount or makes the bank account read-only. Read off removes the field and its table column; Write off greys the input and the app does not send it.</GuideCallout>
       </GuideSection>
 
