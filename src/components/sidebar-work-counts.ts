@@ -5,6 +5,7 @@ export interface SidebarWorkCountSources {
   invitations?: number;
   uncoveredDuties?: number;
   dutiesWithoutLead?: number;
+  attendanceCorrections?: number;
 }
 
 export interface SidebarWorkCounts {
@@ -13,6 +14,7 @@ export interface SidebarWorkCounts {
   pendingApprovals?: number;
   invitations?: number;
   teachingGaps?: number;
+  attendanceCorrections?: number;
 }
 
 const visibleCount = (count: number | undefined) =>
@@ -38,5 +40,6 @@ export function deriveSidebarWorkCounts(
     pendingApprovals: visibleCount(sources.pendingApprovals),
     invitations: visibleCount(sources.invitations),
     teachingGaps: visibleCount(teachingGaps),
+    attendanceCorrections: visibleCount(sources.attendanceCorrections),
   };
 }

@@ -428,6 +428,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ATTENDANCE.REGISTERS },
   },
   {
+    id: "view-attendance-corrections",
+    label: "View attendance corrections",
+    aliases: [
+      "correct a mark", "change attendance", "approve correction",
+      "reject correction", "wrong mark", "fix attendance",
+    ],
+    section: "Academics",
+    group: "Attendance",
+    kind: "view",
+    gate: { any: [P.DECIDE_ATTENDANCE_CORRECTION, P.REQUEST_ATTENDANCE_CORRECTION] },
+    run: { to: R.ATTENDANCE.CORRECTIONS },
+  },
+  {
     id: "view-classes",
     label: "View classes",
     aliases: ["class list", "class rosters"],

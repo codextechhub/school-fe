@@ -270,3 +270,123 @@ export interface CorrectionCreate {
   note?: string;
   arrived_at?: string | null;
 }
+
+// ── Corrections ────────────────────────────────────────────────────────────
+
+export interface CorrectionListArgs {
+  status: "pending" | "decided";
+  branch?: number | "all";
+  page?: number;
+  /** Leave out the reader's own requests: what is left is theirs to decide. */
+  awaitingMe?: boolean;
+}
+
+export interface CorrectionDecision {
+  id: number;
+  approve: boolean;
+  /** Kept on the student's record either way. */
+  decision_note?: string;
+}
+
+// ── A student's Attendance tab ─────────────────────────────────────────────
+
+/** What one day of a term was for this pupil. */
+export type StudentDayState = "MARKED" | "NOT_TAKEN" | "CLOSED" | "SUSPENDED" | "NOT_ON_ROLL";
+
+export interface StudentDay {
+  date: string;
+  state: StudentDayState;
+  /** The class the pupil was placed in that day; null off the roll. */
+  class_id: number | null;
+  mark?: AttendanceMark | null;
+  arrived_at?: string | null;
+  closed_reason: string | null;
+}
+
+export interface TermRef {
+  id: number;
+  name: string;
+  session_name: string;
+  start_date: string;
+  end_date: string;
+  is_current: boolean;
+}
+
+export interface StudentCounts {
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+  not_taken: number;
+  /** Days the pupil was expected and the school was open. */
+  opened: number;
+  rate: number | null;
+}
+
+export interface StudentAbsence {
+  date: string;
+  class_name: string;
+  mark?: AttendanceMark;
+  reason_code?: number | null;
+  reason_label?: string | null;
+  note?: string;
+  notice_state?: NoticeState;
+  notice_sent_at?: string | null;
+}
+
+export interface StudentLessonAbsence {
+  date: string;
+  period_label: string;
+  subject: string;
+  morning_mark?: AttendanceMark | null;
+}
+
+/** A change made in place on the day, or a decided correction. */
+export type StudentHistoryEntry =
+  | {
+      kind: "change";
+      at: string;
+      date: string;
+      from_mark?: AttendanceMark | null;
+      to_mark?: AttendanceMark;
+      changed_by_name: string;
+      via: "SAME_DAY" | "CORRECTION";
+      note?: string;
+    }
+  | {
+      kind: "correction";
+      at: string;
+      date: string;
+      from_mark?: AttendanceMark;
+      to_mark?: AttendanceMark;
+      arrived_at?: string | null;
+      status?: "APPROVED" | "REJECTED";
+      via: "CORRECTION";
+      reason_label?: string | null;
+      note?: string;
+      requested_by_name?: string;
+      requested_at?: string;
+      decided_by_name?: string;
+      decided_at?: string;
+      decision_note?: string;
+    };
+
+export interface StudentAttendance {
+  student: {
+    id: number;
+    name: string;
+    student_number: string;
+    class_name: string | null;
+    branch: BranchRef | null;
+  };
+  /** Absent when the reader may read neither the guardian's name nor email. */
+  primary_guardian?: { name?: string; email?: string | null } | null;
+  term: TermRef | null;
+  terms: TermRef[];
+  counts?: StudentCounts;
+  days: StudentDay[];
+  absences: StudentAbsence[];
+  /** Present only where the pupil's level marks lessons and the reader may read lesson marks. */
+  lesson_absences?: StudentLessonAbsence[];
+  history: StudentHistoryEntry[];
+}

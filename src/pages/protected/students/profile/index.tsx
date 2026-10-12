@@ -50,6 +50,8 @@ import { FIELD_RESOURCE, STUDENT_MEDICAL_FIELDS } from "@/lib/field-resources";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
 import { useStudentsLens } from "@/hooks/use-students-lens";
+import { useCapabilities } from "@/hooks/use-capabilities";
+import { StudentAttendanceTab } from "@/pages/protected/attendance/student-tab";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { Panel as Surface } from "@/components/custom/surface";
 import { AsAtBanner, AsAtControl, LiveOnly } from "@/components/custom/as-at-control";
@@ -74,6 +76,7 @@ const TABS = [
   { key: "academic", label: "Academic" },
   { key: "medical", label: "Medical" },
   { key: "documents", label: "Documents" },
+  { key: "attendance", label: "Attendance" },
   { key: "history", label: "History" },
 ] as const;
 
@@ -103,6 +106,11 @@ export default function StudentProfile() {
   const navigate = useNavigate();
   const { pastYear } = useStudentsLens();
   const { hasPermission } = usePermissions();
+  const { hasCapability } = useCapabilities();
+  // Attendance is its own module: a tab for readers who hold its key at a
+  // school whose plan includes it, and absent for everyone else.
+  const showsAttendance = hasPermission(P.VIEW_ATTENDANCE) && hasCapability("attendance");
+  const tabs = TABS.filter((t) => t.key !== "attendance" || showsAttendance);
   const tab = (params.get("tab") as TabKey) ?? "overview";
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
   const [asAt, setAsAt] = useAsAtParam();
@@ -334,7 +342,7 @@ export default function StudentProfile() {
       <div data-guide="student-profile.tabs" className="w-fit max-w-full min-w-0">
         <Tabs
           tabKey="tab"
-          tabs={TABS.map((t) => ({ value: t.key, label: t.label }))}
+          tabs={tabs.map((t) => ({ value: t.key, label: t.label }))}
         />
       </div>
 
@@ -364,6 +372,7 @@ export default function StudentProfile() {
           loading={documentsLoading}
         />
       )}
+      {tab === "attendance" && showsAttendance && <StudentAttendanceTab studentId={studentId} />}
       {tab === "history" && <HistoryTab studentId={studentId} branch={student?.branch} />}
 
       <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />

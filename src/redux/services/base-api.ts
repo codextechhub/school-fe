@@ -646,6 +646,8 @@ export const baseApi = createApi({
     // row refetches the hubs and not the register being marked.
     "AttendanceRegister",
     "AttendanceReasonCodes",
+    "AttendanceCorrections",
+    "AttendanceStudent",
     "ImportTemplates",
     "ImportBatches",
     "Tickets",

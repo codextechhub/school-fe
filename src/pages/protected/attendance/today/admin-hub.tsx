@@ -324,7 +324,7 @@ function AbsentPanel({
                   <span className="flex min-w-0 flex-col">
                     {canOpenStudent ? (
                       <Link
-                        to={routesPath.PROTECTED.STUDENTS.PROFILE_ID(row.student.id)}
+                        to={`${routesPath.PROTECTED.STUDENTS.PROFILE_ID(row.student.id)}?tab=attendance`}
                         className="truncate font-medium text-primary hover:underline"
                       >
                         {row.student.name}
@@ -372,10 +372,15 @@ function CorrectionPreview({ correction }: { correction: CorrectionRow }) {
   const { formatDay } = useSchoolDisplay();
   return (
     <Panel as="section" className="space-y-4 p-4 sm:p-5">
-      <SectionHeading
-        title="Corrections waiting"
-        body="A mark on a closed day can only change with your decision."
-      />
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
+        <SectionHeading
+          title="Corrections waiting"
+          body="A mark on a closed day can only change with your decision."
+        />
+        <Button asChild variant="outline" size="sm">
+          <Link to={routesPath.PROTECTED.ATTENDANCE.CORRECTIONS}>Open queue</Link>
+        </Button>
+      </div>
       <div className="flex min-w-0 flex-wrap items-center gap-3 rounded-md border border-border px-4 py-3">
         <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
           <p className="truncate font-medium text-black-01">{correction.student.name}</p>

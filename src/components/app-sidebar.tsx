@@ -60,6 +60,7 @@ import { LensRail } from "./layout/lens-pills";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { SchoolMark } from "./school-mark";
 import { deriveSidebarWorkCounts } from "./sidebar-work-counts";
+import { useGetCorrectionsQuery } from "@/redux/services/attendance/attendance-api";
 import { openSettingsSections } from "@/pages/protected/settings/sections";
 
 // A nav item may declare a permission (single code or a list). When absent the
@@ -100,7 +101,7 @@ interface NavItem {
   permissionMode?: "any" | "all";
   /** A live count of work waiting behind this item. Omitted when there is none. */
   badge?: number;
-  items?: { title: string; url: string; isActive: boolean }[];
+  items?: { title: string; url: string; isActive: boolean; badge?: number }[];
 }
 
 /**
@@ -180,6 +181,18 @@ export function AppSidebar({
     { page: 1 },
     { skip: onboarding || !hasPermission(P.BROWSE_TEACHERS) },
   );
+  // Corrections waiting on this reader: pending, and not ones they asked for,
+  // which another administrator decides. The total is the pagination's, so
+  // one short page answers it. Only deciders are asked.
+  const { data: pendingCorrections } = useGetCorrectionsQuery(
+    { status: "pending", awaitingMe: true },
+    {
+      skip:
+        onboarding ||
+        !hasPermission(P.DECIDE_ATTENDANCE_CORRECTION) ||
+        !hasCapability("attendance"),
+    },
+  );
   const waiting = deriveSidebarWorkCounts({
     applicants: summary?.data?.applicants,
     unassignedStudents: summary?.data?.unassigned,
@@ -188,6 +201,7 @@ export function AppSidebar({
     invitations: invited?.pagination?.totalItems,
     uncoveredDuties: coverage?.coverage_gaps,
     dutiesWithoutLead: coverage?.lead_gaps,
+    attendanceCorrections: pendingCorrections?.pagination?.totalItems,
   });
 
   const schoolName =
@@ -738,6 +752,14 @@ export function AppSidebar({
             title: "Class registers",
             url: routesPath.PROTECTED.ATTENDANCE.REGISTERS,
             isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.REGISTERS),
+          }] : []),
+          // Deciders see the requests waiting on them; a teacher who may only
+          // ask sees the ones they made.
+          ...(hasAnyPermission(P.DECIDE_ATTENDANCE_CORRECTION, P.REQUEST_ATTENDANCE_CORRECTION) ? [{
+            title: "Corrections",
+            url: routesPath.PROTECTED.ATTENDANCE.CORRECTIONS,
+            isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.CORRECTIONS),
+            badge: waiting.attendanceCorrections,
           }] : []),
         ],
       },

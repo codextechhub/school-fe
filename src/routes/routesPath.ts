@@ -333,6 +333,7 @@ export const routesPath = {
       /** One class's register; the day rides in `?date=`, omitted for today. */
       REGISTER_ID: (classId: number | string, date?: string) =>
         `/attendance/registers/${classId}${date ? `?date=${date}` : ""}`,
+      CORRECTIONS: "/attendance/corrections",
     },
   },
 };

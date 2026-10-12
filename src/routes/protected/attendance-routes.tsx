@@ -6,6 +6,7 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 const AttendanceToday = lazy(() => import("@/pages/protected/attendance/today"));
 const ClassRegisters = lazy(() => import("@/pages/protected/attendance/registers"));
 const ClassRegister = lazy(() => import("@/pages/protected/attendance/register"));
+const AttendanceCorrections = lazy(() => import("@/pages/protected/attendance/corrections"));
 
 const A = routesPath.PROTECTED.ATTENDANCE;
 
@@ -37,5 +38,10 @@ export const attendanceRoutes = [
     path: A.REGISTER,
     Component: ClassRegister,
     handle: { title: "Daily register", back: A.INDEX } satisfies DashboardHandle,
+  },
+  {
+    path: A.CORRECTIONS,
+    Component: AttendanceCorrections,
+    handle: { title: "Corrections", lens: true, lenses: "branch" } satisfies DashboardHandle,
   },
 ] as RouteObject[];

@@ -95,7 +95,8 @@ None is dead API. Each is a control the design never drew:
    changeable. No control in the design.
 3. `reports/export/` serves CSV, Excel and PDF. The design offers CSV only.
 4. `decision_note` on approve and reject. The design's reject toast says "your
-   note is kept", but there is no input for it.
+   note is kept", but there is no input for it. **Ruled 12 October 2026:** an
+   optional note on both.
 5. `arrived_at` on a correction to Late is **required** by the backend. The
    design's correction drawer has no time field.
 6. `classes_without_branch` on the hub: classes at a school with several
@@ -259,6 +260,18 @@ The test submitted JSS2 B (lagoon-view, 12 October 2026).
   suspended / not on roll), absences with reason and notice state, lesson
   absences, history mixing same-day changes and corrections.
 - Hub absent rows and the chronic list link here.
+
+**Built 12 October 2026.** Two backend changes came with it, each committed
+on its own: every day on the student tab now carries `class_id`, so a day
+opens the register of the class the pupil was in that day (a pupil who moved
+class mid-term would otherwise have every day linked to their new class); and
+"corrections waiting on you" (the Today count, its preview and the new
+`?awaiting=me` list filter behind the sidebar badge) leaves out the reader's
+own requests, which only another administrator may decide. Driven against the
+seeded backend: rejecting with a note (the note shows in the queue and on the
+student's history), requesting a correction from a register opened from the
+student's day grid, the "yours: another administrator decides" state, and both
+screens at 390px.
 
 ### Phase 4: settings and reports
 

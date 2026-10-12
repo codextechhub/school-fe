@@ -94,6 +94,8 @@ export function NavMain({
       title: string;
       url: string;
       isActive: boolean;
+      /** The same live count, on the one screen inside a group where the work waits. */
+      badge?: number;
     }[];
   }[];
   groupTitle?: string;
@@ -190,6 +192,7 @@ export function NavMain({
                           )}
                         >
                           {subItem.title}
+                          <NavCount count={subItem.badge} />
                         </Link>
                       </DropdownMenuItem>
                     ))}
@@ -237,7 +240,10 @@ export function NavMain({
                             isActive={subItem.isActive}
                             className="text-xs"
                           >
-                            <span>{subItem.title}</span>
+                            <span className="flex w-full items-center gap-2">
+                              {subItem.title}
+                              <NavCount count={subItem.badge} />
+                            </span>
                           </SidebarMenuSubButton>
                         </Link>
                       </SidebarMenuSubItem>
@@ -250,5 +256,15 @@ export function NavMain({
         })}
       </SidebarMenu>
     </SidebarGroup>
+  );
+}
+
+/** A sub-item's live count, drawn only when there is work waiting. */
+function NavCount({ count }: { count?: number }) {
+  if (count == null || count <= 0) return null;
+  return (
+    <span className="ml-auto rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
+      {count > 99 ? "99+" : count}
+    </span>
   );
 }

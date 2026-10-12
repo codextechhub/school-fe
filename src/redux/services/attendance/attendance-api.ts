@@ -1,15 +1,18 @@
 import { baseApi } from "../base-api";
-import type { Envelope } from "../onboarding/onboarding-types";
+import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import { dayParams } from "./attendance-params";
 import type {
   AdminHub,
   CorrectionCreate,
+  CorrectionDecision,
+  CorrectionListArgs,
   CorrectionRow,
   DayArgs,
   MarkWrite,
   ReasonCode,
   Register,
   RegisterKey,
+  StudentAttendance,
   TeacherHub,
 } from "./attendance-types";
 
@@ -86,7 +89,7 @@ export const attendanceApi = baseApi.injectEndpoints({
         body,
       }),
       onQueryStarted: putRegister,
-      invalidatesTags: ["AttendanceDay"],
+      invalidatesTags: ["AttendanceDay", "AttendanceStudent"],
     }),
 
     /** Mark every unmarked, unlocked row Present. Submits nothing. */
@@ -96,7 +99,7 @@ export const attendanceApi = baseApi.injectEndpoints({
         method: "POST",
       }),
       onQueryStarted: putRegister,
-      invalidatesTags: ["AttendanceDay"],
+      invalidatesTags: ["AttendanceDay", "AttendanceStudent"],
     }),
 
     /** Submit the register. Guardian notices go out from the server as it lands. */
@@ -106,7 +109,7 @@ export const attendanceApi = baseApi.injectEndpoints({
         method: "POST",
       }),
       onQueryStarted: putRegister,
-      invalidatesTags: ["AttendanceDay"],
+      invalidatesTags: ["AttendanceDay", "AttendanceStudent"],
     }),
 
     /**
@@ -133,7 +136,58 @@ export const attendanceApi = baseApi.injectEndpoints({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["AttendanceDay"],
+      invalidatesTags: ["AttendanceDay", "AttendanceCorrections"],
+    }),
+
+    // ── Corrections ───────────────────────────────────────────────────────
+
+    /**
+     * Waiting or decided corrections, newest first. A decider reads every
+     * correction in their branches; a reader who may only ask reads their own.
+     */
+    getCorrections: builder.query<PaginatedEnvelope<CorrectionRow>, CorrectionListArgs>({
+      query: ({ status, branch, page, awaitingMe }) => ({
+        url: `/attendance/corrections/`,
+        method: "GET",
+        params: {
+          status,
+          ...(awaitingMe ? { awaiting: "me" } : {}),
+          ...dayParams({ branch }),
+          ...(page && page > 1 ? { page } : {}),
+        },
+      }),
+      providesTags: ["AttendanceCorrections"],
+    }),
+
+    /**
+     * Approve or reject. Approval changes the mark, so every register, hub and
+     * student tab that may show it is refetched; a rejection changes only the
+     * queue and the student's history, but the two are not told apart here.
+     */
+    decideCorrection: builder.mutation<Envelope<CorrectionRow>, CorrectionDecision>({
+      query: ({ id, approve, decision_note }) => ({
+        url: `/attendance/corrections/${id}/${approve ? "approve" : "reject"}/`,
+        method: "POST",
+        body: decision_note ? { decision_note } : {},
+      }),
+      invalidatesTags: [
+        "AttendanceCorrections",
+        "AttendanceDay",
+        "AttendanceRegister",
+        "AttendanceStudent",
+      ],
+    }),
+
+    // ── A student's Attendance tab ─────────────────────────────────────────
+
+    /** One term of a student's attendance; no term means the current one. */
+    getStudentAttendance: builder.query<Envelope<StudentAttendance>, { studentId: number; term?: number }>({
+      query: ({ studentId, term }) => ({
+        url: `/attendance/students/${studentId}/`,
+        method: "GET",
+        params: term ? { term } : {},
+      }),
+      providesTags: ["AttendanceStudent"],
     }),
   }),
 });
@@ -169,4 +223,7 @@ export const {
   useSubmitRegisterMutation,
   useGetReasonCodesQuery,
   useRequestCorrectionMutation,
+  useGetCorrectionsQuery,
+  useDecideCorrectionMutation,
+  useGetStudentAttendanceQuery,
 } = attendanceApi;
