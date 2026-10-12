@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useFieldAccess } from "@/components/finance-ui";
@@ -35,6 +37,9 @@ export function RegisterRowItem({
   row,
   mode,
   marks,
+  offered = ["P", "L", "A", "E"],
+  fieldResource = FIELD_RESOURCE.ATTENDANCE_REGISTER,
+  aside,
   busy,
   onMark,
   onRequestCorrection,
@@ -43,11 +48,17 @@ export function RegisterRowItem({
   mode: RowMode;
   /** The marks this reader may record here, after Field Access. */
   marks: AttendanceMark[];
+  /** The buttons the register has at all: a lesson register has no Excused. */
+  offered?: AttendanceMark[];
+  /** The Field Access resource the row's fields belong to. */
+  fieldResource?: string;
+  /** A line under the name, such as the morning mark beside a lesson. */
+  aside?: ReactNode;
   busy: boolean;
   onMark: (mark: AttendanceMark) => void;
-  onRequestCorrection: () => void;
+  onRequestCorrection?: () => void;
 }) {
-  const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
+  const access = useFieldAccess(fieldResource);
   const { formatTime } = useSchoolDisplay();
 
   const details = [
@@ -63,6 +74,7 @@ export function RegisterRowItem({
         <p className="truncate font-medium text-black-01">{row.name}</p>
         {row.student_number && <p className="text-xs text-gray-05">{row.student_number}</p>}
         {details && <p className="mt-0.5 text-xs text-gray-06">{details}</p>}
+        {aside}
       </div>
       <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:justify-end">
         {row.locked ? (
@@ -71,7 +83,7 @@ export function RegisterRowItem({
             <span className="text-xs text-gray-05">Kept out of attendance</span>
           </>
         ) : mode === "mark" ? (
-          (Object.keys(MARKS) as AttendanceMark[]).map((mark) => (
+          offered.map((mark) => (
             <button
               key={mark}
               type="button"
@@ -98,7 +110,7 @@ export function RegisterRowItem({
                   : ""}
               </Badge>
             )}
-            {mode === "correct" && row.mark && (
+            {mode === "correct" && row.mark && onRequestCorrection && (
               <Button variant="outline" size="sm" onClick={onRequestCorrection}>
                 Request correction
               </Button>

@@ -308,6 +308,20 @@ from the export address the menu builds.
   `TIMETABLE_NOT_PUBLISHED`, `LESSON_MARKING_OFF`.
 - Teacher hub lesson cards open it.
 
+**Built 12 October 2026.** The lesson list (`/attendance/lessons`) shows only
+to readers who take any class's register, and its sidebar door recedes at a
+school where no level marks lessons, as the design asks of Sunrise. The lesson
+register (`/attendance/lessons/:slotId?date=`) reuses the class register's row
+and Late drawer with the lesson's own Field Access resource. The backend's
+search places gained `attendance.lessons`. Found while driving it: every
+submission and notice time was printed as a bare time, so a register
+submitted on a later day ("Marked 8:42 am" under Friday, submitted Monday)
+read as taken on time; `timeOnDay` now adds the date whenever the day differs,
+on every attendance screen. Driven against the seeded backend: the list on a
+past day and today, a final lesson with its morning marks, today's open lesson
+in marking mode with its Late drawer (not saved, to keep the seeded unmarked
+lesson), and both screens at 390px.
+
 ### Phase 6: the staff register
 
 - `/attendance/staff`: a group per branch, the locked "No home branch" group for

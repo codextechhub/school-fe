@@ -60,7 +60,10 @@ import { LensRail } from "./layout/lens-pills";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { SchoolMark } from "./school-mark";
 import { deriveSidebarWorkCounts } from "./sidebar-work-counts";
-import { useGetCorrectionsQuery } from "@/redux/services/attendance/attendance-api";
+import {
+  useGetAttendanceSettingsQuery,
+  useGetCorrectionsQuery,
+} from "@/redux/services/attendance/attendance-api";
 import { openSettingsSections } from "@/pages/protected/settings/sections";
 
 // A nav item may declare a permission (single code or a list). When absent the
@@ -193,6 +196,12 @@ export function AppSidebar({
         !hasCapability("attendance"),
     },
   );
+  // Whether any level marks its lessons, for the Lesson registers door. Read
+  // only by readers who would be offered it.
+  const { data: attendanceSettings } = useGetAttendanceSettingsQuery(undefined, {
+    skip: onboarding || !hasPermission(P.TAKE_ANY_REGISTER) || !hasCapability("attendance"),
+  });
+  const marksLessons = (attendanceSettings?.data.lesson_marking_levels.length ?? 0) > 0;
   const waiting = deriveSidebarWorkCounts({
     applicants: summary?.data?.applicants,
     unassignedStudents: summary?.data?.unassigned,
@@ -730,8 +739,8 @@ export function AppSidebar({
         ],
       },
       {
-        // The daily registers. Lesson registers and the staff register join
-        // as sub-items in the phases that build them.
+        // The daily registers. The staff register joins as a sub-item in the
+        // phase that builds it.
         title: "Attendance",
         capability: "attendance",
         url: "#",
@@ -760,6 +769,14 @@ export function AppSidebar({
             url: routesPath.PROTECTED.ATTENDANCE.CORRECTIONS,
             isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.CORRECTIONS),
             badge: waiting.attendanceCorrections,
+          }] : []),
+          // Only where a level marks its lessons: a school that marks none
+          // has no lesson registers, and the door recedes rather than opening
+          // onto a page that says so.
+          ...(hasPermission(P.TAKE_ANY_REGISTER) && marksLessons ? [{
+            title: "Lesson registers",
+            url: routesPath.PROTECTED.ATTENDANCE.LESSONS,
+            isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.LESSONS),
           }] : []),
           ...(hasPermission(P.VIEW_ATTENDANCE_REPORTS) ? [{
             title: "Reports",

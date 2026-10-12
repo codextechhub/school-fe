@@ -26,6 +26,7 @@ import { PersonAvatar } from "@/pages/protected/students/person-avatar";
 
 import { ClosedDayNotice } from "../components/closed-day-notice";
 import { MARKS, markLabel, noticeText } from "../marks";
+import { timeOnDay } from "../time-on-day";
 
 /**
  * The administrator's view of one day across every class in their branches.
@@ -67,8 +68,8 @@ export function AdminHub({ hub, isToday }: { hub: AdminHubData; isToday: boolean
           branchDimension={hub.branch_dimension}
         />
       )}
-      {missed.length > 0 && <MissedLessonPanel rows={missed} />}
-      <AbsentPanel rows={hub.absent} isToday={isToday} dateLabel={hub.date_label} />
+      {missed.length > 0 && <MissedLessonPanel rows={missed} date={hub.date} />}
+      <AbsentPanel rows={hub.absent} isToday={isToday} date={hub.date} dateLabel={hub.date_label} />
       {hub.pending_corrections_preview && (
         <CorrectionPreview correction={hub.pending_corrections_preview} />
       )}
@@ -225,8 +226,8 @@ function RemindCell({ row, busy, onRemind }: { row: NotTakenRow; busy: boolean; 
 }
 
 /** Children in school in the morning and absent from a lesson. Both marks stand. */
-function MissedLessonPanel({ rows }: { rows: MissedLessonRow[] }) {
-  const { formatInstantTime } = useSchoolDisplay();
+function MissedLessonPanel({ rows, date }: { rows: MissedLessonRow[]; date: string }) {
+  const fmt = useSchoolDisplay();
   return (
     <Panel as="section" className="space-y-4 border-amber-200 bg-amber-50/40 p-4 sm:p-5">
       <SectionHeading
@@ -251,7 +252,7 @@ function MissedLessonPanel({ rows }: { rows: MissedLessonRow[] }) {
               )}
               <MiniMark
                 title={`${row.period_label} · ${row.subject}`}
-                text={`Absent · ${formatInstantTime(row.lesson_submitted_at)}`}
+                text={`Absent · ${timeOnDay(fmt, row.lesson_submitted_at, date)}`}
                 mark="A"
               />
             </div>
@@ -277,15 +278,17 @@ function MiniMark({ title, text, mark }: { title: string; text: string; mark: ke
 function AbsentPanel({
   rows,
   isToday,
+  date,
   dateLabel,
 }: {
   rows: HubAbsentRow[];
   isToday: boolean;
+  date: string;
   dateLabel: string;
 }) {
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
   const { hasPermission } = usePermissions();
-  const { formatInstantTime } = useSchoolDisplay();
+  const fmt = useSchoolDisplay();
   const canOpenStudent = hasPermission(P.BROWSE_STUDENTS);
 
   const showMark = !access.isHidden("mark");
@@ -314,7 +317,7 @@ function AbsentPanel({
             const notice = noticeText(
               row.mark,
               row.notice_state,
-              row.notice_sent_at ? formatInstantTime(row.notice_sent_at) : null,
+              row.notice_sent_at ? timeOnDay(fmt, row.notice_sent_at, date) : null,
             );
             const reason = [row.reason_label, row.note].filter(Boolean).join(" · ");
             return {

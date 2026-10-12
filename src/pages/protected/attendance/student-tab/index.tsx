@@ -22,6 +22,7 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 
 import { ChoiceChips } from "../components/choice-chips";
 import { MARKS, markLabel, noticeText } from "../marks";
+import { timeOnDay } from "../time-on-day";
 import { termGrid } from "./term-grid";
 
 /**
@@ -249,7 +250,8 @@ function DayGrid({ days }: { days: StudentDay[] }) {
 /** Absent and excused days, newest first, with what the guardian was told. */
 function Absences({ body }: { body: StudentAttendance }) {
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
-  const { formatDay, formatInstantTime } = useSchoolDisplay();
+  const fmt = useSchoolDisplay();
+  const { formatDay } = fmt;
   const lessons = body.lesson_absences ?? [];
 
   return (
@@ -263,7 +265,7 @@ function Absences({ body }: { body: StudentAttendance }) {
             const notice = noticeText(
               absence.mark,
               absence.notice_state,
-              absence.notice_sent_at ? formatInstantTime(absence.notice_sent_at) : null,
+              absence.notice_sent_at ? timeOnDay(fmt, absence.notice_sent_at, absence.date) : null,
             );
             const reason = [
               !access.isHidden("reason_code") ? absence.reason_label : null,

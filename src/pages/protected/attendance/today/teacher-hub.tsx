@@ -16,6 +16,7 @@ import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 
 import { ClosedDayNotice } from "../components/closed-day-notice";
+import { timeOnDay } from "../time-on-day";
 
 /**
  * A teacher's own registers for one day: the class they lead, and the lessons
@@ -49,7 +50,7 @@ export function TeacherHub({ hub }: { hub: TeacherHubData }) {
           <ClassCard key={card.class_id} card={card} date={hub.date} />
         ))}
         {lessons.map((card) => (
-          <LessonCard key={card.slot_id} card={card} />
+          <LessonCard key={card.slot_id} card={card} date={hub.date} />
         ))}
       </ul>
       {!hub.lesson_marking_on && hub.classes.length > 0 && (
@@ -71,11 +72,12 @@ const STATUS_TEXT: Record<RegisterStatus, { text: string; variant: "active" | "p
 
 function ClassCard({ card, date }: { card: TeacherClassCard; date: string }) {
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
-  const { formatInstantTime, today } = useSchoolDisplay();
+  const fmt = useSchoolDisplay();
+  const { today } = fmt;
   const status = !access.isHidden("status") ? card.status : undefined;
   const submitted =
     card.submitted_at && !access.isHidden("taken_by")
-      ? `Submitted ${formatInstantTime(card.submitted_at)}${card.submitted_by_name ? ` by ${card.submitted_by_name}` : ""}`
+      ? `Submitted ${timeOnDay(fmt, card.submitted_at, date)}${card.submitted_by_name ? ` by ${card.submitted_by_name}` : ""}`
       : null;
   const size = card.student_count !== undefined ? `${card.student_count} students` : null;
   return (
@@ -89,19 +91,22 @@ function ClassCard({ card, date }: { card: TeacherClassCard; date: string }) {
   );
 }
 
-function LessonCard({ card }: { card: TeacherLessonCard }) {
+function LessonCard({ card, date }: { card: TeacherLessonCard; date: string }) {
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_LESSON);
-  const { formatInstantTime, formatTime } = useSchoolDisplay();
+  const fmt = useSchoolDisplay();
+  const { formatTime, today } = fmt;
   const status = !access.isHidden("status") ? card.status : undefined;
   const marked =
     card.submitted_at && !access.isHidden("taken_by")
-      ? `marked ${formatInstantTime(card.submitted_at)}`
+      ? `marked ${timeOnDay(fmt, card.submitted_at, date)}`
       : null;
   return (
     <CardRow
       title={`${card.period_label} · ${card.subject}`}
       meta={[card.class_name, formatTime(card.start_time), marked].filter(Boolean).join(" · ")}
       status={status}
+      to={routesPath.PROTECTED.ATTENDANCE.LESSON_ID(card.slot_id, date === today() ? undefined : date)}
+      cta={status === "SUBMITTED" ? "Open" : "Mark lesson"}
     />
   );
 }

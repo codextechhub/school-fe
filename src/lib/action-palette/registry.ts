@@ -454,6 +454,16 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ATTENDANCE.REPORTS },
   },
   {
+    id: "view-lesson-registers",
+    label: "View lesson registers",
+    aliases: ["lesson attendance", "mark a lesson", "period register", "missed a lesson", "subject attendance"],
+    section: "Academics",
+    group: "Attendance",
+    kind: "view",
+    gate: { perm: P.TAKE_ANY_REGISTER },
+    run: { to: R.ATTENDANCE.LESSONS },
+  },
+  {
     id: "view-classes",
     label: "View classes",
     aliases: ["class list", "class rosters"],

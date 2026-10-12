@@ -65,28 +65,63 @@ type DrawerProps = {
   onClose: () => void;
 };
 
+/** Late on a class register, saved as the class register's mark. */
+function LateDrawer({ row, register, subtitle, onClose }: DrawerProps) {
+  const [save] = useSetMarkMutation();
+  return (
+    <LateArrivalDrawer
+      name={row.name}
+      subtitle={subtitle}
+      arrivedAt={row.mark === "L" ? row.arrived_at : null}
+      note={row.note}
+      fieldResource={FIELD_RESOURCE.ATTENDANCE_REGISTER}
+      onSave={async (body) =>
+        !("error" in (await save({ ...register, studentId: row.student_id, body: { mark: "L", ...body } })))
+      }
+      onClose={onClose}
+    />
+  );
+}
+
 /**
  * Late: the arrival time, starting at the time the drawer opened.
  *
  * A teacher marking a child as they walk in saves it as it stands; one
- * marking later types the time the child actually arrived.
+ * marking later types the time the child actually arrived. Shared by the
+ * class register and a lesson register, which save it each to their own
+ * register (`onSave`, true when it was accepted) and read their own Field
+ * Access resource for the note.
  */
-function LateDrawer({ row, register, subtitle, onClose }: DrawerProps) {
-  const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
+export function LateArrivalDrawer({
+  name,
+  subtitle,
+  arrivedAt,
+  note: initialNote,
+  fieldResource,
+  onSave,
+  onClose,
+}: {
+  name: string;
+  subtitle: string;
+  arrivedAt?: string | null;
+  note?: string;
+  fieldResource: string;
+  onSave: (body: { arrived_at: string; note?: string }) => Promise<boolean>;
+  onClose: () => void;
+}) {
+  const access = useFieldAccess(fieldResource);
   const { now, formatTime } = useSchoolDisplay();
-  const [time, setTime] = useState(() => (row.mark === "L" && row.arrived_at) || now().time);
-  const [note, setNote] = useState(row.note ?? "");
-  const [save, { isLoading }] = useSetMarkMutation();
+  const [time, setTime] = useState(() => arrivedAt || now().time);
+  const [note, setNote] = useState(initialNote ?? "");
+  const [saving, setSaving] = useState(false);
   const noteWritable = !access.isHidden("note") && !access.isReadOnly("note");
 
   const submit = async () => {
-    const result = await save({
-      ...register,
-      studentId: row.student_id,
-      body: { mark: "L", arrived_at: time, ...(noteWritable ? { note: note.trim() } : {}) },
-    });
-    if ("error" in result) return;
-    toast.success(`${row.name} marked Late`, { description: `Arrived ${formatTime(time)}.` });
+    setSaving(true);
+    const saved = await onSave({ arrived_at: time, ...(noteWritable ? { note: note.trim() } : {}) });
+    setSaving(false);
+    if (!saved) return;
+    toast.success(`${name} marked Late`, { description: `Arrived ${formatTime(time)}.` });
     onClose();
   };
 
@@ -99,7 +134,7 @@ function LateDrawer({ row, register, subtitle, onClose }: DrawerProps) {
       saveLabel="Mark late"
       onSave={() => void submit()}
       canSave={!!time}
-      saving={isLoading}
+      saving={saving}
     >
       <Field label="Arrival time" required>
         <TimeInput value={time} onChange={setTime} aria-label="Arrival time" />

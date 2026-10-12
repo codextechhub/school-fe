@@ -10,6 +10,10 @@ import type {
   CorrectionListArgs,
   CorrectionRow,
   DayArgs,
+  LessonKey,
+  LessonList,
+  LessonMarkWrite,
+  LessonRegister,
   MarkWrite,
   ReasonCode,
   ReasonCodeWrite,
@@ -219,6 +223,45 @@ export const attendanceApi = baseApi.injectEndpoints({
       invalidatesTags: ["AttendanceReasonCodes"],
     }),
 
+    // ── Lesson registers ───────────────────────────────────────────────────
+
+    /** The day's lessons in levels that mark them, for a reader who takes any class. */
+    getLessons: builder.query<Envelope<LessonList>, DayArgs>({
+      query: (args) => ({ url: `/attendance/lessons/`, method: "GET", params: dayParams(args) }),
+      providesTags: ["AttendanceDay"],
+    }),
+
+    getLessonRegister: builder.query<Envelope<LessonRegister>, LessonKey>({
+      query: ({ slotId, date }) => ({ url: `/attendance/lessons/${slotId}/${date}/`, method: "GET" }),
+      providesTags: (_result, _error, { slotId, date }) => [
+        { type: "AttendanceRegister", id: `lesson-${slotId}@${date}` },
+      ],
+    }),
+
+    /** Record one lesson row. Its answer is written into the cached lesson register. */
+    setLessonMark: builder.mutation<Envelope<LessonRegister>, LessonKey & { studentId: number; body: LessonMarkWrite }>({
+      query: ({ slotId, date, studentId, body }) => ({
+        url: `/attendance/lessons/${slotId}/${date}/marks/${studentId}/`,
+        method: "PUT",
+        body,
+      }),
+      onQueryStarted: putLessonRegister,
+      invalidatesTags: ["AttendanceDay", "AttendanceStudent", "AttendanceReports"],
+    }),
+
+    fillLessonPresent: builder.mutation<Envelope<LessonRegister & { filled: number }>, LessonKey>({
+      query: ({ slotId, date }) => ({ url: `/attendance/lessons/${slotId}/${date}/fill-present/`, method: "POST" }),
+      onQueryStarted: putLessonRegister,
+      invalidatesTags: ["AttendanceDay"],
+    }),
+
+    /** Submit a lesson register. It sends nothing to anyone. */
+    submitLessonRegister: builder.mutation<Envelope<LessonRegister>, LessonKey>({
+      query: ({ slotId, date }) => ({ url: `/attendance/lessons/${slotId}/${date}/submit/`, method: "POST" }),
+      onQueryStarted: putLessonRegister,
+      invalidatesTags: ["AttendanceDay", "AttendanceStudent", "AttendanceReports"],
+    }),
+
     // ── Reports ────────────────────────────────────────────────────────────
 
     /** One term's attendance across the reader's branches; no term means the current one. */
@@ -266,6 +309,25 @@ async function putRegister(
   }
 }
 
+/** {@link putRegister} for a lesson register. */
+async function putLessonRegister(
+  { slotId, date }: LessonKey,
+  {
+    dispatch,
+    queryFulfilled,
+  }: {
+    dispatch: (action: unknown) => unknown;
+    queryFulfilled: Promise<{ data: Envelope<LessonRegister> }>;
+  },
+) {
+  try {
+    const { data } = await queryFulfilled;
+    dispatch(attendanceApi.util.upsertQueryData("getLessonRegister", { slotId, date }, data));
+  } catch {
+    // A refused write changes nothing; the base query has already said why.
+  }
+}
+
 export const {
   useGetAttendanceTodayQuery,
   useGetMyAttendanceTodayQuery,
@@ -284,4 +346,9 @@ export const {
   useAddReasonCodeMutation,
   useSetReasonCodeRetiredMutation,
   useGetAttendanceReportQuery,
+  useGetLessonsQuery,
+  useGetLessonRegisterQuery,
+  useSetLessonMarkMutation,
+  useFillLessonPresentMutation,
+  useSubmitLessonRegisterMutation,
 } = attendanceApi;

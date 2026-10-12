@@ -336,6 +336,12 @@ export const routesPath = {
         `/attendance/registers/${classId}${date ? `?date=${date}` : ""}`,
       CORRECTIONS: "/attendance/corrections",
       REPORTS: "/attendance/reports",
+      /** The day's lessons in levels that mark them. */
+      LESSONS: "/attendance/lessons",
+      LESSON: "/attendance/lessons/:slotId",
+      /** One lesson's register; the day rides in `?date=`, omitted for today. */
+      LESSON_ID: (slotId: number | string, date?: string) =>
+        `/attendance/lessons/${slotId}${date ? `?date=${date}` : ""}`,
     },
   },
 };

@@ -482,3 +482,83 @@ export interface Report {
 /** The three tables that download, and the three file types each comes in. */
 export type ReportTable = "by_class" | "chronic" | "not_taken";
 export type ReportFileType = "csv" | "xlsx" | "pdf";
+
+// ── Lesson registers ───────────────────────────────────────────────────────
+
+/** Which lesson register: a timetable slot and a day. */
+export interface LessonKey {
+  slotId: number;
+  date: string;
+}
+
+export interface LessonListRow {
+  slot_id: number;
+  period_label: string;
+  start_time: string;
+  end_time: string;
+  school_class: { id: number; name: string };
+  branch: BranchRef | null;
+  subject: string;
+  teacher_name: string | null;
+  status?: RegisterStatus;
+  submitted_at?: string | null;
+  submitted_by_name?: string | null;
+}
+
+export interface LessonList {
+  date: string;
+  date_label: string;
+  closed: ClosedDay | null;
+  lesson_marking_on: boolean;
+  branch_dimension: boolean;
+  lessons: LessonListRow[];
+}
+
+/** A row of a lesson register: Present, Late or Absent, and the morning mark beside it. */
+export interface LessonRow {
+  student_id: number;
+  name: string;
+  student_number: string;
+  locked: boolean;
+  mark?: AttendanceMark | null;
+  arrived_at?: string | null;
+  note?: string;
+  /** The class register's mark that morning; null when that register was not submitted. */
+  morning_mark?: AttendanceMark | null;
+}
+
+export interface LessonRegister {
+  lesson: {
+    slot_id: number;
+    period_label: string;
+    start_time: string;
+    end_time: string;
+    subject: string;
+    teacher_name: string | null;
+  };
+  school_class: { id: number; name: string; branch: BranchRef | null };
+  date: string;
+  date_label: string;
+  closed: ClosedDay | null;
+  status?: RegisterStatus;
+  roster_empty: boolean;
+  counts?: Omit<RegisterCounts, "excused">;
+  taken_by?: { submitted_by: string | null; submitted_at: string } | null;
+  edit_window_open: boolean | null;
+  rows: LessonRow[];
+  history: {
+    student_id: number;
+    student_name: string;
+    from_mark?: AttendanceMark | null;
+    to_mark?: AttendanceMark;
+    changed_by_name: string;
+    changed_at: string;
+    note?: string;
+  }[];
+}
+
+export interface LessonMarkWrite {
+  mark: Exclude<AttendanceMark, "E">;
+  arrived_at?: string | null;
+  note?: string;
+}

@@ -36,6 +36,7 @@ import { useAttendanceDay } from "../use-attendance-day";
 import { MarkDrawers, type MarkDrawer } from "./mark-drawers";
 import { RegisterRowItem, type RowMode } from "./register-rows";
 import { submitBarNote, submitConfirmText, submittedText } from "./submit-text";
+import { timeOnDay } from "../time-on-day";
 
 /**
  * One class's morning register for one day.
@@ -256,17 +257,18 @@ function RegisterHeader({
   today: string;
   setDate: (next: string) => void;
 }) {
-  const { formatDay, formatInstantTime } = useSchoolDisplay();
+  const fmt = useSchoolDisplay();
+  const { formatDay } = fmt;
   const chip = register.status ? STATUS_CHIP[register.status] : null;
   const takenBy = register.taken_by;
-  const time = takenBy ? formatInstantTime(takenBy.submitted_at) : "";
+  const time = takenBy ? timeOnDay(fmt, takenBy.submitted_at, date) : "";
 
   let takenLine: string | null = null;
   if (takenBy?.on_behalf_of) {
     const leave = takenBy.on_leave
       ? `, who is on ${takenBy.on_leave.leave_type_label.toLowerCase()} until ${formatDay(takenBy.on_leave.ends_on)}`
       : "";
-    takenLine = `Taken by ${takenBy.submitted_by} at ${time}, on behalf of ${takenBy.on_behalf_of}${leave}.`;
+    takenLine = `Taken by ${takenBy.submitted_by}, ${time}, on behalf of ${takenBy.on_behalf_of}${leave}.`;
   } else if (takenBy) {
     takenLine = `Submitted ${time} by ${takenBy.submitted_by}.`;
   }
@@ -350,7 +352,7 @@ function History({ register }: { register: Register }) {
  * Pinned to the foot of the screen until the register is submitted, so the
  * button is in reach on a phone however long the class list is.
  */
-function SubmitBar({
+export function SubmitBar({
   unmarked,
   note,
   busy,

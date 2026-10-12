@@ -22,6 +22,7 @@ import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined
 
 import { DayPicker } from "../components/day-picker";
 import { useAttendanceDay } from "../use-attendance-day";
+import { timeOnDay } from "../time-on-day";
 
 /**
  * Every class's register for one day.
@@ -121,7 +122,7 @@ export default function ClassRegisters() {
 /** Where one class's register stands on the day, as the register itself says. */
 function RegisterState({ classId, date }: { classId: number; date: string }) {
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
-  const { formatInstantTime } = useSchoolDisplay();
+  const fmt = useSchoolDisplay();
   const { data, isLoading, isError } = useGetRegisterQuery({ classId, date });
   const register = data?.data;
 
@@ -135,7 +136,7 @@ function RegisterState({ classId, date }: { classId: number; date: string }) {
     case "SUBMITTED":
       return (
         <Badge variant="active" className="rounded-full">
-          Submitted{register.taken_by ? ` ${formatInstantTime(register.taken_by.submitted_at)}` : ""}
+          Submitted{register.taken_by ? ` ${timeOnDay(fmt, register.taken_by.submitted_at, date)}` : ""}
         </Badge>
       );
     case "READY":
