@@ -13,8 +13,21 @@ vi.mock("@/redux/services/staff/staff-api", () => ({
 }));
 
 vi.mock("@/pages/protected/students/person-avatar", () => ({
-  PersonAvatar: ({ name, photoUrl }: { name: string; photoUrl?: string }) => (
-    <span data-testid="avatar" data-name={name} data-photo={photoUrl ?? ""} />
+  PersonAvatar: ({
+    name,
+    photoUrl,
+    className,
+  }: {
+    name: string;
+    photoUrl?: string;
+    className?: string;
+  }) => (
+    <span
+      data-testid="avatar"
+      data-name={name}
+      data-photo={photoUrl ?? ""}
+      data-class={className ?? ""}
+    />
   ),
 }));
 
@@ -51,6 +64,15 @@ describe("HeaderAccountAvatar", () => {
     const avatar = container.querySelector("[data-testid='avatar']");
     expect(avatar?.getAttribute("data-name")).toBe("Ada Okoye");
     expect(avatar?.getAttribute("data-photo")).toBe("/media/staff/17/photo.jpg");
+  });
+
+  it("keeps the shared avatar outline in the header", async () => {
+    await act(async () => {
+      root.render(<HeaderAccountAvatar name="Ada Okoye" />);
+    });
+
+    const avatar = container.querySelector("[data-testid='avatar']");
+    expect(avatar?.getAttribute("data-class")).toBe("size-9");
   });
 
   it("keeps the initials fallback when the account has no staff record", async () => {

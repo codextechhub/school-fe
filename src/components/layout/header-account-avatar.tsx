@@ -24,7 +24,7 @@ export function HeaderAccountAvatar({ name }: { name: string }) {
     <PersonAvatar
       name={name}
       photoUrl={person.data?.data.photo_url ?? undefined}
-      className="size-9 ring-0"
+      className="size-9"
       textClassName="text-[13px]"
     />
   );
