@@ -441,6 +441,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ATTENDANCE.CORRECTIONS },
   },
   {
+    id: "view-attendance-reports",
+    label: "View attendance reports",
+    aliases: [
+      "attendance summary", "chronic absence", "attendance rate", "registers not taken",
+      "attendance by class", "export attendance", "attendance csv",
+    ],
+    section: "Academics",
+    group: "Attendance",
+    kind: "view",
+    gate: { perm: P.VIEW_ATTENDANCE_REPORTS },
+    run: { to: R.ATTENDANCE.REPORTS },
+  },
+  {
     id: "view-classes",
     label: "View classes",
     aliases: ["class list", "class rosters"],
@@ -932,6 +945,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: { any: SECTION_GATES.calendar.anyOf },
     run: { to: R.SETTINGS.CALENDAR },
+  },
+  {
+    id: "view-attendance-settings",
+    label: "View attendance settings",
+    aliases: [
+      "lesson marking", "guardian notices", "absence email", "chronic absence",
+      "attendance threshold", "reason codes", "excused reasons", "edit window",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.attendance.anyOf },
+    run: { to: R.SETTINGS.ATTENDANCE },
   },
   {
     id: "view-staff-settings",

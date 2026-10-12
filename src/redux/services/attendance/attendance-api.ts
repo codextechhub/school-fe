@@ -3,6 +3,8 @@ import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types
 import { dayParams } from "./attendance-params";
 import type {
   AdminHub,
+  AttendanceSettings,
+  AttendanceSettingsWrite,
   CorrectionCreate,
   CorrectionDecision,
   CorrectionListArgs,
@@ -10,8 +12,11 @@ import type {
   DayArgs,
   MarkWrite,
   ReasonCode,
+  ReasonCodeWrite,
   Register,
   RegisterKey,
+  Report,
+  ReportArgs,
   StudentAttendance,
   TeacherHub,
 } from "./attendance-types";
@@ -89,7 +94,7 @@ export const attendanceApi = baseApi.injectEndpoints({
         body,
       }),
       onQueryStarted: putRegister,
-      invalidatesTags: ["AttendanceDay", "AttendanceStudent"],
+      invalidatesTags: ["AttendanceDay", "AttendanceStudent", "AttendanceReports"],
     }),
 
     /** Mark every unmarked, unlocked row Present. Submits nothing. */
@@ -99,7 +104,7 @@ export const attendanceApi = baseApi.injectEndpoints({
         method: "POST",
       }),
       onQueryStarted: putRegister,
-      invalidatesTags: ["AttendanceDay", "AttendanceStudent"],
+      invalidatesTags: ["AttendanceDay", "AttendanceStudent", "AttendanceReports"],
     }),
 
     /** Submit the register. Guardian notices go out from the server as it lands. */
@@ -109,7 +114,7 @@ export const attendanceApi = baseApi.injectEndpoints({
         method: "POST",
       }),
       onQueryStarted: putRegister,
-      invalidatesTags: ["AttendanceDay", "AttendanceStudent"],
+      invalidatesTags: ["AttendanceDay", "AttendanceStudent", "AttendanceReports"],
     }),
 
     /**
@@ -175,7 +180,55 @@ export const attendanceApi = baseApi.injectEndpoints({
         "AttendanceDay",
         "AttendanceRegister",
         "AttendanceStudent",
+        "AttendanceReports",
       ],
+    }),
+
+    // ── Settings and reasons ───────────────────────────────────────────────
+
+    /** The school's attendance settings, with the active year's levels. */
+    getAttendanceSettings: builder.query<Envelope<AttendanceSettings>, void>({
+      query: () => ({ url: `/attendance/settings/`, method: "GET" }),
+      providesTags: ["AttendanceSettings"],
+    }),
+
+    /**
+     * Change any of the four settings. Lesson marking and the threshold move
+     * what the hubs and reports show, so those are refetched too.
+     */
+    updateAttendanceSettings: builder.mutation<Envelope<AttendanceSettings>, AttendanceSettingsWrite>({
+      query: (body) => ({ url: `/attendance/settings/`, method: "PATCH", body }),
+      invalidatesTags: ["AttendanceSettings", "AttendanceDay", "AttendanceReports"],
+    }),
+
+    addReasonCode: builder.mutation<Envelope<ReasonCode>, ReasonCodeWrite>({
+      query: (body) => ({ url: `/attendance/reason-codes/`, method: "POST", body }),
+      invalidatesTags: ["AttendanceReasonCodes"],
+    }),
+
+    /**
+     * Retire a reason, or bring one back. A retired reason stays on the marks
+     * that used it and is offered on no new one; the last live reason cannot
+     * be retired.
+     */
+    setReasonCodeRetired: builder.mutation<Envelope<ReasonCode>, { id: number; retired: boolean }>({
+      query: ({ id, retired }) => ({
+        url: `/attendance/reason-codes/${id}/${retired ? "retire" : "restore"}/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AttendanceReasonCodes"],
+    }),
+
+    // ── Reports ────────────────────────────────────────────────────────────
+
+    /** One term's attendance across the reader's branches; no term means the current one. */
+    getAttendanceReport: builder.query<Envelope<Report>, ReportArgs>({
+      query: ({ term, branch }) => ({
+        url: `/attendance/reports/`,
+        method: "GET",
+        params: { ...dayParams({ branch }), ...(term ? { term } : {}) },
+      }),
+      providesTags: ["AttendanceReports"],
     }),
 
     // ── A student's Attendance tab ─────────────────────────────────────────
@@ -226,4 +279,9 @@ export const {
   useGetCorrectionsQuery,
   useDecideCorrectionMutation,
   useGetStudentAttendanceQuery,
+  useGetAttendanceSettingsQuery,
+  useUpdateAttendanceSettingsMutation,
+  useAddReasonCodeMutation,
+  useSetReasonCodeRetiredMutation,
+  useGetAttendanceReportQuery,
 } = attendanceApi;

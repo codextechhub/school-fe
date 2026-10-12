@@ -7,6 +7,7 @@ const AttendanceToday = lazy(() => import("@/pages/protected/attendance/today"))
 const ClassRegisters = lazy(() => import("@/pages/protected/attendance/registers"));
 const ClassRegister = lazy(() => import("@/pages/protected/attendance/register"));
 const AttendanceCorrections = lazy(() => import("@/pages/protected/attendance/corrections"));
+const AttendanceReports = lazy(() => import("@/pages/protected/attendance/reports"));
 
 const A = routesPath.PROTECTED.ATTENDANCE;
 
@@ -43,5 +44,12 @@ export const attendanceRoutes = [
     path: A.CORRECTIONS,
     Component: AttendanceCorrections,
     handle: { title: "Corrections", lens: true, lenses: "branch" } satisfies DashboardHandle,
+  },
+  {
+    // A term is chosen on the screen, from the terms the report knows, so
+    // only the branch lens applies.
+    path: A.REPORTS,
+    Component: AttendanceReports,
+    handle: { title: "Attendance reports", lens: true, lenses: "branch" } satisfies DashboardHandle,
   },
 ] as RouteObject[];

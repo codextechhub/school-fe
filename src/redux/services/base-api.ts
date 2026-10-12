@@ -648,6 +648,8 @@ export const baseApi = createApi({
     "AttendanceReasonCodes",
     "AttendanceCorrections",
     "AttendanceStudent",
+    "AttendanceSettings",
+    "AttendanceReports",
     "ImportTemplates",
     "ImportBatches",
     "Tickets",

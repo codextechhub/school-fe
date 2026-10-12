@@ -92,7 +92,8 @@ None is dead API. Each is a control the design never drew:
 1. `PATCH reason-codes/<id>/`: rename a code, set `requires_note` and
    `counts_as_authorised`. The design has no rename and no flags.
 2. `settings.edit_window_days` (0 to 14): how long a submitted register stays
-   changeable. No control in the design.
+   changeable. No control in the design. **Ruled 12 October 2026:** a setting beside the
+   threshold.
 3. `reports/export/` serves CSV, Excel and PDF. The design offers CSV only.
 4. `decision_note` on approve and reject. The design's reject toast says "your
    note is kept", but there is no input for it. **Ruled 12 October 2026:** an
@@ -118,15 +119,16 @@ None is dead API. Each is a control the design never drew:
    class list; each row opens that class's register.
 3. **"A student's record" sub-item** jumps to one hard-coded student. A record
    needs an id, so it cannot be a nav destination.
-4. **"Attendance settings" as a module screen.** This app keeps school-wide
-   settings in the Settings console, and the backend's search places already
-   label it as a settings group.
+4. **"Attendance settings". Ruled 12 October 2026:** a section of the Settings
+   console (Academics group, beside Calendar and timetables), linked from the
+   Attendance sidebar, rather than a screen of the module's own.
 5. **Arrival time. Ruled 12 October 2026:** a time field that starts at the
    current time, not the design's four fixed chips.
-6. **Threshold** as three pills (85, 90, 95). The backend takes 50 to 100.
-7. **"Add a code"** is a toast. Needs a small form; the backend takes a name and
-   the two flags.
-8. **Export "queued" toast.** The backend downloads straight away.
+6. **Threshold. Ruled 12 October 2026:** a number box, 50 to 100.
+7. **"Add a code". Ruled 12 October 2026:** a small drawer with the name and
+   "needs a note"; "counts as authorised" stays off screen until a screen uses it.
+8. **Export. Ruled 12 October 2026:** CSV, Excel and PDF from one menu, downloaded
+   straight away.
 9. **Missed-lesson card "Present · 8:05 am".** The morning mark is served, the
    8:05 time is not. Show the mark alone.
 10. **Staff note "Account locked after three failed sign-ins"**: not served,
@@ -282,6 +284,19 @@ screens at 390px.
 - Reports at `/attendance/reports`: term pills, range note, weekly trend,
   by class, by level, chronic, not taken, lessons missed (when sent), and the
   three downloads through `downloadAuthorisedFile`.
+
+**Built 12 October 2026.** Settings is a section of the Settings console
+(`/settings/attendance`, Academics group), opened on the key that saves it
+(`attendance.settings.update`) and the attendance plan, with a second door in
+the Attendance sidebar. Retire and restore act at once; the four rules save
+together. The design's sample guardian email is not drawn: the real email is a
+notification template this app does not hold, and a sample that drifted from it
+would mislead. Reports (`/attendance/reports`) draw the weekly trend as one
+series of bars scaled from a little under the lowest week, empty weeks as a
+grey dash, fitting a phone without scrolling; the not-taken list pages 15 at a
+time on screen. Driven against the seeded backend: a retire and restore round
+trip, the threshold refusing 40, every report section, and all three file types
+from the export address the menu builds.
 
 ### Phase 5: lesson registers
 

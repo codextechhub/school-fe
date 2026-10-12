@@ -162,6 +162,7 @@ export const routesPath = {
       ACADEMICS: "/settings/academics",
       DISPLAY: "/settings/display",
       CALENDAR: "/settings/calendar",
+      ATTENDANCE: "/settings/attendance",
       ADMISSION_NUMBERS: "/settings/admission-numbers",
       PAYROLL: "/settings/payroll",
       STAFF: "/settings/staff",
@@ -334,6 +335,7 @@ export const routesPath = {
       REGISTER_ID: (classId: number | string, date?: string) =>
         `/attendance/registers/${classId}${date ? `?date=${date}` : ""}`,
       CORRECTIONS: "/attendance/corrections",
+      REPORTS: "/attendance/reports",
     },
   },
 };

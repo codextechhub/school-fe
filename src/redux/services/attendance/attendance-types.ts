@@ -390,3 +390,95 @@ export interface StudentAttendance {
   lesson_absences?: StudentLessonAbsence[];
   history: StudentHistoryEntry[];
 }
+
+// ── Attendance settings ────────────────────────────────────────────────────
+
+/** One level of the active school year, and whether it marks every lesson. */
+export interface SettingsLevel {
+  code: string;
+  name: string;
+  program_id: number;
+  program_name: string;
+  lesson_marking: boolean;
+  /** Lesson marking has nothing to mark until a class at the level has a published timetable. */
+  has_published_timetable: boolean;
+}
+
+export interface AttendanceSettings {
+  guardian_notices: boolean;
+  /** A student below this rate, in percent, is on the chronic-absence list. */
+  chronic_threshold: number;
+  lesson_marking_levels: string[];
+  /** How many days after its date a submitted register can still be changed in place. 0 is the same day only. */
+  edit_window_days: number;
+  levels: SettingsLevel[];
+  scope_label: { school_name: string; session_name: string | null; term_name: string | null };
+}
+
+export type AttendanceSettingsWrite = Partial<
+  Pick<AttendanceSettings, "guardian_notices" | "chronic_threshold" | "lesson_marking_levels" | "edit_window_days">
+>;
+
+export interface ReasonCodeWrite {
+  name: string;
+  requires_note?: boolean;
+}
+
+// ── Reports ────────────────────────────────────────────────────────────────
+
+export interface ReportArgs {
+  term?: number;
+  branch?: number | "all";
+}
+
+export interface ReportClassCounts {
+  present: number;
+  late: number;
+  absent: number;
+  excused: number;
+  rate: number | null;
+  not_taken: number;
+  roster_size: number;
+}
+
+export interface Report {
+  term: TermRef | null;
+  terms: TermRef[];
+  range: { start: string | null; end: string | null; school_days?: number };
+  /** Absent with the register counts. A week with no register taken has a null rate. */
+  trend?: { week_start: string; label: string; rate: number | null }[];
+  by_class: {
+    class_id: number;
+    class_name: string;
+    level_name: string;
+    branch: BranchRef | null;
+    counts?: ReportClassCounts;
+  }[];
+  by_level?: {
+    level_name: string;
+    present: number;
+    late: number;
+    absent: number;
+    excused: number;
+    not_taken: number;
+    rate: number | null;
+  }[];
+  chronic?: { student: StudentRef; class_name: string | null; rate: number; absent: number; not_taken: number }[];
+  threshold: number;
+  /** Absent with the register status. */
+  not_taken?: {
+    date: string;
+    class_id: number;
+    class_name: string;
+    level_name: string;
+    class_teacher_name: string | null;
+    branch: BranchRef | null;
+  }[];
+  branch_dimension: boolean;
+  /** Present only where a class in scope marks lessons. */
+  lessons_missed?: { subject: string; class_name: string; teacher_name: string | null; missed: number; students: string[] }[];
+}
+
+/** The three tables that download, and the three file types each comes in. */
+export type ReportTable = "by_class" | "chronic" | "not_taken";
+export type ReportFileType = "csv" | "xlsx" | "pdf";

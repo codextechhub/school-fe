@@ -6,6 +6,7 @@ import {
   CalendarClock,
   Clock,
   CalendarRange,
+  ClipboardCheck,
   ClipboardList,
   GraduationCap,
   Hash,
@@ -53,6 +54,7 @@ import { DisplaySection } from "./sections/display-section";
 import { StaffProfilesSection } from "./sections/staff-profiles-section";
 import { StaffSection } from "./sections/staff-section";
 import { StaffNumbersSection } from "./sections/staff-numbers-section";
+import { AttendanceSection } from "./sections/attendance-section";
 
 const BASE = routesPath.PROTECTED.SETTINGS.INDEX;
 
@@ -85,6 +87,7 @@ const SECTION_META: Record<
   promotion: { title: "Promotion", description: "Arms, holds and full classes", icon: GraduationCap, group: "students" },
   academics: { title: "Academic structure", description: "The school year and arms", icon: CalendarRange, group: "academics" },
   calendar: { title: "Calendar and timetables", description: "Teaching days, periods, exams", icon: CalendarClock, group: "academics" },
+  attendance: { title: "Attendance", description: "Lessons, notices, reasons", icon: ClipboardCheck, group: "academics" },
   staff: { title: "Staff rules", description: "Starting role, leave, hiring", icon: Briefcase, group: "staff" },
   "staff-ids": { title: "Staff IDs", description: "The rule for staff numbers", icon: BadgeCheck, group: "staff" },
   "staff-profiles": { title: "Staff profiles", description: "Who sees what of a colleague", icon: UserRoundCog, group: "staff" },
@@ -103,6 +106,7 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   promotion: PromotionSection,
   academics: AcademicsSection,
   calendar: CalendarSection,
+  attendance: AttendanceSection,
   "admission-numbers": AdmissionNumbersSection,
   payroll: PayrollSection,
   staff: StaffSection,
@@ -211,6 +215,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   promotion: "Who moves up at the end of the year, whether a year group keeps its arms or is spread across classes, and what a full class does.",
   academics: "Whether your school says Term or Semester, the ones every new year starts with, and the arms offered for new classes.",
   calendar: "The days your school teaches, the day its week starts, which events close it, what a timetable needs to publish, and who may invigilate.",
+  attendance: "Which levels mark every lesson, whether guardians are emailed about an absence, the chronic-absence line, how long a register stays open, and your reasons for excusing an absence.",
   "admission-numbers": "Whether every child needs an admission number, and what a valid one looks like.",
   payroll: "Whether the whole school is paid in one run, or each branch runs its own.",
   staff: "The role new staff start with, the documents kept on file, what staff change themselves, hire approval, and leave allowances.",
