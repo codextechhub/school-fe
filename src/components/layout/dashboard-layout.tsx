@@ -319,9 +319,12 @@ export default function DashboardLayout() {
           <header className="relative flex h-15 shrink-0 items-center gap-3 px-3 lg:gap-4 lg:px-5 bg-white border border-l-0 border-white-02">
             {/* Left: the toggle, the back affordance and the page title. It
                 takes the slack so the controls stay pinned right, and stops
-                short of the centred search box on wide screens rather than
-                sliding under it. */}
-            <div className="inline-flex min-w-0 flex-1 items-center gap-2.5 lg:max-w-[calc(50%-15rem)]">
+                short of the centred search box rather than sliding under it:
+                half the header, less half the box (`min(38vw,430px)` in
+                AppSearch), less a gap. The box is centred only from `xl`,
+                because below it the header beside an open sidebar is too
+                narrow to hold a Back button and a title either side of it. */}
+            <div className="inline-flex min-w-0 flex-1 items-center gap-2.5 xl:max-w-[calc(50%-min(19vw,215px)-1rem)]">
               <SidebarTrigger className="size-7 rounded-full border border-white-02 text-gray-06 hover:text-primary" />
               {back !== undefined && (
                 <>

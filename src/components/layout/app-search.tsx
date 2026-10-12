@@ -48,8 +48,8 @@ import { usePaletteSchool } from "./use-palette-school";
 /** The one wording for this box: placeholder, aria-label and mobile trigger. */
 const SEARCH_LABEL = "Search your workspace";
 
-/** The width at which the header has room for the full field (Tailwind `lg`). */
-const DESKTOP_QUERY = "(min-width: 1024px)";
+/** The width at which the header has room for the full field (Tailwind `xl`). */
+const DESKTOP_QUERY = "(min-width: 1280px)";
 
 type SearchVariant = "desktop" | "mobile";
 
@@ -641,7 +641,7 @@ export function AppSearch({
       <div
         data-guide="header.workspace-search"
         className={cn(
-          "absolute left-1/2 top-1/2 hidden w-[min(38vw,430px)] -translate-x-1/2 -translate-y-1/2 lg:block",
+          "absolute left-1/2 top-1/2 hidden w-[min(38vw,430px)] -translate-x-1/2 -translate-y-1/2 xl:block",
           className,
         )}
       >
@@ -664,7 +664,7 @@ export function AppSearch({
         aria-label={SEARCH_LABEL}
         aria-expanded={mobileOpen}
         onClick={() => (mobileOpen ? closeSearch() : focusSearch())}
-        className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 hover:bg-pry-01 hover:text-primary lg:hidden"
+        className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 hover:bg-pry-01 hover:text-primary xl:hidden"
       >
         <Search className="size-4.5 stroke-[2.15]" />
       </button>
@@ -673,7 +673,7 @@ export function AppSearch({
           a taller header would shove every screen down the moment somebody
           searches, and the title it hides is a line the searcher just left. */}
       {mobileOpen && (
-        <div className="absolute inset-x-0 top-0 z-40 flex h-15 items-center gap-2 bg-white px-3 lg:hidden">
+        <div className="absolute inset-x-0 top-0 z-40 flex h-15 items-center gap-2 bg-white px-3 xl:hidden">
           <div className="relative min-w-0 flex-1">
             <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
             <input
