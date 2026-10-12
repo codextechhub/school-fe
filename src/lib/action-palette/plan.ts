@@ -30,6 +30,7 @@ export const PLAN_BY_PREFIX: ReadonlyArray<readonly [prefix: string, capability:
   [R.ACADEMIC_CALENDAR.INDEX, "calendar"],
   [R.TIMETABLES.EXAMS, "calendar_advanced"],
   ["/timetables", "calendar_plus"],
+  [R.ATTENDANCE.INDEX, "attendance"],
   ["/data-imports", "bulk_import"],
   ["/export", "data_export"],
   [R.FINANCE.INDEX, "finance"],

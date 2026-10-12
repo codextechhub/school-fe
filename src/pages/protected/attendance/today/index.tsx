@@ -1,0 +1,149 @@
+import { ClipboardCheck } from "lucide-react";
+
+import PageAccessDenied from "@/components/custom/page-access-denied";
+import { PageShell } from "@/components/layout/page-shell";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useBranchLens } from "@/hooks/use-branch-lens";
+import { usePermissions } from "@/hooks/use-permissions";
+import { useSchoolDisplay } from "@/hooks/use-school-display";
+import { P } from "@/permissions";
+import {
+  useGetAttendanceTodayQuery,
+  useGetMyAttendanceTodayQuery,
+} from "@/redux/services/attendance/attendance-api";
+import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
+
+import { DayPicker } from "../components/day-picker";
+import { useAttendanceDay } from "../use-attendance-day";
+import { AdminHub } from "./admin-hub";
+import { TeacherHub } from "./teacher-hub";
+
+/**
+ * Attendance, Today.
+ *
+ * One address, two screens, chosen by what the reader may do. Somebody who
+ * takes any class's register or decides corrections works the whole school
+ * and gets the administrator's hub; everybody else gets their own registers.
+ * The server draws the same line (`today/` refuses the second kind), so asking
+ * for the hub and falling back on the refusal would only cost a round trip.
+ *
+ * The day comes from the address (`?date=`), so another day can be linked to.
+ */
+export default function AttendanceToday() {
+  const { hasPermission } = usePermissions();
+  const { date, today, isToday, setDate } = useAttendanceDay();
+
+  if (!hasPermission(P.VIEW_ATTENDANCE)) {
+    return (
+      <PageShell>
+        <PageAccessDenied message="Your role does not include attendance. Ask your school administrator if you need it." />
+      </PageShell>
+    );
+  }
+
+  const worksWholeSchool =
+    hasPermission(P.TAKE_ANY_REGISTER) || hasPermission(P.DECIDE_ATTENDANCE_CORRECTION);
+
+  return (
+    <PageShell className="content-start gap-5" grid>
+      {worksWholeSchool ? (
+        <AdminToday date={date} today={today} isToday={isToday} setDate={setDate} />
+      ) : (
+        <TeacherToday date={date} today={today} setDate={setDate} />
+      )}
+    </PageShell>
+  );
+}
+
+type DayProps = { date: string; today: string; setDate: (next: string) => void };
+
+function AdminToday({ date, today, isToday, setDate }: DayProps & { isToday: boolean }) {
+  const { branch, applies, label } = useBranchLens();
+  const { formatInstantTime } = useSchoolDisplay();
+  const { data, isLoading, isError, refetch, fulfilledTimeStamp } = useGetAttendanceTodayQuery({
+    date: isToday ? undefined : date,
+    branch,
+  });
+  const hub = data?.data;
+  const scope = applies ? label : null;
+  const readAt = fulfilledTimeStamp ? `read at ${formatInstantTime(new Date(fulfilledTimeStamp).toISOString())}` : null;
+
+  return (
+    <>
+      <DayHeader date={date} today={today} setDate={setDate} sub={[scope, isToday ? readAt : null]} />
+      {isError ? (
+        <LoadError onRetry={refetch} />
+      ) : isLoading || !hub ? (
+        <HubSkeleton />
+      ) : (
+        <AdminHub hub={hub} isToday={isToday} />
+      )}
+    </>
+  );
+}
+
+function TeacherToday({ date, today, setDate }: DayProps) {
+  const { data, isLoading, isError, refetch } = useGetMyAttendanceTodayQuery({
+    date: date === today ? undefined : date,
+  });
+  const hub = data?.data;
+  return (
+    <>
+      <DayHeader date={date} today={today} setDate={setDate} sub={["Your class register and lessons for the day"]} />
+      {isError ? (
+        <LoadError onRetry={refetch} />
+      ) : isLoading || !hub ? (
+        <Skeleton className="h-40 w-full rounded-md" />
+      ) : (
+        <TeacherHub hub={hub} />
+      )}
+    </>
+  );
+}
+
+function DayHeader({
+  date,
+  today,
+  setDate,
+  sub,
+}: DayProps & { sub: Array<string | null> }) {
+  const { formatDay } = useSchoolDisplay();
+  const line = sub.filter(Boolean).join(" · ");
+  return (
+    <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
+      <div className="min-w-0">
+        <h1 className="font-mont text-lg font-semibold text-black-01">
+          {formatDay(date, { weekday: "long", month: "long" })}
+        </h1>
+        {line && <p className="text-sm text-gray-06">{line}</p>}
+      </div>
+      <DayPicker date={date} today={today} onChange={setDate} />
+    </div>
+  );
+}
+
+function LoadError({ onRetry }: { onRetry: () => void }) {
+  return (
+    <OutlinedNotice
+      icon={ClipboardCheck}
+      title="We could not load the registers"
+      body="Something went wrong on our side. Try again in a moment."
+      actionLabel="Try again"
+      onAction={onRetry}
+    />
+  );
+}
+
+function HubSkeleton() {
+  return (
+    <>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
+        {Array.from({ length: 6 }).map((_, index) => (
+          <Skeleton key={index} className="h-26 rounded-md" />
+        ))}
+      </div>
+      <Skeleton className="h-48 w-full rounded-md" />
+      <Skeleton className="h-64 w-full rounded-md" />
+    </>
+  );
+}

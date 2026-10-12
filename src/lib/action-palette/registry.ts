@@ -399,6 +399,35 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ACADEMIC_CALENDAR.INDEX },
   },
   {
+    id: "view-attendance-today",
+    label: "View today's attendance",
+    // A teacher and an administrator both land here: the screen shows a
+    // teacher their own registers and an administrator every class.
+    aliases: [
+      "attendance", "register", "registers", "roll call", "take register",
+      "mark register", "who is absent", "absent today", "my registers",
+    ],
+    section: "Academics",
+    group: "Attendance",
+    kind: "view",
+    gate: { perm: P.VIEW_ATTENDANCE },
+    run: { to: R.ATTENDANCE.INDEX },
+  },
+  {
+    id: "view-class-registers",
+    label: "View class registers",
+    aliases: [
+      "class register", "registers for a day", "open a register",
+      "submitted registers", "attendance by class", "yesterday's register",
+    ],
+    section: "Academics",
+    group: "Attendance",
+    kind: "view",
+    // The list is built from the class list, so it needs both.
+    gate: { all: [P.VIEW_ATTENDANCE, P.BROWSE_CLASSES] },
+    run: { to: R.ATTENDANCE.REGISTERS },
+  },
+  {
     id: "view-classes",
     label: "View classes",
     aliases: ["class list", "class rosters"],

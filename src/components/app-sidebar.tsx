@@ -29,6 +29,7 @@ import {
   MailCheck,
   Network,
   CalendarClock,
+  ClipboardCheck,
   ShoppingCart,
   Wallet,
   CalendarRange,
@@ -711,6 +712,32 @@ export function AppSidebar({
             isActive: location.startsWith(
               routesPath.PROTECTED.TIMETABLES.EXAMS,
             ),
+          }] : []),
+        ],
+      },
+      {
+        // The daily registers. Corrections, reports and the staff register
+        // join as sub-items in the phases that build them.
+        title: "Attendance",
+        capability: "attendance",
+        url: "#",
+        icon: ClipboardCheck,
+        isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.INDEX),
+        childActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.INDEX),
+        permission: P.VIEW_ATTENDANCE,
+        items: [
+          {
+            title: "Today",
+            url: routesPath.PROTECTED.ATTENDANCE.INDEX,
+            // Exact match: every other attendance path starts with this one.
+            isActive: location === routesPath.PROTECTED.ATTENDANCE.INDEX,
+          },
+          // Built from the class list, so it needs that key as well. A
+          // register opened from it, or from Today, lights this item too.
+          ...(hasPermission(P.BROWSE_CLASSES) ? [{
+            title: "Class registers",
+            url: routesPath.PROTECTED.ATTENDANCE.REGISTERS,
+            isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.REGISTERS),
           }] : []),
         ],
       },

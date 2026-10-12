@@ -20,6 +20,7 @@ import {
   Wrench,
   School,
   BriefcaseBusiness,
+  ClipboardCheck,
 } from "lucide-react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router";
 
@@ -56,6 +57,7 @@ const CATEGORY_ICONS: Record<GuideCategoryId, ElementType> = {
   staff: BriefcaseBusiness,
   academics: Library,
   "calendar-and-timetables": CalendarDays,
+  attendance: ClipboardCheck,
   "roles-and-permissions": ShieldCheck,
   "approvals-and-workflow": PlayCircle,
   "finance-and-payments": Landmark,

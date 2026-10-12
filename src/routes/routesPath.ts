@@ -322,5 +322,17 @@ export const routesPath = {
       TEACHERS: "/timetables/teachers",
       EXAMS: "/timetables/exams",
     },
+    // Attendance. `INDEX` is Today: the administrator's hub for a reader who
+    // works every class, a teacher's own registers for everyone else. Which one
+    // is decided by the reader's keys, not by the address.
+    ATTENDANCE: {
+      INDEX: "/attendance",
+      /** Every class's register for the chosen day. */
+      REGISTERS: "/attendance/registers",
+      REGISTER: "/attendance/registers/:classId",
+      /** One class's register; the day rides in `?date=`, omitted for today. */
+      REGISTER_ID: (classId: number | string, date?: string) =>
+        `/attendance/registers/${classId}${date ? `?date=${date}` : ""}`,
+    },
   },
 };

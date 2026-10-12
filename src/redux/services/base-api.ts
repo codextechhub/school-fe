@@ -638,6 +638,14 @@ export const baseApi = createApi({
     "RoleFieldAccess",
     "UserFieldAccessOverrides",
     "Notifications",
+    // Everything that reads one day's registers: both Today screens, and the
+    // registers themselves. A mark or a submit anywhere moves all of them.
+    "AttendanceDay",
+    // One class's register for one day, keyed `<class>@<date>`. A mark is
+    // written into the cached copy from the write's own answer, so marking a
+    // row refetches the hubs and not the register being marked.
+    "AttendanceRegister",
+    "AttendanceReasonCodes",
     "ImportTemplates",
     "ImportBatches",
     "Tickets",

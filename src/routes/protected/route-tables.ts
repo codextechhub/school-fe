@@ -5,6 +5,7 @@ import { rolesRoutes } from "./roles-routes";
 import { settingsRoutes } from "./settings-routes";
 import { workflowRoutes } from "./workflow-routes";
 import { academicRoutes } from "./academic-routes";
+import { attendanceRoutes } from "./attendance-routes";
 import { classesRoutes } from "./classes-routes";
 import { studentsRoutes } from "./students-routes";
 import { staffRoutes } from "./staff-routes";
@@ -38,6 +39,7 @@ export const protectedChildren: RouteObject[] = [
   ...settingsRoutes,
   ...workflowRoutes,
   ...academicRoutes,
+  ...attendanceRoutes,
   ...classesRoutes,
   ...studentsRoutes,
   ...staffRoutes,

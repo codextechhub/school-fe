@@ -9,6 +9,7 @@ export const GUIDE_CATEGORY_IDS = [
   "staff",
   "academics",
   "calendar-and-timetables",
+  "attendance",
   "roles-and-permissions",
   "approvals-and-workflow",
   "finance-and-payments",
