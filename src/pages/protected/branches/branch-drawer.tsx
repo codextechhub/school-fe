@@ -23,7 +23,7 @@ import { locationOf, StatusChip } from "./branch-display";
  * them off the list they will go back to in ten seconds.
  *
  * Read-only, like the list. Everything here is CodeX's to change, so no row
- * ever turns into a control. The address and email rows are Field Access
+ * ever turns into a control. The address, email and phone rows are Field Access
  * fields of `school.branches` and are left out entirely when the role may not
  * read them; the branch name and code are not switchable.
  */
@@ -88,6 +88,7 @@ export function BranchDrawer({
                 <Row label="State" value={branch.state} />
                 <Row label="Country" value={branch.country} />
                 {!access.isHidden("email") && <Row label="Email" value={branch.email ?? ""} />}
+                {!access.isHidden("phone") && <Row label="Phone" value={branch.phone ?? ""} />}
                 <Row
                   label="Opened"
                   value={

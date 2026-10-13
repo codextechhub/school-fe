@@ -1,9 +1,9 @@
 /**
  * One branch, as `/v1/i/me/branches/` returns it.
  *
- * `address` and `email` are Field Access fields of `school.branches` and are
- * absent when the signed-in role may not read them. The branch name has no
- * switch. Neither field is ever writable from this app.
+ * `address`, `email` and `phone` are Field Access fields of `school.branches`
+ * and are absent when the signed-in role may not read them. The branch name has
+ * no switch. None of them is ever writable from this app.
  */
 export interface SchoolBranch {
   _read_only_fields?: string[];
@@ -16,6 +16,8 @@ export interface SchoolBranch {
   status: "ACTIVE" | "PENDING" | "SUSPENDED" | "INACTIVE" | "CLOSED" | string;
   address?: string;
   email?: string;
+  /** The branch's own number, the one its payment terminal notifies. "" when none is set. */
+  phone?: string;
   state: string;
   country: string;
   opened_at: string | null;

@@ -1,6 +1,6 @@
 import { baseApi } from "../base-api";
 import type { Envelope } from "../onboarding/onboarding-types";
-import type { InvoiceCheckout, InvoicePaySummary } from "./pay-types";
+import type { InvoiceCheckout, InvoicePaySummary, PublicCollectionStatus } from "./pay-types";
 
 /**
  * Paying an invoice from the link in its email.
@@ -44,7 +44,25 @@ export const payApi = baseApi.injectEndpoints({
       }),
       extraOptions: { silent: true },
     }),
+
+    /**
+     * How the payer's payment went, asked by its reference alone.
+     *
+     * Public like the two above: the reference is the payer's whole authority,
+     * so it carries no Bearer token and no ?tenant=, and the interceptor never
+     * runs session recovery for it. Silent because the page words every outcome
+     * itself, including a reference the server does not know (404).
+     */
+    collectionStatus: builder.query<Envelope<PublicCollectionStatus>, string>({
+      query: (reference) =>
+        `/payments/public/collections/${encodeURIComponent(reference)}/status/`,
+      extraOptions: { silent: true },
+    }),
   }),
 });
 
-export const { useInvoicePaySummaryQuery, useStartInvoiceCheckoutMutation } = payApi;
+export const {
+  useInvoicePaySummaryQuery,
+  useStartInvoiceCheckoutMutation,
+  useCollectionStatusQuery,
+} = payApi;

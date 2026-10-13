@@ -23,6 +23,7 @@ import { endSession } from "@/utils/end-session";
 import { captureReturnTo } from "@/utils/return-to";
 import {
   AUTH_ENDPOINTS,
+  PUBLIC_PAYER_ENDPOINTS,
   TENANT_EXEMPT_ENDPOINTS,
   blockedDuringIdentitySwap,
   sendsImpersonationHeader,
@@ -416,6 +417,12 @@ export const baseQueryInterceptor: BaseQueryFn<
     // the caught error through humanizeAuthError), so a global toast here would
     // duplicate the inline message.
     if (isAuthRoute(args)) {
+      return result;
+    }
+    // A payer's public route has no session to recover. Refreshing a stale
+    // staff token left on the browser could end in a redirect to sign-in, which
+    // is the one thing a parent on the return page must never see.
+    if (PUBLIC_PAYER_ENDPOINTS.has(api.endpoint)) {
       return result;
     }
 
