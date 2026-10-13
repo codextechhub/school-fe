@@ -650,6 +650,7 @@ export const baseApi = createApi({
     "AttendanceStudent",
     "AttendanceSettings",
     "AttendanceReports",
+    "AttendanceStaff",
     "ImportTemplates",
     "ImportBatches",
     "Tickets",

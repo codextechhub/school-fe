@@ -562,3 +562,61 @@ export interface LessonMarkWrite {
   arrived_at?: string | null;
   note?: string;
 }
+
+// ── The staff register ─────────────────────────────────────────────────────
+
+export interface StaffRegisterRow {
+  staff: { id: number; name: string; staff_number: string };
+  /** The job title and the classes the person leads; null when neither is readable. */
+  role: string | null;
+  locked: boolean;
+  lock_reason: "ON_LEAVE" | "NO_HOME_BRANCH" | null;
+  /** The sentence saying why the row cannot be marked. */
+  lock_note: string | null;
+  mark?: Exclude<AttendanceMark, "E"> | null;
+  arrived_at?: string | null;
+  note?: string;
+  /** The approved leave covering the day; absent unless the reader may read leave. */
+  leave?: { id: number; type: string; type_label: string; end_date: string } | null;
+  /** Somebody leaving: the parts of it the reader may read. */
+  exit?: { text: string; label?: string; last_working_day?: string; last_working_day_label?: string } | null;
+}
+
+export interface StaffGroup {
+  branch: BranchRef;
+  closed: ClosedDay | null;
+  status?: RegisterStatus;
+  submitted_at?: string | null;
+  submitted_by_name?: string | null;
+  edit_window_open?: boolean | null;
+  counts?: {
+    total: number;
+    present: number;
+    late: number;
+    absent: number;
+    on_leave: number;
+    unmarked: number;
+  };
+  rows: StaffRegisterRow[];
+}
+
+export interface StaffRegisterDay {
+  date: string;
+  date_label: string;
+  closed: ClosedDay | null;
+  branch_dimension: boolean;
+  groups: StaffGroup[];
+  /** The people based at no branch: locked until Staff Management gives them one. */
+  no_home_branch: { count: number; rows: StaffRegisterRow[] } | null;
+}
+
+export interface StaffGroupKey {
+  branchId: number;
+  date: string;
+}
+
+export interface StaffMarkWrite {
+  mark: Exclude<AttendanceMark, "E">;
+  arrived_at?: string | null;
+  note?: string;
+}

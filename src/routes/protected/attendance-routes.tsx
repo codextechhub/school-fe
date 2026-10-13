@@ -10,6 +10,7 @@ const AttendanceCorrections = lazy(() => import("@/pages/protected/attendance/co
 const AttendanceReports = lazy(() => import("@/pages/protected/attendance/reports"));
 const AttendanceLessons = lazy(() => import("@/pages/protected/attendance/lessons"));
 const LessonRegisterPage = lazy(() => import("@/pages/protected/attendance/lesson"));
+const StaffRegisterPage = lazy(() => import("@/pages/protected/attendance/staff"));
 
 const A = routesPath.PROTECTED.ATTENDANCE;
 
@@ -63,5 +64,10 @@ export const attendanceRoutes = [
     path: A.LESSON,
     Component: LessonRegisterPage,
     handle: { title: "Lesson register", back: A.INDEX } satisfies DashboardHandle,
+  },
+  {
+    path: A.STAFF,
+    Component: StaffRegisterPage,
+    handle: { title: "Staff register", lens: true, lenses: "branch" } satisfies DashboardHandle,
   },
 ] as RouteObject[];

@@ -342,6 +342,8 @@ export const routesPath = {
       /** One lesson's register; the day rides in `?date=`, omitted for today. */
       LESSON_ID: (slotId: number | string, date?: string) =>
         `/attendance/lessons/${slotId}${date ? `?date=${date}` : ""}`,
+      /** Every branch's staff register for the day. */
+      STAFF: "/attendance/staff",
     },
   },
 };

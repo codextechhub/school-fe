@@ -464,6 +464,16 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ATTENDANCE.LESSONS },
   },
   {
+    id: "view-staff-register",
+    label: "View the staff register",
+    aliases: ["staff attendance", "teacher attendance", "who is at work", "staff absent", "staff late", "mark staff"],
+    section: "Academics",
+    group: "Attendance",
+    kind: "view",
+    gate: { perm: P.VIEW_STAFF_REGISTER },
+    run: { to: R.ATTENDANCE.STAFF },
+  },
+  {
     id: "view-classes",
     label: "View classes",
     aliases: ["class list", "class rosters"],

@@ -21,6 +21,10 @@ import type {
   RegisterKey,
   Report,
   ReportArgs,
+  StaffGroup,
+  StaffGroupKey,
+  StaffMarkWrite,
+  StaffRegisterDay,
   StudentAttendance,
   TeacherHub,
 } from "./attendance-types";
@@ -262,6 +266,49 @@ export const attendanceApi = baseApi.injectEndpoints({
       invalidatesTags: ["AttendanceDay", "AttendanceStudent", "AttendanceReports"],
     }),
 
+    // ── The staff register ─────────────────────────────────────────────────
+
+    /**
+     * The day's staff registers: one per branch the reader can see, and the
+     * people based at no branch for a reader who covers the whole school.
+     * Writes answer with one branch's group, so the day is refetched whole
+     * rather than patched; it is a short list.
+     */
+    getStaffRegister: builder.query<Envelope<StaffRegisterDay>, DayArgs & { date: string }>({
+      query: ({ date, branch }) => ({
+        url: `/attendance/staff-registers/${date}/`,
+        method: "GET",
+        params: dayParams({ branch }),
+      }),
+      providesTags: ["AttendanceStaff"],
+    }),
+
+    setStaffMark: builder.mutation<Envelope<StaffGroup>, StaffGroupKey & { staffId: number; body: StaffMarkWrite }>({
+      query: ({ branchId, date, staffId, body }) => ({
+        url: `/attendance/staff-registers/${branchId}/${date}/marks/${staffId}/`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["AttendanceStaff"],
+    }),
+
+    fillStaffPresent: builder.mutation<Envelope<StaffGroup & { filled: number }>, StaffGroupKey>({
+      query: ({ branchId, date }) => ({
+        url: `/attendance/staff-registers/${branchId}/${date}/fill-present/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AttendanceStaff"],
+    }),
+
+    /** Submit one branch's staff register. Staff absences notify nobody. */
+    submitStaffRegister: builder.mutation<Envelope<StaffGroup>, StaffGroupKey>({
+      query: ({ branchId, date }) => ({
+        url: `/attendance/staff-registers/${branchId}/${date}/submit/`,
+        method: "POST",
+      }),
+      invalidatesTags: ["AttendanceStaff"],
+    }),
+
     // ── Reports ────────────────────────────────────────────────────────────
 
     /** One term's attendance across the reader's branches; no term means the current one. */
@@ -351,4 +398,8 @@ export const {
   useSetLessonMarkMutation,
   useFillLessonPresentMutation,
   useSubmitLessonRegisterMutation,
+  useGetStaffRegisterQuery,
+  useSetStaffMarkMutation,
+  useFillStaffPresentMutation,
+  useSubmitStaffRegisterMutation,
 } = attendanceApi;

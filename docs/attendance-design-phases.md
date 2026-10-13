@@ -330,6 +330,24 @@ lesson), and both screens at 390px.
   note, fill present and submit per branch, `EMPTY_STAFF_REGISTER`,
   `STAFF_DAY_CLOSED`, `ON_LEAVE`.
 
+**Built 13 October 2026.** The staff register (`/attendance/staff`) shows a
+register per branch, each marked and submitted on its own, the locked "No
+home branch" group for a whole-school reader, and a leave lock that links to
+the person's leave record only for a reader who may read leave. Today gains
+the design's "Staff register" button. The shared register row takes its own
+lock wording, so a child reads "Suspended" and a member of staff "On leave"
+or "No home branch". Three backend changes came with it, each committed on
+its own: the staff register's search place; a class teacher's role line no
+longer says "Class Teacher · Class teacher · SSS1 B"; and the scenario
+seeder, which stopped with "No mark for pupil None" when run on a later day
+because its corrections counted their days back from today, now keeps the
+corrections it already filed. Driven against the seeded backend after the
+seeder topped up 13 October: both branches, the leave and leaving rows, the
+no-home-branch group, an Absent and back to Present round trip at the Annex,
+and the page at 390px.
+
+All six phases are built.
+
 ---
 
 ## 4. Order, and why

@@ -40,6 +40,7 @@ export function RegisterRowItem({
   offered = ["P", "L", "A", "E"],
   fieldResource = FIELD_RESOURCE.ATTENDANCE_REGISTER,
   aside,
+  lockedText,
   busy,
   onMark,
   onRequestCorrection,
@@ -54,6 +55,8 @@ export function RegisterRowItem({
   fieldResource?: string;
   /** A line under the name, such as the morning mark beside a lesson. */
   aside?: ReactNode;
+  /** What a locked row says in place of its buttons. A child's lock is a suspension. */
+  lockedText?: ReactNode;
   busy: boolean;
   onMark: (mark: AttendanceMark) => void;
   onRequestCorrection?: () => void;
@@ -78,10 +81,12 @@ export function RegisterRowItem({
       </div>
       <div className="col-span-2 flex flex-wrap items-center gap-2 sm:col-span-1 sm:justify-end">
         {row.locked ? (
-          <>
-            <Badge variant="inactive" className="rounded-full">Suspended</Badge>
-            <span className="text-xs text-gray-05">Kept out of attendance</span>
-          </>
+          lockedText ?? (
+            <>
+              <Badge variant="inactive" className="rounded-full">Suspended</Badge>
+              <span className="text-xs text-gray-05">Kept out of attendance</span>
+            </>
+          )
         ) : mode === "mark" ? (
           offered.map((mark) => (
             <button

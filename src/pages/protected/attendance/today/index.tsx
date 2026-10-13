@@ -1,7 +1,9 @@
+import { Link } from "react-router";
 import { ClipboardCheck } from "lucide-react";
 
 import PageAccessDenied from "@/components/custom/page-access-denied";
 import { PageShell } from "@/components/layout/page-shell";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -11,6 +13,7 @@ import {
   useGetAttendanceTodayQuery,
   useGetMyAttendanceTodayQuery,
 } from "@/redux/services/attendance/attendance-api";
+import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 
 import { DayPicker } from "../components/day-picker";
@@ -58,6 +61,7 @@ export default function AttendanceToday() {
 type DayProps = { date: string; today: string; setDate: (next: string) => void };
 
 function AdminToday({ date, today, isToday, setDate }: DayProps & { isToday: boolean }) {
+  const { hasPermission } = usePermissions();
   const { branch, applies, label } = useBranchLens();
   const { formatInstantTime } = useSchoolDisplay();
   const { data, isLoading, isError, refetch, fulfilledTimeStamp } = useGetAttendanceTodayQuery({
@@ -70,7 +74,17 @@ function AdminToday({ date, today, isToday, setDate }: DayProps & { isToday: boo
 
   return (
     <>
-      <DayHeader date={date} today={today} setDate={setDate} sub={[scope, isToday ? readAt : null]} />
+      <DayHeader
+        date={date}
+        today={today}
+        setDate={setDate}
+        sub={[scope, isToday ? readAt : null]}
+        action={hasPermission(P.VIEW_STAFF_REGISTER) ? (
+          <Button asChild variant="outline" size="sm" className="h-9">
+            <Link to={`${routesPath.PROTECTED.ATTENDANCE.STAFF}${isToday ? "" : `?date=${date}`}`}>Staff register</Link>
+          </Button>
+        ) : null}
+      />
       {isError ? (
         <LoadError onRetry={refetch} />
       ) : isLoading || !hub ? (
@@ -106,7 +120,8 @@ function DayHeader({
   today,
   setDate,
   sub,
-}: DayProps & { sub: Array<string | null> }) {
+  action,
+}: DayProps & { sub: Array<string | null>; action?: React.ReactNode }) {
   const { formatDay } = useSchoolDisplay();
   const line = sub.filter(Boolean).join(" · ");
   return (
@@ -117,7 +132,10 @@ function DayHeader({
         </h1>
         {line && <p className="text-sm text-gray-06">{line}</p>}
       </div>
-      <DayPicker date={date} today={today} onChange={setDate} />
+      <div className="flex flex-wrap items-center gap-2">
+        {action}
+        <DayPicker date={date} today={today} onChange={setDate} />
+      </div>
     </div>
   );
 }

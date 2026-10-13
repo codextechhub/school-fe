@@ -739,8 +739,8 @@ export function AppSidebar({
         ],
       },
       {
-        // The daily registers. The staff register joins as a sub-item in the
-        // phase that builds it.
+        // The daily registers, the work that follows from them, and the rules
+        // they keep. Each sub-item is gated on the key its screen reads.
         title: "Attendance",
         capability: "attendance",
         url: "#",
@@ -777,6 +777,11 @@ export function AppSidebar({
             title: "Lesson registers",
             url: routesPath.PROTECTED.ATTENDANCE.LESSONS,
             isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.LESSONS),
+          }] : []),
+          ...(hasPermission(P.VIEW_STAFF_REGISTER) ? [{
+            title: "Staff register",
+            url: routesPath.PROTECTED.ATTENDANCE.STAFF,
+            isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.STAFF),
           }] : []),
           ...(hasPermission(P.VIEW_ATTENDANCE_REPORTS) ? [{
             title: "Reports",
