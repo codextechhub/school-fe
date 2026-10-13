@@ -4,7 +4,7 @@ export default function AttendanceSettingsArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>Open <strong>Settings</strong>, then <strong>Attendance</strong> under Academics, or <strong>Attendance settings</strong> in the Attendance menu. These rules bind every branch, so only an administrator who covers the whole school can change them. A change applies from now on: marks already taken and emails already sent are not touched.</p>
+        <p>Open <strong>Settings</strong>, then <strong>Attendance</strong> under Academics. These rules bind every branch, so only an administrator who covers the whole school can change them. A change applies from now on: marks already taken and emails already sent are not touched.</p>
       </GuideSection>
 
       <GuideSection id="lesson-marking" title="Lesson marking">

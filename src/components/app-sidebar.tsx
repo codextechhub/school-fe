@@ -739,8 +739,9 @@ export function AppSidebar({
         ],
       },
       {
-        // The daily registers, the work that follows from them, and the rules
-        // they keep. Each sub-item is gated on the key its screen reads.
+        // The daily registers and the work that follows from them. Each
+        // sub-item is gated on the key its screen reads. The rules live only
+        // in the Settings console, with the school's other settings.
         title: "Attendance",
         capability: "attendance",
         url: "#",
@@ -787,13 +788,6 @@ export function AppSidebar({
             title: "Reports",
             url: routesPath.PROTECTED.ATTENDANCE.REPORTS,
             isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.REPORTS),
-          }] : []),
-          // The rules live in the Settings console with the school's other
-          // settings; this is a second door onto that section.
-          ...(hasPermission(P.MANAGE_ATTENDANCE_SETTINGS) ? [{
-            title: "Attendance settings",
-            url: routesPath.PROTECTED.SETTINGS.ATTENDANCE,
-            isActive: location.startsWith(routesPath.PROTECTED.SETTINGS.ATTENDANCE),
           }] : []),
         ],
       },

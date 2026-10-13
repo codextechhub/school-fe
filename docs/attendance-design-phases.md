@@ -120,8 +120,9 @@ None is dead API. Each is a control the design never drew:
 3. **"A student's record" sub-item** jumps to one hard-coded student. A record
    needs an id, so it cannot be a nav destination.
 4. **"Attendance settings". Ruled 12 October 2026:** a section of the Settings
-   console (Academics group, beside Calendar and timetables), linked from the
-   Attendance sidebar, rather than a screen of the module's own.
+   console (Academics group, beside Calendar and timetables), rather than a
+   screen of the module's own. Ruled 14 October 2026: the Attendance sidebar
+   carries no link to it; Settings is its one home.
 5. **Arrival time. Ruled 12 October 2026:** a time field that starts at the
    current time, not the design's four fixed chips.
 6. **Threshold. Ruled 12 October 2026:** a number box, 50 to 100.
@@ -287,8 +288,8 @@ screens at 390px.
 
 **Built 12 October 2026.** Settings is a section of the Settings console
 (`/settings/attendance`, Academics group), opened on the key that saves it
-(`attendance.settings.update`) and the attendance plan, with a second door in
-the Attendance sidebar. Retire and restore act at once; the four rules save
+(`attendance.settings.update`) and the attendance plan. The Attendance sidebar
+does not link to it. Retire and restore act at once; the four rules save
 together. The design's sample guardian email is not drawn: the real email is a
 notification template this app does not hold, and a sample that drifted from it
 would mislead. Reports (`/attendance/reports`) draw the weekly trend as one
