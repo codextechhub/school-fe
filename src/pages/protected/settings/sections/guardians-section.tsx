@@ -8,6 +8,8 @@ import {
   SettingsPanel,
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
+import { useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import {
@@ -45,6 +47,10 @@ const MAX_EXTRAS = 10;
  * email, how siblings are recognised, and the relationship words the school
  * uses beyond the fixed ones. Every form that adds or links a guardian, and
  * both imports, apply the same rules on the server.
+ *
+ * The email rule is a rule about a guardian's email address, so it is offered
+ * only to somebody who may read that field. The server leaves the stored value
+ * as it stands for anybody else, and the form sends it back unchanged.
  */
 export function GuardiansSection() {
   const query = useGetGuardianRulesQuery();
@@ -74,6 +80,7 @@ export function GuardiansSection() {
 function GuardiansForm({ rules }: { rules: GuardianRules }) {
   const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
   const [save, { isLoading: saving }] = useUpdateGuardianRulesMutation();
+  const emailRuleOffered = !useFieldAccess(FIELD_RESOURCE.GUARDIANS).isHidden("email");
 
   const [minimum, setMinimum] = useState(String(rules.min_per_student));
   const [emailRequired, setEmailRequired] = useState(rules.email_required);
@@ -156,24 +163,26 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
         </div>
       </SettingsPanel>
 
-      <SettingsPanel title="Contact details">
-        <label className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
-          <span className="min-w-0">
-            <span className="block font-mont text-sm font-medium text-gray-01">Email required for a new guardian</span>
-            <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
-              A phone number is always required. A guardian already on record without an email can
-              still be linked to another child.
+      {emailRuleOffered ? (
+        <SettingsPanel title="Contact details">
+          <label className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
+            <span className="min-w-0">
+              <span className="block font-mont text-sm font-medium text-gray-01">Email required for a new guardian</span>
+              <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
+                A phone number is always required. A guardian already on record without an email can
+                still be linked to another child.
+              </span>
             </span>
-          </span>
-          <Switch
-            checked={emailRequired}
-            disabled={!canSave}
-            onCheckedChange={setEmailRequired}
-            aria-label="Email required for a new guardian"
-          />
-        </label>
-        <ErrorLine text={errors.email_required} padded />
-      </SettingsPanel>
+            <Switch
+              checked={emailRequired}
+              disabled={!canSave}
+              onCheckedChange={setEmailRequired}
+              aria-label="Email required for a new guardian"
+            />
+          </label>
+          <ErrorLine text={errors.email_required} padded />
+        </SettingsPanel>
+      ) : null}
 
       <SettingsPanel
         title="Recognising siblings"

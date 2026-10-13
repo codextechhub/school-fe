@@ -1332,6 +1332,14 @@ export function CompleteStep({
         </div>
       )}
 
+      {/* Why the whole job stopped, in the server's words */}
+      {job?.last_error_message && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 px-4 py-3">
+          <p className="text-xs font-semibold text-destructive">Why the import stopped</p>
+          <p className="mt-1 text-xs text-gray-600">{job.last_error_message}</p>
+        </div>
+      )}
+
       {/* Skipped row breakdown */}
       {skippedRows.length > 0 && (
         <div className="rounded-md border border-amber-200 overflow-hidden">
@@ -1419,7 +1427,11 @@ export function CompleteStep({
           {isFailed && (
             <ul className="text-[11px] text-blue-600 space-y-0.5 list-disc list-inside">
               <li>The import job failed before completing. No data was written.</li>
-              <li>Review the error details above and contact support if the error persists.</li>
+              {job?.last_error_code === "FIELD_WRITE_DENIED" ? (
+                <li>Remove the column that sets a detail your role may not change, or ask someone who may change it to run the import.</li>
+              ) : (
+                <li>Review the error details above and contact support if the error persists.</li>
+              )}
               <li>You can safely re-run the import once the issue is resolved.</li>
             </ul>
           )}

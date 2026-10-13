@@ -8,6 +8,7 @@ import {
 
 const PROBLEMS = [
   { title: "The payment can only settle the payer's own bills", body: "The payer is not linked to anyone yet. Open the payer's customer record, go to Payers, and link the children they pay for." },
+  { title: "Record payer payment or the Payers tab is missing", body: "Field Access has closed a field to your role: Write on the payer, bank account, amount or date hides Record payer payment, and Read on the payer, customer or active choice hides a customer's Payers tab. Ask whoever manages roles. When the amount is closed to you, each child's share shows no credit or bills." },
   { title: "Record payment stays greyed out", body: "Something changed after the preview. Select Preview again, check the split, then record." },
   { title: "The amounts come to more than was received", body: "Amounts typed by hand may add up to less than the payment, never to more. Lower one of them." },
   { title: "A child's bills are not listed", body: "They are billed at a branch you do not work in. You see the child and the amount, not their bills; that branch settles them." },

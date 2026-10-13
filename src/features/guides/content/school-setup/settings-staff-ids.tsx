@@ -64,7 +64,7 @@ export default function SettingsStaffIdsArticle() {
 
       <GuideSection id="issue-automatically" title="Issue staff IDs automatically">
         <p>Turn on <strong>Issue numbers automatically</strong> and a person added with the Staff ID left blank is given the next one in the series. After BS/STF/0042, the next person gets BS/STF/0043. Save the rule to keep the switch.</p>
-        <p>The Add staff form shows the next ID in the empty box, for example <strong>Next: BS/STF/0043</strong>, and says it is issued if the box is left blank. Typing an ID uses that one instead. The next ID is worked out from the last one issued, so it needs IDs that end in digits and at least one already issued. A branch with its own rule keeps its own series.</p>
+        <p>The Add staff form shows the next ID in the empty box, for example <strong>Next: BS/STF/0043</strong>, and says it is issued if the box is left blank. Typing an ID uses that one instead. The next ID is worked out from the last one issued, so it needs IDs that end in digits and at least one already issued. A branch with its own rule keeps its own series. A role that cannot read staff IDs is shown no next ID: the box only says that a blank is filled in.</p>
       </GuideSection>
 
       <GuideSection id="use-the-schools-rule" title="Put a branch back on the school's rule">

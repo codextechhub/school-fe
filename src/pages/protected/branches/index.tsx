@@ -10,6 +10,8 @@ import type { SchoolBranch } from "@/redux/services/branches/branches-types";
 import { BranchDrawer } from "./branch-drawer";
 import { locationOf, StatusChip } from "./branch-display";
 import { PageShell } from "@/components/layout/page-shell";
+import { useFieldAccess } from "@/components/finance-ui/field-access";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 
 /**
  * The branches this school runs.
@@ -20,6 +22,11 @@ import { PageShell } from "@/components/layout/page-shell";
  * button. A card that offered one would be refused by the API behind it, and a
  * school that needs a new branch or a corrected address asks the team.
  *
+ * Address and email are Field Access fields of `school.branches`: a role that
+ * may not read them gets a card without the street address and a drawer
+ * without those rows. They are never writable here, so no control for them
+ * exists whatever the switches say. The branch name has no switch.
+ *
  * The three counts read as dashes because there is no Student, Teacher or Class
  * model in the product yet. The server sends null rather than zero for exactly
  * this reason: zero would claim a branch has no students, which is a different
@@ -29,6 +36,7 @@ import { PageShell } from "@/components/layout/page-shell";
 export default function Branches() {
   const { data, isLoading, isError, refetch } = useGetMyBranchesQuery();
   const [openCode, setOpenCode] = useState<number | null>(null);
+  const access = useFieldAccess(FIELD_RESOURCE.BRANCHES);
 
   const branches = data?.data ?? [];
 
@@ -77,6 +85,7 @@ export default function Branches() {
           <BranchCard
             key={branch.id}
             branch={branch}
+            showAddress={!access.isHidden("address")}
             onView={() => setOpenCode(branch.code)}
           />
         ))}
@@ -93,9 +102,12 @@ export default function Branches() {
 /** How a branch reads at a glance. */
 function BranchCard({
   branch,
+  showAddress,
   onView,
 }: {
   branch: SchoolBranch;
+  /** False when Field Access hides the street address from this role. */
+  showAddress: boolean;
   onView: () => void;
 }) {
   return (
@@ -141,7 +153,7 @@ function BranchCard({
 
         <div className="flex gap-1.5 items-center mt-1.5 text-gray-05 min-w-0">
           <MapPin className="size-3 shrink-0 text-amber-01" />
-          <p className="text-xs truncate">{locationOf(branch)}</p>
+          <p className="text-xs truncate">{locationOf(branch, showAddress)}</p>
         </div>
 
         <hr className="my-3 border-white-02 border-1.5" />

@@ -8,10 +8,11 @@ import {
 
 const PROBLEMS = [
   { title: "The bank account has not been given a branch", body: "At a school with more than one branch, money cannot move through an account no branch owns. Give the account its branch, or split it by branch if several branches really share it." },
+  { title: "Bank transaction or Bank transfer is missing", body: "Field Access has closed a field the document cannot be raised without, such as the bank account, amount, date or narration, to your role. Ask whoever manages roles to open Write on it. A document with a field closed to you shows without it, and its Status filter is not offered when Read on status is off." },
   { title: "The account I want is not offered under To", body: "A bank transfer only moves money between two accounts of the same branch. To send money to another branch, use Send money on Inter-branch Transfers." },
   { title: "The other side account is refused", body: "Receivables, payables, tax and other accounts kept by their own documents cannot be used here. The message names the document to use instead, such as a receipt or a supplier bill." },
   { title: "Void is refused", body: "The bank line is matched on a reconciliation. Unmatch it in Bank Reconciliation first, then void." },
-  { title: "Split by branch is missing", body: "It appears only at a school with more than one branch, on an active account no branch owns, for someone who covers the whole school and may update bank accounts." },
+  { title: "Split by branch is missing", body: "It appears only at a school with more than one branch, on an active account no branch owns, for someone who covers the whole school and may update bank accounts, and whose role may change the split date, the agreement reference and each branch's share, ledger code and ledger name under Field Access." },
   { title: "The split is refused", body: "Common reasons: the shares do not add up to the book balance, statement lines on the account are still unmatched, something is booked on it after the split date, or one of the branches has closed its books for that month." },
 ] as const;
 

@@ -11,6 +11,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGetMyBranchQuery } from "@/redux/services/branches/branches-api";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
+import { useFieldAccess } from "@/components/finance-ui/field-access";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { locationOf, StatusChip } from "./branch-display";
 
 /**
@@ -20,7 +22,10 @@ import { locationOf, StatusChip } from "./branch-display";
  * facts about a row the reader is already looking at, and a route would take
  * them off the list they will go back to in ten seconds.
  *
- * Read-only, like the list. Everything here is CodeX's to change.
+ * Read-only, like the list. Everything here is CodeX's to change, so no row
+ * ever turns into a control. The address and email rows are Field Access
+ * fields of `school.branches` and are left out entirely when the role may not
+ * read them; the branch name and code are not switchable.
  */
 export function BranchDrawer({
   code,
@@ -34,6 +39,7 @@ export function BranchDrawer({
     skip: code == null,
   });
   const branch = data?.data;
+  const access = useFieldAccess(FIELD_RESOURCE.BRANCHES, branch);
   const { formatDate } = useSchoolDisplay(branch?.id ?? null);
 
   return (
@@ -50,7 +56,7 @@ export function BranchDrawer({
             <span className="truncate">{branch?.name ?? "Branch"}</span>
           </SheetTitle>
           <SheetDescription className="text-[13px] text-gray-01">
-            {branch ? locationOf(branch) : "Loading this branch…"}
+            {branch ? locationOf(branch, !access.isHidden("address")) : "Loading this branch…"}
           </SheetDescription>
         </SheetHeader>
 
@@ -78,10 +84,10 @@ export function BranchDrawer({
 
               <dl className="mt-5 grid gap-0">
                 <Row label="Branch code" value={String(branch.code)} mono />
-                <Row label="Address" value={branch.address} />
+                {!access.isHidden("address") && <Row label="Address" value={branch.address ?? ""} />}
                 <Row label="State" value={branch.state} />
                 <Row label="Country" value={branch.country} />
-                <Row label="Email" value={branch.email} />
+                {!access.isHidden("email") && <Row label="Email" value={branch.email ?? ""} />}
                 <Row
                   label="Opened"
                   value={

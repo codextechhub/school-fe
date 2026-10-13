@@ -8,7 +8,7 @@ import {
   useGetGuardianRulesQuery,
   useUpdateGuardianMutation,
 } from "@/redux/services/students/students-api";
-import type { GuardianDetail } from "@/redux/services/students/students-types";
+import { guardianEmailBinds, type GuardianDetail } from "@/redux/services/students/students-types";
 
 import { DrawerShell, Field, errorInputClass, inputClass } from "../drawers/drawer-shell";
 
@@ -80,7 +80,7 @@ export function EditGuardianDrawer({
     writable(key) && !draft[key].trim();
   // A school that requires guardian emails does not let one be emptied, but
   // an old record that never had one is not blocked until somebody edits it.
-  const emailRequired = useGetGuardianRulesQuery().data?.data.email_required ?? false;
+  const emailRequired = guardianEmailBinds(useGetGuardianRulesQuery().data?.data);
   const emailEmptied =
     emailRequired && writable("email") && Boolean(guardian.email) && !draft.email.trim();
   const nameBlank = blank("first_name") || blank("last_name") || emailEmptied;

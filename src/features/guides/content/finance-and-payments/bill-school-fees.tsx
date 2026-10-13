@@ -38,6 +38,7 @@ export default function BillSchoolFeesArticle() {
       <GuideSection id="add-customers" title="How pupils get an account">
         <p>You do not add pupils as customers yourself. The first time a pupil is billed, the run opens their account, named for the child, at the pupil&apos;s branch. Every later bill, receipt and statement for that pupil goes to the same account.</p>
         <p><strong>Customers / Payers</strong> lists those accounts with each one&apos;s balance and status. Use it to look a pupil up and to set the <strong>Billing email</strong>, which is where invoices, receipts and statements are sent.</p>
+        <p>Each value on a customer follows Field Access: the code and name are always shown, while the billing email, phone and address, the balance, the account status, the statement and the other figures each have their own switch. A closed value leaves the list, the customer&apos;s drawer and the New customer form, a statement shows no running balance when the balance is closed, and the billing email, phone and opening balance are always asked for on a new customer.</p>
         <GuideCallout tone="warning" title="Do not add a pupil by hand">
           A customer added with <strong>New customer</strong> is not linked to the pupil, so the fee run opens a second account for them and the family ends up with two balances. Add a customer by hand only for someone who is not a pupil. Fees a pupil owed from before the school used these books come in through <strong>Import opening balances</strong>, below.
         </GuideCallout>

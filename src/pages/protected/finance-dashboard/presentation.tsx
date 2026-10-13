@@ -74,12 +74,18 @@ export function FinanceKpiTile({ label, value, icon: Icon, tone, delta, goodWhen
   );
 }
 
+/** A row of headline tiles; `data-count` lets the stylesheet size the columns to the tiles drawn, and a row with none is not drawn. */
+function KpiGrid({ count, children }: { count: number; children: ReactNode }) {
+  if (count <= 0) return null;
+  return <div className="finance-kpi-grid" data-count={count}>{children}</div>;
+}
+
 /** The detailed shared tab keeps its cards, while this row gives its figures a common visual hierarchy. */
 export function ReceivablesHeadline({ d, currency }: { d: ReceivablesDashboard; currency?: string | null }) {
   const c = d.collections;
   const s = d.receivables_summary;
   return (
-    <div className="finance-kpi-grid">
+    <KpiGrid count={[c?.billed, c?.collected, d.days_to_pay != null, s, d.credit].filter(Boolean).length}>
       {c?.billed && <FinanceKpiTile icon={FileText} tone="blue" label={`Billed ${d.window.label.toLowerCase()}`}
         value={formatMoney(c.billed.kobo, currency)} note={c.invoice_count != null ? `${c.invoice_count} invoices` : d.window.name} />}
       {c?.collected && <FinanceKpiTile icon={ReceiptText} tone="green" label="Collected"
@@ -91,13 +97,13 @@ export function ReceivablesHeadline({ d, currency }: { d: ReceivablesDashboard; 
         value={formatMoney(s.overdue_amount.kobo, currency)} note={`${s.overdue_payers} payers past due`} />}
       {d.credit && <FinanceKpiTile icon={Wallet} tone="amber" label="Credit held"
         value={formatMoney(d.credit.total.kobo, currency)} note={`${d.credit.payers} payers in credit`} />}
-    </div>
+    </KpiGrid>
   );
 }
 
 export function SpendHeadline({ d, currency }: { d: SpendDashboard; currency?: string | null }) {
   return (
-    <div className="finance-kpi-grid">
+    <KpiGrid count={[d.runway, d.spend, d.payroll, d.tax_owed, d.unmatched].filter(Boolean).length}>
       {d.runway && <FinanceKpiTile icon={Banknote} tone="green" label="Cash runway"
         value={runwayLabel(d.runway.months)} note={d.runway.months == null ? "Needs more history" : "At recent outflow"} />}
       {d.spend && <FinanceKpiTile icon={TrendingUp} tone="red" label={`Operating spend ${d.window.label.toLowerCase()}`}
@@ -109,7 +115,7 @@ export function SpendHeadline({ d, currency }: { d: SpendDashboard; currency?: s
         value={formatMoney(d.tax_owed.amount.kobo, currency)} note={d.tax_owed.next?.name ?? "Open returns"} />}
       {d.unmatched && <FinanceKpiTile icon={Landmark} tone="violet" label="Unmatched bank lines"
         value={d.unmatched.lines.toLocaleString()} note={d.unmatched.lines ? "Waiting on a match" : "All lines matched"} />}
-    </div>
+    </KpiGrid>
   );
 }
 

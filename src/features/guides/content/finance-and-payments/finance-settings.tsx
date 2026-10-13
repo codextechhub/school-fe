@@ -54,7 +54,7 @@ export default function FinanceSettingsArticle() {
       <GuideSection id="documents" title="Documents">
         <GuideSteps>
           <GuideStep title="Default invoice due days">The due date given to an invoice raised without one, including invoices generated from a fee structure.</GuideStep>
-          <GuideStep title="Primary collection account">The bank account printed on invoices and receipts as the place to pay.</GuideStep>
+          <GuideStep title="Primary collection account">The bank account printed on invoices and receipts as the place to pay. Naming a different one sets that account&apos;s fee collection flag, so the choice is greyed for a role that may not change that flag under Field Access, and each account shows its bank and currency only to a role that may read them.</GuideStep>
           <GuideStep title="Term collection target (%)">The share of a {w.term}&apos;s fees you aim to have collected by its end. It is drawn as the target on the dashboard&apos;s collection curve.</GuideStep>
           <GuideStep title="Default invoice narration, and two switches">The narration pre-fills manual invoices. <strong>Post manual invoices immediately</strong> decides whether a manual invoice posts or waits as a draft. <strong>Allow customer opening balances</strong> decides whether a customer can be created with an amount already owed.</GuideStep>
         </GuideSteps>

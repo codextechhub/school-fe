@@ -35,6 +35,7 @@ export default function SettingsGuardiansArticle() {
       <GuideSection id="contact-details" title="Contact details">
         <p>A phone number is always required for a new guardian. Turn on <strong>Email required for a new guardian</strong> and an email is required too: the forms drop &quot;(optional)&quot; from <strong>Email</strong>, and a new guardian without one is refused with <strong>A guardian email is required at this school.</strong></p>
         <p>A guardian already on the school&apos;s records without an email can still be linked to another child, because nothing new is written about them.</p>
+        <p>Only a role that can read a guardian&apos;s email in Field Access sees the <strong>Email required for a new guardian</strong> switch, and a role that cannot read it leaves the rule as it stands when it saves. A role that cannot give a guardian&apos;s email is not held to the rule on the forms: the label stays <strong>Email (optional)</strong> for that person.</p>
       </GuideSection>
 
       <GuideSection id="recognising-siblings" title="Recognising siblings">

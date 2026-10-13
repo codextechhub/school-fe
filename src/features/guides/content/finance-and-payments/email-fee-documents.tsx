@@ -9,6 +9,7 @@ import {
 const PROBLEMS = [
   { title: "The email button is missing", body: "Invoice, receipt and statement emails each have their own permission. A receipt can only be emailed once it is posted." },
   { title: "To says No recipient", body: "The customer has no billing email. Add the parent's address on the customer's Contact tab, then try again." },
+  { title: "To reads The customer's billing email", body: "Field Access has closed the billing email to your role. The panel says where the document goes in words, and the history shows how many addresses it went to and never which. Ask your administrator to open the field if you must check the address." },
   { title: "Send is disabled", body: "Wait for the recipients to load. When a send is blocked, the panel shows the reason in an amber box." },
   { title: "The parent says nothing arrived", body: "Check Previously sent. Sent means the mail service accepted it, so ask the parent to look in spam before you retry." },
 ] as const;

@@ -23,7 +23,7 @@ export default function ImportStudentsArticle() {
         <GuideSteps>
           <GuideStep title="Upload">Drop the file on the box or select it to browse, add optional <strong>Notes</strong> for whoever reviews the batch, and select <strong>Parse &amp; continue</strong>. Empty rows are ignored.</GuideStep>
           <GuideStep title="Compare the headers">The <strong>Header comparison</strong> step lists the template&apos;s columns beside yours. A column marked <strong>Missing in upload</strong> may come with a suggestion of what you meant. Select <strong>Continue to validation</strong>.</GuideStep>
-          <GuideStep title="Read the validation issues">Every row is checked for required fields, values and references to classes and branches. <strong>Review validation issues</strong> lists errors and warnings by row. Select <strong>Export Error Data</strong> for a file of every issue to fix in your spreadsheet.</GuideStep>
+          <GuideStep title="Read the validation issues">Every row is checked for required fields, values and references to classes and branches. <strong>Review validation issues</strong> lists errors and warnings by row. Select <strong>Export Error Data</strong> for a file of every issue to fix in your spreadsheet. A column that sets something your role may not change is refused here: the issue names the row and the column, and says so in the same words XVS gives when the import runs.</GuideStep>
           <GuideStep title="Go on">When the issues are ones you accept, select <strong>Proceed to import</strong>.</GuideStep>
         </GuideSteps>
       </GuideSection>
@@ -46,6 +46,7 @@ export default function ImportStudentsArticle() {
           { title: "Start import stays disabled", body: "At least one blocking error remains. Export the error data, fix the rows in your spreadsheet, and upload the file again." },
           { title: "Children came in as applicants", body: "Your school needs documents before a child joins the roll, so an import brings every child in as an applicant, with a warning on each row. Upload the documents on each record, then put them on the roll from Applicants." },
           { title: "Rows warn that the school asks for more guardians", body: "Your school asks for more than one guardian per child and each row carries one. The students are still imported; add the other guardians on their records or with the guardians import." },
+          { title: "A row is refused for a detail you may not change", body: "Your role cannot change that field in Field Access. Remove the column from the file, or ask someone who may change it to run the import." },
           { title: "Rows failed to import", body: "Select View import details on the last step to see why each row failed, fix those rows in the file and import them again." },
         ]} />
       </GuideSection>

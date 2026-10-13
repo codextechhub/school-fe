@@ -27,6 +27,8 @@ import {
   useGetClassSeatsQuery,
 } from "@/redux/services/students/students-api";
 import {
+  bindingRequiredFields,
+  guardianEmailBinds,
   type EnrolWrite,
   type Gender,
 } from "@/redux/services/students/students-types";
@@ -271,8 +273,8 @@ export default function EnrolStudent() {
   const [docFiles, setDocFiles] = useState<Record<string, File>>({});
   const rules = rulesData?.data;
   const requiredFields = useMemo(
-    () => new Set(rules?.required_fields ?? []),
-    [rules?.required_fields],
+    () => new Set(bindingRequiredFields(rules)),
+    [rules],
   );
   const isReq = (name: string) => requiredFields.has(name);
   const [enrol, { isLoading }] = useEnrolStudentMutation();
@@ -402,7 +404,7 @@ export default function EnrolStudent() {
     } else if (filled.length < minimum) {
       out.guardians = `This school asks for ${minimum} guardians for every child.`;
     } else if (
-      guardianRules?.email_required &&
+      guardianEmailBinds(guardianRules) &&
       filled.some((g) => g.kind !== "existing" && !g.email.trim())
     ) {
       out.guardians = "A guardian email is required at this school.";
@@ -1083,7 +1085,7 @@ export default function EnrolStudent() {
         <GuardianRows
           rows={guardians}
           onChange={setGuardians}
-          emailRequired={guardianRules?.email_required ?? false}
+          emailRequired={guardianEmailBinds(guardianRules)}
           error={touched.guardians ? problems.guardians : undefined}
         />
         </Panel>

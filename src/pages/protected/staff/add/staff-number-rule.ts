@@ -8,6 +8,11 @@ import type { StaffNumberPolicy } from "@/redux/services/staff/staff-types";
  * continue from yet, and then the server asks for one to start the series.
  * The hint is the school's own words where it wrote some, since the server
  * refuses a wrong number with the same sentence.
+ *
+ * `suggestion` is absent for a user who cannot read staff numbers. Such a form
+ * names no number, and never claims the series has nothing to continue from,
+ * since it cannot know: it says a blank is filled in and leaves the box
+ * optional, and the server asks for a starting number if it must.
  */
 export function staffNumberField(policy: StaffNumberPolicy | undefined): {
   required: boolean;
@@ -16,6 +21,15 @@ export function staffNumberField(policy: StaffNumberPolicy | undefined): {
 } {
   const issues = Boolean(policy?.auto_issue);
   const next = policy?.suggestion ?? "";
+  if (issues && policy && policy.suggestion === undefined) {
+    return {
+      required: false,
+      hint: `Leave it blank and the next number is issued. Type a number to use your own.${
+        policy.hint ? ` ${policy.hint}` : ""
+      }`,
+      placeholder: "",
+    };
+  }
   if (issues && next) {
     return {
       required: false,

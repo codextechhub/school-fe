@@ -9,14 +9,21 @@ import type { SchoolBranch } from "@/redux/services/branches/branches-types";
  * undefined at runtime and takes the drawer with it.
  */
 
-/** What a school can read from the address fields it actually has. */
-export function locationOf(branch: SchoolBranch): string {
-  const parts = [branch.address, branch.state, branch.country]
+/**
+ * What a school can read from the address fields it actually has.
+ *
+ * The street address is a Field Access field and `showAddress` is false when
+ * the role may not read it, in which case only the state and country remain.
+ * A branch with nothing to show says so rather than rendering an empty row that
+ * reads as a loading bug; the wording does not claim an address is missing when
+ * the role simply cannot see it.
+ */
+export function locationOf(branch: SchoolBranch, showAddress = true): string {
+  const parts = [showAddress ? branch.address : undefined, branch.state, branch.country]
     .map((part) => part?.trim())
     .filter(Boolean);
-  // A branch with no address on file says so rather than
-  // rendering an empty row that reads as a loading bug.
-  return parts.length ? parts.join(", ") : "No address on file";
+  if (parts.length) return parts.join(", ");
+  return showAddress ? "No address on file" : "No location on file";
 }
 
 const STATUS_LABEL: Record<

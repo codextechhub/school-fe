@@ -12,6 +12,7 @@ import {
   useLinkGuardianMutation,
 } from "@/redux/services/students/students-api";
 import {
+  guardianEmailBinds,
   type StudentDetail,
 } from "@/redux/services/students/students-types";
 
@@ -87,7 +88,7 @@ export function LinkGuardianDrawer({
   const [link, { isLoading }] = useLinkGuardianMutation();
   // A new guardian needs an email where the school says so; linking one
   // already on record never does.
-  const emailRequired = useGetGuardianRulesQuery().data?.data.email_required ?? false;
+  const emailRequired = guardianEmailBinds(useGetGuardianRulesQuery().data?.data);
 
   const valid =
     mode === "search"

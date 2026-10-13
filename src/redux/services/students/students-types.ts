@@ -498,13 +498,15 @@ export interface AdmissionPolicy {
   hint: string;
   /**
    * The next number in this school's own series, or "" for no suggestion.
+   * Absent when the caller cannot read the numbers already issued, in which
+   * case a form prints the rule's own hint and never a number.
    *
    * Derived from the numbers already issued, not from `pattern` - a regular
    * expression cannot be inverted. It is a suggestion and NOT a reservation:
    * two registrars enrolling at once can be handed the same one, and the
    * server's unique constraint is what prevents the collision.
    */
-  suggestion: string;
+  suggestion?: string;
   /** Issue the next number automatically when enrolment leaves it blank. */
   auto_issue?: boolean;
   /** Where the rule read came from. Absent from an older server. */
@@ -539,6 +541,13 @@ export interface EnrolmentRules {
   document_types: LabelledOption[];
   /** Fields from `optional_fields` this school requires at enrolment. */
   required_fields: string[];
+  /**
+   * The entries of `required_fields` that bind the signed-in user: a
+   * requirement on a field they cannot write is left for somebody who can.
+   * Absent from an older server, where `required_fields` binds everyone.
+   */
+  binding_required_fields?: string[];
+  /** The details the user may read, which are the only ones a screen lists. */
   optional_fields: LabelledOption[];
   capacity_mode: CapacityMode;
   /** Given to a new class created without a capacity; null means unlimited. */
@@ -554,10 +563,26 @@ export interface EnrolmentRules {
 export interface GuardianRules {
   min_per_student: number;
   email_required: boolean;
+  /**
+   * Whether the email rule binds the signed-in user: a user who cannot give a
+   * guardian's email is not held to it. Absent from an older server, where
+   * `email_required` binds everyone.
+   */
+  binding_email_required?: boolean;
   matching: "EMAIL_THEN_PHONE" | "EMAIL_ONLY";
   matching_options: LabelledOption[];
   extra_relationships: string[];
   relationships: LabelledOption[];
+}
+
+/** The required details a form holds the signed-in user to. */
+export function bindingRequiredFields(rules: EnrolmentRules | undefined): string[] {
+  return rules?.binding_required_fields ?? rules?.required_fields ?? [];
+}
+
+/** Whether a form must ask for a new guardian's email from the signed-in user. */
+export function guardianEmailBinds(rules: GuardianRules | undefined): boolean {
+  return rules?.binding_email_required ?? rules?.email_required ?? false;
 }
 
 /** One step of a school's own admissions, in its order. */
@@ -628,7 +653,7 @@ export type GuardianRulesUpdate = Pick<
 
 export type EnrolmentRulesUpdate = Omit<
   EnrolmentRules,
-  "document_types" | "optional_fields"
+  "document_types" | "optional_fields" | "binding_required_fields"
 > & { reason?: string };
 
 /**

@@ -8,7 +8,7 @@ export default function ViewBranchesArticle() {
       </GuideSection>
 
       <GuideSection id="read-the-branch-list" title="Read the branch list">
-        <p>Each branch is a card with its name and address. A <strong>Main branch</strong> label marks your main branch; the others read <strong>Branch</strong>. A branch that is not active also shows its status, such as <strong>Pending</strong>, <strong>Suspended</strong>, <strong>Inactive</strong> or <strong>Closed</strong>. An active branch shows no status label.</p>
+        <p>Each branch is a card with its name and address. If your role may not read branch addresses, the card shows only the state and country, and the branch panel leaves out the address and email rows. A <strong>Main branch</strong> label marks your main branch; the others read <strong>Branch</strong>. A branch that is not active also shows its status, such as <strong>Pending</strong>, <strong>Suspended</strong>, <strong>Inactive</strong> or <strong>Closed</strong>. An active branch shows no status label.</p>
         <p>The <strong>Students</strong>, <strong>Teachers</strong> and <strong>Classes</strong> counts show a dash when there is no figure to give, rather than a 0 that would be wrong.</p>
       </GuideSection>
 

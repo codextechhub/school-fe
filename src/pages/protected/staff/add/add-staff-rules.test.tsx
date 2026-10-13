@@ -248,6 +248,21 @@ describe("staffNumberField", () => {
     expect(rule.hint).toContain("has none to continue from yet");
   });
 
+  it("names no number and claims no empty series where the suggestion is withheld", () => {
+    const { suggestion: _withheld, ...unreadable } = { ...LVS, auto_issue: true };
+    const rule = staffNumberField(unreadable);
+    expect(rule.required).toBe(false);
+    expect(rule.placeholder).toBe("");
+    expect(rule.hint).toContain("Leave it blank and the next number is issued");
+    expect(rule.hint).toContain(LVS.hint);
+    expect(rule.hint).not.toContain("none to continue from");
+  });
+
+  it("falls back to the rule's own hint where numbers are not issued and no suggestion came", () => {
+    const { suggestion: _withheld, ...unreadable } = LVS;
+    expect(staffNumberField(unreadable)).toMatchObject({ required: true, hint: LVS.hint });
+  });
+
   it("describes a school with no rule as checking only that the ID is unique", () => {
     const rule = staffNumberField({
       required: false, pattern: "", hint: "", auto_issue: false, source: "default", suggestion: "",

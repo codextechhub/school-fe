@@ -508,6 +508,8 @@ export function SettingsOverviewCard({ icon: Icon, title, description, to, statu
 export interface SettingsAuditRow {
   id: string | number;
   message: string;
+  /** The free-text reason a person gave for the change; empty or absent when there is none. */
+  reason?: string | null;
   actor?: string | null;
   created_at: string;
   before?: Record<string, unknown> | null;
@@ -548,6 +550,7 @@ export function SettingsAuditHistory({ rows }: { rows: SettingsAuditRow[] }) {
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
                 <p className="font-mont text-sm font-semibold text-gray-01">{row.message}</p>
+                {row.reason ? <p className="mt-0.5 whitespace-pre-line break-words font-mont text-xs text-gray-01">Reason: {row.reason}</p> : null}
                 <p className="mt-0.5 font-mont text-xs text-gray-05">{row.actor ?? "System"} · {formatDateTime(row.created_at)}</p>
               </div>
               <PolicyBadge kind="configured">Saved</PolicyBadge>

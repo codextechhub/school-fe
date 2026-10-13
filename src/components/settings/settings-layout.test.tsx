@@ -48,6 +48,15 @@ describe("SettingsAuditHistory", () => {
     expect(container.textContent).not.toContain("term_collection_target_pct");
   });
 
+  it("shows the reason a person gave beside the sentence, and nothing when there is none", () => {
+    act(() => root.render(<SettingsAuditHistory rows={[
+      row({ id: 1, reason: "Governors raised the target after the term review" }),
+      row({ id: 2, message: "Updated the invoice narration.", reason: "" }),
+    ]} />));
+    expect(container.textContent).toContain("Reason: Governors raised the target after the term review");
+    expect(container.textContent?.match(/Reason:/g)).toHaveLength(1);
+  });
+
   it("counts the changes of a row the server sent no words for", () => {
     act(() => root.render(<SettingsAuditHistory rows={[row({})]} />));
     expect(container.textContent).toContain("1 setting changed");

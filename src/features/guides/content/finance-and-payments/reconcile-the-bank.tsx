@@ -11,6 +11,7 @@ const PROBLEMS = [
   { title: "Match stays disabled", body: "The bank and book totals you selected must be equal. Match one to one, one bank line to several book lines, or several bank lines to one book line." },
   { title: "A bank charge has no book entry", body: "Select the bank line and use Add adjusting entry. It books the charge and matches the line in one step." },
   { title: "The adjusting entry lands on a later date", body: "The line's period is closed, so the entry books on the first open day after it. The bank's own date stays on the journal." },
+  { title: "A balance card is missing", body: "Field Access has closed it for your role. The statement balance, the book balance and the difference each follow their own switch, and the difference needs both balances, so closing either takes it away. The reconciliation report leaves the same figures off." },
   { title: "A school fee receipt will not match", body: "Check the receipt's amount and date against the bank line. A receipt recorded against the wrong bank account never appears here." },
 ] as const;
 

@@ -56,6 +56,12 @@ const FIELDS = [
  * Documents stay a prompt: a school registering a child on the day they
  * arrive rarely has every paper in hand, so a missing one marks the record
  * incomplete rather than stopping the enrolment.
+ *
+ * The list of required details is built from `optional_fields`, which holds
+ * only the pupil details the user may read. A requirement the school has set
+ * on a detail outside that list is not shown, is kept in the form's value and
+ * is sent back with every save, so saving never lifts it; the server also
+ * preserves it. A panel with nothing to tick is not rendered.
  */
 export function EnrolmentSection() {
   const query = useGetEnrolmentRulesQuery();
@@ -183,23 +189,25 @@ function EnrolmentForm({ rules }: { rules: EnrolmentRules }) {
         </div>
       </SettingsPanel>
 
-      <SettingsPanel
-        title="Details required at enrolment"
-        description="Name, birth date, gender and a class are always required. Tick anything else a new record must have. Records already on the roll are not affected until someone edits that detail."
-      >
-        <div className="grid grid-cols-1 gap-2.5 px-4 py-4 sm:grid-cols-2 sm:px-5">
-          {rules.optional_fields.map((field) => (
-            <CheckRow
-              key={field.value}
-              label={field.label}
-              checked={fields.includes(field.value)}
-              disabled={!canSave}
-              onChange={(on) => setFields(toggle(fields, field.value, on))}
-            />
-          ))}
-          <ErrorLine text={errors.required_fields} />
-        </div>
-      </SettingsPanel>
+      {rules.optional_fields.length > 0 ? (
+        <SettingsPanel
+          title="Details required at enrolment"
+          description="Name, birth date, gender and a class are always required. Tick anything else a new record must have. Records already on the roll are not affected until someone edits that detail."
+        >
+          <div className="grid grid-cols-1 gap-2.5 px-4 py-4 sm:grid-cols-2 sm:px-5">
+            {rules.optional_fields.map((field) => (
+              <CheckRow
+                key={field.value}
+                label={field.label}
+                checked={fields.includes(field.value)}
+                disabled={!canSave}
+                onChange={(on) => setFields(toggle(fields, field.value, on))}
+              />
+            ))}
+            <ErrorLine text={errors.required_fields} />
+          </div>
+        </SettingsPanel>
+      ) : null}
 
       <SettingsPanel
         title="Class capacity"

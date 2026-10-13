@@ -33,6 +33,7 @@ const PROBLEMS = [
   ["The youngest age must be below the oldest", "Youngest and Oldest are the wrong way round, or the same. Ages run from 0 to 99."],
   ["Leave it blank for no limit, or enter 1 to 500", "Capacity of a new class takes a whole number from 1 to 500, or nothing at all."],
   ["A child was enrolled without a document you ticked", "That is expected. Documents are a prompt, never a gate. The child's record shows as incomplete until the file is uploaded on their Documents tab."],
+  ["A detail you expected is not in the list", "Your role cannot read it in Field Access. Ask a school administrator, or ask them to make the change."],
   ["An existing class did not change size", "Capacity of a new class only fills in classes created without a capacity from now on. Change an existing class's capacity in Academic Structure."],
 ] as const;
 
@@ -63,6 +64,7 @@ export default function SettingsEnrolmentArticle() {
         <GuideChecklist items={DETAILS} />
         <p>A ticked detail loses &quot;(optional)&quot; on the enrolment form, and the form will not save without it: an empty one reads <strong>Required at this school.</strong> If XVS refuses the save itself, its message names the detail, for example <strong>Home address is required at this school.</strong> The details carry the same names here as on the form. Student phone and Student email are the student&apos;s own, not a guardian&apos;s.</p>
         <p>Records already on the roll are not affected until somebody edits that detail. From then on it cannot be emptied.</p>
+        <p>The list shows only the details your role can read in Field Access. A requirement your school has set on a detail you cannot read is not shown and is not lifted when you save. A requirement on a detail your role cannot change does not hold you on the enrolment form: the detail stays optional for you, and somebody who can change it completes it later.</p>
       </GuideSection>
 
       <GuideSection id="class-capacity" title="Class capacity">
