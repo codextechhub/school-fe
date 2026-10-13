@@ -148,12 +148,29 @@ export interface TeacherLessonCard {
   submitted_at?: string | null;
 }
 
+/** The next lesson the timetable gives the reader, from now. */
+export interface NextLesson {
+  date: string;
+  date_label: string;
+  is_today: boolean;
+  period_label: string;
+  start_time: string;
+  end_time: string;
+  subject: string;
+  class_name: string;
+  room_name: string | null;
+  /** Only at a school with several branches. */
+  branch_name: string | null;
+}
+
 export interface TeacherHub {
   date: string;
   date_label: string;
   closed: ClosedDay | null;
   classes: TeacherClassCard[];
   lesson_marking_on: boolean;
+  /** Only when reading today; null when nothing is timetabled in the next fortnight. */
+  next_lesson?: NextLesson | null;
   lessons?: TeacherLessonCard[];
 }
 
@@ -463,7 +480,14 @@ export interface Report {
     not_taken: number;
     rate: number | null;
   }[];
-  chronic?: { student: StudentRef; class_name: string | null; rate: number; absent: number; not_taken: number }[];
+  chronic?: {
+    student: StudentRef;
+    class_name: string | null;
+    rate: number;
+    absent: number;
+    excused: number;
+    not_taken: number;
+  }[];
   threshold: number;
   /** Absent with the register status. */
   not_taken?: {
@@ -619,4 +643,15 @@ export interface StaffMarkWrite {
   mark: Exclude<AttendanceMark, "E">;
   arrived_at?: string | null;
   note?: string;
+}
+
+// ── One class's chronic-absence list ───────────────────────────────────────
+
+export interface ClassChronic {
+  school_class: { id: number; name: string };
+  term: TermRef | null;
+  terms: TermRef[];
+  threshold: number;
+  /** Absent when the reader may not read the register's counts. */
+  chronic?: NonNullable<Report["chronic"]>;
 }

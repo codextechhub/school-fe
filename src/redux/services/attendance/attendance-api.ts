@@ -5,6 +5,7 @@ import type {
   AdminHub,
   AttendanceSettings,
   AttendanceSettingsWrite,
+  ClassChronic,
   CorrectionCreate,
   CorrectionDecision,
   CorrectionListArgs,
@@ -227,6 +228,19 @@ export const attendanceApi = baseApi.injectEndpoints({
       invalidatesTags: ["AttendanceReasonCodes"],
     }),
 
+    /**
+     * The pupils of one class below the school's chronic-absence line this
+     * term. Its own class teacher may read it; anyone else needs the reports.
+     */
+    getClassChronic: builder.query<Envelope<ClassChronic>, { classId: number; term?: number }>({
+      query: ({ classId, term }) => ({
+        url: `/attendance/classes/${classId}/chronic/`,
+        method: "GET",
+        params: term ? { term } : {},
+      }),
+      providesTags: ["AttendanceReports"],
+    }),
+
     // ── Lesson registers ───────────────────────────────────────────────────
 
     /** The day's lessons in levels that mark them, for a reader who takes any class. */
@@ -393,6 +407,7 @@ export const {
   useAddReasonCodeMutation,
   useSetReasonCodeRetiredMutation,
   useGetAttendanceReportQuery,
+  useGetClassChronicQuery,
   useGetLessonsQuery,
   useGetLessonRegisterQuery,
   useSetLessonMarkMutation,
