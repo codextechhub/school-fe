@@ -470,15 +470,22 @@ export default function Dashboard() {
               {greeting(schoolNow.hour)}
               {user?.first_name ? `, ${user.first_name}` : ""}.
             </h1>
-            <p className="mt-2 max-w-lg text-[13px] leading-5 text-white/70 text-pretty">
-              {calendar.isError
-                ? "Your calendar summary could not be loaded. The rest of your workspace is still available below."
-                : term
-                ? `${term.name} of ${sessionName ?? "this year"} is underway. You have taught ${taught} of ${teachable} teaching days.`
-                : sessionName
-                  ? `${sessionName} is selected. No ${words.term} covers today, so nothing is being taught right now.`
-                  : "No academic year is set up yet, so there is nothing to teach into."}
-            </p>
+            {/* Said only once it is known. While the term is loading, and for a
+                role that cannot read the calendar at all, "no term covers today"
+                would be a claim about the school rather than about the reader. */}
+            {canSeeCalendar && (
+              <p className="mt-2 max-w-lg text-[13px] leading-5 text-white/70 text-pretty">
+                {calendar.isError
+                  ? "Your calendar summary could not be loaded. The rest of your workspace is still available below."
+                  : academicLoading
+                    ? <span className="inline-block h-4 w-64 max-w-full animate-pulse rounded bg-white/15 align-middle" aria-label="Loading this term" />
+                    : term
+                      ? `${term.name} of ${sessionName ?? "this year"} is underway. You have taught ${taught} of ${teachable} teaching days.`
+                      : sessionName
+                        ? `${sessionName} is selected. No ${words.term} covers today, so nothing is being taught right now.`
+                        : "No academic year is set up yet, so there is nothing to teach into."}
+              </p>
+            )}
             {heroActions.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-2">
                 {heroActions.slice(0, 2).map((action) => (
