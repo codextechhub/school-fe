@@ -128,7 +128,8 @@ function CardRow({
   const chip = status ? STATUS_TEXT[status] : null;
   const body = (
     <>
-      <div className="min-w-0 flex-1">
+      {/* Its own line on a phone, so the status and the link never squeeze the title. */}
+      <div className="min-w-0 basis-full sm:basis-auto sm:flex-1">
         <p className="truncate font-medium text-black-01">{title}</p>
         <p className="text-xs text-gray-05">{meta}</p>
       </div>
