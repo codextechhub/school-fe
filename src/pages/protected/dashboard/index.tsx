@@ -31,6 +31,7 @@ import { selectUser } from "@/redux/features/auth/auth-slice";
 import { routesPath } from "@/routes/routesPath";
 import { useGetAcademicOverviewQuery } from "@/redux/services/academics/academics-api";
 import { useGetCalendarOverviewQuery } from "@/redux/services/calendar/calendar-api";
+import { TeacherDayCards } from "./teacher-day";
 import { useGetOnboardingStateQuery } from "@/redux/services/onboarding/onboarding-api";
 import { useGetStudentSummaryQuery } from "@/redux/services/students/students-api";
 import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
@@ -543,6 +544,9 @@ export default function Dashboard() {
           )}
         </div>
       </section>
+
+      {/* An active teacher's own registers and class, before the school's figures. */}
+      <TeacherDayCards />
 
       {operationalError && !operationalLoading && (
         <section className="flex items-start gap-3 rounded-2xl border border-yellow-01/30 bg-yellow-01/5 px-4 py-3.5">
