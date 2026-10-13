@@ -17,6 +17,7 @@ import type {
   HostAvatarProps, HostBranch, HostPerson, HostPosition, HostQueryResult, HostExportProps,
   HostRole,
 } from "@xvs/finance/host";
+import type { FinanceSettingsSection } from "@/pages/protected/finance/console-sections";
 
 /**
  * The reader's branch reach, as the package's `useReaderReach` host member
@@ -162,6 +163,12 @@ export {
   financeSettingsSections,
   setupSections,
 } from "@/xvs-host-config";
+
+/** Host-owned Finance settings use the school permissions that protect them. */
+export function useFinanceSettingsSectionAccess(): (section: FinanceSettingsSection) => boolean {
+  const { hasPermission } = usePermissions();
+  return (section) => section !== "fees" || hasPermission(P.VIEW_FEES);
+}
 
 /** A school adjusts the approval paths it was given; it does not author new ones.
  *

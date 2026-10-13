@@ -9,7 +9,6 @@ import { useGuideWords } from "../../guide-words";
 
 const PROBLEMS = [
   { title: "Everything is greyed out", body: "You can read settings but not change them. Changing needs the finance settings update permission, and because a setting applies to every branch, someone who covers the whole school. At a school with one branch, its bursar covers the whole school." },
-  { title: "Finance settings are protected", body: "You do not have the finance settings view permission. Ask whoever manages roles." },
   { title: "An account is missing from a mapping list", body: "Each role only offers active, postable accounts of the type it expects. Create or fix the account in the Chart of Accounts first." },
   { title: "Save stays disabled", body: "Nothing has changed, or a number is out of range. The message beside the button says which." },
 ] as const;
@@ -19,7 +18,7 @@ export default function FinanceSettingsArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p><strong>Settings</strong>, at the foot of the Finance sidebar, holds the rules behind the school&apos;s books. Day-to-day work stays on the other screens; come here when a default needs to change.</p>
+        <p><strong>Settings</strong>, at the foot of the Finance sidebar, holds the rules behind the school&apos;s books. Day-to-day work stays on the other screens; come here when a default needs to change. It lists only sections with settings your role may read.</p>
         <GuideChecklist items={[
           "You have agreed the change with the bursar or accountant.",
           "You know what the setting affects before you save it.",
@@ -31,13 +30,13 @@ export default function FinanceSettingsArticle() {
 
       <GuideSection id="sections" title="What each section holds">
         <GuideSteps>
-          <GuideStep title="Overview">A card per section, with its state, and the set of books the settings apply to.</GuideStep>
+          <GuideStep title="Overview">A card for each section open to your role, with its state, and the set of books the settings apply to.</GuideStep>
           <GuideStep title="Fiscal calendar">How the next fiscal year opens and how long records are kept. Years and periods themselves are managed on Fiscal Periods. Both are explained in the guide to closing a month or the fiscal year.</GuideStep>
           <GuideStep title="Accounting defaults">Which account each posting role uses, such as receivables, customer credit or bad debt.</GuideStep>
           <GuideStep title="Documents">Billing defaults for invoices and receipts.</GuideStep>
           <GuideStep title="Banking and cash">Defaults for bank matching, receipt allocation and petty cash alerts, and the Online payments panel, which has a guide of its own.</GuideStep>
           <GuideStep title="Reference data">Links to the Chart of accounts, Tax codes and Cost centres.</GuideStep>
-          <GuideStep title="Approvals">Which finance documents go through an approval path. <strong>Manage workflows</strong> opens the approval templates, for people allowed to see them.</GuideStep>
+          <GuideStep title="Approvals"><strong>Manage workflows</strong> opens the approval templates. This section appears only to people allowed to see them.</GuideStep>
           <GuideStep title="Fee due dates">When fee bills fall due. It has a guide of its own.</GuideStep>
           <GuideStep title="Receivables">Credit on new bills, the concession limit, fees billed ahead, doubtful-debt bands, deposits and how a payer&apos;s payment is split. Explained in the guide to fees billed ahead, deposits and doubtful debts.</GuideStep>
           <GuideStep title="Payroll">How PAYE is worked out, which deductions apply, how payslips reach staff, and earlier pay. Explained in the payroll guide.</GuideStep>
