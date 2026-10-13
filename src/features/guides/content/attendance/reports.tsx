@@ -15,7 +15,7 @@ export default function ReportsArticle() {
       </GuideSection>
 
       <GuideSection id="chronic" title="Chronic absence">
-        <p>The students whose rate for the {w.term} is below your school&apos;s line, lowest first. The line is set in Settings, under Attendance. Select a name to open that student&apos;s attendance.</p>
+        <p>The students whose rate for the {w.term} is below your school&apos;s line, lowest first. The line is set in Settings, under Attendance. An excused day lowers the rate as an absence does, so each row gives the days absent and the days excused separately. Select a name to open that student&apos;s attendance.</p>
       </GuideSection>
 
       <GuideSection id="not-taken" title="Registers not taken">

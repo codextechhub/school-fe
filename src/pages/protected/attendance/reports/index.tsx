@@ -344,7 +344,7 @@ function Chronic({ report, exportArgs }: { report: Report; exportArgs: ExportArg
         <EmptyLine text="Nobody is below the line this term." />
       ) : (
         <CustomTable
-          tableHeaderList={["Student", "Class", "Rate", "Days absent", "Days not taken"]}
+          tableHeaderList={["Student", "Class", "Rate", "Days absent", "Days excused", "Days not taken"]}
           defaultBodyList={rows}
           tableBodyList={rows.map((row) => ({
             Student: canOpen ? (
@@ -360,6 +360,7 @@ function Chronic({ report, exportArgs }: { report: Report; exportArgs: ExportArg
             Class: row.class_name ?? "",
             Rate: rate(row.rate),
             "Days absent": row.absent,
+            "Days excused": row.excused,
             "Days not taken": row.not_taken,
           }))}
           hidePagination
