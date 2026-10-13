@@ -109,7 +109,9 @@ function RegisterBody({
   const classId = register.school_class.id;
   const key = { classId, date };
   const takesAny = hasPermission(P.TAKE_ANY_REGISTER);
-  const { data: mine } = useGetMyAttendanceTodayQuery(
+  // A teacher's right to mark rests on their own Today list; until it has
+  // answered, the register is not shown rather than shown read-only.
+  const { data: mine, isLoading: mineLoading } = useGetMyAttendanceTodayQuery(
     { date: date === today ? undefined : date },
     { skip: takesAny || !hasPermission(P.TAKE_OWN_REGISTER) },
   );
@@ -163,6 +165,8 @@ function RegisterBody({
       description: submittedText(preview),
     });
   };
+
+  if (mineLoading) return <RegisterSkeleton />;
 
   return (
     <>
