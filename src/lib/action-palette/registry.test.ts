@@ -16,24 +16,10 @@
 import { describe, expect, it } from "vitest";
 import { P, resolvePermissionKey, type PermissionCode } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
-import { academicRoutes } from "@/routes/protected/academic-routes";
-import { branchesRoutes } from "@/routes/protected/branches-routes";
-import { classesRoutes } from "@/routes/protected/classes-routes";
-import { onboardingRoutes, onboardingWelcomeRoute } from "@/routes/protected/onboarding-routes";
-import { overviewRoutes } from "@/routes/protected/overview-routes";
-import { staffRoutes } from "@/routes/protected/staff-routes";
-import { studentsRoutes } from "@/routes/protected/students-routes";
-import { supportRoutes } from "@/routes/protected/support-routes";
-import { financeRoutes, FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
-import {
-  procurementRoutes,
-  PROCUREMENT_MOUNTED_PATHS,
-} from "@/routes/protected/procurement-routes";
-import { rolesRoutes } from "@/routes/protected/roles-routes";
-import { settingsRoutes } from "@/routes/protected/settings-routes";
-import { workflowRoutes } from "@/routes/protected/workflow-routes";
-import { dataImportRoutes } from "@/routes/protected/data-import-routes";
-import { exportRoutes } from "@/routes/protected/export-routes";
+import { FINANCE_MOUNTED_PATHS } from "@/routes/protected/finance-routes";
+import { onboardingWelcomeRoute } from "@/routes/protected/onboarding-routes";
+import { PROCUREMENT_MOUNTED_PATHS } from "@/routes/protected/procurement-routes";
+import { protectedChildren } from "@/routes/protected/route-tables";
 import {
   ACTIONS,
   LIVE_ONLY_ACTION_IDS,
@@ -43,33 +29,18 @@ import {
 import type { ActionDef } from "./types";
 
 /**
- * The paths the router genuinely mounts. Taken from the route modules rather
+ * The paths the router genuinely mounts. Taken from the route table rather
  * than from routesPath, because the two can drift: a path can be named without
- * anything mounting it, which is exactly how /school-fees and /settings sat in
- * the sidebar pointing at "#" until the stubs were removed.
- * Every one of these modules is import-cheap (lazy() page imports plus
- * type-only handles), so pulling them in costs no page bundle.
+ * anything mounting it, which is how /school-fees and /settings once sat in the
+ * sidebar pointing at "#".
  *
- * The protected route barrel is deliberately NOT imported: it pulls in
- * DashboardLayout eagerly, and with it the whole shell.
+ * `protectedChildren` is the same table the router mounts, so a new route
+ * module is audited here the moment it is mounted. It is import-cheap (lazy()
+ * page imports plus type-only handles); the protected route barrel is not
+ * imported, because it pulls in DashboardLayout eagerly and with it the shell.
  */
 const SERVED_PATHS = new Set([
-  ...[
-    onboardingWelcomeRoute,
-    ...onboardingRoutes,
-    ...overviewRoutes,
-    ...branchesRoutes,
-    ...academicRoutes,
-    ...classesRoutes,
-    ...studentsRoutes,
-    ...staffRoutes,
-    ...supportRoutes,
-    ...rolesRoutes,
-    ...settingsRoutes,
-    ...workflowRoutes,
-    ...dataImportRoutes,
-    ...exportRoutes,
-  ]
+  ...[onboardingWelcomeRoute, ...protectedChildren]
     .map((route) => route.path)
     .filter((path): path is string => typeof path === "string"),
   // The two consoles mount one path per real section under a single parent, so
@@ -110,24 +81,14 @@ function collectHandles(
 }
 
 /**
+ * Read from the same route table, so every mounted screen is held to the rule.
  * `onboardingWelcomeRoute` is deliberately absent. It is mounted as a SIBLING
  * of the layout route rather than a child, so it has no shell and the closed
  * wall cannot be drawn over it - the handle flags say nothing about it because
  * there is nothing for them to say. It is still a served path; it is just not
  * somewhere the go-live rule applies.
  */
-const ROUTE_HANDLES = collectHandles([
-  ...onboardingRoutes,
-  ...overviewRoutes,
-  ...branchesRoutes,
-  ...academicRoutes,
-  ...classesRoutes,
-  ...studentsRoutes,
-  ...staffRoutes,
-  ...supportRoutes,
-  ...financeRoutes,
-  ...procurementRoutes,
-] as RouteLike[]);
+const ROUTE_HANDLES = collectHandles(protectedChildren as RouteLike[]);
 
 const routeOpensBeforeGoLive = (path: string): boolean => {
   const handle = ROUTE_HANDLES.get(path);

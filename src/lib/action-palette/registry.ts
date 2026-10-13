@@ -1344,15 +1344,10 @@ const PENDING_SURFACE_PREFIXES: readonly string[] = [
   "/academic-structure",
   "/academic-calendar",
   "/timetables",
+  // Where a school reads what an upload did, including the initial roll.
+  "/data-imports/batches",
 ];
 
-/**
- * Is this destination one a school may open before go-live?
- *
- * Exported because it is the claim that has to be true, not an implementation
- * detail: registry.test.ts holds it against every path the router mounts, so
- * this answer and `pendingSurface` on the route handle cannot drift apart.
- */
 /**
  * Screens under a pending-surface prefix that are nonetheless closed.
  *
@@ -1361,8 +1356,9 @@ const PENDING_SURFACE_PREFIXES: readonly string[] = [
  * Teaching duties needs an academic year, which a school being set up has not
  * started. The organogram is drawn once a school is running, and its
  * endpoints answer 403 `TENANT_NOT_LIVE` until then. A person's own payslips
- * are written by payroll runs, which a school makes once it is live. Their
- * route handles say the same.
+ * are written by payroll runs, which a school makes once it is live. Starting a
+ * new import batch from the console waits for go-live, although the batches
+ * themselves can be read before it. Their route handles say the same.
  *
  * Subtracted HERE rather than in the action filter below, because this is the
  * one function that answers "does this path open before go-live" - and the
@@ -1374,8 +1370,16 @@ const LIVE_ONLY_PATHS: readonly string[] = [
   "/staff/organogram",
   "/staff/organogram/manage",
   "/staff/me/payslips",
+  "/data-imports/batches/new",
 ];
 
+/**
+ * Is this destination one a school may open before go-live?
+ *
+ * Exported because it is the claim that has to be true, not an implementation
+ * detail: registry.test.ts holds it against every path the router mounts, so
+ * this answer and `pendingSurface` on the route handle cannot drift apart.
+ */
 export const pathOpensBeforeGoLive = (to: string): boolean => {
   // Judged on the path alone: `?action=new` opens a form on the same screen.
   const path = to.split(/[?#]/)[0];
