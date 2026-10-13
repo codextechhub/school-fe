@@ -523,14 +523,20 @@ export default function Dashboard() {
                   {words.Term} progress
                 </p>
                 <p className="mt-1.5 truncate text-sm font-semibold text-white">
-                  {calendar.isError ? "Unavailable" : term?.name ?? `Between ${words.terms}`}
+                  {calendar.isError
+                    ? "Unavailable"
+                    : academicLoading
+                      ? "Loading…"
+                      : term?.name ?? `Between ${words.terms}`}
                 </p>
                 <p className="mt-1 text-[11px] leading-4 text-white/60">
                   {calendar.isError
                     ? "Refresh to try again"
-                    : term
-                      ? `${Math.max(0, teachable - taught)} teaching days remain`
-                      : "No teaching days are active"}
+                    : academicLoading
+                      ? "\u00a0"
+                      : term
+                        ? `${Math.max(0, teachable - taught)} teaching days remain`
+                        : "No teaching days are active"}
                 </p>
               </div>
             </div>
