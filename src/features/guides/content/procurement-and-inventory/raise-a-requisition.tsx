@@ -34,6 +34,7 @@ export default function RaiseARequisitionArticle() {
         <GuideSteps>
           <GuideStep title="Open the request">In Procurement <strong>Approvals</strong>, filter by document type if you want, and open the requisition. The drawer shows <strong>This document is awaiting your approval</strong> and how many approvals the step needs.</GuideStep>
           <GuideStep title="Decide">Select <strong>Approve</strong>, <strong>Request Revision</strong> to send it back for changes, or <strong>Reject</strong>. Request Revision and Reject need a comment.</GuideStep>
+          <GuideStep title="Find a decision you made before">Select <strong>My decisions</strong>. Search by document reference, or narrow the list by document type, decision and date. A decision from a branch you no longer work in keeps only its receipt: the document reference, your decision, the approval stage, when you acted and whether you acted for somebody else.</GuideStep>
         </GuideSteps>
       </GuideSection>
 

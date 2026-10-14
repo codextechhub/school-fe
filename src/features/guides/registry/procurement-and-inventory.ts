@@ -28,7 +28,7 @@ export const PROCUREMENT_AND_INVENTORY_GUIDES = [
     relatedGuideIds: ["school.procurement.order-receive-and-pay", "school.workflow.decide-approval", "school.workflow.track-and-delegate"],
     estimatedMinutes: 6,
     owner: OWNER,
-    reviewedAt: "2026-09-27",
+    reviewedAt: "2026-10-13",
     risk: "medium",
     featured: true,
     status: "published",
