@@ -47,11 +47,9 @@ export function AsAtControl({
           onChange={(event) => onChange(event.target.value === today ? undefined : event.target.value)}
         />
       </label>
-      <span className="text-[11px] text-gray-05">
-        {historyStarts
-          ? `History from ${formatDay(historyStarts, { month: "long" })}`
-          : "No history recorded yet"}
-      </span>
+      {!historyStarts && (
+        <span className="text-[11px] text-gray-05">No history recorded yet</span>
+      )}
     </div>
   );
 }
