@@ -42,7 +42,6 @@ import { useSchoolWords } from "@/hooks/use-school-words";
  */
 export default function AcademicStructureOverview() {
   const { lens, branch, multiBranch } = useAcademicsLens();
-  const [view, setView] = useState<"list" | "tree">("list");
 
   const { data, isLoading, isError, refetch } = useGetAcademicOverviewQuery(lens);
   const overview = data?.data;
@@ -75,6 +74,33 @@ export default function AcademicStructureOverview() {
     );
   }
 
+  return (
+    <AcademicStructureOverviewContent
+      overview={overview}
+      multiBranch={multiBranch}
+      branch={branch}
+    />
+  );
+}
+
+/**
+ * The loaded academic structure overview.
+ *
+ * Incomplete readiness sits before the structure so missing setup is the next
+ * thing a reader encounters. A completed checklist moves below the structure,
+ * where it confirms the page without interrupting normal browsing.
+ */
+export function AcademicStructureOverviewContent({
+  overview,
+  multiBranch,
+  branch,
+}: {
+  overview: AcademicOverview;
+  multiBranch: boolean;
+  branch: number | "all";
+}) {
+  const [view, setView] = useState<"list" | "tree">("list");
+
   // The year being READ, not the year being run - the counts below are its.
   // They are the same block until somebody looks back at last year.
   const {
@@ -84,6 +110,8 @@ export default function AcademicStructureOverview() {
     branches_without_a_session: orphans,
   } = overview;
   const session = viewed ?? active;
+  const readinessChecks = getReadinessChecks(session, counts);
+  const isReady = readinessChecks.every((check) => check.complete);
 
   return (
     <PageShell className="content-start gap-6" grid>
@@ -109,6 +137,8 @@ export default function AcademicStructureOverview() {
       )}
 
       <CountSpine counts={counts} />
+
+      {!isReady && <ReadinessStrip checks={readinessChecks} />}
 
       <section className="grid min-w-0 gap-3" aria-labelledby="structure-heading">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -138,7 +168,7 @@ export default function AcademicStructureOverview() {
         )}
       </section>
 
-      <ReadinessStrip session={session} counts={counts} />
+      {isReady && <ReadinessStrip checks={readinessChecks} />}
     </PageShell>
   );
 }
@@ -433,14 +463,11 @@ type ReadinessCheck = {
  * report it. A readiness score must never imply that every subject is assigned
  * when this screen cannot verify that claim.
  */
-function ReadinessStrip({
-  session,
-  counts,
-}: {
-  session: OverviewSession | null;
-  counts: Counts;
-}) {
-  const checks: ReadinessCheck[] = [
+function getReadinessChecks(
+  session: OverviewSession | null,
+  counts: Counts,
+): ReadinessCheck[] {
+  return [
     {
       label: "Session configured",
       detail: session ? session.name : "No session",
@@ -467,6 +494,9 @@ function ReadinessStrip({
       complete: counts.subjects > 0,
     },
   ];
+}
+
+function ReadinessStrip({ checks }: { checks: ReadinessCheck[] }) {
   const complete = checks.filter((check) => check.complete).length;
   const percent = Math.round((complete / checks.length) * 100);
   const radius = 27;

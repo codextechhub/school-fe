@@ -29,7 +29,7 @@ export default function StructureOverviewArticle() {
       </GuideSection>
 
       <GuideSection id="readiness" title="Check structure readiness">
-        <p><strong>Structure readiness</strong>, at the foot of the page, scores five setup steps and shows a percentage:</p>
+        <p><strong>Structure readiness</strong> scores five setup steps and shows a percentage. It appears above <strong>The structure</strong> while something needs attention, then moves to the foot of the page when all five steps are complete:</p>
         <GuideChecklist items={[
           "Session configured",
           "Departments created",
