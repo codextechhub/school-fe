@@ -48,6 +48,7 @@ const IKEJA: SchoolBranch = {
   status: "ACTIVE",
   address: "12 Allen Avenue",
   email: "ikeja@bright-star.example",
+  phone: "08031234567",
   state: "Lagos",
   country: "Nigeria",
   opened_at: "2024-09-01",
@@ -63,6 +64,7 @@ const LEKKI: SchoolBranch = {
   is_main: false,
   address: "5 Admiralty Way",
   email: "lekki@bright-star.example",
+  phone: "08039876543",
 };
 
 function without(branch: SchoolBranch, ...keys: Array<keyof SchoolBranch>): SchoolBranch {
@@ -73,6 +75,9 @@ function without(branch: SchoolBranch, ...keys: Array<keyof SchoolBranch>): Scho
 
 const HIDDEN_ADDRESS_AND_EMAIL: FieldAccessPayload = {
   "school.branches": { hidden: ["address", "email"], read_only: ["address", "email"], open_on_create: [] },
+};
+const HIDDEN_PHONE: FieldAccessPayload = {
+  "school.branches": { hidden: ["phone"], read_only: ["phone"], open_on_create: [] },
 };
 const READ_ONLY_ALWAYS: FieldAccessPayload = {
   "school.branches": { hidden: [], read_only: ["address", "email"], open_on_create: [] },
@@ -115,6 +120,22 @@ describe("branch list Field Access", () => {
     mocks.list = [{ ...without(IKEJA, "address", "email"), state: "", country: "" }];
 
     expect(render().body.textContent).toContain("No location on file");
+  });
+
+  it("shows each branch's phone number to a role that may read it", () => {
+    const text = render().body.textContent ?? "";
+
+    expect(text).toContain("08031234567");
+    expect(text).toContain("08039876543");
+  });
+
+  it("leaves the phone number off the card when it is hidden or not set", () => {
+    mocks.fieldAccess = HIDDEN_PHONE;
+    mocks.list = [without(IKEJA, "phone"), { ...LEKKI, phone: "" }];
+    const text = render().body.textContent ?? "";
+
+    expect(text).toContain("Ikeja Branch");
+    expect(text).not.toContain("0803");
   });
 
   it("offers no edit control for a branch, whatever the switches say", () => {
@@ -170,6 +191,23 @@ describe("branch drawer Field Access", () => {
     expect(document.body.textContent).toContain("Ikeja Branch");
     expect(document.body.textContent).not.toContain("Allen Avenue");
     expect(document.body.textContent).not.toContain("ikeja@bright-star.example");
+  });
+
+  it("lists the phone row when the role may read it", () => {
+    open();
+
+    expect(rowLabels()).toContain("Phone");
+    expect(document.body.textContent).toContain("08031234567");
+  });
+
+  it("removes the phone row, with its label, when it is hidden", () => {
+    mocks.fieldAccess = HIDDEN_PHONE;
+    mocks.detail = without(IKEJA, "phone");
+    open();
+
+    expect(rowLabels()).not.toContain("Phone");
+    expect(rowLabels()).toContain("Address");
+    expect(document.body.textContent).not.toContain("08031234567");
   });
 
   it("hides one of the two without touching the other", () => {

@@ -51,3 +51,29 @@ export interface InvoiceCheckout {
   currency: string;
   invoice_number: string;
 }
+
+/**
+ * How a payer's collection went, as the public status route words it.
+ *
+ * PENDING covers every state short of an answer from the provider. The other
+ * three are final: the page stops asking once it holds one.
+ */
+export type CollectionStatus = "PENDING" | "CONFIRMED" | "FAILED" | "ABANDONED";
+
+/**
+ * The little the backend tells a payer about their own payment. The reference
+ * is the only credential, so nothing about the customer, pupil, invoice or
+ * branch is in it, and there should never be.
+ */
+export interface PublicCollectionStatus {
+  status: CollectionStatus;
+  /** Kobo. */
+  amount: number;
+  /** The amount as the school prints it, symbol included. */
+  amount_naira: string;
+  currency: string;
+  /** Whoever is being paid: the school, or the platform for its own invoice. */
+  payee_name: string;
+  /** ISO 8601 UTC instant the payment was booked, else null. */
+  paid_at: string | null;
+}

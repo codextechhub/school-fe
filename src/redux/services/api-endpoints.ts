@@ -11,6 +11,20 @@
  * must always act as the *original* signed-in user, register it below.
  */
 
+/**
+ * Routes a payer reaches with no account: the invoice pay page and the payment
+ * return page. The signed token or the payment reference in the path is their
+ * whole authority, so none of these carries a Bearer token, a tenant assertion
+ * or an impersonation header, and a refusal of one never starts session
+ * recovery (a stale staff token on a parent's shared laptop must not bounce
+ * the parent to the sign-in page).
+ */
+export const PUBLIC_PAYER_ENDPOINTS = new Set([
+  "invoicePaySummary",
+  "startInvoiceCheckout",
+  "collectionStatus",
+]);
+
 // Endpoints that must never carry a (possibly stale) Bearer token. Sending one
 // to the login/activation/reset routes makes the backend treat the request as
 // already-authenticated, which can surface as a 500.
@@ -22,13 +36,11 @@ export const AUTH_ENDPOINTS = new Set([
   "activationPreview",
   "activateAccount",
   "logout",
-  // Paying an invoice from its email link. The payer holds no account, and the
-  // signed token in the path is their whole authority. A Bearer token left over
-  // from a staff session on the same browser must not ride along: the backend
-  // route takes no authentication at all, and sending one would only mean the
-  // page behaves differently on a colleague's laptop than on a parent's phone.
-  "invoicePaySummary",
-  "startInvoiceCheckout",
+  // The payer routes. A Bearer token left over from a staff session on the
+  // same browser must not ride along: the backend routes take no authentication
+  // at all, and sending one would only mean the page behaves differently on a
+  // colleague's laptop than on a parent's phone.
+  ...PUBLIC_PAYER_ENDPOINTS,
 ]);
 
 // Endpoints that operate purely on the caller and therefore must NOT carry the

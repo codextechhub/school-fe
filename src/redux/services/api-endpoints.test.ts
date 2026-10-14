@@ -83,7 +83,7 @@ describe("endpoint set invariants", () => {
 // that takes neither, so the page would behave differently depending on who
 // last used the browser.
 describe("public invoice pay endpoints", () => {
-  const PAY_ENDPOINTS = ["invoicePaySummary", "startInvoiceCheckout"];
+  const PAY_ENDPOINTS = ["invoicePaySummary", "startInvoiceCheckout", "collectionStatus"];
 
   it("never carries a Bearer token", () => {
     for (const endpoint of PAY_ENDPOINTS) {

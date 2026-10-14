@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { GraduationCap, MapPin } from "lucide-react";
+import { GraduationCap, MapPin, Phone } from "lucide-react";
 import { Badge, badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -22,9 +22,9 @@ import { FIELD_RESOURCE } from "@/lib/field-resources";
  * button. A card that offered one would be refused by the API behind it, and a
  * school that needs a new branch or a corrected address asks the team.
  *
- * Address and email are Field Access fields of `school.branches`: a role that
- * may not read them gets a card without the street address and a drawer
- * without those rows. They are never writable here, so no control for them
+ * Address, email and phone are Field Access fields of `school.branches`: a role
+ * that may not read them gets a card without the street address or the phone
+ * number and a drawer without those rows. They are never writable here, so no control for them
  * exists whatever the switches say. The branch name has no switch.
  *
  * The three counts read as dashes because there is no Student, Teacher or Class
@@ -155,6 +155,14 @@ function BranchCard({
           <MapPin className="size-3 shrink-0 text-amber-01" />
           <p className="text-xs truncate">{locationOf(branch, showAddress)}</p>
         </div>
+
+        {/* Absent, not blank, when the role may not read it or none is set. */}
+        {branch.phone ? (
+          <div className="flex gap-1.5 items-center mt-1 text-gray-05 min-w-0">
+            <Phone className="size-3 shrink-0 text-amber-01" />
+            <p className="text-xs truncate">{branch.phone}</p>
+          </div>
+        ) : null}
 
         <hr className="my-3 border-white-02 border-1.5" />
 
