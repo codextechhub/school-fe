@@ -121,6 +121,7 @@ const PACKAGE_CREATE_SCREENS: Record<string, string> = {
 // whose online money the platform holds may use it, and the palette gates on
 // permissions alone, so it would offer New payout at a school that cannot pay.
 const PACKAGE_CREATE_NOT_MOUNTED: Record<string, string> = {
+  "finance/provider-topups-tab.tsx": "the platform's own books; a school never tops up its provider balance",
   "finance/payouts-tab.tsx": "offered from the sidebar only where the platform holds the school's money",
   "finance/setup/currencies-tab.tsx": "a school bills in naira",
   "finance/setup/dimensions-tab.tsx": "analytical tagging it will not use",

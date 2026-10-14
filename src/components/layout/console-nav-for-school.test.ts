@@ -24,6 +24,7 @@ const INTENTIONALLY_UNMOUNTED = [
   "/finance/setup/dimensions",
   "/finance/setup/tax-tables",
   "/finance/payments/held-reconciliations",
+  "/finance/payments/provider-top-ups",
 ];
 
 describe("the school's finance sidebar", () => {
