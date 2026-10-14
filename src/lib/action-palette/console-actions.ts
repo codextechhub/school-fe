@@ -143,6 +143,8 @@ export const EXTRA_ALIASES: Record<string, string[]> = {
   "/finance/payments/held-settlements": ["settlements to branches"],
   "/finance/payments/transactions": ["money in and out", "money movements"],
   "/finance/payments/provider-activity": ["paystack log", "provider log", "payment attempts", "failed payment", "refused payment", "paystack activity"],
+  "/finance/payments/terminals": ["payment terminals", "branch terminals", "card machine", "pos"],
+  "/finance/payments/terminal-payments": ["terminal payments", "paid at a terminal", "match a terminal payment"],
   "/finance/collections": ["gateway", "online payments", "card payments"],
   "/finance/collections/virtual-accounts": ["dedicated accounts", "transfer accounts"],
   "/finance/reports/trial-balance": ["tb"],

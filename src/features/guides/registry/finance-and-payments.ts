@@ -380,8 +380,10 @@ export const FINANCE_AND_PAYMENTS_GUIDES = [
       `${R.FINANCE.PAYMENTS}/transactions`,
       `${R.FINANCE.PAYMENTS}/provider-activity`,
       `${R.FINANCE.PAYMENTS}/webhooks`,
+      `${R.FINANCE.PAYMENTS}/terminals`,
+      `${R.FINANCE.PAYMENTS}/terminal-payments`,
     ],
-    access: { mode: "any", permissions: [P.PAY_VIEW_COLLECTIONS, P.PAY_VIEW_PAYOUTS, P.PAY_VIEW_PAYMENT_REPORTS, P.PAY_VIEW_WEBHOOKS] },
+    access: { mode: "any", permissions: [P.PAY_VIEW_COLLECTIONS, P.PAY_VIEW_PAYOUTS, P.PAY_VIEW_PAYMENT_REPORTS, P.PAY_VIEW_WEBHOOKS, P.PAY_VIEW_TERMINALS, P.PAY_VIEW_TERMINAL_PAYMENTS] },
     walkthroughId: "walkthrough.school.finance.online-fee-payments",
     primaryRoute: R.FINANCE.COLLECTIONS,
     sections: [

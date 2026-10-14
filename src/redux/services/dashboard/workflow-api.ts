@@ -78,7 +78,7 @@ const APPROVER_CHANGE_TAGS = [
  */
 const PROC_DOC_TAGS = [
   "ProcRequisitions", "ProcPurchaseOrders", "ProcVendorInvoices", "ProcVendorPayments",
-  "ProcVendorCreditNotes",
+  "ProcVendorCreditNotes", "FinancePayroll",
 ] as const;
 
 export const workflowApi = baseApi.injectEndpoints({
