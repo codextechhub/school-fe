@@ -658,6 +658,25 @@ export const baseApi = createApi({
     "AttendanceSettings",
     "AttendanceReports",
     "AttendanceStaff",
+    // Everything that counts a term's progress: both hubs, moderation and the
+    // approvals queue. Any sheet or class write moves their figures.
+    "GradebookProgress",
+    // One score sheet, keyed `<class>:<subject>`. A cell write answers with
+    // the sheet, which is written into the cached copy instead of refetched.
+    "GradebookSheet",
+    // One class's broadsheet, compile drawer, principal's comments and publish
+    // preview, keyed by class. Submitting, returning or publishing moves all.
+    "GradebookClass",
+    // Release lists, report cards and a student's Results tab: what a family
+    // is given. Publishing, a hold, a lift or an approved amendment moves it.
+    "GradebookRelease",
+    "GradebookHolds",
+    "GradebookAmendments",
+    "GradebookAnalytics",
+    // Structures, scales, report card options and remark templates.
+    "GradebookSetup",
+    // Who takes each non-core subject: an academics record the sheets read.
+    "ElectiveTakers",
     "ImportTemplates",
     "ImportBatches",
     "Tickets",

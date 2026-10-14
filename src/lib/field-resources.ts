@@ -20,6 +20,11 @@ export const FIELD_RESOURCE = {
   ATTENDANCE_CORRECTION: "attendance.correction",
   ATTENDANCE_LESSON: "attendance.lesson",
   ATTENDANCE_STAFF: "attendance.staff",
+  GRADEBOOK_SHEET: "gradebook.sheet",
+  GRADEBOOK_RESULT: "gradebook.result",
+  GRADEBOOK_HOLD: "gradebook.hold",
+  GRADEBOOK_SETUP: "gradebook.setup",
+  GRADEBOOK_AMENDMENT: "gradebook.amendment",
 } as const;
 
 /** A student's medical fields, in the order every screen shows them. */

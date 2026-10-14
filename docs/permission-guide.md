@@ -419,3 +419,33 @@ however the key was obtained, so a school app has no use for them.
 | academics.classes.archive | 300308 | SENSITIVE | `ARCHIVE_CLASS` |
 | academics.classes.reactivate | 300310 | SENSITIVE | `REACTIVATE_CLASS` |
 | academics.classes.assign | 300311 | SENSITIVE | `ASSIGN_CLASS` |
+| academics.electives.view | 300801 | NORMAL | `VIEW_ELECTIVE_TAKERS` |
+| academics.electives.update | 300803 | NORMAL | `SET_ELECTIVE_TAKERS` |
+
+### `gradebook` module (MM=32) - results from score sheet to report card
+
+Which sheet a teacher may enter, which class they may submit and which sheets a
+head may moderate are rules the server enforces on top of the key: the main
+teacher, the class teacher and the head of the subject's department.
+
+| Backend key | Code | Sensitivity | UI constant |
+|---|---|---|---|
+| gradebook.hub.view | 320101 | NORMAL | `VIEW_RESULTS_HUB` |
+| gradebook.sheet.view | 320201 | NORMAL | `VIEW_SCORE_SHEETS` |
+| gradebook.sheet.enter | 320223 | NORMAL | `ENTER_OWN_SCORES` |
+| gradebook.sheet.enter_any | 320224 | SENSITIVE | `ENTER_ANY_SCORES` |
+| gradebook.sheet.remind | 320222 | NORMAL | `REMIND_SUBJECT_TEACHER` |
+| gradebook.sheet.import | 320217 | NORMAL | `UPLOAD_SCORES` |
+| gradebook.moderation.approve | 320305 | NORMAL | `MODERATE_SHEETS` |
+| gradebook.class.submit | 320425 | NORMAL | `SUBMIT_CLASS_RESULTS` |
+| gradebook.class.publish | 320416 | SENSITIVE | `PUBLISH_RESULTS` |
+| gradebook.hold.view | 320501 | NORMAL | `VIEW_RESULT_HOLDS` |
+| gradebook.hold.update | 320503 | SENSITIVE | `MANAGE_RESULT_HOLDS` |
+| gradebook.release.view | 320601 | NORMAL | `VIEW_RELEASE` |
+| gradebook.result.view | 320701 | NORMAL | `VIEW_STUDENT_RESULTS` |
+| gradebook.setup.view | 320801 | NORMAL | `VIEW_ASSESSMENT_SETUP` |
+| gradebook.setup.update | 320803 | SENSITIVE | `MANAGE_ASSESSMENT_SETUP` |
+| gradebook.amendment.create | 320902 | NORMAL | `RAISE_AMENDMENT` |
+| gradebook.amendment.approve | 320905 | SENSITIVE | `DECIDE_AMENDMENT` |
+| gradebook.analytics.view | 321001 | NORMAL | `VIEW_RESULT_ANALYTICS` |
+| gradebook.analytics.export | 321018 | SENSITIVE | `EXPORT_RESULT_ANALYTICS` |

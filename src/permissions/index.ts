@@ -15,6 +15,7 @@ import {
  *
  * ── Code format: MM RR AA (6 digits) ─────────────────────────────────────────
  *   MM = module group   10=school  20=onboarding  30=academics  31=attendance
+ *                       32=gradebook
  *                       40=import
  *                       50=communication
  *                       92=exports (the Export Centre, shared with console-fe)
@@ -25,6 +26,7 @@ import {
  *                       11=assign  12=start   13=end   14=run   15=execute
  *                       16=publish 17=import  18=export  19=apply
  *                       20=mark    21=mark any class    22=remind
+ *                       23=enter   24=enter any sheet   25=submit
  *
  * ── Adding a permission ───────────────────────────────────────────────────────
  *   1. Pick the next free code in the right MM RR range.
@@ -359,6 +361,38 @@ const REGISTRY: Record<string, string> = {
   "310418": "attendance.report.export",
   "310503": "attendance.settings.update",
 
+  // ── academics / electives  (MM=30, RR=08) ─────────────────────────────────
+  // Who takes each non-core subject in a class, per term. An academics record
+  // the gradebook reads, so it sits with academics rather than with results.
+  "300801": "academics.electives.view",
+  "300803": "academics.electives.update",
+
+  // ── gradebook  (MM=32) ─────────────────────────────────────────────────────
+  // Results from score sheet to report card (`gradebook.*`). Three verbs only
+  // this module uses take the next free action codes: 23 = enter (a sheet you
+  // are main teacher of), 24 = enter any sheet in your branches, 25 = submit
+  // a class you are class teacher of. Which sheet or class those cover is a
+  // rule the server enforces, not a key.
+  "320101": "gradebook.hub.view",
+  "320201": "gradebook.sheet.view",
+  "320223": "gradebook.sheet.enter",
+  "320224": "gradebook.sheet.enter_any",
+  "320222": "gradebook.sheet.remind",
+  "320217": "gradebook.sheet.import",
+  "320305": "gradebook.moderation.approve",
+  "320425": "gradebook.class.submit",
+  "320416": "gradebook.class.publish",
+  "320501": "gradebook.hold.view",
+  "320503": "gradebook.hold.update",
+  "320601": "gradebook.release.view",
+  "320701": "gradebook.result.view",
+  "320801": "gradebook.setup.view",
+  "320803": "gradebook.setup.update",
+  "320902": "gradebook.amendment.create",
+  "320905": "gradebook.amendment.approve",
+  "321001": "gradebook.analytics.view",
+  "321018": "gradebook.analytics.export",
+
   // ── platform surfaces the shared screens reach  (MM=11) ────────────────────
   // Platform keys, deliberately outside the school namespace at MM=10, and the
   // only two here. The approval screens come from @xvs/finance and read this
@@ -638,6 +672,31 @@ export const P = {
   VIEW_ATTENDANCE_REPORTS: "310401",  // read the term's attendance summaries
   EXPORT_ATTENDANCE_REPORTS: "310418",  // download them as a file
   MANAGE_ATTENDANCE_SETTINGS: "310503",  // change attendance settings and reason codes
+
+  // ── Who takes what ─────────────────────────────────────────────────────────
+  VIEW_ELECTIVE_TAKERS:    "300801",  // read who takes each non-core subject in a class
+  SET_ELECTIVE_TAKERS:     "300803",  // change who takes them
+
+  // ── Gradebook ──────────────────────────────────────────────────────────────
+  VIEW_RESULTS_HUB:        "320101",  // the results hub: every class's progress and the late list
+  VIEW_SCORE_SHEETS:       "320201",  // read score sheets (a teacher: only the ones they are on)
+  ENTER_OWN_SCORES:        "320223",  // enter and submit the sheets you are main teacher of
+  ENTER_ANY_SCORES:        "320224",  // enter and submit any sheet in your branches
+  REMIND_SUBJECT_TEACHER:  "320222",  // remind a teacher whose sheet is late
+  UPLOAD_SCORES:           "320217",  // fill a sheet from a spreadsheet
+  MODERATE_SHEETS:         "320305",  // approve or return sheets as a head of department
+  SUBMIT_CLASS_RESULTS:    "320425",  // write comments and ratings, and submit the class you lead
+  PUBLISH_RESULTS:         "320416",  // approve, return and publish classes; principal's comments
+  VIEW_RESULT_HOLDS:       "320501",  // read fee holds and the balances behind them
+  MANAGE_RESULT_HOLDS:     "320503",  // hold a result over fees, or lift a hold
+  VIEW_RELEASE:            "320601",  // read release lists and report cards, and print them
+  VIEW_STUDENT_RESULTS:    "320701",  // read a student's Results tab
+  VIEW_ASSESSMENT_SETUP:   "320801",  // read structures, scales, card options and remark templates
+  MANAGE_ASSESSMENT_SETUP: "320803",  // change them
+  RAISE_AMENDMENT:         "320902",  // ask for a published result to be corrected
+  DECIDE_AMENDMENT:        "320905",  // approve or reject such a correction
+  VIEW_RESULT_ANALYTICS:   "321001",  // read performance analytics
+  EXPORT_RESULT_ANALYTICS: "321018",  // download them as a file
 
   // ── Export Centre ──────────────────────────────────────────────────────────
   // Named as the shared Export Centre screens name them, for the same reason
