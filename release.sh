@@ -2,8 +2,12 @@
 # Promote what is live on staging to production, and step back if it goes wrong.
 #
 #   ./release.sh status             where main, staging and production stand
-#   ./release.sh promote            staging's tip becomes production, tagged
+#   ./release.sh promote [bump]     staging's tip becomes production, tagged
 #   ./release.sh rollback <tag>     production's files return to <tag>'s
+#
+# `bump` is patch by default, or may be minor or major. Production releases use
+# semantic tags such as v1.4.2. The first semantic release is v1.0.0; older
+# date-based tags remain available as rollback targets.
 #
 # `production` only ever moves forward, so it is never reset or force-pushed:
 # promote fast-forwards it, and rollback adds a commit whose files are exactly
@@ -42,17 +46,56 @@ migrations_between() {
   git diff --name-only --diff-filter=A "$1" "$2" -- '*/migrations/0*.py' || true
 }
 
+latest_semver() {
+  local tag major minor patch
+  local latest_major=-1 latest_minor=-1 latest_patch=-1
+
+  while IFS= read -r tag; do
+    if [[ "$tag" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+      major=$((10#${BASH_REMATCH[1]}))
+      minor=$((10#${BASH_REMATCH[2]}))
+      patch=$((10#${BASH_REMATCH[3]}))
+      if (( major > latest_major ||
+            (major == latest_major && minor > latest_minor) ||
+            (major == latest_major && minor == latest_minor && patch > latest_patch) )); then
+        latest_major=$major
+        latest_minor=$minor
+        latest_patch=$patch
+      fi
+    fi
+  done < <(git tag --list 'v*')
+
+  if (( latest_major >= 0 )); then
+    echo "$latest_major.$latest_minor.$latest_patch"
+  fi
+}
+
 next_tag() {
-  local day n
-  day=$(date +%Y.%m.%d)
-  n=1
-  while git rev-parse --verify --quiet "refs/tags/v$day.$n" >/dev/null; do
-    n=$((n + 1))
-  done
-  echo "v$day.$n"
+  local bump=${1:-patch}
+  local current major minor patch
+
+  case "$bump" in
+    major|minor|patch) ;;
+    *) die "Release bump must be major, minor or patch." ;;
+  esac
+
+  current=$(latest_semver)
+  if [ -z "$current" ]; then
+    echo "v1.0.0"
+    return
+  fi
+
+  IFS=. read -r major minor patch <<< "$current"
+  case "$bump" in
+    major) major=$((major + 1)); minor=0; patch=0 ;;
+    minor) minor=$((minor + 1)); patch=0 ;;
+    patch) patch=$((patch + 1)) ;;
+  esac
+  echo "v$major.$minor.$patch"
 }
 
 cmd_status() {
+  local tag shown=0
   fetch_all
   echo "main:       $(git rev-parse --short "$REMOTE/main")"
   echo "staging:    $(git rev-parse --short "$REMOTE/$STAGING")"
@@ -62,11 +105,23 @@ cmd_status() {
   else
     echo "production: not created yet (the first promote creates it)"
   fi
-  echo "Recent releases:"
-  git tag --list 'v*' --sort=-creatordate | head -5 | sed 's/^/  /'
+  echo "Recent semantic releases:"
+  while IFS= read -r tag; do
+    if [[ "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+      echo "  $tag"
+      shown=$((shown + 1))
+      (( shown == 5 )) && break
+    fi
+  done < <(git tag --list 'v*' --sort=-creatordate)
+  (( shown > 0 )) || echo "  none (the next release will be v1.0.0)"
 }
 
 cmd_promote() {
+  local bump=${1:-patch}
+  case "$bump" in
+    major|minor|patch) ;;
+    *) die "Usage: ./release.sh promote [major|minor|patch]" ;;
+  esac
   require_clean_tree
   fetch_all
   local target base tag
@@ -99,7 +154,7 @@ cmd_promote() {
   echo "(Render shows the deploy, and you have tried the change there)."
   confirm "Promote $(git rev-parse --short "$target") to production?" release
 
-  tag=$(next_tag)
+  tag=$(next_tag "$bump")
   git tag -a "$tag" "$target" -m "Production release $tag"
   git push "$REMOTE" "$target:refs/heads/$PROD" || { git tag -d "$tag" >/dev/null; die "push refused; no tag kept."; }
   git push "$REMOTE" "$tag"
@@ -140,7 +195,7 @@ cmd_rollback() {
 
 case "${1:-}" in
   status)   cmd_status ;;
-  promote)  cmd_promote ;;
+  promote)  shift; cmd_promote "${1:-patch}" ;;
   rollback) shift; cmd_rollback "${1:-}" ;;
-  *) die "Usage: ./release.sh status | promote | rollback <tag>" ;;
+  *) die "Usage: ./release.sh status | promote [major|minor|patch] | rollback <tag>" ;;
 esac
