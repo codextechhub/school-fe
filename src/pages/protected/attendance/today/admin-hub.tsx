@@ -153,11 +153,11 @@ function HubKpiStrip({ kpis, isToday }: { kpis: HubKpis; isToday: boolean }) {
 }
 
 const METRIC_TONE = {
-  green: { dot: "bg-emerald-600", wash: "bg-emerald-50", text: "text-emerald-700" },
-  red: { dot: "bg-rose-500", wash: "bg-rose-50", text: "text-rose-700" },
-  amber: { dot: "bg-amber-600", wash: "bg-amber-50", text: "text-amber-700" },
-  blue: { dot: "bg-blue-600", wash: "bg-blue-50", text: "text-blue-700" },
-  violet: { dot: "bg-violet-600", wash: "bg-violet-50", text: "text-violet-700" },
+  green: { wash: "bg-emerald-50", text: "text-emerald-700" },
+  red: { wash: "bg-rose-50", text: "text-rose-700" },
+  amber: { wash: "bg-amber-50", text: "text-amber-700" },
+  blue: { wash: "bg-blue-50", text: "text-blue-700" },
+  violet: { wash: "bg-violet-50", text: "text-violet-700" },
 };
 
 function HubMetric({
@@ -175,10 +175,7 @@ function HubMetric({
   return (
     <Panel className="relative overflow-hidden px-4 py-4">
       <span className={`absolute -right-5 -top-5 size-14 rounded-full ${palette.wash}`} aria-hidden="true" />
-      <div className="relative flex items-center gap-2 text-xs font-medium text-gray-06">
-        <span className={`size-2 rounded-full ${palette.dot}`} aria-hidden="true" />
-        <span>{label}</span>
-      </div>
+      <p className="relative text-xs font-medium text-gray-06">{label}</p>
       <p className="relative mt-3 font-mont text-2xl font-semibold tracking-tight text-black-01">{value}</p>
       <p className={`relative mt-1.5 text-xs ${palette.text}`}>{foot}</p>
     </Panel>

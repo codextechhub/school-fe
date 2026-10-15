@@ -369,6 +369,15 @@ The six top-level routes were driven at 390px and 820px with no page-level
 horizontal overflow; tables use stacked cards when the sidebar leaves too
 little room for readable columns.
 
+Class registers uses the same register fields in a directory and selected-class
+preview. Counts control the completion bars and count tiles, status controls
+the summary cards, filters and badges, and mark controls the student preview's
+mark labels. Class, teacher and branch details remain the catalogue fields the
+previous directory already displayed. The directory summary states when a
+figure covers the current catalogue page rather than implying a school-wide
+total. Today keeps its colored card washes and removes the colored dots beside
+the metric labels.
+
 ---
 
 ## 4. Order, and why

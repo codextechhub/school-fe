@@ -394,6 +394,7 @@ export const {
   useGetMyAttendanceTodayQuery,
   useRemindClassTeacherMutation,
   useGetRegisterQuery,
+  useLazyGetRegisterQuery,
   useSetMarkMutation,
   useFillPresentMutation,
   useSubmitRegisterMutation,
