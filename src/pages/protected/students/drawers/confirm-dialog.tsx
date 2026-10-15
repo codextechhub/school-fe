@@ -16,6 +16,10 @@ import {
  * confirmation that does not say what will happen is a speed bump, and people
  * learn to click through it. "A withdrawn student leaves the roll and their
  * class seat is released" is a reason to stop and read.
+ *
+ * The confirm button is red by default, for a move that takes something away.
+ * A move that sends work on (submitting, putting a record in use) passes
+ * `tone="primary"`, so red keeps meaning loss.
  */
 export function ConfirmDialog({
   open,
@@ -25,6 +29,7 @@ export function ConfirmDialog({
   body,
   confirmLabel,
   busy,
+  tone = "destructive",
 }: {
   open: boolean;
   onCancel: () => void;
@@ -33,6 +38,7 @@ export function ConfirmDialog({
   body: string;
   confirmLabel: string;
   busy?: boolean;
+  tone?: "destructive" | "primary";
 }) {
   return (
     <AlertDialog open={open} onOpenChange={(next) => !next && onCancel()}>
@@ -51,7 +57,7 @@ export function ConfirmDialog({
               onConfirm();
             }}
             disabled={busy}
-            className="bg-red-600 hover:bg-red-700"
+            className={tone === "destructive" ? "bg-red-600 hover:bg-red-700" : undefined}
           >
             {busy ? "Working…" : confirmLabel}
           </AlertDialogAction>

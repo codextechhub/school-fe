@@ -162,6 +162,7 @@ function SheetBody({
       )}
 
       <ConfirmDialog
+        tone="primary"
         open={confirming}
         onCancel={() => setConfirming(false)}
         onConfirm={() => void onSubmit()}

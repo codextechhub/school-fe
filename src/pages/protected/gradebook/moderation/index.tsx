@@ -138,12 +138,12 @@ function ModerationCard({
         </div>
         {showStats && (
           <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Stat label="Class average" value={row.class_average ? `${row.class_average}%` : "—"} />
+            <Stat label="Class average" value={row.class_average ? `${row.class_average}%` : "-"} />
             <Stat
               label="Highest · lowest"
-              value={row.highest !== null && row.highest !== undefined ? `${row.highest} · ${row.lowest}` : "—"}
+              value={row.highest !== null && row.highest !== undefined ? `${row.highest} · ${row.lowest}` : "-"}
             />
-            <Stat label="Pass rate" value={row.pass_rate !== null && row.pass_rate !== undefined ? `${row.pass_rate}%` : "—"} />
+            <Stat label="Pass rate" value={row.pass_rate !== null && row.pass_rate !== undefined ? `${row.pass_rate}%` : "-"} />
           </dl>
         )}
         <div className="flex min-w-0 flex-wrap items-center gap-3">

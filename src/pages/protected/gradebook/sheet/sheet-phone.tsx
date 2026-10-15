@@ -68,9 +68,9 @@ export function SheetPhone({
 
         {showFigures && (
           <dl className="grid grid-cols-3 gap-2 rounded-md bg-gray-50 p-3 text-center">
-            <PhoneFigure label="Total" value={done ? String(row.total) : "—"} />
-            <PhoneFigure label="Percentage" value={done && row.percentage ? `${row.percentage}%` : "—"} />
-            <PhoneFigure label="Grade" value={done && row.grade ? row.grade : "—"} />
+            <PhoneFigure label="Total" value={done ? String(row.total) : "-"} />
+            <PhoneFigure label="Percentage" value={done && row.percentage ? `${row.percentage}%` : "-"} />
+            <PhoneFigure label="Grade" value={done && row.grade ? row.grade : "-"} />
           </dl>
         )}
         {showFigures && done && row.excused_note && <p className="text-xs text-gray-06">{row.excused_note}</p>}
@@ -143,7 +143,7 @@ function PhoneCell({
         </div>
       ) : (
         <div className="mt-1 text-base text-black-01">
-          {stored.marker ? <MarkerChip marker={stored.marker} /> : (stored.mark ?? "—")}
+          {stored.marker ? <MarkerChip marker={stored.marker} /> : (stored.mark ?? "-")}
         </div>
       )}
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}

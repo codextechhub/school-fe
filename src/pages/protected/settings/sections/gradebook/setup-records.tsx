@@ -177,6 +177,7 @@ export function ProgrammeRecords<T extends SetupRecordLike>({
       })}
 
       <ConfirmDialog
+        tone="primary"
         open={confirm?.kind === "activate"}
         onCancel={() => setConfirm(null)}
         onConfirm={() => confirm && void run(() => onActivate(confirm.record))}

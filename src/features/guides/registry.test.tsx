@@ -147,7 +147,7 @@ describe("every guide article", () => {
         ...guide.tags,
         ...guide.aliases,
       ].join(" ");
-      expect(text.includes("—"), "an em dash").toBe(false);
+      expect(text.includes("\u2014"), "an em dash").toBe(false);
       expect(/campus/i.test(text), "\"campus\" where a branch is meant").toBe(false);
       expect(/\bConsole\b/.test(text), "\"Console\", which school users do not have").toBe(false);
     },

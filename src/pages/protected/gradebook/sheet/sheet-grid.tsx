@@ -117,7 +117,7 @@ function GridCell({
 
   if (!editable) {
     if (stored.marker) return <MarkerChip marker={stored.marker} />;
-    return <span className="text-sm text-black-01">{stored.mark ?? "—"}</span>;
+    return <span className="text-sm text-black-01">{stored.mark ?? "-"}</span>;
   }
 
   if (draft === undefined && stored.marker) {
@@ -213,10 +213,10 @@ function Figures({ row }: { row: SheetRow }) {
   const done = row.complete && row.total !== null && row.total !== undefined;
   return (
     <>
-      <TableCell className="text-right font-medium text-black-01">{done ? row.total : "—"}</TableCell>
-      <TableCell className="text-right text-gray-06">{done && row.percentage ? `${row.percentage}%` : "—"}</TableCell>
+      <TableCell className="text-right font-medium text-black-01">{done ? row.total : "-"}</TableCell>
+      <TableCell className="text-right text-gray-06">{done && row.percentage ? `${row.percentage}%` : "-"}</TableCell>
       <TableCell className={cn("font-semibold", row.is_fail ? "text-destructive" : "text-black-01")}>
-        {done ? row.grade : "—"}
+        {done ? row.grade : "-"}
       </TableCell>
       <TableCell className="text-gray-06">
         {done ? row.remark : "Not entered"}
