@@ -194,7 +194,7 @@ export default function FeeHoldsPage() {
                   ? {
                       "Balance (Finance)":
                         row.balance === null || row.balance === undefined ? "-" : formatKoboAsNaira(row.balance),
-                      "Oldest unpaid": row.days_owed ? `${row.days_owed} days` : "-",
+                      "Oldest unpaid": <OldestUnpaid row={row} />,
                     }
                   : {}),
                 Hold: <HoldCell row={row} />,
@@ -208,6 +208,14 @@ export default function FeeHoldsPage() {
       {acting && data && <HoldDrawer row={acting} term={data.term.id} onClose={() => setActing(null)} />}
     </PageShell>
   );
+}
+
+/** How long the oldest bill has been unpaid, or when it falls due while it is not yet overdue. */
+function OldestUnpaid({ row }: { row: HoldRow }) {
+  const { formatDate } = useSchoolDisplay(row.branch?.id ?? null);
+  if (!row.oldest_unpaid_on) return <span className="text-gray-05">-</span>;
+  if (row.days_owed) return <span>{row.days_owed === 1 ? "1 day" : `${row.days_owed} days`}</span>;
+  return <span className="text-gray-06">Due {formatDate(row.oldest_unpaid_on)}</span>;
 }
 
 function HoldCell({ row }: { row: HoldRow }) {

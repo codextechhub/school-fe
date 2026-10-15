@@ -105,6 +105,7 @@ describe("fee holds Field Access", () => {
     expect(headers()).toEqual(expect.arrayContaining(["Balance (Finance)", "Oldest unpaid", "Action"]));
     expect(container.textContent).toContain("₦125,000.00");
     expect(container.textContent).toContain("Two terms unpaid.");
+    expect(container.textContent).toContain("44 days");
     expect(asked.at(-1)).toMatchObject({ owes: true });
     expect(labels()).toEqual(expect.arrayContaining(["Lift hold", "Hold result"]));
   });
@@ -145,6 +146,13 @@ describe("fee holds Field Access", () => {
     render();
     expect(headers()).not.toContain("Action");
     expect(labels()).not.toContain("Lift hold");
+  });
+
+  it("says when a bill falls due while it is not yet overdue", () => {
+    page = { ...page, data: [{ ...tunde, balance: 1_868_750, oldest_unpaid_on: "2026-11-15", days_owed: 0 }] };
+    render();
+    expect(container.textContent).toContain("₦18,687.50");
+    expect(container.textContent).toMatch(/Due .*2026/);
   });
 
   it("says when Finance cannot answer, rather than showing zero", () => {

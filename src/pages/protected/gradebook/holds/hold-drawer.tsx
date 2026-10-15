@@ -90,7 +90,9 @@ export function HoldDrawer({
                 label="Oldest unpaid"
                 value={
                   row.oldest_unpaid_on
-                    ? `${formatDate(row.oldest_unpaid_on)} · ${row.days_owed ?? 0} days`
+                    ? row.days_owed
+                      ? `${formatDate(row.oldest_unpaid_on)} · ${row.days_owed} day${row.days_owed === 1 ? "" : "s"} ago`
+                      : `Due ${formatDate(row.oldest_unpaid_on)}`
                     : "-"
                 }
               />
