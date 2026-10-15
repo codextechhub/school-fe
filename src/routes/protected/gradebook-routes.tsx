@@ -9,6 +9,7 @@ const Moderation = lazy(() => import("@/pages/protected/gradebook/moderation"));
 const Approvals = lazy(() => import("@/pages/protected/gradebook/approvals"));
 const FeeHolds = lazy(() => import("@/pages/protected/gradebook/holds"));
 const Release = lazy(() => import("@/pages/protected/gradebook/release"));
+const Amendments = lazy(() => import("@/pages/protected/gradebook/amendments"));
 const ReportCardPage = lazy(() => import("@/pages/protected/gradebook/report-card"));
 const ClassCardsPage = lazy(() => import("@/pages/protected/gradebook/report-card/class-cards"));
 const BroadsheetPage = lazy(() => import("@/pages/protected/gradebook/broadsheet"));
@@ -59,6 +60,11 @@ export const gradebookRoutes = [
     path: G.HOLDS,
     Component: FeeHolds,
     handle: { title: "Fee holds", lens: true, lenses: "branch" } satisfies DashboardHandle,
+  },
+  {
+    path: G.AMENDMENTS,
+    Component: Amendments,
+    handle: { title: "Corrections", lens: true, lenses: "branch" } satisfies DashboardHandle,
   },
   {
     // The class rides in `?class=`, chosen on the screen.

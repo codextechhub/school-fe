@@ -14,6 +14,16 @@ import type { Release, ReportCard, StudentResults } from "@/redux/services/grade
  * of the payload; these screens must then drop the column, line or block
  * rather than print a blank or a zero under its heading.
  */
+let asksCorrections = true;
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({
+    fieldAccess: {},
+    hasPermission: () => asksCorrections,
+    hasAnyPermission: () => asksCorrections,
+    hasAllPermissions: () => true,
+    hasModuleAccess: () => true,
+  }),
+}));
 vi.mock("@/hooks/use-branch-lens", () => ({ useBranchLens: () => ({ branch: "all", applies: false, label: "" }) }));
 vi.mock("@/components/layout/page-shell", () => ({
   PageShell: ({ children }: { children: ReactNode }) => <main>{children}</main>,
@@ -81,7 +91,7 @@ const results: StudentResults = {
       released_at: null,
       release_label: "Held",
       version: 1,
-      subjects: [{ name: "Mathematics", total: 78, grade: "A", remark: "Excellent" }],
+      subjects: [{ id: 41, name: "Mathematics", total: 78, grade: "A", remark: "Excellent" }],
       class_id: 82,
     },
     { term: { id: 43, name: "Third Term" }, session: { id: 14, name: "2025/2026" }, published: false, message: "Nothing was published for this term." },
@@ -118,6 +128,7 @@ beforeEach(() => {
   root = createRoot(container);
   releaseData = release;
   resultsData = results;
+  asksCorrections = true;
 });
 
 afterEach(() => {
@@ -214,6 +225,7 @@ describe("results tab", () => {
   });
 
   it("drops the figures and the hold reason the server withheld", () => {
+    asksCorrections = false;
     resultsData = {
       ...results,
       terms: [
@@ -221,7 +233,7 @@ describe("results tab", () => {
           ...results.terms[0],
           overall_average: undefined,
           position: undefined,
-          subjects: [{ name: "Mathematics", grade: "A" }],
+          subjects: [{ id: 41, name: "Mathematics", grade: "A" }],
         },
       ],
       history: [{ kind: "HOLD_PLACED", text: "Result held for First Term", by: "Ngozi Ibekwe", at: "2026-10-14T17:22:27Z" }],
@@ -234,6 +246,15 @@ describe("results tab", () => {
     expect(headers()).toEqual(["Subject", "Grade"]);
     expect(container.textContent).not.toContain("Two terms unpaid.");
     expect(container.textContent).toContain("Result held for First Term");
+  });
+
+  it("offers a correction on each published subject to a reader who may ask for one", () => {
+    render(<StudentResultsTab studentId={373} />);
+    const asks = Array.from(container.querySelectorAll("button")).filter((b) => b.textContent === "Ask for a correction");
+    expect(asks).toHaveLength(1);
+    asksCorrections = false;
+    render(<StudentResultsTab studentId={373} />);
+    expect(container.textContent).not.toContain("Ask for a correction");
   });
 
   it("leaves the history out when there is none", () => {

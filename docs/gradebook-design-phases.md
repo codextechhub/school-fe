@@ -409,6 +409,27 @@ gradebook. Where it differs from the design:
 Raise with the corrected marks (`amendments/form/`), the amendments list,
 approve and reject, and the history entries. Mostly undrawn (2.2).
 
+**As built.** Corrections are `/gradebook/corrections`, for a holder of
+either amendment key. Where they differ from the design:
+
+1. A correction is asked for from the student's Results tab, on the subject
+   it concerns ("Ask for a correction"), not from the Approvals row: the
+   people who ask (branch administrators) cannot open Approvals, and the tab
+   already names the class, the student and the subject. The backend gained
+   the subject's `id` on the Results tab for this.
+2. The drawer starts from the published marks, judges each column as the
+   score sheet does (a published result has no blank column), sends only
+   the columns that change, and prints a server refusal under its column.
+   While a correction waits for a subject, the drawer says so and sends
+   nothing.
+3. The list shows the reason, the marks before and after (in column order,
+   with the total and grade), and the decision. Approve takes an optional
+   note; Reject needs one (designed; the design drew Approve only). The
+   backend gained `can_decide` (waiting, and not raised by the reader), so
+   Approve is never offered to the person who asked.
+4. Approvals keeps a line saying how many corrections wait, with a link to
+   them, for a reader who decides corrections.
+
 ### Phase 8: analytics and exports
 
 The four analytics cards and both exports, CSV and xlsx.

@@ -71,6 +71,7 @@ let drawerComments: PrincipalComments = comments;
 const saveComments = vi.fn();
 
 vi.mock("@/redux/services/gradebook/gradebook-api", () => ({
+  useGetAmendmentsQuery: () => ({ data: undefined }),
   useGetApprovalsQuery: () => ({
     data: { data: { branch_dimension: true, classes: rows } },
     isLoading: false,

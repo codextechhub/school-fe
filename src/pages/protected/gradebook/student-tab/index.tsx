@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router";
 import { Award } from "lucide-react";
 
@@ -6,12 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
+import { P } from "@/permissions";
 import { useGetStudentResultsQuery } from "@/redux/services/gradebook/gradebook-api";
-import type { ResultHistoryEntry, ResultTerm } from "@/redux/services/gradebook/gradebook-types";
+import type { AmendmentTarget, ResultHistoryEntry, ResultTerm } from "@/redux/services/gradebook/gradebook-types";
 import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 
+import { CorrectionDrawer } from "../amendments/correction-drawer";
 import { YearBlock } from "../report-card/report-card";
 
 const KIND: Record<string, { text: string; variant: "pending" | "active" | "blue" }> = {
@@ -31,13 +35,19 @@ const KIND: Record<string, { text: string; variant: "pending" | "active" | "blue
  * Nothing in the history is ever deleted, and the history section appears
  * only when there is something in it.
  *
+ * A reader who may ask for corrections asks for one here, on the subject of a
+ * published term it concerns; someone else decides it on Corrections.
+ *
  * Field Access: every figure, the hold reasons and the amendment notes are
  * left out by the server where the reader may not read them, and their
  * columns and lines leave with them.
  */
 export function StudentResultsTab({ studentId }: { studentId: number }) {
   const { data, isLoading, isError, refetch } = useGetStudentResultsQuery(studentId);
+  const { hasPermission } = usePermissions();
+  const [correcting, setCorrecting] = useState<AmendmentTarget | null>(null);
   const results = data?.data;
+  const asks = hasPermission(P.RAISE_AMENDMENT);
 
   if (isError) {
     return (
@@ -57,14 +67,25 @@ export function StudentResultsTab({ studentId }: { studentId: number }) {
       {results.terms.length === 0 ? (
         <OutlinedNotice icon={Award} title="No term yet" body="Results appear here once the student's first term has begun." />
       ) : (
-        results.terms.map((term) => <TermCard key={term.term.id} term={term} studentId={studentId} />)
+        results.terms.map((term) => (
+          <TermCard key={term.term.id} term={term} studentId={studentId} onCorrect={asks ? setCorrecting : undefined} />
+        ))
       )}
       {results.history.length > 0 && <History entries={results.history} />}
+      {correcting && <CorrectionDrawer target={correcting} onClose={() => setCorrecting(null)} />}
     </div>
   );
 }
 
-function TermCard({ term, studentId }: { term: ResultTerm; studentId: number }) {
+function TermCard({
+  term,
+  studentId,
+  onCorrect,
+}: {
+  term: ResultTerm;
+  studentId: number;
+  onCorrect?: (target: AmendmentTarget) => void;
+}) {
   const title = `${term.session.name} · ${term.term.name}`;
   if (!term.published) {
     return (
@@ -78,6 +99,8 @@ function TermCard({ term, studentId }: { term: ResultTerm; studentId: number }) 
   const showsTotal = subjects.some((subject) => "total" in subject);
   const showsGrade = subjects.some((subject) => "grade" in subject);
   const showsRemark = subjects.some((subject) => "remark" in subject);
+  const classId = term.class_id;
+  const corrects = !!onCorrect && classId !== undefined;
 
   return (
     <Panel as="section" className="space-y-3 p-4 sm:p-5">
@@ -111,6 +134,11 @@ function TermCard({ term, studentId }: { term: ResultTerm; studentId: number }) 
               {showsTotal && <TableHead className="text-right">Total</TableHead>}
               {showsGrade && <TableHead className="text-center">Grade</TableHead>}
               {showsRemark && <TableHead>Remark</TableHead>}
+              {corrects && (
+                <TableHead>
+                  <span className="sr-only">Correction</span>
+                </TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -120,6 +148,19 @@ function TermCard({ term, studentId }: { term: ResultTerm; studentId: number }) 
                 {showsTotal && <TableCell className="text-right">{subject.total ?? "-"}</TableCell>}
                 {showsGrade && <TableCell className="text-center">{subject.grade ?? "-"}</TableCell>}
                 {showsRemark && <TableCell>{subject.remark ?? "-"}</TableCell>}
+                {corrects && (
+                  <TableCell className="text-right">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() =>
+                        onCorrect({ term: term.term.id, classId, studentId, subjectId: subject.id })
+                      }
+                    >
+                      Ask for a correction
+                    </Button>
+                  </TableCell>
+                )}
               </TableRow>
             ))}
           </TableBody>

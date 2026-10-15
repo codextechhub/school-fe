@@ -735,7 +735,7 @@ export interface ResultTerm {
   released_at?: string | null;
   release_label?: string;
   version?: number;
-  subjects?: { name: string; total?: number | null; grade?: string | null; remark?: string | null }[];
+  subjects?: { id: number; name: string; total?: number | null; grade?: string | null; remark?: string | null }[];
   cumulative?: Cumulative;
   class_id?: number;
 }
@@ -768,4 +768,85 @@ export interface StudentResults {
   guardian?: { name?: string; email?: string | null } | null;
   terms: ResultTerm[];
   history: ResultHistoryEntry[];
+}
+
+// ── Corrections to published results (`amendments/`) ───────────────────────
+
+/**
+ * A subject's cells with what is worked out from them. `cells` follows the
+ * mark switch and the figures the row-result switch, as on the sheet.
+ */
+export interface AmendmentLine {
+  cells?: SheetCell[];
+  total?: number | null;
+  obtainable?: number | null;
+  percentage?: string | null;
+  grade?: string | null;
+  remark?: string | null;
+  is_fail?: boolean | null;
+}
+
+/** What the correction drawer shows before one is asked for: the subject as published. */
+export interface AmendmentForm extends AmendmentLine {
+  class: Ref;
+  student: StudentRef;
+  subject: Ref;
+  term: Ref;
+  /** The report card version a correction would replace. */
+  version: number;
+  components: SheetComponent[];
+  /** The correction already waiting for this subject; another cannot be raised meanwhile. */
+  pending: { id: number; raised_at: string } | null;
+}
+
+export interface AmendmentTarget {
+  term?: number;
+  classId: number;
+  studentId: number;
+  subjectId: number;
+}
+
+export interface AmendmentRaise {
+  term: number;
+  class: number;
+  student: number;
+  subject: number;
+  reason: string;
+  /** Only the columns being changed. */
+  cells: { component: number; mark: number | null; marker: Marker | null }[];
+}
+
+/**
+ * A correction. The reason and the decision note follow the amendment
+ * switches; `before` and `after` the sheet's. `can_decide` is true while it
+ * waits and the reader did not raise it; deciding also needs the decide key.
+ */
+export interface AmendmentRow {
+  id: number;
+  status: AmendmentStatus;
+  student: StudentRef;
+  class: Ref;
+  term: Ref;
+  subject: Ref;
+  branch: Ref | null;
+  amendment_reason?: string;
+  raised_by: string | null;
+  raised_at: string;
+  decided_by: string | null;
+  decided_at: string | null;
+  decision_note?: string;
+  /** The report card version an approval produced. */
+  version: number | null;
+  before?: AmendmentLine;
+  after?: AmendmentLine;
+  can_decide: boolean;
+}
+
+export interface AmendmentsArgs extends TermArgs {
+  status?: AmendmentStatus;
+  page?: number;
+}
+
+export interface AmendmentsPage extends PaginatedEnvelope<AmendmentRow> {
+  branch_dimension: boolean;
 }

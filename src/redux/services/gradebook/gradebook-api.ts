@@ -2,6 +2,12 @@ import { baseApi } from "../base-api";
 import type { Envelope } from "../onboarding/onboarding-types";
 import { termParams } from "./gradebook-params";
 import type {
+  AmendmentForm,
+  AmendmentRaise,
+  AmendmentRow,
+  AmendmentsArgs,
+  AmendmentsPage,
+  AmendmentTarget,
   Approvals,
   Broadsheet,
   ClassCards,
@@ -268,6 +274,57 @@ export const gradebookApi = baseApi.injectEndpoints({
       providesTags: ["GradebookRelease"],
     }),
 
+    // ── Corrections to published results ─────────────────────────────────
+
+    /** The term's corrections in the reader's branches, waiting ones first. */
+    getAmendments: builder.query<AmendmentsPage, AmendmentsArgs | void>({
+      query: (args) => {
+        const { status, page, ...term } = args ?? {};
+        return {
+          url: `/gradebook/amendments/`,
+          method: "GET",
+          params: { ...termParams(term), ...(status ? { status } : {}), ...(page ? { page } : {}) },
+        };
+      },
+      providesTags: ["GradebookAmendments"],
+    }),
+
+    /** One student's subject as published, before a correction is asked for. */
+    getAmendmentForm: builder.query<Envelope<AmendmentForm>, AmendmentTarget>({
+      query: ({ term, classId, studentId, subjectId }) => ({
+        url: `/gradebook/amendments/form/`,
+        method: "GET",
+        params: { ...termParams({ term }), class: classId, student: studentId, subject: subjectId },
+      }),
+      providesTags: ["GradebookAmendments"],
+    }),
+
+    /**
+     * Asks for a correction. Silent: a refused cell comes back as a 422 listing
+     * each cell, which the drawer prints under the cell it belongs to.
+     */
+    raiseAmendment: builder.mutation<Envelope<AmendmentRow>, AmendmentRaise>({
+      query: (body) => ({ url: `/gradebook/amendments/`, method: "POST", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["GradebookAmendments", "GradebookRelease"],
+    }),
+
+    /** Applies a correction and re-issues the student's report card as the next version. */
+    approveAmendment: builder.mutation<Envelope<AmendmentRow>, { id: number; note?: string }>({
+      query: ({ id, note }) => ({
+        url: `/gradebook/amendments/${id}/approve/`,
+        method: "POST",
+        body: note === undefined ? {} : { note },
+      }),
+      invalidatesTags: ["GradebookAmendments", "GradebookRelease", "GradebookSheet", "GradebookAnalytics"],
+    }),
+
+    /** Closes a correction without changing anything; the note is required. */
+    rejectAmendment: builder.mutation<Envelope<AmendmentRow>, { id: number; note: string }>({
+      query: ({ id, note }) => ({ url: `/gradebook/amendments/${id}/reject/`, method: "POST", body: { note } }),
+      invalidatesTags: ["GradebookAmendments", "GradebookRelease"],
+    }),
+
     // ── Fee holds ────────────────────────────────────────────────────────
 
     /** The roll of the term's classes with what Finance says each family owes. */
@@ -456,6 +513,11 @@ export const {
   useGetReportCardQuery,
   useGetClassCardsQuery,
   useGetStudentResultsQuery,
+  useGetAmendmentsQuery,
+  useGetAmendmentFormQuery,
+  useRaiseAmendmentMutation,
+  useApproveAmendmentMutation,
+  useRejectAmendmentMutation,
   useGetHoldsQuery,
   usePlaceHoldMutation,
   useLiftHoldMutation,

@@ -540,6 +540,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.GRADEBOOK.RELEASE },
   },
   {
+    id: "view-result-corrections",
+    label: "View corrections to results",
+    aliases: [
+      "amendments", "amendment", "correct a result", "change published score",
+      "approve correction", "reject correction", "updated report card",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { any: [P.RAISE_AMENDMENT, P.DECIDE_AMENDMENT] },
+    run: { to: R.GRADEBOOK.AMENDMENTS },
+  },
+  {
     id: "view-my-score-sheets",
     label: "View my score sheets",
     // A teacher's own sheets for the term, each opening onto the grid.

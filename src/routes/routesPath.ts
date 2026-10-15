@@ -356,6 +356,8 @@ export const routesPath = {
       MODERATION: "/gradebook/moderation",
       APPROVALS: "/gradebook/approvals",
       HOLDS: "/gradebook/holds",
+      /** Corrections to published results. */
+      AMENDMENTS: "/gradebook/corrections",
       /** Report cards and release; the class rides in `?class=`. */
       RELEASE: "/gradebook/release",
       CLASS_CARDS: "/gradebook/report-cards/:classId",

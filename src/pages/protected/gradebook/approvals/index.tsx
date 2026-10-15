@@ -12,7 +12,9 @@ import { useFieldAccess } from "@/components/finance-ui";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
-import { useGetApprovalsQuery } from "@/redux/services/gradebook/gradebook-api";
+import { usePermissions } from "@/hooks/use-permissions";
+import { P } from "@/permissions";
+import { useGetAmendmentsQuery, useGetApprovalsQuery } from "@/redux/services/gradebook/gradebook-api";
 import type { ApprovalRow } from "@/redux/services/gradebook/gradebook-types";
 import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -40,7 +42,8 @@ const byDecision = (a: ApprovalRow, b: ApprovalRow) =>
  * refusal does not stop the rest.
  *
  * Each row names the students whose results are held and who held them, never
- * why: the reason belongs to the fee holds screen.
+ * why: the reason belongs to the fee holds screen. A reader who decides
+ * corrections is told how many wait, with the way to them.
  *
  * Field Access: Return needs Write on the return note, because a class never
  * goes back without one, and the principal's comments follow their own switch
@@ -64,6 +67,10 @@ export default function ApprovalsPage() {
   const mayReturn = !sheetAccess.isReadOnly("note");
   const readsComments = !resultAccess.isHidden("comments");
   const status = parseApiError(error).status;
+  const { hasPermission } = usePermissions();
+  const decidesCorrections = hasPermission(P.DECIDE_AMENDMENT);
+  const { data: waiting } = useGetAmendmentsQuery({ branch, status: "PENDING" }, { skip: !decidesCorrections });
+  const corrections = waiting?.pagination.totalItems ?? 0;
 
   const toggle = (id: number, on: boolean) =>
     setPicked((current) => (on ? [...current, id] : current.filter((value) => value !== id)));
@@ -84,6 +91,16 @@ export default function ApprovalsPage() {
           </Button>
         )}
       </div>
+
+      {decidesCorrections && corrections > 0 && (
+        <p role="status" className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-white px-4 py-3 text-sm text-black-01">
+          {corrections === 1 ? "1 correction to a published result is" : `${corrections} corrections to published results are`}{" "}
+          waiting for a decision.
+          <Link to={routesPath.PROTECTED.GRADEBOOK.AMENDMENTS} className="font-medium text-primary hover:underline">
+            Open corrections
+          </Link>
+        </p>
+      )}
 
       {status === 403 ? (
         <OutlinedNotice
