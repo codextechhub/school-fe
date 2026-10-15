@@ -149,7 +149,7 @@ function ModerationCard({
         <div className="flex min-w-0 flex-wrap items-center gap-3">
           <p className="min-w-0 flex-1 text-sm text-gray-06">{compare}</p>
           <span className="flex flex-wrap gap-2">
-            <Button size="sm" variant="ghost" asChild>
+            <Button size="sm" variant="outline" asChild>
               <Link to={routesPath.PROTECTED.GRADEBOOK.SHEET_ID(row.class.id, row.subject.id)}>View sheet</Link>
             </Button>
             {row.can_decide && (

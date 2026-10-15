@@ -216,7 +216,7 @@ function ApprovalCard({
         </div>
         <p className={row.held.length ? "text-sm text-[#854F0B]" : "text-sm text-gray-06"}>{heldNote}</p>
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="ghost" asChild>
+          <Button size="sm" variant="outline" asChild>
             <Link to={routesPath.PROTECTED.GRADEBOOK.BROADSHEET_ID(row.class.id)}>Open broadsheet</Link>
           </Button>
           {row.can_decide && (
@@ -237,7 +237,7 @@ function ApprovalCard({
             </>
           )}
           {!row.can_decide && row.stage === "PUBLISHED" && onComment && (
-            <Button size="sm" variant="ghost" onClick={onComment}>
+            <Button size="sm" variant="outline" onClick={onComment}>
               Principal&apos;s comments
             </Button>
           )}

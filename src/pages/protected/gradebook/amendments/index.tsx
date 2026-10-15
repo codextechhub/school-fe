@@ -230,7 +230,7 @@ function AmendmentCard({
         </p>
         {row.decision_note && <p className="text-sm text-gray-06">Decision: {row.decision_note}</p>}
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="ghost" asChild>
+          <Button size="sm" variant="outline" asChild>
             <Link to={routesPath.PROTECTED.GRADEBOOK.REPORT_CARD_ID(row.class.id, row.student.id, row.term.id)}>
               View report card
             </Link>

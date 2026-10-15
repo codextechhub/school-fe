@@ -151,7 +151,7 @@ export function ProgrammeRecords<T extends SetupRecordLike>({
                             </Button>
                           )}
                           {record.status === "IN_USE" && !record.locked && (
-                            <Button size="sm" variant="ghost" disabled={busy} onClick={() => void run(() => onCopy(record))}>
+                            <Button size="sm" variant="outline" disabled={busy} onClick={() => void run(() => onCopy(record))}>
                               Copy
                             </Button>
                           )}
@@ -160,7 +160,7 @@ export function ProgrammeRecords<T extends SetupRecordLike>({
                               <Button size="sm" onClick={() => setConfirm({ kind: "activate", record })}>
                                 Put in use
                               </Button>
-                              <Button size="sm" variant="ghost" onClick={() => setConfirm({ kind: "delete", record })}>
+                              <Button size="sm" variant="outline" onClick={() => setConfirm({ kind: "delete", record })}>
                                 Delete draft
                               </Button>
                             </>

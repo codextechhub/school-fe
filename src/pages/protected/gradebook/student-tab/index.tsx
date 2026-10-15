@@ -152,7 +152,7 @@ function TermCard({
                   <TableCell className="text-right">
                     <Button
                       size="sm"
-                      variant="ghost"
+                      variant="outline"
                       onClick={() =>
                         onCorrect({ term: term.term.id, classId, studentId, subjectId: subject.id })
                       }

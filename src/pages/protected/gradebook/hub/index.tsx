@@ -231,7 +231,7 @@ function LateList({ late }: { late: LateSheet[] }) {
                       {row.reminded_today ? "Reminded today" : "Remind"}
                     </Button>
                   )}
-                  <Button size="sm" variant="ghost" asChild>
+                  <Button size="sm" variant="outline" asChild>
                     <Link to={routesPath.PROTECTED.GRADEBOOK.SHEET_ID(row.class.id, row.subject.id)}>Open sheet</Link>
                   </Button>
                 </span>

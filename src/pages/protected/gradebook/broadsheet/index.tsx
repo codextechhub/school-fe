@@ -206,7 +206,7 @@ function BroadsheetBody({ sheet, classKey }: { sheet: Broadsheet; classKey: Clas
                         </Badge>
                       )}
                       {mayOpen && (
-                        <Button size="sm" variant="ghost" onClick={() => setOpened(row.student.id)}>
+                        <Button size="sm" variant="outline" onClick={() => setOpened(row.student.id)}>
                           Open
                         </Button>
                       )}

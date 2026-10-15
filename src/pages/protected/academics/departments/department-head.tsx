@@ -62,7 +62,7 @@ export function DepartmentHeadPanel({ department, canEdit }: { department: Depar
               {department.head ? "Change" : "Name a head"}
             </Button>
             {department.head && (
-              <Button size="sm" variant="ghost" disabled={updating.isLoading} onClick={() => void clear()}>
+              <Button size="sm" variant="outline" disabled={updating.isLoading} onClick={() => void clear()}>
                 Clear
               </Button>
             )}

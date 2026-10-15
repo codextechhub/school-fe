@@ -211,7 +211,7 @@ function ReleaseBody({ release }: { release: Release }) {
               row.result_state === "NOT_PUBLISHED" ? (
                 <span className="text-gray-05">-</span>
               ) : (
-                <Button size="sm" variant="ghost" asChild>
+                <Button size="sm" variant="outline" asChild>
                   <Link to={routesPath.PROTECTED.GRADEBOOK.REPORT_CARD_ID(release.class.id, row.student.id)}>Preview</Link>
                 </Button>
               ),

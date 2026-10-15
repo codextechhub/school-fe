@@ -121,7 +121,7 @@ function CommentsForm({
                     {writes && band.template && band.template !== text && (
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="outline"
                         onClick={() => setTexts((current) => ({ ...current, [band.band_min]: band.template ?? "" }))}
                       >
                         Use the school&apos;s remark
