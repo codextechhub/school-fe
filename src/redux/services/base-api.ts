@@ -283,6 +283,14 @@ const invalidRequestMessage = (res: unknown): string => {
   return coded ? "" : extractFirstDetailError(error) ?? "";
 };
 
+/**
+ * The sign-in endpoints, which own their error display and never refresh a token.
+ *
+ * Matched as a path under `/user/auth/`, never as a word anywhere in the
+ * address: "activate" is also how a session, a structure or a scale is put in
+ * use, and matching the word alone took those actions' refusals away from the
+ * reader and stopped a 401 on them from refreshing the session.
+ */
 const AUTH_URLS = [
   "login",
   "reset-password",
@@ -291,14 +299,14 @@ const AUTH_URLS = [
   "activate",
 ];
 
-const isAuthRoute = (args: string | FetchArgs): boolean => {
+export const isAuthRoute = (args: string | FetchArgs): boolean => {
   const url =
     typeof args === "string"
       ? args
       : typeof args === "object" && "url" in args && typeof args.url === "string"
         ? args.url
         : "";
-  return AUTH_URLS.some((u) => url.includes(u));
+  return AUTH_URLS.some((u) => url.includes(`/user/auth/${u}`));
 };
 
 /**

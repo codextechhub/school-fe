@@ -14,7 +14,7 @@ vi.mock("sonner", () => ({
   toast: { error: mocks.toastError, info: vi.fn(), success: vi.fn() },
 }));
 
-import { baseQueryInterceptor } from "./base-api";
+import { baseQueryInterceptor, isAuthRoute } from "./base-api";
 import { routesPath } from "@/routes/routesPath";
 
 const { navigate, toastError } = mocks;
@@ -339,5 +339,20 @@ describe("a refused request (400, 422)", () => {
     await baseQueryInterceptor("/students/7/", apiStub("mutation"), {});
 
     expect(toastError).not.toHaveBeenCalled();
+  });
+});
+
+describe("which requests count as signing in", () => {
+  it("counts the sign-in endpoints under /user/auth/", () => {
+    expect(isAuthRoute("/user/auth/login/")).toBe(true);
+    expect(isAuthRoute({ url: "/user/auth/activate/abc123/" })).toBe(true);
+    expect(isAuthRoute("/user/auth/password/reset/abc123/confirm/")).toBe(true);
+  });
+
+  it("does not count an action that merely says activate", () => {
+    // Putting a session or a grading scale in use must keep its refusal
+    // toast and its token refresh, like every other action.
+    expect(isAuthRoute("/academics/sessions/12/activate/")).toBe(false);
+    expect(isAuthRoute({ url: "/gradebook/scales/5/activate/" })).toBe(false);
   });
 });
