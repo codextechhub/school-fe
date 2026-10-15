@@ -66,6 +66,12 @@ vi.mock("./drawers/drawer-shell", async (importActual) => {
 import { GuardianRows, type GuardianDraft } from "./enrol/guardian-rows";
 import { LinkGuardianDrawer } from "./drawers/link-guardian-drawer";
 
+/** The "Add a new one" switch, found by the name a reader hears. */
+const addNewButton = () =>
+  Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Add a new one") ??
+  null;
+
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const guardians = (access: FieldAccessMap[string]): FieldAccessMap => ({
@@ -174,7 +180,7 @@ describe("adding a new guardian with a phone open on create", () => {
       fieldAccess = PHONE_READ_ONLY_BUT_OPEN;
       await render();
 
-      const addNew = document.body.querySelector("button[aria-label='Add a new one view']") as HTMLButtonElement;
+      const addNew = addNewButton() as HTMLButtonElement;
       expect(addNew).not.toBeNull();
       await act(async () => addNew.click());
 
@@ -200,7 +206,7 @@ describe("adding a new guardian with a phone open on create", () => {
       fieldAccess = PHONE_HIDDEN_AND_CLOSED;
       await render();
 
-      expect(document.body.querySelector("button[aria-label='Add a new one view']")).toBeNull();
+      expect(addNewButton()).toBeNull();
       expect(inputLabelled("Phone")).toBeNull();
     });
   });

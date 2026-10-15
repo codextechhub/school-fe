@@ -53,6 +53,12 @@ vi.mock("./drawer-shell", async (importActual) => {
 
 import { LinkGuardianDrawer } from "./link-guardian-drawer";
 
+/** The "Add a new one" switch, found by the name a reader hears. */
+const addNewButton = () =>
+  Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent?.trim() === "Add a new one") ??
+  null;
+
+
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 function labelled(text: string): HTMLLabelElement | undefined {
@@ -95,9 +101,7 @@ describe("LinkGuardianDrawer and the guardian email rule", () => {
         <LinkGuardianDrawer student={{ id: 41 } as StudentDetail} open onClose={() => {}} />,
       );
     });
-    const addNew = document.body.querySelector(
-      "button[aria-label='Add a new one view']",
-    ) as HTMLButtonElement;
+    const addNew = addNewButton() as HTMLButtonElement;
     await act(async () => addNew.click());
   }
 
