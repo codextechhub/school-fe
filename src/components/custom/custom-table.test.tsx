@@ -51,7 +51,7 @@ describe("CustomTable loading skeleton", () => {
 
   it("shows no spinner", () => {
     const doc = renderLoading();
-    expect(doc.querySelector('img[src$="school-loading.svg"]')).toBeNull();
+    expect(doc.querySelector('img[src$="xvs-loading.svg"]')).toBeNull();
   });
 
   it("announces loading once for the surface, not once per ghost row", () => {

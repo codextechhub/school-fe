@@ -35,10 +35,14 @@ const DEFAULT_SIZE = 30;
  */
 const WORDMARK_SCALE = 0.8;
 
-/** Product marks used when a school has no crest of its own. */
+/**
+ * The XVS logo, used when a school has no crest of its own: the full-colour
+ * crest on a light surface, the white crest on a dark one. Never the CodeX
+ * mark, which belongs to the console.
+ */
 const FALLBACK_SRC = {
-  blue: "/svg/logo-blue.svg",
-  white: "/svg/logo-white.svg",
+  blue: "/svg/xvs-logo.svg",
+  white: "/svg/xvs-logo-white.svg",
 } as const;
 
 export function SchoolMark({

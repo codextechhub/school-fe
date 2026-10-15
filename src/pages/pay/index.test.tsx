@@ -54,7 +54,7 @@ describe("the invoice pay page", () => {
     const html = render({ data: { data: PAYABLE }, isLoading: false, isError: false });
 
     expect(html).toContain("Corona Secondary School");
-    expect(html).not.toContain("/svg/logo-blue.svg");
+    expect(html).not.toContain("/svg/xvs-logo.svg");
   });
 
   it("heads a CodeX invoice with the XVS mark", () => {
@@ -64,7 +64,7 @@ describe("the invoice pay page", () => {
       isError: false,
     });
 
-    expect(html).toContain("/svg/logo-blue.svg");
+    expect(html).toContain("/svg/xvs-logo.svg");
     expect(html).not.toContain("CodeX");
   });
 
@@ -139,7 +139,7 @@ describe("the invoice pay page", () => {
   it("shows a loader rather than an empty card while it is fetching", () => {
     const html = render({ data: undefined, isLoading: true, isError: false });
 
-    expect(html).toContain("school-loading.svg");
+    expect(html).toContain("xvs-loading.svg");
     expect(html).not.toContain("not valid");
   });
 });

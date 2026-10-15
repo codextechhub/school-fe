@@ -135,9 +135,9 @@ export default function PayInvoice() {
           for ₦546,000 is one nobody should pay.
 
           CodeX billing a school is XVS itself, so that case heads with the
-          transparent blue product mark instead. */}
+          XVS logo instead. */}
       {invoice.issuer_is_platform ? (
-        <img src="/svg/logo-blue.svg" alt="XVS" className="h-10 w-auto" />
+        <img src="/svg/xvs-logo.svg" alt="XVS" className="h-10 w-auto" />
       ) : invoice.logo_url ? (
         <img
           src={invoice.logo_url}

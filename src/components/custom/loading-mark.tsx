@@ -1,7 +1,7 @@
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const SRC = "/svg/school-loading.svg";
+const SRC = "/svg/xvs-loading.svg";
 
 export type LoadingMarkProps = {
   /** Size it with an `h-*` class; the width follows. Unsized it is 203px tall. */
@@ -16,12 +16,12 @@ export type LoadingMarkProps = {
 };
 
 /**
- * The school app's loading mark: a crest whose lines write themselves in
+ * The XVS loading mark: the XVS crest, its lines writing themselves in
  * while two points circle its base. Used for every wait that has nothing
  * better to show, from the boot screen to a section loading, and handed to
  * the shared finance screens as the host's `LoadingMark`.
  *
- * It renders `public/svg/school-loading.svg` as an image, which keeps the
+ * It renders `public/svg/xvs-loading.svg` as an image, which keeps the
  * drawing's own styles and motion (including its reduced-motion rule) out of
  * the page's stylesheet. `index.html` shows the same file as the boot
  * screen, so it is cached before React first asks for it.
