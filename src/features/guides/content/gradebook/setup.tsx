@@ -4,7 +4,7 @@ export default function GradebookSetupArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>Open <strong>Settings</strong>, then <strong>Gradebook</strong>, or <strong>Assessment setup</strong> under Gradebook in the sidebar. Everything here applies to every branch, so only somebody who works for the whole school can change it; a branch administrator reads it.</p>
+        <p>Open <strong>Settings</strong>, then <strong>Gradebook</strong>. Everything here applies to every branch, so only somebody who works for the whole school can change it; a branch administrator reads it.</p>
         <GuideChecklist items={[
           "Your programmes are set up under Academic structure.",
           "You know how your school weights continuous assessment against the examination, and its grade bands.",

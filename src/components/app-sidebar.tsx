@@ -823,7 +823,6 @@ export function AppSidebar({
           P.ENTER_OWN_SCORES,
           P.ENTER_ANY_SCORES,
           P.VIEW_ELECTIVE_TAKERS,
-          P.MANAGE_ASSESSMENT_SETUP,
           P.PUBLISH_RESULTS,
           P.VIEW_RESULT_HOLDS,
           P.VIEW_RELEASE,
@@ -890,13 +889,6 @@ export function AppSidebar({
             title: "Who takes what",
             url: routesPath.PROTECTED.GRADEBOOK.ELECTIVES,
             isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.ELECTIVES),
-          }] : []),
-          // The rules live in the Settings console, beside the school's others,
-          // so it is the Settings door that lights there, not this one.
-          ...(hasPermission(P.MANAGE_ASSESSMENT_SETUP) ? [{
-            title: "Assessment setup",
-            url: routesPath.PROTECTED.SETTINGS.GRADEBOOK,
-            isActive: false,
           }] : []),
         ],
       },
