@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Bell, CheckCheck, Loader2, Search } from "lucide-react";
+import { Bell, CheckCheck, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NotificationEventIcon } from "@/components/custom/notification-event-icon";
@@ -18,6 +18,7 @@ import {
 import { useAppSelector } from "@/redux/store";
 import { selectTenantIsPending } from "@/redux/features/auth/auth-slice";
 import { canOpenNotification } from "@/lib/notification-destination";
+import { LoadingMark } from "@/components/custom/loading-mark";
 
 /**
  * The notification centre - a school's own feed over `/v1/notify/`.
@@ -139,7 +140,7 @@ export default function Notifications() {
       <section className="min-w-0 rounded-md border border-border bg-white">
         {isLoading ? (
           <div className="grid h-72 place-content-center">
-            <Loader2 className="size-6 animate-spin text-primary" />
+            <LoadingMark className="h-24" />
           </div>
         ) : isError ? (
           <div className="py-20 text-center">

@@ -10,6 +10,7 @@ import {
 import { useBrandFavicon } from "@/hooks/use-brand-favicon";
 import { formatDate } from "@/lib/dates";
 import { activeDisplayPrefs } from "@/lib/school-display";
+import { LoadingMark } from "@/components/custom/loading-mark";
 
 /**
  * Paying an invoice from the link in its email.
@@ -70,7 +71,7 @@ export default function PayInvoice() {
     return (
       <Shell>
         <div className="flex items-center justify-center py-10">
-          <LoaderCircle className="size-5 animate-spin text-muted-foreground" />
+          <LoadingMark className="h-16" />
         </div>
       </Shell>
     );

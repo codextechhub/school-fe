@@ -9,6 +9,7 @@ const SECTIONS = [
   ["Accounting integration", "Which accounts purchasing posts to. They are owned by Finance and changed there with Edit in Finance."],
   ["Approvals", "Which approval path each purchasing document follows. They are changed under Workflow with Manage workflows."],
   ["Reference data", "Shortcuts to vendors, categories, catalogue, contracts and stock items."],
+  ["Recent changes", "The newest saved changes from every section in one list, with who made each one and when."],
 ] as const;
 
 export default function ProcurementSettingsArticle() {

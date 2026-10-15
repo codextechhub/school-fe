@@ -48,6 +48,7 @@ import {
   conversationCommentBody,
   partitionTicketAttachments,
 } from "./conversation-model";
+import { LoadingMark } from "@/components/custom/loading-mark";
 
 /**
  * One ticket, and the conversation on it.
@@ -420,7 +421,7 @@ export default function SupportTicketDetail() {
     return (
       <PageShell>
         <div className="grid h-72 place-content-center">
-          <Loader2 className="size-6 animate-spin text-primary" />
+          <LoadingMark className="h-24" />
         </div>
       </PageShell>
     );

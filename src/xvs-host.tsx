@@ -194,6 +194,10 @@ export { default as FeeDuePolicyPanel } from "@/pages/protected/school-finance/f
  *  customer, which in a school is every pupil. */
 export { default as FeeGenerationPanel } from "@/pages/protected/school-finance/fee-generation";
 
+/** The school app's loading crest, for the shared screens' loaders. A busy
+ *  Refresh button keeps the spinning arrow; see LoadingMark. */
+export { LoadingMark } from "@/components/custom/loading-mark";
+
 /** The school's own crest at the top of the Finance sidebar, not the platform's.
  *
  *  The same component the school's own sidebar uses, deliberately: crossing

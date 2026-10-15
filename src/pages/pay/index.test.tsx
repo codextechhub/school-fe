@@ -139,7 +139,7 @@ describe("the invoice pay page", () => {
   it("shows a loader rather than an empty card while it is fetching", () => {
     const html = render({ data: undefined, isLoading: true, isError: false });
 
-    expect(html).toContain("animate-spin");
+    expect(html).toContain("school-loading.svg");
     expect(html).not.toContain("not valid");
   });
 });

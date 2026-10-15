@@ -17,7 +17,7 @@ import { captureReturnTo } from "@/utils/return-to";
 import { DEFAULT_FAVICON, setFavicon } from "@/utils/favicon";
 import { useSchoolLogo } from "@/hooks/use-school-logo";
 import { Button } from "@/components/ui/button";
-import { LoaderCircle, RefreshCw, TriangleAlert } from "lucide-react";
+import { RefreshCw, TriangleAlert } from "lucide-react";
 import { getAuthContextGateState } from "@/utils/auth-context-gate";
 import {
   isSessionRestoreBlocked,
@@ -25,6 +25,7 @@ import {
   type RefreshOutcome,
 } from "@/utils/token-refresh";
 import { getAccessToken } from "@/utils/access-token";
+import { LoadingMark } from "@/components/custom/loading-mark";
 
 const { LOGIN } = routesPath.AUTH;
 
@@ -242,8 +243,8 @@ export default function Authenticated() {
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         {restoreState === "restoring" ? (
-          <div className="flex items-center gap-2 text-sm text-gray-01" role="status">
-            <LoaderCircle className="size-4 shrink-0 animate-spin" />
+          <div className="flex flex-col items-center gap-3 text-sm text-gray-01" role="status">
+            <LoadingMark label={null} />
             Restoring your session…
           </div>
         ) : (
@@ -284,10 +285,10 @@ export default function Authenticated() {
       return (
         <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
           <div
-            className="flex items-center gap-2 text-center text-sm text-gray-01"
+            className="flex flex-col items-center gap-3 text-center text-sm text-gray-01"
             role="status"
           >
-            <LoaderCircle className="size-4 shrink-0 animate-spin" />
+            <LoadingMark label={null} />
             {autoRetrying ? "Reconnecting…" : "Preparing your workspace…"}
           </div>
         </main>

@@ -1,5 +1,5 @@
 import { createElement, lazy, Suspense, useEffect, useLayoutEffect, useState, type MouseEvent } from "react";
-import { ArrowRight, BookOpenText, Check, CheckCircle2, Clock3, ExternalLink, Flag, Loader2, PlayCircle, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowRight, BookOpenText, Check, CheckCircle2, Clock3, ExternalLink, Flag, PlayCircle, ThumbsDown, ThumbsUp } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router";
 
 import PageAccessDenied from "@/components/custom/page-access-denied";
@@ -10,6 +10,7 @@ import { GUIDE_CATEGORIES, GUIDE_REGISTRY, canDiscoverGuide, findWalkthrough, us
 import { resetGuideArticleScroll, scrollToGuideSection } from "@/features/guides/article-navigation";
 import { useRecordGuideAnalyticsMutation } from "@/redux/services/support/guide-analytics-api";
 import { routesPath } from "@/routes/routesPath";
+import { LoadingMark } from "@/components/custom/loading-mark";
 
 const GUIDE_ARTICLES = new Map(
   GUIDE_REGISTRY
@@ -102,7 +103,7 @@ export default function GuideArticlePage() {
         </header>
 
         <div className="mt-6 rounded-3xl border border-gray-200 bg-white p-5 shadow-sm sm:p-8">
-          <Suspense fallback={<div className="grid min-h-80 place-items-center"><Loader2 className="size-5 animate-spin text-primary" /></div>}>{createElement(Article)}</Suspense>
+          <Suspense fallback={<div className="grid min-h-80 place-items-center"><LoadingMark className="h-16" /></div>}>{createElement(Article)}</Suspense>
         </div>
 
         {related.length > 0 && (

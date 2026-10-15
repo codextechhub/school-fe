@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import { Outlet } from "react-router";
-import { LoaderCircle } from "lucide-react";
 
 import { RouteProgress } from "@/components/layout/route-progress";
+import { LoadingMark } from "@/components/custom/loading-mark";
 
 // Single Suspense boundary for all lazily-loaded route chunks. Kept eager
 // (like RouteError and the Authenticated gate) so the shell that handles
@@ -16,7 +16,7 @@ export default function LazyRoot() {
       <Suspense
         fallback={
           <div className="flex h-screen items-center justify-center px-4">
-            <LoaderCircle className="size-5 animate-spin text-gray-01" />
+            <LoadingMark />
           </div>
         }
       >

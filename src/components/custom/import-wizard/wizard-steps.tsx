@@ -24,6 +24,7 @@ import {
 import type { DatasetType, ImportBatch, ImportTemplate, ValidationSeverity } from "@/redux/services/dashboard/import-types";
 import { showBlobPreview } from "@xvs/finance/components/finance-ui/file-preview-dialog";
 import { downloadObjectUrl, fetchAttachmentBlob } from "@/utils/attachment-download";
+import { LoadingMark } from "@/components/custom/loading-mark";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -761,7 +762,7 @@ export function ValidationStep({ phase, onComplete }: { phase: "running" | "done
   return (
     <div className="bg-white rounded-md border border-white-02 p-6">
       <div className="text-center py-10 space-y-4">
-        <div className="size-11 mx-auto rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" />
+        <LoadingMark className="mx-auto h-16" />
         <div>
           <p className="text-base font-semibold text-black-01">Validating your file against the template…</p>
           <p className="text-xs text-gray-01 mt-1">Checking required fields, data types, choices and cross-references.</p>
@@ -1184,7 +1185,7 @@ export function ImportProgressStep({
 
       <div className="text-center py-2">
         <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="size-7 rounded-full border-[3px] border-primary/20 border-t-primary animate-spin" />
+          <LoadingMark label={null} className="h-10" />
           <p className="text-sm font-semibold text-black-01">Processing batch · {total} {total === 1 ? "row" : "rows"}</p>
         </div>
         <div className="max-w-lg mx-auto">
