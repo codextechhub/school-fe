@@ -27,7 +27,7 @@ export function AsAtControl({
   value: string | undefined;
   onChange: (day?: string) => void;
 }) {
-  const { formatDay, today: todayIn } = useSchoolDisplay();
+  const { today: todayIn } = useSchoolDisplay();
   const today = todayIn();
   return (
     <div
