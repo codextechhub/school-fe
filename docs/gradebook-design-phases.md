@@ -434,6 +434,18 @@ either amendment key. Where they differ from the design:
 
 The four analytics cards and both exports, CSV and xlsx.
 
+**As built.** Analytics are `/gradebook/analytics`, following the branch
+lens. Where they differ from the design:
+
+1. Export is a menu offering CSV or Excel (the design drew CSV only, B8),
+   for a holder of the export key alone. The file is the server's, cut from
+   the same figures as the screen, and keeps the server's file name.
+2. Every part appears only when it has something to say: the comparison
+   only where two classes share a subject, the top of each class only at a
+   school that ranks and for a reader of both positions and averages.
+3. Seed gap: no earlier published term exists, so the term-on-term table
+   shows its calm line and its figures are covered by tests only.
+
 ### Phase 9: bulk upload
 
 Template download, the preview with per-cell outcomes and issues, choosing

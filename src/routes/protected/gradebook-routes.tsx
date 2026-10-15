@@ -10,6 +10,7 @@ const Approvals = lazy(() => import("@/pages/protected/gradebook/approvals"));
 const FeeHolds = lazy(() => import("@/pages/protected/gradebook/holds"));
 const Release = lazy(() => import("@/pages/protected/gradebook/release"));
 const Amendments = lazy(() => import("@/pages/protected/gradebook/amendments"));
+const Analytics = lazy(() => import("@/pages/protected/gradebook/analytics"));
 const ReportCardPage = lazy(() => import("@/pages/protected/gradebook/report-card"));
 const ClassCardsPage = lazy(() => import("@/pages/protected/gradebook/report-card/class-cards"));
 const BroadsheetPage = lazy(() => import("@/pages/protected/gradebook/broadsheet"));
@@ -60,6 +61,11 @@ export const gradebookRoutes = [
     path: G.HOLDS,
     Component: FeeHolds,
     handle: { title: "Fee holds", lens: true, lenses: "branch" } satisfies DashboardHandle,
+  },
+  {
+    path: G.ANALYTICS,
+    Component: Analytics,
+    handle: { title: "Analytics", lens: true, lenses: "branch" } satisfies DashboardHandle,
   },
   {
     path: G.AMENDMENTS,

@@ -2,6 +2,9 @@ import { baseApi } from "../base-api";
 import type { Envelope } from "../onboarding/onboarding-types";
 import { termParams } from "./gradebook-params";
 import type {
+  Analytics,
+  AnalyticsTable,
+  DownloadedFile,
   AmendmentForm,
   AmendmentRaise,
   AmendmentRow,
@@ -325,6 +328,38 @@ export const gradebookApi = baseApi.injectEndpoints({
       invalidatesTags: ["GradebookAmendments", "GradebookRelease"],
     }),
 
+    // ── Performance analytics ────────────────────────────────────────────
+
+    /** How the term's published results read, in the reader's branches. */
+    getAnalytics: builder.query<Envelope<Analytics>, TermArgs | void>({
+      query: (args) => ({ url: `/gradebook/analytics/`, method: "GET", params: termParams(args ?? {}) }),
+      providesTags: ["GradebookAnalytics"],
+    }),
+
+    /**
+     * One analytics table as a CSV or Excel file. Hands back an object URL
+     * (the caller revokes it) and the server's file name; a Blob in the store
+     * would trip the serializability check. A refusal keeps the server's
+     * sentence and is silent here, because the screen shows it.
+     */
+    exportAnalytics: builder.mutation<
+      DownloadedFile,
+      TermArgs & { table: AnalyticsTable; fileType: "csv" | "xlsx" }
+    >({
+      query: ({ table, fileType, ...term }) => ({
+        url: `/gradebook/analytics/export/`,
+        method: "GET",
+        params: { ...termParams(term), table, export: fileType },
+        responseHandler: async (response) => {
+          if (!response.ok) return response.json();
+          const disposition = response.headers.get("Content-Disposition") ?? "";
+          const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? `gradebook_${table}.${fileType}`;
+          return { url: URL.createObjectURL(await response.blob()), filename };
+        },
+      }),
+      extraOptions: { silent: true },
+    }),
+
     // ── Fee holds ────────────────────────────────────────────────────────
 
     /** The roll of the term's classes with what Finance says each family owes. */
@@ -513,6 +548,8 @@ export const {
   useGetReportCardQuery,
   useGetClassCardsQuery,
   useGetStudentResultsQuery,
+  useGetAnalyticsQuery,
+  useExportAnalyticsMutation,
   useGetAmendmentsQuery,
   useGetAmendmentFormQuery,
   useRaiseAmendmentMutation,

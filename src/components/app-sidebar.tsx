@@ -829,6 +829,7 @@ export function AppSidebar({
           P.VIEW_RELEASE,
           P.RAISE_AMENDMENT,
           P.DECIDE_AMENDMENT,
+          P.VIEW_RESULT_ANALYTICS,
         ],
         permissionMode: "any",
         items: [
@@ -879,6 +880,11 @@ export function AppSidebar({
             title: "Corrections",
             url: routesPath.PROTECTED.GRADEBOOK.AMENDMENTS,
             isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.AMENDMENTS),
+          }] : []),
+          ...(hasPermission(P.VIEW_RESULT_ANALYTICS) ? [{
+            title: "Analytics",
+            url: routesPath.PROTECTED.GRADEBOOK.ANALYTICS,
+            isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.ANALYTICS),
           }] : []),
           ...(hasPermission(P.VIEW_ELECTIVE_TAKERS) ? [{
             title: "Who takes what",

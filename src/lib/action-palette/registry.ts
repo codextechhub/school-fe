@@ -553,6 +553,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.GRADEBOOK.AMENDMENTS },
   },
   {
+    id: "view-result-analytics",
+    label: "View performance analytics",
+    aliases: [
+      "analytics", "performance", "subject averages", "pass rate", "grade spread",
+      "compare classes", "top of class", "term on term", "export results",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { perm: P.VIEW_RESULT_ANALYTICS },
+    run: { to: R.GRADEBOOK.ANALYTICS },
+  },
+  {
     id: "view-my-score-sheets",
     label: "View my score sheets",
     // A teacher's own sheets for the term, each opening onto the grid.

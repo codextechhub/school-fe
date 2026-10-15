@@ -850,3 +850,69 @@ export interface AmendmentsArgs extends TermArgs {
 export interface AmendmentsPage extends PaginatedEnvelope<AmendmentRow> {
   branch_dimension: boolean;
 }
+
+// ── Performance analytics (`analytics/`) ───────────────────────────────────
+
+/**
+ * One subject in one published class. `average`, `spread` and `pass_rate`
+ * are class figures and follow the class-figures switch; `marked` counts
+ * students and has none.
+ */
+export interface AnalyticsSubject {
+  subject: Ref;
+  class: Ref;
+  average?: string | null;
+  spread?: { grade: string; count: number }[];
+  pass_rate?: number | null;
+  marked: number;
+}
+
+/** A subject offered by two or more published classes, and the gap between highest and lowest average. */
+export interface AnalyticsCompare {
+  subject: Ref;
+  arms: { class: Ref; average?: string }[];
+  gap?: string;
+}
+
+/**
+ * A student's overall average this term against their most recent earlier
+ * published term. `from`, `to` and `change` follow the overall-average switch.
+ */
+export interface AnalyticsMover {
+  student: StudentRef;
+  class: Ref;
+  from_term: Ref;
+  from?: string;
+  to?: string;
+  change?: string;
+}
+
+/** The highest overall average of a class and every student on it. */
+export interface AnalyticsTop {
+  class: Ref;
+  students: Ref[];
+  average: string;
+}
+
+export interface Analytics {
+  term: TermRef;
+  scope: {
+    branch_dimension: boolean;
+    classes: { id: number; name: string; branch: Ref | null }[];
+    published_count: number;
+  };
+  ranks: boolean;
+  subjects: AnalyticsSubject[];
+  compare: AnalyticsCompare[];
+  movers: AnalyticsMover[];
+  /** Absent for a reader who may not read both positions and overall averages. */
+  tops?: AnalyticsTop[];
+}
+
+export type AnalyticsTable = "subjects" | "movers";
+
+/** A downloaded table: an object URL the caller revokes, and the server's file name. */
+export interface DownloadedFile {
+  url: string;
+  filename: string;
+}

@@ -358,6 +358,7 @@ export const routesPath = {
       HOLDS: "/gradebook/holds",
       /** Corrections to published results. */
       AMENDMENTS: "/gradebook/corrections",
+      ANALYTICS: "/gradebook/analytics",
       /** Report cards and release; the class rides in `?class=`. */
       RELEASE: "/gradebook/release",
       CLASS_CARDS: "/gradebook/report-cards/:classId",
