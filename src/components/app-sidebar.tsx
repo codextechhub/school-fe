@@ -826,6 +826,7 @@ export function AppSidebar({
           P.MANAGE_ASSESSMENT_SETUP,
           P.PUBLISH_RESULTS,
           P.VIEW_RESULT_HOLDS,
+          P.VIEW_RELEASE,
         ],
         permissionMode: "any",
         items: [
@@ -864,6 +865,13 @@ export function AppSidebar({
             title: "Fee holds",
             url: routesPath.PROTECTED.GRADEBOOK.HOLDS,
             isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.HOLDS),
+          }] : []),
+          ...(hasPermission(P.VIEW_RELEASE) ? [{
+            title: "Report cards",
+            url: routesPath.PROTECTED.GRADEBOOK.RELEASE,
+            isActive:
+              location.startsWith(routesPath.PROTECTED.GRADEBOOK.RELEASE) ||
+              location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/report-cards`),
           }] : []),
           ...(hasPermission(P.VIEW_ELECTIVE_TAKERS) ? [{
             title: "Who takes what",

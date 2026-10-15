@@ -527,6 +527,19 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.GRADEBOOK.HOLDS },
   },
   {
+    id: "view-report-cards",
+    label: "View report cards and release",
+    aliases: [
+      "report cards", "print report cards", "print class report cards", "release list",
+      "guardian email", "who was emailed", "results released",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { perm: P.VIEW_RELEASE },
+    run: { to: R.GRADEBOOK.RELEASE },
+  },
+  {
     id: "view-my-score-sheets",
     label: "View my score sheets",
     // A teacher's own sheets for the term, each opening onto the grid.

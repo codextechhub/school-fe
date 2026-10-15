@@ -8,6 +8,9 @@ const MySheets = lazy(() => import("@/pages/protected/gradebook/my-sheets"));
 const Moderation = lazy(() => import("@/pages/protected/gradebook/moderation"));
 const Approvals = lazy(() => import("@/pages/protected/gradebook/approvals"));
 const FeeHolds = lazy(() => import("@/pages/protected/gradebook/holds"));
+const Release = lazy(() => import("@/pages/protected/gradebook/release"));
+const ReportCardPage = lazy(() => import("@/pages/protected/gradebook/report-card"));
+const ClassCardsPage = lazy(() => import("@/pages/protected/gradebook/report-card/class-cards"));
 const BroadsheetPage = lazy(() => import("@/pages/protected/gradebook/broadsheet"));
 const ScoreSheet = lazy(() => import("@/pages/protected/gradebook/sheet"));
 const WhoTakesWhat = lazy(() => import("@/pages/protected/gradebook/electives"));
@@ -56,6 +59,23 @@ export const gradebookRoutes = [
     path: G.HOLDS,
     Component: FeeHolds,
     handle: { title: "Fee holds", lens: true, lenses: "branch" } satisfies DashboardHandle,
+  },
+  {
+    // The class rides in `?class=`, chosen on the screen.
+    path: G.RELEASE,
+    Component: Release,
+    handle: { title: "Report cards", lens: true, lenses: "branch" } satisfies DashboardHandle,
+  },
+  {
+    // No lens: a class's cards belong to its branch whatever is chosen.
+    path: G.CLASS_CARDS,
+    Component: ClassCardsPage,
+    handle: { title: "Print the class", back: G.RELEASE } satisfies DashboardHandle,
+  },
+  {
+    path: G.REPORT_CARD,
+    Component: ReportCardPage,
+    handle: { title: "Report card", back: G.RELEASE } satisfies DashboardHandle,
   },
   {
     path: G.SHEET,

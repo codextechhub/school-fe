@@ -380,6 +380,30 @@ the class-figures, position, ratings and next-term variations, the cumulative
 block, promotion line and version. Print class. Results tab on the student
 record with terms, calm line and history.
 
+**As built.** Report cards and release is `/gradebook/release?class=`, one
+card is `/gradebook/report-cards/:classId/:studentId` and printing a class is
+`/gradebook/report-cards/:classId`. The Results tab sits on the student
+record (`?tab=results`) for readers of student results at a school with the
+gradebook. Where it differs from the design:
+
+1. The class is a select, not tabs (ruling 2.3.4). It reads a new backend
+   list, `GET release/`, under the release key, so a role with the release
+   key and nothing else still has classes to choose from.
+2. The guardian email sample is static copy with "[First name]" (ruling
+   2.3.6); NOT_SENT reads "Not sent", never "Emailed".
+3. Cards print through the app's print stylesheet (ruling 2.3.7): A4
+   portrait, one to a page, while the rest of the app prints landscape. The
+   report card screens name the page on the document root, because a named
+   page set inside the layout's grid is ignored and a page switch part-way
+   adds a blank page. On paper the card is set smaller and tighter, and a
+   card of fifteen subjects and ten ratings fits one page. Not yet proved:
+   a last-term card with the year block and fifteen subjects (the seed has
+   no earlier term).
+4. A held card says so on screen and never on paper. Printing the class
+   leaves held students out and names them above the cards.
+5. Student names on the release list open the student's Results tab, where
+   each published term has "Preview and print".
+
 ### Phase 7: amendments
 
 Raise with the corrected marks (`amendments/form/`), the amendments list,

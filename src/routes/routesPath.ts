@@ -356,6 +356,14 @@ export const routesPath = {
       MODERATION: "/gradebook/moderation",
       APPROVALS: "/gradebook/approvals",
       HOLDS: "/gradebook/holds",
+      /** Report cards and release; the class rides in `?class=`. */
+      RELEASE: "/gradebook/release",
+      CLASS_CARDS: "/gradebook/report-cards/:classId",
+      CLASS_CARDS_ID: (classId: number | string, term?: number) =>
+        `/gradebook/report-cards/${classId}${term ? `?term=${term}` : ""}`,
+      REPORT_CARD: "/gradebook/report-cards/:classId/:studentId",
+      REPORT_CARD_ID: (classId: number | string, studentId: number | string, term?: number) =>
+        `/gradebook/report-cards/${classId}/${studentId}${term ? `?term=${term}` : ""}`,
       BROADSHEET: "/gradebook/classes/:classId",
       /** One class's broadsheet; the term rides in `?term=`, omitted for the current one. */
       BROADSHEET_ID: (classId: number | string, term?: number) =>

@@ -672,6 +672,51 @@ button:focus-visible .school-mark__pen {
     margin: 12mm;
     size: landscape;
   }
+
+  /* A report card is a portrait A4 document, one to a page, while every
+     other print in the app is landscape. The report card screens name the
+     page on the document root (useReportCardPrint), so the whole print takes
+     it and no page switches part-way. */
+  @page report-card {
+    margin: 12mm;
+    size: A4 portrait;
+  }
+
+  html[data-print-page="report-card"] body {
+    page: report-card;
+  }
+
+  /* A card must fit one page with fifteen subjects and ten ratings, so on
+     paper it is set smaller and tighter than on screen. */
+  .report-card {
+    max-width: none !important;
+    padding: 0 !important;
+    zoom: 0.85;
+  }
+
+  .report-card > * + * {
+    margin-top: 8px !important;
+  }
+
+  .report-card th,
+  .report-card td {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    height: auto !important;
+  }
+
+  .report-card section {
+    padding: 6px 8px !important;
+  }
+
+  /* Several cards print one to a page. */
+  .report-card-break {
+    break-after: page;
+  }
+
+  .report-card-break:last-child {
+    break-after: auto;
+  }
 }
 
 /* Figures in mono inside the finance and procurement screens, so money and

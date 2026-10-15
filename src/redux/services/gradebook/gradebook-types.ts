@@ -55,7 +55,10 @@ export type Marker = "ABS" | "EXC";
 /** What a family may see of one result. A held result is published but not released. */
 export type ResultState = "NOT_PUBLISHED" | "HELD" | "RELEASED";
 
-/** What happened to the guardian's "report card is ready" email. */
+/**
+ * What happened to the guardian's "report card is ready" email. NOT_SENT is a
+ * released result whose email has no recorded outcome, never to be read as sent.
+ */
 export type EmailState = "SENT" | "NO_EMAIL" | "HELD" | "NOT_SENT";
 
 /** Why a sheet due this term is not in, on the hub's late list. */
@@ -608,4 +611,161 @@ export interface HoldLiftResult {
   /** The class was already published, so lifting released the result. */
   released: boolean;
   row: HoldRow;
+}
+
+// ── Release, report cards and a student's results ──────────────────────────
+
+/** A class a release reader may open, with where it stands in the chain. */
+export interface ReleaseClass {
+  class: Ref;
+  /** Null at a school with one branch. */
+  branch: Ref | null;
+  stage: ClassStage;
+  published_at: string | null;
+}
+
+export interface ReleaseClasses {
+  term: Ref;
+  branch_dimension: boolean;
+  classes: ReleaseClass[];
+}
+
+/**
+ * One student on a release list. `guardian` is the primary guardian, null
+ * when there is none, absent or cut down where Field Access hides it.
+ * `email_state` and `emailed_at` follow the email-state switch.
+ */
+export interface ReleaseRow {
+  student: StudentRef;
+  guardian?: { name?: string; email?: string | null } | null;
+  result_state: ResultState;
+  email_state?: EmailState | null;
+  emailed_at?: string | null;
+  released_at: string | null;
+}
+
+export interface Release {
+  class: Ref;
+  term: Ref;
+  stage: ClassStage;
+  published_at: string | null;
+  class_size: number;
+  held_count: number;
+  rows: ReleaseRow[];
+}
+
+/** A printed line: a label and its value worded for print. */
+export interface CardLine {
+  label: string;
+  value: string;
+}
+
+export interface CardSubject {
+  name: string;
+  /** Component scores as printed ("18", "ABS", "Exc"). */
+  cells?: string[];
+  total?: number | null;
+  grade?: string | null;
+  remark?: string | null;
+  /** Present only where the school printed class figures and the reader may read them. */
+  class_average?: string | null;
+  highest?: number | null;
+  lowest?: number | null;
+}
+
+/** The school year on the last term's card: each subject's total per term and the annual figures. */
+export interface Cumulative {
+  terms: string[];
+  subjects: { name: string; totals?: string[]; annual_average?: string | null }[];
+  annual_average?: string | null;
+  annual_position?: string;
+  promotion_line?: string;
+}
+
+/**
+ * A report card, every figure from the snapshot published with the class.
+ * A line or block the reader may not read is absent rather than blank.
+ */
+export interface ReportCard {
+  letterhead: {
+    school_name: string;
+    logo_url: string | null;
+    branch_name: string | null;
+    branch_address: string | null;
+    phone: string | null;
+  };
+  term_line: string;
+  facts: CardLine[];
+  components: { short_name: string; max_score: number }[];
+  subjects: CardSubject[];
+  totals: CardLine[];
+  attendance?: CardLine[];
+  ratings?: { trait: string; value: number }[];
+  rating_key?: string;
+  teacher_comment?: string;
+  teacher_name?: string | null;
+  principal_comment?: string | null;
+  principal_name?: string | null;
+  grading_key: string;
+  cumulative?: Cumulative;
+  next_term_line?: string;
+  version: number;
+  /** The result is withheld from the family; staff still read the card. */
+  held: boolean;
+}
+
+export interface ClassCards {
+  class: Ref;
+  term: Ref;
+  cards: ReportCard[];
+  /** Students without a card in the print, and why. */
+  left_out: { student: StudentRef; reason: "HELD" | "NOT_RELEASED" }[];
+  left_out_count: number;
+}
+
+/** One term on a student's Results tab: published with its figures, or one calm sentence. */
+export interface ResultTerm {
+  term: Ref;
+  session: Ref;
+  published: boolean;
+  message?: string;
+  overall_average?: string | null;
+  /** "3rd of 24", only where that term ranked. */
+  position?: string;
+  released_at?: string | null;
+  release_label?: string;
+  version?: number;
+  subjects?: { name: string; total?: number | null; grade?: string | null; remark?: string | null }[];
+  cumulative?: Cumulative;
+  class_id?: number;
+}
+
+/** A hold placed or lifted, or an amendment, on a student's results. */
+export interface ResultHistoryEntry {
+  kind: string;
+  text: string;
+  reason?: string;
+  lift_note?: string;
+  amendment?: {
+    id: number;
+    status: string;
+    subject: Ref;
+    term: Ref;
+    amendment_reason?: string;
+    raised_by: string | null;
+    raised_at: string;
+    decided_by: string | null;
+    decided_at: string | null;
+    decision_note?: string;
+    version: number | null;
+  };
+  by: string | null;
+  at: string;
+}
+
+export interface StudentResults {
+  student: StudentRef & { class: Ref | null; branch: Ref | null };
+  guardian?: { name?: string; email?: string | null } | null;
+  terms: ResultTerm[];
+  history: ResultHistoryEntry[];
 }

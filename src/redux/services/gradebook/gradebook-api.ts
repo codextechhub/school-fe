@@ -4,6 +4,7 @@ import { termParams } from "./gradebook-params";
 import type {
   Approvals,
   Broadsheet,
+  ClassCards,
   ClassReturnBody,
   CellWrite,
   ClassKey,
@@ -20,6 +21,10 @@ import type {
   PrincipalCommentsWrite,
   PublishPreview,
   PublishResult,
+  Release,
+  ReleaseClasses,
+  ReportCard,
+  StudentResults,
   RemarkTemplate,
   ResultsHub,
   Scale,
@@ -223,6 +228,46 @@ export const gradebookApi = baseApi.injectEndpoints({
       ],
     }),
 
+    // ── Release, report cards and a student's results ────────────────────
+
+    /** The classes whose release list the reader may open, with their stage. */
+    getReleaseClasses: builder.query<Envelope<ReleaseClasses>, TermArgs | void>({
+      query: (args) => ({ url: `/gradebook/release/`, method: "GET", params: termParams(args ?? {}) }),
+      providesTags: ["GradebookRelease", "GradebookProgress"],
+    }),
+
+    /** One class's release list: each student's guardian, result and email state. */
+    getRelease: builder.query<Envelope<Release>, ClassKey>({
+      query: ({ classId, term }) => ({ url: `/gradebook/release/${classId}/`, method: "GET", params: termParams({ term }) }),
+      providesTags: ["GradebookRelease"],
+    }),
+
+    /** One student's report card, from the snapshot published with the class. */
+    getReportCard: builder.query<Envelope<ReportCard>, ClassKey & { studentId: number }>({
+      query: ({ classId, studentId, term }) => ({
+        url: `/gradebook/report-cards/${classId}/${studentId}/`,
+        method: "GET",
+        params: termParams({ term }),
+      }),
+      providesTags: ["GradebookRelease"],
+    }),
+
+    /** Every released student's card in roll order, for printing the class. */
+    getClassCards: builder.query<Envelope<ClassCards>, ClassKey>({
+      query: ({ classId, term }) => ({
+        url: `/gradebook/report-cards/${classId}/`,
+        method: "GET",
+        params: termParams({ term }),
+      }),
+      providesTags: ["GradebookRelease"],
+    }),
+
+    /** A student's Results tab: every term of their school years, and their history. */
+    getStudentResults: builder.query<Envelope<StudentResults>, number>({
+      query: (studentId) => ({ url: `/gradebook/students/${studentId}/results/`, method: "GET" }),
+      providesTags: ["GradebookRelease"],
+    }),
+
     // ── Fee holds ────────────────────────────────────────────────────────
 
     /** The roll of the term's classes with what Finance says each family owes. */
@@ -406,6 +451,11 @@ export const {
   useGetPublishPreviewQuery,
   useLazyGetPublishPreviewQuery,
   usePublishClassesMutation,
+  useGetReleaseClassesQuery,
+  useGetReleaseQuery,
+  useGetReportCardQuery,
+  useGetClassCardsQuery,
+  useGetStudentResultsQuery,
   useGetHoldsQuery,
   usePlaceHoldMutation,
   useLiftHoldMutation,

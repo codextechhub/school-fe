@@ -52,6 +52,7 @@ import { P } from "@/permissions";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { useCapabilities } from "@/hooks/use-capabilities";
 import { StudentAttendanceTab } from "@/pages/protected/attendance/student-tab";
+import { StudentResultsTab } from "@/pages/protected/gradebook/student-tab";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { Panel as Surface } from "@/components/custom/surface";
 import { AsAtBanner, AsAtControl, LiveOnly } from "@/components/custom/as-at-control";
@@ -77,6 +78,7 @@ const TABS = [
   { key: "medical", label: "Medical" },
   { key: "documents", label: "Documents" },
   { key: "attendance", label: "Attendance" },
+  { key: "results", label: "Results" },
   { key: "history", label: "History" },
 ] as const;
 
@@ -110,7 +112,11 @@ export default function StudentProfile() {
   // Attendance is its own module: a tab for readers who hold its key at a
   // school whose plan includes it, and absent for everyone else.
   const showsAttendance = hasPermission(P.VIEW_ATTENDANCE) && hasCapability("attendance");
-  const tabs = TABS.filter((t) => t.key !== "attendance" || showsAttendance);
+  // Results are the gradebook's, on the same terms.
+  const showsResults = hasPermission(P.VIEW_STUDENT_RESULTS) && hasCapability("gradebook");
+  const tabs = TABS.filter(
+    (t) => (t.key !== "attendance" || showsAttendance) && (t.key !== "results" || showsResults),
+  );
   const tab = (params.get("tab") as TabKey) ?? "overview";
   const [drawer, setDrawer] = useState<DrawerRequest | null>(null);
   const [asAt, setAsAt] = useAsAtParam();
@@ -373,6 +379,7 @@ export default function StudentProfile() {
         />
       )}
       {tab === "attendance" && showsAttendance && <StudentAttendanceTab studentId={studentId} />}
+      {tab === "results" && showsResults && <StudentResultsTab studentId={studentId} />}
       {tab === "history" && <HistoryTab studentId={studentId} branch={student?.branch} />}
 
       <StudentDrawers request={drawer} onClose={() => setDrawer(null)} />
