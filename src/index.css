@@ -611,6 +611,13 @@ button:focus-visible .school-mark__pen {
     visibility: hidden;
   }
 
+  /* Paper is white. The app's grey page would otherwise print behind the
+     document, since colours print exactly (below). */
+  html,
+  body {
+    background: #fff !important;
+  }
+
   .print-area,
   .print-area * {
     visibility: visible;
