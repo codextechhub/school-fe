@@ -384,3 +384,92 @@ export interface ModerationQueue {
   branch_dimension: boolean;
   sheets: ModerationRow[];
 }
+
+// ── The broadsheet (`classes/<id>/broadsheet/`) and compiling ───────────────
+
+/** Which class, for which term (the current one when omitted). */
+export interface ClassKey {
+  classId: number;
+  term?: number;
+}
+
+/** A subject the class owes, and whether its sheet is in. */
+export interface BroadsheetSubject {
+  id: number;
+  name: string;
+  short: string;
+  main_teacher: Ref | null;
+  in: boolean;
+}
+
+/** One student's mark in one subject: a total, not taken, or not in yet. */
+export interface BroadsheetCell {
+  subject: number;
+  state: "TOTAL" | "NOT_TAKEN" | "NOT_IN";
+  total?: number | null;
+}
+
+/**
+ * One student's line. `average` follows the overall-average switch, `position`
+ * the position switch and is absent where the school does not rank, and
+ * `comment_done` the class teacher's comment switch.
+ */
+export interface BroadsheetRow {
+  student: StudentRef;
+  cells: BroadsheetCell[];
+  average?: string | null;
+  position?: number | null;
+  position_of?: number;
+  comment_done?: boolean;
+}
+
+export interface Broadsheet {
+  class: Ref;
+  term: Ref;
+  class_teacher: Ref | null;
+  stage: ClassStage;
+  /** The principal sent the class back to its class teacher, with a note. */
+  returned: { by: string | null; at: string; note?: string } | null;
+  subjects: BroadsheetSubject[];
+  rows: BroadsheetRow[];
+  gaps: { subject: Ref; main_teacher: Ref | null }[];
+  /** School days in the term with no register taken; null once published. */
+  attendance_warning?: { days_not_taken: number } | null;
+  can_submit: boolean;
+  submit_blockers: { subjects_missing: Ref[]; comments_missing: number };
+  ranks: boolean;
+}
+
+/** One subject on a student's compile drawer. */
+export interface CompileSubject {
+  subject: Ref;
+  total?: number | null;
+  grade?: string | null;
+  state: "TOTAL" | "NOT_TAKEN" | "NOT_IN";
+}
+
+/** A student's compile drawer: their term so far, and the class teacher's part. */
+export interface Compile {
+  student: StudentRef;
+  /** Where the student sits on the roll, and their neighbours, by id. */
+  index: number;
+  of: number;
+  previous: number | null;
+  next: number | null;
+  subjects: CompileSubject[];
+  average?: string | null;
+  /** Follows the register's counts switch; absent when closed. */
+  attendance?: { opened: number; present: number; absent: number };
+  /** Present only where the school rates conduct; absent with `traits` otherwise. */
+  ratings?: Record<string, number>;
+  traits?: string[];
+  teacher_comment?: string;
+  stage: ClassStage;
+  /** The class teacher, on a class not yet with the principal. */
+  can_edit: boolean;
+}
+
+export interface CompileWrite {
+  teacher_comment: string;
+  ratings?: Record<string, number>;
+}

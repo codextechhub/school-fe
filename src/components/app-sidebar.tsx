@@ -834,7 +834,8 @@ export function AppSidebar({
             url: routesPath.PROTECTED.GRADEBOOK.INDEX,
             isActive:
               location === routesPath.PROTECTED.GRADEBOOK.INDEX ||
-              location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/sheets`),
+              location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/sheets`) ||
+              location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/classes`),
           }] : []),
           // A teacher's own sheets; for a teacher a sheet lights this instead.
           ...(hasAnyPermission(P.ENTER_OWN_SCORES, P.ENTER_ANY_SCORES) ? [{
@@ -844,7 +845,8 @@ export function AppSidebar({
               location.startsWith(routesPath.PROTECTED.GRADEBOOK.MINE) ||
               (!readsResultsHub &&
                 (location === routesPath.PROTECTED.GRADEBOOK.INDEX ||
-                  location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/sheets`))),
+                  location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/sheets`) ||
+                  location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/classes`))),
           }] : []),
           ...(offersModeration && hasAnyPermission(P.MODERATE_SHEETS, P.VIEW_RESULTS_HUB) ? [{
             title: "Moderation",

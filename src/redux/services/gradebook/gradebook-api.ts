@@ -2,7 +2,11 @@ import { baseApi } from "../base-api";
 import type { Envelope } from "../onboarding/onboarding-types";
 import { termParams } from "./gradebook-params";
 import type {
+  Broadsheet,
   CellWrite,
+  ClassKey,
+  Compile,
+  CompileWrite,
   GradebookSettings,
   GradebookSettingsWrite,
   ModerationQueue,
@@ -84,6 +88,51 @@ export const gradebookApi = baseApi.injectEndpoints({
         body: { note },
       }),
       invalidatesTags: (_result, _error, { note: _note, ...key }) => ["GradebookProgress", sheetTag(key)],
+    }),
+
+    // ── A class: its broadsheet, compiling and submitting it ──────────────
+
+    getBroadsheet: builder.query<Envelope<Broadsheet>, ClassKey>({
+      query: ({ classId, term }) => ({
+        url: `/gradebook/classes/${classId}/broadsheet/`,
+        method: "GET",
+        params: termParams({ term }),
+      }),
+      providesTags: (_result, _error, { classId }) => [{ type: "GradebookClass", id: classId }],
+    }),
+
+    getCompile: builder.query<Envelope<Compile>, ClassKey & { studentId: number }>({
+      query: ({ classId, studentId, term }) => ({
+        url: `/gradebook/classes/${classId}/students/${studentId}/compile/`,
+        method: "GET",
+        params: termParams({ term }),
+      }),
+      providesTags: (_result, _error, { classId }) => [{ type: "GradebookClass", id: classId }],
+    }),
+
+    /** The class teacher's comment and ratings for one student. Answers with the drawer. */
+    saveCompile: builder.mutation<Envelope<Compile>, ClassKey & { studentId: number; body: CompileWrite }>({
+      query: ({ classId, studentId, term, body }) => ({
+        url: `/gradebook/classes/${classId}/students/${studentId}/compile/`,
+        method: "PUT",
+        params: termParams({ term }),
+        body,
+      }),
+      invalidatesTags: (_result, _error, { classId }) => [{ type: "GradebookClass", id: classId }],
+    }),
+
+    /** Sends the class to the principal. Answers with the broadsheet. */
+    submitClass: builder.mutation<Envelope<Broadsheet>, ClassKey>({
+      query: ({ classId, term }) => ({
+        url: `/gradebook/classes/${classId}/submit/`,
+        method: "POST",
+        params: termParams({ term }),
+      }),
+      invalidatesTags: (_result, _error, { classId }) => [
+        { type: "GradebookClass", id: classId },
+        "GradebookProgress",
+        "GradebookSheet",
+      ],
     }),
 
     getMySheets: builder.query<Envelope<TeacherHub>, { term?: number } | void>({
@@ -221,6 +270,10 @@ export const {
   useGetModerationQueueQuery,
   useApproveSheetMutation,
   useReturnSheetMutation,
+  useGetBroadsheetQuery,
+  useGetCompileQuery,
+  useSaveCompileMutation,
+  useSubmitClassMutation,
   useGetMySheetsQuery,
   useGetSheetQuery,
   useSaveScoresMutation,

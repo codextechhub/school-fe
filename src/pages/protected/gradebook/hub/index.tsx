@@ -127,7 +127,7 @@ function ClassTable({ hub }: { hub: Hub }) {
         <p className="text-sm text-gray-06">Where each class has reached in the chain.</p>
       </div>
       <CustomTable
-        tableHeaderList={["Class", placeHeader, "Subjects in", "Stage", "Class teacher"]}
+        tableHeaderList={["Class", placeHeader, "Subjects in", "Stage", "Class teacher", "Action"]}
         defaultBodyList={rows}
         hidePagination
         emptyText="No class this term"
@@ -148,6 +148,11 @@ function ClassTable({ hub }: { hub: Hub }) {
             </span>
           ),
           "Class teacher": row.class_teacher?.name ?? "No class teacher",
+          Action: (
+            <Button size="sm" variant="outline" asChild>
+              <Link to={routesPath.PROTECTED.GRADEBOOK.BROADSHEET_ID(row.id)}>Broadsheet</Link>
+            </Button>
+          ),
         }))}
       />
     </Panel>

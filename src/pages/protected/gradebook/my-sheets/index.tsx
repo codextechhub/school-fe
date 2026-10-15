@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { useSchoolWords } from "@/hooks/use-school-words";
 import { useGetMySheetsQuery } from "@/redux/services/gradebook/gradebook-api";
-import type { Duty, MySheet, SheetCta, TeacherHub } from "@/redux/services/gradebook/gradebook-types";
+import type { ClassStage, Duty, MySheet, SheetCta, TeacherHub } from "@/redux/services/gradebook/gradebook-types";
 import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { parseApiError } from "@/utils/api-error";
@@ -30,9 +30,9 @@ const CTA_TEXT: Record<SheetCta, string> = {
  * sheet but is not listed for it, because they cannot enter or submit it.
  *
  * Duties (the class the reader leads, the department they head) say how far
- * the class has got and how many sheets wait for the head. A head's card opens
- * the moderation queue; a class teacher's is information until the broadsheet
- * that compiles the class exists.
+ * the class has got and how many sheets wait for the head. A class teacher's
+ * card opens the class's broadsheet, where it is compiled; a head's opens the
+ * moderation queue.
  */
 export default function MySheets() {
   const { data, isLoading, isError, error, refetch } = useGetMySheetsQuery();
@@ -137,10 +137,18 @@ function SheetCard({ sheet }: { sheet: MySheet }) {
   );
 }
 
+/** What a class teacher's duty card says the class needs, by its stage. */
+const CLASS_DUTY: Record<ClassStage, string> = {
+  ENTERING: "compile the class",
+  COMPILING: "compile the class",
+  AWAITING: "with the principal",
+  PUBLISHED: "results published",
+};
+
 function DutyCard({ duty }: { duty: Duty }) {
   const head = duty.kind === "HEAD_OF_DEPARTMENT";
   const hat = head ? `As head of ${duty.department?.name ?? "department"}` : "As class teacher";
-  const title = head ? "Moderation queue" : `${duty.class?.name ?? "Your class"} · compile the class`;
+  const title = head ? "Moderation queue" : `${duty.class?.name ?? "Your class"} · ${CLASS_DUTY[duty.stage ?? "ENTERING"]}`;
   const meta = head
     ? duty.waiting
       ? `${duty.waiting} sheet${duty.waiting === 1 ? "" : "s"} waiting for you`
@@ -155,16 +163,16 @@ function DutyCard({ duty }: { duty: Duty }) {
   );
   return (
     <li className="min-w-0">
-      {head ? (
-        <Link
-          to={routesPath.PROTECTED.GRADEBOOK.MODERATION}
-          className="block rounded-md border border-border px-4 py-3 transition-colors hover:bg-primary/5"
-        >
-          {body}
-        </Link>
-      ) : (
-        <div className="rounded-md border border-border px-4 py-3">{body}</div>
-      )}
+      <Link
+        to={
+          head || !duty.class
+            ? routesPath.PROTECTED.GRADEBOOK.MODERATION
+            : routesPath.PROTECTED.GRADEBOOK.BROADSHEET_ID(duty.class.id)
+        }
+        className="block rounded-md border border-border px-4 py-3 transition-colors hover:bg-primary/5"
+      >
+        {body}
+      </Link>
     </li>
   );
 }

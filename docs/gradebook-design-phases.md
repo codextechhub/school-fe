@@ -301,7 +301,7 @@ everyone else, which also live at `/gradebook/mine`. Moderation is
 `/gradebook/moderation`. Where it differs from the design:
 
 1. Branch tabs are the app's branch lens in the sidebar, not tabs on the page.
-2. The by-class table has no Broadsheet action until Phase 4 builds it.
+2. Each class on the by-class table opens its broadsheet.
 3. Remind is withheld on a sheet waiting for its head; a reminded sheet says
    "Reminded today". A teacher who cannot sign in links to their staff record,
    and only a reader who can unlock staff accounts is told.
@@ -317,6 +317,26 @@ everyone else, which also live at `/gradebook/mine`. Moderation is
 Broadsheet with gaps, attendance warning, position column, print stylesheet.
 Compile drawer with step-through, ratings, comment, Save and next. Submit the
 class.
+
+**As built.** The broadsheet is `/gradebook/classes/:classId?term=`, reached
+from the hub's by-class table and from the class teacher's duty card on My
+sheets. Where it differs from the design:
+
+1. The Submit button names what stops it ("2 subjects missing", "3 comments
+   to write") and becomes "Submit the class" only when the server says
+   `can_submit`. It is offered to the class teacher while the class is
+   entering or compiling; the confirmation says the comments lock.
+2. Open on each row is the compile drawer, for the class teacher and for an
+   approver; an approver, and the class teacher once the class has gone to
+   the principal, reads it with nothing to change.
+3. Every save carries the comment (the server requires it), so a role that
+   may not write the comment saves nothing, and the ratings read only too.
+4. Print hides the gradebook chrome and the Compile column and prints
+   landscape with the class and term as a heading.
+5. The duty card follows the class's stage: "compile the class", then "with
+   the principal", then "results published".
+6. The principal's return note shows as a banner while the class is open
+   again. Driving it needs Phase 5's Return.
 
 ### Phase 5: approvals, publishing and fee holds
 

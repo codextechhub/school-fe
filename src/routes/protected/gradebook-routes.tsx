@@ -6,6 +6,7 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 const GradebookHome = lazy(() => import("@/pages/protected/gradebook/home"));
 const MySheets = lazy(() => import("@/pages/protected/gradebook/my-sheets"));
 const Moderation = lazy(() => import("@/pages/protected/gradebook/moderation"));
+const BroadsheetPage = lazy(() => import("@/pages/protected/gradebook/broadsheet"));
 const ScoreSheet = lazy(() => import("@/pages/protected/gradebook/sheet"));
 const WhoTakesWhat = lazy(() => import("@/pages/protected/gradebook/electives"));
 
@@ -32,6 +33,12 @@ export const gradebookRoutes = [
     path: G.MINE,
     Component: MySheets,
     handle: { title: "My sheets" } satisfies DashboardHandle,
+  },
+  {
+    // No lens: a class's broadsheet belongs to its branch whatever is chosen.
+    path: G.BROADSHEET,
+    Component: BroadsheetPage,
+    handle: { title: "Broadsheet", back: G.INDEX } satisfies DashboardHandle,
   },
   {
     path: G.MODERATION,
