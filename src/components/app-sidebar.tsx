@@ -62,7 +62,6 @@ import { useStudentsLens } from "@/hooks/use-students-lens";
 import { SchoolMark } from "./school-mark";
 import { deriveSidebarWorkCounts } from "./sidebar-work-counts";
 import {
-  useGetAttendanceSettingsQuery,
   useGetCorrectionsQuery,
 } from "@/redux/services/attendance/attendance-api";
 import {
@@ -201,12 +200,6 @@ export function AppSidebar({
         !hasCapability("attendance"),
     },
   );
-  // Whether any level marks its lessons, for the Lesson registers door. Read
-  // only by readers who would be offered it.
-  const { data: attendanceSettings } = useGetAttendanceSettingsQuery(undefined, {
-    skip: onboarding || !hasPermission(P.TAKE_ANY_REGISTER) || !hasCapability("attendance"),
-  });
-  const marksLessons = (attendanceSettings?.data.lesson_marking_levels.length ?? 0) > 0;
   // Moderation is a door only where it applies: a hub reader at a school that
   // moderates a programme, or a teacher who heads a department. Each is asked
   // only of the readers it could answer for.
@@ -789,10 +782,8 @@ export function AppSidebar({
             isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.CORRECTIONS),
             badge: waiting.attendanceCorrections,
           }] : []),
-          // Only where a level marks its lessons: a school that marks none
-          // has no lesson registers, and the door recedes rather than opening
-          // onto a page that says so.
-          ...(hasPermission(P.TAKE_ANY_REGISTER) && marksLessons ? [{
+          // The screen explains when no level currently marks lessons.
+          ...(hasPermission(P.TAKE_ANY_REGISTER) ? [{
             title: "Lesson registers",
             url: routesPath.PROTECTED.ATTENDANCE.LESSONS,
             isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.LESSONS),

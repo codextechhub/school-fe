@@ -53,7 +53,9 @@ const LESSON_MARKS: AttendanceMark[] = ["P", "L", "A"];
  * class's register; whether this reader teaches it is read from their own
  * Today list. A day the lesson does not happen, a level with lesson marking
  * off or an unpublished timetable is refused by the server, and its sentence
- * is shown as it is.
+ * is shown as it is. Until the teacher's Today list answers, the register is
+ * withheld rather than displayed read-only because that list establishes the
+ * teacher's right to mark it.
  */
 export default function LessonRegisterPage() {
   const { slotId: raw } = useParams();
@@ -109,8 +111,6 @@ function LessonBody({
   const slotId = register.lesson.slot_id;
   const key = { slotId, date };
   const takesAny = hasPermission(P.TAKE_ANY_REGISTER);
-  // A teacher's right to mark rests on their own Today list; until it has
-  // answered, the register is not shown rather than shown read-only.
   const { data: mine, isLoading: mineLoading } = useGetMyAttendanceTodayQuery(
     { date: date === today ? undefined : date },
     { skip: takesAny || !hasPermission(P.TAKE_OWN_REGISTER) },
@@ -192,7 +192,9 @@ function LessonBody({
                   marks={marks}
                   offered={LESSON_MARKS}
                   fieldResource={FIELD_RESOURCE.ATTENDANCE_LESSON}
-                  aside={!row.locked && row.morning_mark !== undefined ? <MorningMark mark={row.morning_mark} /> : null}
+                  aside={!access.isHidden("morning_mark") && !row.locked && row.morning_mark !== undefined
+                    ? <MorningMark mark={row.morning_mark} />
+                    : null}
                   busy={markState.isLoading && markState.originalArgs?.studentId === row.student_id}
                   onMark={(mark) => onMark(row, mark)}
                 />

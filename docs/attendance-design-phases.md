@@ -331,6 +331,13 @@ past day and today, a final lesson with its morning marks, today's open lesson
 in marking mode with its Late drawer (not saved, to keep the seeded unmarked
 lesson), and both screens at 390px.
 
+**Directory redesigned 15 October 2026.** The daily lesson list is a searchable
+All, Needs action or Submitted queue with status summary cards and one focused
+lesson preview. The preview fetches only the selected register, rather than
+loading every lesson's student rows, and keeps marking in the full register.
+`attendance.lesson` Field Access controls status, submitted time, counts,
+lesson marks and morning marks across the queue and preview.
+
 ### Phase 6: the staff register
 
 - `/attendance/staff`: a group per branch, the locked "No home branch" group for

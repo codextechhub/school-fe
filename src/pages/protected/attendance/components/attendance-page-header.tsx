@@ -1,9 +1,10 @@
 /**
  * Shared heading for Attendance pages.
  *
- * The heading keeps the section name, purpose, scope, and date controls in a
- * stable order. Actions wrap below the title on narrow screens, so a long
- * branch or date never stretches the page beyond the viewport.
+ * The heading keeps the title, purpose, scope, and date controls in a stable
+ * order. Its title matches the other directory and worklist pages. Actions
+ * wrap below the title on narrow screens, so a long branch or date never
+ * stretches the page beyond the viewport.
  */
 export function AttendancePageHeader({
   title,
@@ -21,8 +22,7 @@ export function AttendancePageHeader({
   return (
     <header className="flex min-w-0 flex-wrap items-start justify-between gap-4">
       <div className="min-w-0 max-w-3xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Attendance</p>
-        <h1 className="mt-1 font-mont text-2xl font-semibold tracking-tight text-black-01 sm:text-3xl">
+        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
           {title}
         </h1>
         {description && <p className="mt-1 text-sm text-gray-06">{description}</p>}

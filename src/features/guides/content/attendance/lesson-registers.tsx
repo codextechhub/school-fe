@@ -14,7 +14,7 @@ export default function LessonRegistersArticle() {
       <GuideSection id="open-a-lesson" title="Open a lesson">
         <GuideSteps>
           <GuideStep title="If you teach it">Your lessons for the day are under <strong>My registers</strong> on Attendance, Today. Select one to open it.</GuideStep>
-          <GuideStep title="If you take any class's register">Open <strong>Attendance</strong>, then <strong>Lesson registers</strong>, to see every lesson of the day with whether it is marked, and open any of them. Use the date to open an earlier day.</GuideStep>
+          <GuideStep title="If you take any class's register">Open <strong>Attendance</strong>, then <strong>Lesson registers</strong>, to see the day&apos;s summary and every scheduled lesson. Search by class, subject or teacher, or use All, Needs action and Submitted. Select a lesson to preview its progress and first students, then open the full register to mark it. Use the date to open an earlier day.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
