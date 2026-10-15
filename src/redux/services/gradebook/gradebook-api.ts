@@ -2,14 +2,24 @@ import { baseApi } from "../base-api";
 import type { Envelope } from "../onboarding/onboarding-types";
 import { termParams } from "./gradebook-params";
 import type {
+  Approvals,
   Broadsheet,
+  ClassReturnBody,
   CellWrite,
   ClassKey,
   Compile,
   CompileWrite,
   GradebookSettings,
   GradebookSettingsWrite,
+  HoldLiftResult,
+  HoldRow,
+  HoldsArgs,
+  HoldsPage,
   ModerationQueue,
+  PrincipalComments,
+  PrincipalCommentsWrite,
+  PublishPreview,
+  PublishResult,
   RemarkTemplate,
   ResultsHub,
   Scale,
@@ -133,6 +143,121 @@ export const gradebookApi = baseApi.injectEndpoints({
         "GradebookProgress",
         "GradebookSheet",
       ],
+    }),
+
+    // ── Approvals and publishing ─────────────────────────────────────────
+
+    /** Classes with the principal or published, in the reader's branches. */
+    getApprovals: builder.query<Envelope<Approvals>, TermArgs | void>({
+      query: (args) => ({ url: `/gradebook/approvals/`, method: "GET", params: termParams(args ?? {}) }),
+      providesTags: ["GradebookProgress"],
+    }),
+
+    /** Sends an awaiting class back: to its class teacher, or one subject's sheet to its teacher. */
+    returnClass: builder.mutation<Envelope<unknown>, ClassKey & ClassReturnBody>({
+      query: ({ classId, term, ...body }) => ({
+        url: `/gradebook/classes/${classId}/return/`,
+        method: "POST",
+        params: termParams({ term }),
+        body,
+      }),
+      invalidatesTags: (_result, _error, { classId }) => [
+        "GradebookProgress",
+        "GradebookSheet",
+        { type: "GradebookClass", id: classId },
+      ],
+    }),
+
+    /** The principal's comment for each remark band, for one class. */
+    getPrincipalComments: builder.query<Envelope<PrincipalComments>, ClassKey>({
+      query: ({ classId, term }) => ({
+        url: `/gradebook/classes/${classId}/principal-comments/`,
+        method: "GET",
+        params: termParams({ term }),
+      }),
+      providesTags: (_result, _error, { classId }) => [{ type: "GradebookClass", id: classId }],
+    }),
+
+    /** Saves the bands named; the others keep what they have. Answers with every band. */
+    savePrincipalComments: builder.mutation<
+      Envelope<PrincipalComments>,
+      ClassKey & { body: PrincipalCommentsWrite }
+    >({
+      query: ({ classId, term, body }) => ({
+        url: `/gradebook/classes/${classId}/principal-comments/`,
+        method: "PUT",
+        params: termParams({ term }),
+        body,
+      }),
+      invalidatesTags: (_result, _error, { classId }) => [{ type: "GradebookClass", id: classId }],
+    }),
+
+    /** What publishing an awaiting class now would release, email and hold back. */
+    getPublishPreview: builder.query<Envelope<PublishPreview>, ClassKey>({
+      query: ({ classId, term }) => ({
+        url: `/gradebook/classes/${classId}/publish/preview/`,
+        method: "GET",
+        params: termParams({ term }),
+      }),
+      // A class published a moment ago answers NOT_AWAITING; the dialog says so in place.
+      extraOptions: { silent: true },
+      providesTags: (_result, _error, { classId }) => [{ type: "GradebookClass", id: classId }],
+    }),
+
+    /**
+     * Publishes each class in its own transaction. A class that is no longer
+     * awaiting is refused in its own row and the others still go ahead.
+     */
+    publishClasses: builder.mutation<Envelope<PublishResult[]>, { term?: number; classes: number[] }>({
+      query: ({ term, classes }) => ({
+        url: `/gradebook/classes/publish/`,
+        method: "POST",
+        params: termParams({ term }),
+        body: { classes },
+      }),
+      invalidatesTags: (_result, _error, { classes }) => [
+        "GradebookProgress",
+        "GradebookRelease",
+        "GradebookHolds",
+        ...classes.map((id) => ({ type: "GradebookClass" as const, id })),
+      ],
+    }),
+
+    // ── Fee holds ────────────────────────────────────────────────────────
+
+    /** The roll of the term's classes with what Finance says each family owes. */
+    getHolds: builder.query<HoldsPage, HoldsArgs | void>({
+      query: (args) => {
+        const { classId, search, owes, page, ...term } = args ?? {};
+        return {
+          url: `/gradebook/holds/`,
+          method: "GET",
+          params: {
+            ...termParams(term),
+            ...(classId ? { class: classId } : {}),
+            ...(search?.trim() ? { search: search.trim() } : {}),
+            ...(owes ? { owes: "true" } : {}),
+            ...(page ? { page } : {}),
+          },
+        };
+      },
+      providesTags: ["GradebookHolds"],
+    }),
+
+    /** Holds a student's result for the term, with a reason. Answers with their row. */
+    placeHold: builder.mutation<Envelope<HoldRow>, { student: number; term: number; reason: string }>({
+      query: (body) => ({ url: `/gradebook/holds/`, method: "POST", body }),
+      invalidatesTags: ["GradebookHolds", "GradebookProgress", "GradebookRelease", "GradebookClass"],
+    }),
+
+    /** Lifts a hold; on a published class this releases the result and tells the guardian. */
+    liftHold: builder.mutation<Envelope<HoldLiftResult>, { holdId: number; note?: string }>({
+      query: ({ holdId, note }) => ({
+        url: `/gradebook/holds/${holdId}/lift/`,
+        method: "POST",
+        body: note === undefined ? {} : { note },
+      }),
+      invalidatesTags: ["GradebookHolds", "GradebookProgress", "GradebookRelease", "GradebookClass"],
     }),
 
     getMySheets: builder.query<Envelope<TeacherHub>, { term?: number } | void>({
@@ -274,6 +399,16 @@ export const {
   useGetCompileQuery,
   useSaveCompileMutation,
   useSubmitClassMutation,
+  useGetApprovalsQuery,
+  useReturnClassMutation,
+  useGetPrincipalCommentsQuery,
+  useSavePrincipalCommentsMutation,
+  useGetPublishPreviewQuery,
+  useLazyGetPublishPreviewQuery,
+  usePublishClassesMutation,
+  useGetHoldsQuery,
+  usePlaceHoldMutation,
+  useLiftHoldMutation,
   useGetMySheetsQuery,
   useGetSheetQuery,
   useSaveScoresMutation,

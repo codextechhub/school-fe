@@ -501,6 +501,32 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.GRADEBOOK.MODERATION },
   },
   {
+    id: "view-result-approvals",
+    label: "View result approvals",
+    aliases: [
+      "approve results", "publish results", "approvals", "principal's comments",
+      "return class", "release results",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { perm: P.PUBLISH_RESULTS },
+    run: { to: R.GRADEBOOK.APPROVALS },
+  },
+  {
+    id: "view-fee-holds",
+    label: "View fee holds",
+    aliases: [
+      "hold result", "lift hold", "withhold result", "fees owed", "result held",
+      "outstanding fees",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { perm: P.VIEW_RESULT_HOLDS },
+    run: { to: R.GRADEBOOK.HOLDS },
+  },
+  {
     id: "view-my-score-sheets",
     label: "View my score sheets",
     // A teacher's own sheets for the term, each opening onto the grid.

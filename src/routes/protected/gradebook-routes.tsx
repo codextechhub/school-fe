@@ -6,6 +6,8 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 const GradebookHome = lazy(() => import("@/pages/protected/gradebook/home"));
 const MySheets = lazy(() => import("@/pages/protected/gradebook/my-sheets"));
 const Moderation = lazy(() => import("@/pages/protected/gradebook/moderation"));
+const Approvals = lazy(() => import("@/pages/protected/gradebook/approvals"));
+const FeeHolds = lazy(() => import("@/pages/protected/gradebook/holds"));
 const BroadsheetPage = lazy(() => import("@/pages/protected/gradebook/broadsheet"));
 const ScoreSheet = lazy(() => import("@/pages/protected/gradebook/sheet"));
 const WhoTakesWhat = lazy(() => import("@/pages/protected/gradebook/electives"));
@@ -44,6 +46,16 @@ export const gradebookRoutes = [
     path: G.MODERATION,
     Component: Moderation,
     handle: { title: "Moderation", lens: true, lenses: "branch" } satisfies DashboardHandle,
+  },
+  {
+    path: G.APPROVALS,
+    Component: Approvals,
+    handle: { title: "Approvals", lens: true, lenses: "branch" } satisfies DashboardHandle,
+  },
+  {
+    path: G.HOLDS,
+    Component: FeeHolds,
+    handle: { title: "Fee holds", lens: true, lenses: "branch" } satisfies DashboardHandle,
   },
   {
     path: G.SHEET,

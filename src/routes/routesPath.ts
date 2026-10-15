@@ -354,6 +354,8 @@ export const routesPath = {
       /** The reader's own sheets and duties, whatever else they may read. */
       MINE: "/gradebook/mine",
       MODERATION: "/gradebook/moderation",
+      APPROVALS: "/gradebook/approvals",
+      HOLDS: "/gradebook/holds",
       BROADSHEET: "/gradebook/classes/:classId",
       /** One class's broadsheet; the term rides in `?term=`, omitted for the current one. */
       BROADSHEET_ID: (classId: number | string, term?: number) =>

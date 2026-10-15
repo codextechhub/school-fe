@@ -824,6 +824,8 @@ export function AppSidebar({
           P.ENTER_ANY_SCORES,
           P.VIEW_ELECTIVE_TAKERS,
           P.MANAGE_ASSESSMENT_SETUP,
+          P.PUBLISH_RESULTS,
+          P.VIEW_RESULT_HOLDS,
         ],
         permissionMode: "any",
         items: [
@@ -852,6 +854,16 @@ export function AppSidebar({
             title: "Moderation",
             url: routesPath.PROTECTED.GRADEBOOK.MODERATION,
             isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.MODERATION),
+          }] : []),
+          ...(hasPermission(P.PUBLISH_RESULTS) ? [{
+            title: "Approvals",
+            url: routesPath.PROTECTED.GRADEBOOK.APPROVALS,
+            isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.APPROVALS),
+          }] : []),
+          ...(hasPermission(P.VIEW_RESULT_HOLDS) ? [{
+            title: "Fee holds",
+            url: routesPath.PROTECTED.GRADEBOOK.HOLDS,
+            isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.HOLDS),
           }] : []),
           ...(hasPermission(P.VIEW_ELECTIVE_TAKERS) ? [{
             title: "Who takes what",

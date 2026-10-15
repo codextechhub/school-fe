@@ -7,6 +7,7 @@
  * values are the backend's (`vs_gradebook.constants`), so a state the server
  * adds shows up here as a type error rather than as a blank chip.
  */
+import type { PaginatedEnvelope } from "../onboarding/onboarding-types";
 
 /** Any named row the server refers to: a class, subject, branch, teacher or term. */
 export interface Ref {
@@ -472,4 +473,139 @@ export interface Compile {
 export interface CompileWrite {
   teacher_comment: string;
   ratings?: Record<string, number>;
+}
+
+// ── Approvals and publishing (`approvals/`, `classes/<id>/…`) ──────────────
+
+/** A student whose result is held, and who held it. The reason stays on the holds screen. */
+export interface HeldStudent {
+  student: Ref;
+  held_by: string | null;
+  placed_at: string;
+}
+
+/** A class with the principal or published, as the approvals queue lists it. */
+export interface ApprovalRow {
+  class: Ref;
+  /** Null at a school with one branch. */
+  branch: Ref | null;
+  class_teacher: Ref | null;
+  subjects_in: number;
+  subjects_due: number;
+  stage: ClassStage;
+  submitted_at: string | null;
+  published_at: string | null;
+  held: HeldStudent[];
+  /** The reader may return, comment on and publish it now: it is awaiting approval. */
+  can_decide: boolean;
+}
+
+export interface Approvals {
+  branch_dimension: boolean;
+  classes: ApprovalRow[];
+}
+
+/** Who a class return sends back to: the class teacher, or one subject's sheet. */
+export interface ClassReturnBody {
+  note: string;
+  subject?: number;
+}
+
+/**
+ * One band of the school's remark templates for a class. `template` is the
+ * school's sentence and is absent where the reader may not read templates;
+ * `override` is the class's own comment, null until one is written.
+ */
+export interface PrincipalBand {
+  band_min: number;
+  template?: string;
+  override?: { text: string; written_by: string | null; written_at: string } | null;
+}
+
+export interface PrincipalComments {
+  class: Ref;
+  term: Ref;
+  /** The class is published, so its comments no longer change. */
+  locked: boolean;
+  bands: PrincipalBand[];
+}
+
+export interface PrincipalCommentsWrite {
+  comments: { band_min: number; text: string }[];
+}
+
+/** What publishing the class now would do. */
+export interface PublishPreview {
+  class: Ref;
+  released: number;
+  emailed: number;
+  no_email: number;
+  held: HeldStudent[];
+}
+
+/** One class's answer to a publish: published, or why not (`code`, `message`). */
+export interface PublishResult {
+  class: Ref;
+  published: boolean;
+  code?: string;
+  message?: string;
+  released: number;
+  emailed: number;
+  no_email: number;
+  held: number;
+}
+
+// ── Fee holds (`holds/`) ───────────────────────────────────────────────────
+
+/** A hold on a student's result. `reason` follows the hold-reason switch. */
+export interface HoldRecord {
+  id: number;
+  reason?: string;
+  placed_by: string | null;
+  placed_at: string;
+}
+
+/**
+ * One student on the holds list. It never carries a mark. The balance (kobo),
+ * oldest unpaid day and days owed follow the balance switch, and are null when
+ * Finance could not answer, never zero.
+ */
+export interface HoldRow {
+  student: StudentRef;
+  class: Ref;
+  branch: Ref | null;
+  balance?: number | null;
+  oldest_unpaid_on?: string | null;
+  days_owed?: number | null;
+  hold: HoldRecord | null;
+  /** Released results cannot be held. */
+  released: boolean;
+  released_on: string | null;
+}
+
+export interface HoldsArgs extends TermArgs {
+  classId?: number;
+  search?: string;
+  owes?: boolean;
+  page?: number;
+}
+
+/** The holds page, with when Finance was read and whether it answered. */
+export interface HoldsPage extends PaginatedEnvelope<HoldRow> {
+  /** The term listed, which a hold is placed for. */
+  term: Ref;
+  /** Every class the list can be narrowed to, whatever the filters. */
+  classes: Ref[];
+  /** Present for a reader of balances. */
+  as_of?: string;
+  finance_available?: boolean;
+  /** Present when `owes` was asked for: whether the list was narrowed to it. */
+  owes_applied?: boolean;
+}
+
+export interface HoldLiftResult {
+  hold: HoldRecord & { lifted_by: string | null; lifted_at: string | null; lift_note?: string };
+  /** The class was already published, so lifting released the result. */
+  released: boolean;
+  row: HoldRow;
 }

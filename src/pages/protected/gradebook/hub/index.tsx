@@ -15,19 +15,13 @@ import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { useSchoolWords } from "@/hooks/use-school-words";
 import { P } from "@/permissions";
 import { useGetResultsHubQuery, useRemindTeacherMutation } from "@/redux/services/gradebook/gradebook-api";
-import type { ClassStage, HubClass, LateSheet, ResultsHub as Hub } from "@/redux/services/gradebook/gradebook-types";
+import type { HubClass, LateSheet, ResultsHub as Hub } from "@/redux/services/gradebook/gradebook-types";
 import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { parseApiError } from "@/utils/api-error";
 
+import { CLASS_STAGE } from "../components/class-stage";
 import { SheetStatusChip } from "../components/sheet-status-chip";
-
-const STAGE: Record<ClassStage, { text: string; variant: "pending" | "active" | "blue" }> = {
-  ENTERING: { text: "Entering", variant: "pending" },
-  COMPILING: { text: "Compiling", variant: "pending" },
-  AWAITING: { text: "Awaiting approval", variant: "blue" },
-  PUBLISHED: { text: "Published", variant: "active" },
-};
 
 /**
  * Results this term, for a reader who works every class in their branches.
@@ -137,8 +131,8 @@ function ClassTable({ hub }: { hub: Hub }) {
           "Subjects in": `${row.subjects_in} of ${row.subjects_due}`,
           Stage: (
             <span className="inline-flex flex-wrap gap-1">
-              <Badge variant={STAGE[row.stage].variant} className="rounded-full">
-                {STAGE[row.stage].text}
+              <Badge variant={CLASS_STAGE[row.stage].variant} className="rounded-full">
+                {CLASS_STAGE[row.stage].text}
               </Badge>
               {row.returned && (
                 <Badge variant="rejected" className="rounded-full">

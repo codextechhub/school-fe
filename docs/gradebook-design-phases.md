@@ -345,6 +345,34 @@ comments per band. Publish preview and confirm, for one class or several.
 Fee holds with Hold and Lift drawers, class and branch filters, and the
 "Finance cannot answer" state.
 
+**As built.** Approvals are `/gradebook/approvals` and fee holds
+`/gradebook/holds`, both following the branch lens. Where they differ from
+the design:
+
+1. Return chooses who the class goes back to: the class teacher, or one
+   subject's teacher (picked from the class's subjects with their main
+   teachers). The second reopens that sheet as returned.
+2. The principal's comments are one per remark band, as the API holds them.
+   Each band starts from the school's remark ("Use the school's remark"),
+   only changed bands are sent, a band left blank prints the school's remark,
+   and a written comment can be changed but not emptied (the server refuses a
+   blank one). A published class's comments open read-only.
+3. Where two or more classes await a decision they can be ticked and
+   published together. The confirmation reads each class's preview fresh,
+   and the toast names any class refused and why; the others still go out.
+4. "Raise an amendment" on a published class waits for Phase 7.
+5. The holds list opens on families who owe and anyone held (a held family
+   that has paid must stay findable to be lifted), with a switch to the whole
+   roll, a class select and a search by name or admission number. The backend
+   gained `owes=true` and `search=` (ruling 2.3.3), plus `term` and `classes`
+   on the list so the screen needs no other read: `owes` is ignored for a
+   reader who may not read balances, and not applied while Finance is down
+   (`owes_applied` says which).
+6. The lift drawer cannot know whether the class is already published, so
+   it names both outcomes and the toast says which happened.
+7. Seed gap: no Lagoon View family owes Finance anything, so a non-zero
+   balance and "oldest unpaid" are covered by tests only.
+
 ### Phase 6: release, report cards and the student's Results tab
 
 Release list with result and email states. Report card render and print, with
