@@ -262,6 +262,30 @@ and rating-trait settings if ruled in), with copy, draft and activate.
 Department head on Academics > Departments. `RESULTS_DAY` in the calendar's
 event types. The Who takes what grid on the M13 endpoint.
 
+**As built.** Setup is a Settings console section, `/settings/gradebook`
+(Academics group), gated on `gradebook.setup.update` like attendance's, and
+linked from the Gradebook sidebar as Assessment setup. Where it differs from
+the design:
+
+1. Each programme is a card with its record in use and any drafts. A locked
+   record (a published result rests on it) offers Copy to edit, which opens the
+   copy in the editor; a draft offers Edit, Put in use and Delete draft.
+2. Editing is a drawer with the server's rules checked live (total of 100, one
+   examination; no gap, no overlap, a pass band), replacing the design's band
+   nudge, which had no Save. A draft may be saved while it fails them.
+3. The confirmation says what putting one in use does, and differs by kind: a
+   class with marks keeps its structure, but every unpublished result is
+   regraded by a new scale (the scale is read live until publication).
+4. Switches save as they are turned. Moderation is one switch per programme;
+   rating traits have their own editor. "Applies to" is offered only at a
+   school with several branches.
+5. The department head is a panel in the department's detail view (Name a
+   head, Change, Clear) and a Head column in the table, not a field in the
+   shared academics drawer.
+6. Who takes what lives at `/gradebook/who-takes-what?class=`. Its classes are
+   the results hub's for a hub reader, otherwise the class the reader leads;
+   each tick saves alone, and removing a student with marks is refused.
+
 ### Phase 3: results hub, reminders and moderation
 
 Admin hub with branch tabs, KPIs, by-class table, late list with Remind and the

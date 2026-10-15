@@ -5,6 +5,7 @@ import type { DashboardHandle } from "@/components/layout/dashboard-layout";
 
 const MySheets = lazy(() => import("@/pages/protected/gradebook/my-sheets"));
 const ScoreSheet = lazy(() => import("@/pages/protected/gradebook/sheet"));
+const WhoTakesWhat = lazy(() => import("@/pages/protected/gradebook/electives"));
 
 const G = routesPath.PROTECTED.GRADEBOOK;
 
@@ -28,5 +29,11 @@ export const gradebookRoutes = [
     path: G.SHEET,
     Component: ScoreSheet,
     handle: { title: "Score sheet", back: G.INDEX } satisfies DashboardHandle,
+  },
+  {
+    // The class rides in `?class=`, chosen on the screen from the reader's own.
+    path: G.ELECTIVES,
+    Component: WhoTakesWhat,
+    handle: { title: "Who takes what" } satisfies DashboardHandle,
   },
 ] as RouteObject[];

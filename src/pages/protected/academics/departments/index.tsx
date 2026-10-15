@@ -37,6 +37,8 @@ import PermissionGate from "@/components/custom/permission-gate";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { CardActions, ClickableCard, Panel } from "@/components/custom/surface";
 import { P } from "@/permissions";
+import { useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { usePermissions } from "@/hooks/use-permissions";
 import { useAcademicsLens } from "@/hooks/use-academics-lens";
 import {
@@ -56,6 +58,7 @@ import { EntityDrawer } from "../components/entity-drawer";
 import { ExportButton } from "@/components/custom/export-button";
 import { blankDraft, type EntityDraft } from "../components/entity-draft";
 import { ScopeCell } from "../components/scope-cell";
+import { DepartmentHeadPanel } from "./department-head";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
 import { cn } from "@/lib/utils";
@@ -107,6 +110,8 @@ export default function Departments() {
   const pagination = data?.pagination;
 
   const canEdit = hasPermission(P.MODIFY_STRUCTURE);
+  // The head column follows its Field Access switch, as the detail panel does.
+  const showHead = !useFieldAccess(FIELD_RESOURCE.ACADEMICS_DEPARTMENT).isHidden("head");
   const canArchive = hasPermission(P.ARCHIVE_STRUCTURE);
   const canRestore = hasPermission(P.REACTIVATE_STRUCTURE);
   const filtered = !!search || showArchived !== "true";
@@ -144,6 +149,7 @@ export default function Departments() {
           "Department",
           "Code",
           ...(multiBranch ? ["Scope"] : []),
+          ...(showHead ? ["Head"] : []),
           "Programmes",
           "Subjects",
           "Status",
@@ -153,6 +159,7 @@ export default function Departments() {
           Department: d.name,
           Code: d.code,
           ...(multiBranch ? { Scope: d.scope_label ?? "School-wide" } : {}),
+          ...(showHead ? { Head: d.head?.name ?? "No head" } : {}),
           Programmes: String(d.program_count),
           Subjects: String(d.subject_count),
           Status: d.is_active ? "Active" : "Archived",
@@ -380,7 +387,7 @@ export default function Departments() {
       />
 
       <DepartmentDetails
-        department={viewing}
+        department={departments.find((d) => d.id === viewing?.id) ?? viewing}
         open={!!viewing}
         multiBranch={multiBranch}
         canEdit={canEdit && canManageRow(viewing)}
@@ -581,6 +588,7 @@ function DepartmentDetails({
           </div>
 
           <div className="mt-5 grid gap-3">
+            <DepartmentHeadPanel department={department} canEdit={canEdit} />
             <Panel className="px-4 py-3">
               <p className="text-xs text-gray-05">Scope</p>
               <div className="mt-1.5 flex items-center gap-2 text-sm font-medium text-black-01">

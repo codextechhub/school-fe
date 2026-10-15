@@ -5,7 +5,7 @@ import type { EventType } from "@/redux/services/calendar/calendar-types";
  * How each kind of calendar entry looks, in one place.
  *
  * The server already sends `type_label` for every row, and that is what a list
- * SHOWS. What it cannot send is a colour, so this maps the six codes onto the
+ * SHOWS. What it cannot send is a colour, so this maps the seven codes onto the
  * badge variants the rest of the app uses.
  *
  * The order here is the order the type picker offers, and it is not
@@ -26,6 +26,8 @@ export const EVENT_KINDS: {
   { value: "SCHOOL_EVENT", label: "School event", variant: "teal" },
   { value: "PTA", label: "PTA", variant: "green" },
   { value: "SPORTS", label: "Sports day", variant: "inactive" },
+  // The day results are released. The gradebook's hub reads the term's one.
+  { value: "RESULTS_DAY", label: "Results day", variant: "green" },
 ];
 
 const BY_VALUE = new Map(EVENT_KINDS.map((k) => [k.value, k]));

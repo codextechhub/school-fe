@@ -34,6 +34,11 @@ export default function DepartmentsArticle() {
         <p>Select <strong>Edit department</strong> in the panel, or <strong>Edit</strong> from the card&apos;s menu, to change it. The form is the same one used to add.</p>
       </GuideSection>
 
+      <GuideSection id="name-a-head" title="Name a head of department">
+        <p>The panel&apos;s <strong>Head of department</strong> says who heads it. Select <strong>Name a head</strong> (or <strong>Change</strong>), search for somebody on the staff, pick them and select <strong>Save head</strong>. <strong>Clear</strong> leaves the department with no head.</p>
+        <p>The head is who moderates the department&apos;s score sheets in the Gradebook: in a programme the school moderates, a submitted sheet goes to the head of its subject&apos;s department to approve or send back before the class teacher compiles the class. A department with no head sends its sheets straight on, so moderation never happens for it.</p>
+      </GuideSection>
+
       <GuideSection id="archive-and-restore" title="Archive and restore">
         <p>Archive a department you no longer use from the card&apos;s menu or the open panel, then confirm with <strong>Archive</strong>. An archived department stops appearing when anyone picks one. Nothing already mapped to it is moved.</p>
         <p>To bring one back, set the status filter to <strong>Archived</strong>, open it, and choose <strong>Restore</strong>.</p>

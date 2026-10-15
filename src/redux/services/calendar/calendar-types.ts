@@ -71,7 +71,8 @@ export type EventType =
   | "EXAM_PERIOD"
   | "SCHOOL_EVENT"
   | "PTA"
-  | "SPORTS";
+  | "SPORTS"
+  | "RESULTS_DAY";
 
 /**
  * Who an event covers, when it covers only some of its branch.

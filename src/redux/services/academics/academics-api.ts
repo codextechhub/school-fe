@@ -6,10 +6,12 @@ import type {
   AcademicRulesUpdate,
   AcademicSession,
   BranchFilter,
+  ClassElectives,
   ClassListArgs,
   ClassWrite,
   BulkLevelWrite,
   Department,
+  ElectiveChange,
   EntityWrite,
   GenerateArmsWrite,
   Level,
@@ -340,6 +342,40 @@ export const academicsApi = baseApi.injectEndpoints({
     }),
 
     // ── Classes ────────────────────────────────────────────────────────────
+    /**
+     * Who takes each non-core subject in a class, for a term (the class's
+     * current one when omitted). A change answers with the whole grid, which is
+     * written into the cached copy; the score sheets that list takers refetch.
+     */
+    getClassElectives: builder.query<Envelope<ClassElectives>, { classId: number; term?: number }>({
+      query: ({ classId, term }) => ({
+        url: `/academics/classes/${classId}/electives/`,
+        method: "GET",
+        params: term ? { term } : {},
+      }),
+      providesTags: ["ElectiveTakers"],
+    }),
+    setClassElectives: builder.mutation<
+      Envelope<ClassElectives>,
+      { classId: number; term?: number; changes: ElectiveChange[] }
+    >({
+      query: ({ classId, term, changes }) => ({
+        url: `/academics/classes/${classId}/electives/`,
+        method: "PUT",
+        params: term ? { term } : {},
+        body: { changes },
+      }),
+      async onQueryStarted({ classId, term }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(academicsApi.util.updateQueryData("getClassElectives", { classId, term }, () => data));
+        } catch {
+          // A refusal is toasted by the base query; the grid stays as it was.
+        }
+      },
+      invalidatesTags: ["GradebookSheet", "GradebookProgress"],
+    }),
+
     getClasses: builder.query<PaginatedEnvelope<SchoolClass>, ClassListArgs | void>({
       query: (args) => {
         const { level, ...rest } = args ?? {};
@@ -508,6 +544,8 @@ export const academicsApi = baseApi.injectEndpoints({
 });
 
 export const {
+  useGetClassElectivesQuery,
+  useSetClassElectivesMutation,
   useGetAcademicOverviewQuery,
   useGetStructureTreeQuery,
   useGetSessionsQuery,

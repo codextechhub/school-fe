@@ -488,6 +488,20 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.GRADEBOOK.INDEX },
   },
   {
+    id: "view-who-takes-what",
+    label: "View who takes what",
+    // The record of which students take each non-core subject, per class.
+    aliases: [
+      "electives", "who takes what", "optional subjects", "subject choices",
+      "non-core subjects", "who takes french", "students taking a subject",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { perm: P.VIEW_ELECTIVE_TAKERS },
+    run: { to: R.GRADEBOOK.ELECTIVES },
+  },
+  {
     id: "view-classes",
     label: "View classes",
     aliases: ["class list", "class rosters"],
@@ -992,6 +1006,21 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     kind: "view",
     gate: { any: SECTION_GATES.attendance.anyOf },
     run: { to: R.SETTINGS.ATTENDANCE },
+  },
+  {
+    id: "view-gradebook-settings",
+    label: "View gradebook settings",
+    aliases: [
+      "assessment setup", "assessment structure", "grading scale", "grades",
+      "continuous assessment weighting", "exam weighting", "report card options",
+      "position in class", "moderation", "remark templates", "principal's remarks",
+      "conduct ratings",
+    ],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES.gradebook.anyOf },
+    run: { to: R.SETTINGS.GRADEBOOK },
   },
   {
     id: "view-staff-settings",

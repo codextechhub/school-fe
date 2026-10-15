@@ -25,6 +25,8 @@ export const FIELD_RESOURCE = {
   GRADEBOOK_HOLD: "gradebook.hold",
   GRADEBOOK_SETUP: "gradebook.setup",
   GRADEBOOK_AMENDMENT: "gradebook.amendment",
+  ACADEMICS_DEPARTMENT: "academics.department",
+  ACADEMICS_ELECTIVES: "academics.electives",
 } as const;
 
 /** A student's medical fields, in the order every screen shows them. */

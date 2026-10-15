@@ -30,7 +30,7 @@ export const CALENDAR_AND_TIMETABLES_GUIDES = [
     ],
     estimatedMinutes: 6,
     owner: OWNER,
-    reviewedAt: "2026-09-29",
+    reviewedAt: "2026-10-15",
     risk: "low",
     status: "published",
     relatedGuideIds: [

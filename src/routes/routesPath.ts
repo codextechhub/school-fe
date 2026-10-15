@@ -163,6 +163,7 @@ export const routesPath = {
       DISPLAY: "/settings/display",
       CALENDAR: "/settings/calendar",
       ATTENDANCE: "/settings/attendance",
+      GRADEBOOK: "/settings/gradebook",
       ADMISSION_NUMBERS: "/settings/admission-numbers",
       PAYROLL: "/settings/payroll",
       STAFF: "/settings/staff",
@@ -352,6 +353,8 @@ export const routesPath = {
       /** One subject's sheet for one class; the term rides in `?term=`, omitted for the current one. */
       SHEET_ID: (classId: number | string, subjectId: number | string, term?: number) =>
         `/gradebook/sheets/${classId}/${subjectId}${term ? `?term=${term}` : ""}`,
+      /** Who takes each non-core subject; the class rides in `?class=`. */
+      ELECTIVES: "/gradebook/who-takes-what",
     },
   },
 };

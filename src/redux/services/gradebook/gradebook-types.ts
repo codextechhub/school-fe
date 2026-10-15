@@ -195,3 +195,163 @@ export interface SubmitResult {
   next: "MODERATION" | "CLASS_TEACHER";
   sheet: Sheet;
 }
+
+// ── Assessment setup (`structures/`, `scales/`, `remark-templates/`, `settings/`) ──
+
+/** The server's verdict on a structure's total or a scale's bands. */
+export interface SetupCheck {
+  ok: boolean;
+  message: string;
+}
+
+/** What a structure and a scale share: which programme and branch, and its life. */
+interface SetupRecord {
+  id: number;
+  name: string;
+  program: number;
+  program_name: string;
+  /** Null when it applies to every branch. */
+  branch: number | null;
+  scope_label: string;
+  is_shared: boolean;
+  status: SetupStatus;
+  copied_from: number | null;
+  /** A published result rests on it, so it can only be copied. */
+  locked: boolean;
+  lock_reason: string | null;
+  created_at: string;
+}
+
+export interface StructureComponent {
+  id: number;
+  name: string;
+  short_name: string;
+  max_score: number;
+  is_exam: boolean;
+  order: number;
+}
+
+/** An assessment structure: the components a programme's marks are made of. */
+export interface Structure extends SetupRecord {
+  components?: StructureComponent[];
+  total?: number;
+  total_check?: SetupCheck;
+}
+
+export interface Band {
+  id: number;
+  min_score: number;
+  grade: string;
+  remark?: string;
+  is_fail: boolean;
+  order: number;
+}
+
+/** A grading scale: bands of percentage, each with its grade and remark. */
+export interface Scale extends SetupRecord {
+  bands?: Band[];
+  check?: SetupCheck;
+}
+
+/** A component as a create or an edit sends it. An `id` keeps an existing one. */
+export interface ComponentWrite {
+  id?: number;
+  name: string;
+  short_name: string;
+  max_score: number;
+  is_exam: boolean;
+}
+
+export interface BandWrite {
+  id?: number;
+  min_score: number;
+  grade: string;
+  remark: string;
+  is_fail: boolean;
+}
+
+/** A create names the programme; an edit cannot change it. */
+export interface StructureWrite {
+  name?: string;
+  program?: number;
+  branch?: number | null;
+  components?: ComponentWrite[];
+}
+
+export interface ScaleWrite {
+  name?: string;
+  program?: number;
+  branch?: number | null;
+  bands?: BandWrite[];
+}
+
+/** One principal's remark template, for averages from `band_min` up to the next band. */
+export interface RemarkTemplate {
+  band_min: number;
+  text: string;
+}
+
+/** The school's gradebook settings, with its programmes for the moderation switches. */
+export interface GradebookSettings {
+  show_class_stats: boolean;
+  rank_in_class: boolean;
+  conduct_ratings: boolean;
+  rating_key: boolean;
+  rating_traits: string[];
+  /** Programme codes whose sheets go to a head of department first. */
+  moderated_programs: string[];
+  programs: { code: string; name: string; moderated: boolean }[];
+}
+
+export type GradebookSettingsWrite = Partial<Omit<GradebookSettings, "programs">>;
+
+// ── The results hub (`hub/`) ────────────────────────────────────────────────
+
+/** One class's place in the chain this term. */
+export interface HubClass {
+  id: number;
+  name: string;
+  branch: Ref | null;
+  program: Ref;
+  subjects_in: number;
+  subjects_due: number;
+  stage: ClassStage;
+  /** The principal sent it back to its class teacher. */
+  returned: boolean;
+  class_teacher: Ref | null;
+}
+
+/** A sheet due this term that is not in, with the reason the platform knows. */
+export interface LateSheet {
+  class: Ref;
+  subject: Ref;
+  main_teacher: Ref | null;
+  status: SheetStatus;
+  reason_kind: LateReason;
+  reason: string;
+  entered: number;
+  roll: number;
+  reminded_today: boolean;
+  /** The staff record to fix a locked account on; only for a reader who may. */
+  staff_link: number | null;
+}
+
+/** The administrator's view of a term's results across their branches. */
+export interface ResultsHub {
+  /** The school has more than one branch, so branches are worth naming. */
+  branch_dimension: boolean;
+  term: TermRef;
+  results_day: string | null;
+  term_ends: string;
+  kpis: {
+    sheets_in: number;
+    sheets_due: number;
+    classes_compiled: number;
+    awaiting_approval: number;
+    published: number;
+    held: number;
+  };
+  classes: HubClass[];
+  late: LateSheet[];
+  classes_without_branch: Ref[];
+}

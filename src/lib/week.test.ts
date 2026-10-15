@@ -64,6 +64,7 @@ describe("resolveCalendarRules", () => {
         SCHOOL_EVENT: false,
         PTA: false,
         SPORTS: false,
+        RESULTS_DAY: false,
       },
       roomRequiredToPublish: true,
       teacherDutyMatch: "OFF",

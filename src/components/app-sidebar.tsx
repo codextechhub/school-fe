@@ -801,15 +801,34 @@ export function AppSidebar({
         icon: Award,
         isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX),
         childActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX),
-        permission: [P.ENTER_OWN_SCORES, P.ENTER_ANY_SCORES],
+        permission: [
+          P.ENTER_OWN_SCORES,
+          P.ENTER_ANY_SCORES,
+          P.VIEW_ELECTIVE_TAKERS,
+          P.MANAGE_ASSESSMENT_SETUP,
+        ],
         permissionMode: "any",
         items: [
-          {
-            // A teacher's own sheets. A sheet opened from it lights it too.
+          // A teacher's own sheets. A sheet opened from it lights it too.
+          ...(hasAnyPermission(P.ENTER_OWN_SCORES, P.ENTER_ANY_SCORES) ? [{
             title: "My sheets",
             url: routesPath.PROTECTED.GRADEBOOK.INDEX,
-            isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX),
-          },
+            isActive:
+              location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX) &&
+              !location.startsWith(routesPath.PROTECTED.GRADEBOOK.ELECTIVES),
+          }] : []),
+          ...(hasPermission(P.VIEW_ELECTIVE_TAKERS) ? [{
+            title: "Who takes what",
+            url: routesPath.PROTECTED.GRADEBOOK.ELECTIVES,
+            isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.ELECTIVES),
+          }] : []),
+          // The rules live in the Settings console, beside the school's others,
+          // so it is the Settings door that lights there, not this one.
+          ...(hasPermission(P.MANAGE_ASSESSMENT_SETUP) ? [{
+            title: "Assessment setup",
+            url: routesPath.PROTECTED.SETTINGS.GRADEBOOK,
+            isActive: false,
+          }] : []),
         ],
       },
     ],

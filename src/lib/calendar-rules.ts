@@ -40,6 +40,7 @@ export const DEFAULT_CLOSES_SCHOOL: Record<string, boolean> = {
   SCHOOL_EVENT: false,
   PTA: false,
   SPORTS: false,
+  RESULTS_DAY: false,
 };
 
 export function resolveCalendarRules(

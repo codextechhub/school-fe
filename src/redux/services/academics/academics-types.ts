@@ -83,6 +83,15 @@ export interface Department extends Scoped {
    */
   program_count: number;
   subject_count: number;
+  /**
+   * The member of staff who heads it, or null. Absent when the reader's role
+   * may not read it. A head who has left the staff roll reads as null.
+   *
+   * A head is what moderation turns on: a moderated programme's sheets go to
+   * the head of the subject's department, and a department with no head sends
+   * them straight on.
+   */
+  head?: { id: number; name: string } | null;
 }
 
 export interface Level extends Scoped {
@@ -389,6 +398,8 @@ export interface EntityWrite {
   is_active?: boolean;
   /** Programmes and subjects only. Null means "in no department". */
   department?: number | null;
+  /** Departments only: the staff record of the head, or null to clear it. */
+  head?: number | null;
 }
 
 /**
@@ -437,4 +448,41 @@ export interface AcademicRulesUpdate {
   default_arms: string[];
   /** Kept on the audit record. */
   reason?: string;
+}
+
+// ── Who takes what (`classes/<id>/electives/`) ─────────────────────────────
+
+/** A subject the class's level offers that is not core, and how many take it. */
+export interface ElectiveSubject {
+  id: number;
+  name: string;
+  code: string;
+  /** Absent when the reader's role may not read who takes what. */
+  takers?: number;
+  roll: number;
+}
+
+export interface ElectiveStudent {
+  id: number;
+  name: string;
+  admission_number: string;
+  /** The ids of the non-core subjects the student takes. */
+  takes?: number[];
+}
+
+/** One class's non-core subjects for a term, and who takes each. */
+export interface ClassElectives {
+  class: { id: number; name: string };
+  term: { id: number; name: string };
+  /** The class teacher, or an administrator over the class's branch. */
+  can_edit: boolean;
+  subjects: ElectiveSubject[];
+  students: ElectiveStudent[];
+}
+
+/** One student put on or taken off one subject. */
+export interface ElectiveChange {
+  student: number;
+  subject: number;
+  takes: boolean;
 }

@@ -32,6 +32,7 @@ export const SCHOOL_SETTINGS_SECTIONS = [
   "academics",
   "calendar",
   "attendance",
+  "gradebook",
   "admission-numbers",
   "payroll",
   "staff",
@@ -101,6 +102,9 @@ export const SECTION_GATES: Record<
   // reads these rules through the screens they shape, and a settings screen
   // they cannot change is not a setting for them.
   attendance: { anyOf: [P.MANAGE_ATTENDANCE_SETTINGS], capability: "attendance" },
+  // Gated on the key that saves it, as attendance is: a teacher reads the
+  // structure and scale through the sheets they shape.
+  gradebook: { anyOf: [P.MANAGE_ASSESSMENT_SETUP], capability: "gradebook" },
   "admission-numbers": { anyOf: [P.MODIFY_STUDENT], capability: "students" },
   payroll: { anyOf: [P.VIEW_SETTINGS], capability: "finance_advanced" },
   // Their reads check the staff directory key.

@@ -23,7 +23,7 @@ export default function PlanTheCalendarArticle() {
         <GuideSteps>
           <GuideStep title="Open the form">Select <strong>Add event</strong> on the overview or on <strong>Events</strong>.</GuideStep>
           <GuideStep title="Name it">Type the <strong>Event name</strong>, for example <em>Mid-{w.term} break</em>.</GuideStep>
-          <GuideStep title="Choose the type">Pick one <strong>Type</strong>: Public holiday, Mid-{w.term} break, Exam period, School event, PTA or Sports day. The type decides whether <strong>School closed on these days</strong> starts ticked.</GuideStep>
+          <GuideStep title="Choose the type">Pick one <strong>Type</strong>: Public holiday, Mid-{w.term} break, Exam period, School event, PTA, Sports day or Results day. A Results day is the day results are released; the Gradebook shows it to administrators while results are being prepared. The type decides whether <strong>School closed on these days</strong> starts ticked.</GuideStep>
           <GuideStep title="Set the dates">Choose the <strong>Start date</strong>. The <strong>End date</strong> follows it, which suits a one-day event; move it for an event that runs several days.</GuideStep>
           <GuideStep title="Choose where it applies">When your school runs more than one branch, choose <strong>The whole school</strong> or <strong>One branch</strong>. Most events apply to every branch.</GuideStep>
           <GuideStep title="Save">Add a <strong>Description</strong> if useful, then select <strong>Add event</strong>.</GuideStep>
