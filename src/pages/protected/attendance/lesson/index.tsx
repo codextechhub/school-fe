@@ -281,10 +281,11 @@ function LessonHeader({
     <Panel as="section" className="space-y-4 p-4 sm:p-5">
       <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">
+          <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Lesson register</p>
+          <h1 className="mt-1 font-mont text-2xl font-semibold tracking-tight text-black-01 sm:text-3xl">
             {register.lesson.period_label} · {register.lesson.subject}
           </h1>
-          <p className="text-sm text-gray-06">
+          <p className="mt-1 text-sm text-gray-06">
             {[
               register.school_class.name,
               formatDay(date, { weekday: "long", month: "long" }),

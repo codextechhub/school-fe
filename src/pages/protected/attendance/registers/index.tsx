@@ -4,6 +4,7 @@ import { ClipboardList } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import PageAccessDenied from "@/components/custom/page-access-denied";
+import { Panel } from "@/components/custom/surface";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,7 @@ import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 
 import { DayPicker } from "../components/day-picker";
+import { AttendancePageHeader } from "../components/attendance-page-header";
 import { useAttendanceDay } from "../use-attendance-day";
 import { timeOnDay } from "../time-on-day";
 
@@ -64,17 +66,12 @@ export default function ClassRegisters() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">
-            {formatDay(date, { weekday: "long", month: "long" })}
-          </h1>
-          <p className="text-sm text-gray-06">
-            {[applies ? label : null, "Every class's morning register"].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-        <DayPicker date={date} today={today} onChange={setDate} />
-      </div>
+      <AttendancePageHeader
+        title="Class registers"
+        description="Open any class to take, review, or complete its morning register."
+        meta={[formatDay(date, { weekday: "long", month: "long" }), applies ? label : null]}
+        actions={<DayPicker date={date} today={today} onChange={setDate} />}
+      />
 
       {isError ? (
         <OutlinedNotice
@@ -87,33 +84,40 @@ export default function ClassRegisters() {
       ) : isLoading ? (
         <Skeleton className="h-72 w-full rounded-md" />
       ) : (
-        <CustomTable
-          tableHeaderList={["Class", "Class teacher", scopeHeader, "Register", "Action"]}
-          defaultBodyList={classes}
-          tableBodyList={classes.map((schoolClass) => ({
-            Class: <span className="font-medium text-black-01">{schoolClass.name}</span>,
-            "Class teacher": schoolClass.class_teacher?.name ?? "No class teacher",
-            [scopeHeader]: applies ? schoolClass.branch_name ?? "No branch" : schoolClass.level_name,
-            Register: <RegisterState classId={schoolClass.id} date={date} />,
-            Action: (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  open(schoolClass);
-                }}
-              >
-                Open
-              </Button>
-            ),
-          }))}
-          onRowClick={(schoolClass: SchoolClass) => schoolClass && open(schoolClass)}
-          currentPage={page}
-          totalPage={data?.pagination?.totalPages ?? 1}
-          onPageChange={(next) => setPage(Number(next) || 1)}
-          emptyText="No classes in this school year yet"
-        />
+        <Panel as="section" className="overflow-hidden">
+          <div className="border-b border-border px-4 py-4 sm:px-5">
+            <h2 className="font-mont text-base font-semibold text-black-01">Register directory</h2>
+            <p className="mt-0.5 text-sm text-gray-06">Status and the next action for every active class.</p>
+          </div>
+          <CustomTable
+            tableHeaderList={["Class", "Class teacher", scopeHeader, "Register", "Action"]}
+            defaultBodyList={classes}
+            tableBodyList={classes.map((schoolClass) => ({
+              Class: <span className="font-medium text-black-01">{schoolClass.name}</span>,
+              "Class teacher": schoolClass.class_teacher?.name ?? "No class teacher",
+              [scopeHeader]: applies ? schoolClass.branch_name ?? "No branch" : schoolClass.level_name,
+              Register: <RegisterState classId={schoolClass.id} date={date} />,
+              Action: (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    open(schoolClass);
+                  }}
+                >
+                  Open
+                </Button>
+              ),
+            }))}
+            onRowClick={(schoolClass: SchoolClass) => schoolClass && open(schoolClass)}
+            cardBreakpoint="lg"
+            currentPage={page}
+            totalPage={data?.pagination?.totalPages ?? 1}
+            onPageChange={(next) => setPage(Number(next) || 1)}
+            emptyText="No classes in this school year yet"
+          />
+        </Panel>
       )}
     </PageShell>
   );

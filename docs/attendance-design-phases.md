@@ -349,6 +349,26 @@ and the page at 390px.
 
 All six phases are built.
 
+### Responsive redesign and Field Access coverage
+
+**Built 15 October 2026.** Attendance now uses one heading and content
+hierarchy across Today, Class registers, Corrections, Lesson registers, Staff
+register and Reports. Today keeps its daily figures above the work queue and
+opens the selected pending class in a focused register beside the queue on a
+wide screen, or immediately below it on a narrower screen. The focused roster
+scrolls inside its panel, uses the same row controls and cache as the full
+register, and retains the link to the full register.
+
+The focused register reuses `attendance.register` Field Access for `counts`,
+`status`, `mark`, `arrived_at`, `reason_code`, `note` and `notice_state`. Hidden
+counts remove progress and totals, hidden status removes its status, a hidden
+or read-only mark removes write controls, Late requires a writable arrival
+time, and Excused requires a writable reason. No new field or grouping was
+introduced. Regression coverage locks hidden, read-only and writable states.
+The six top-level routes were driven at 390px and 820px with no page-level
+horizontal overflow; tables use stacked cards when the sidebar leaves too
+little room for readable columns.
+
 ---
 
 ## 4. Order, and why

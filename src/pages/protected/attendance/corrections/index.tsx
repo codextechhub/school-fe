@@ -25,6 +25,7 @@ import { routesPath } from "@/routes/routesPath";
 import { DrawerShell, Field } from "@/pages/protected/students/drawers/drawer-shell";
 import { Pager } from "@/pages/protected/students/pager";
 
+import { AttendancePageHeader } from "../components/attendance-page-header";
 import { MARKS } from "../marks";
 
 /**
@@ -55,14 +56,12 @@ export default function AttendanceCorrections() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="min-w-0">
-        <h1 className="font-mont text-lg font-semibold text-black-01">Corrections</h1>
-        <p className="text-sm text-gray-06">
-          {decides
-            ? "A mark on a closed day changes only with an administrator's decision. The original mark is never deleted."
-            : "The corrections you have asked for. An attendance administrator decides each one."}
-        </p>
-      </div>
+      <AttendancePageHeader
+        title="Attendance corrections"
+        description={decides
+          ? "Review changes requested after a register has closed. The original mark always stays in the audit history."
+          : "Follow the corrections you requested and see the decision on each one."}
+      />
       <CorrectionList status="pending" decides={decides} />
       <CorrectionList status="decided" decides={decides} />
     </PageShell>

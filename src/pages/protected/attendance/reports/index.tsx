@@ -25,6 +25,7 @@ import { routesPath } from "@/routes/routesPath";
 import { downloadAuthorisedFile } from "@/utils/attachment-download";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 
+import { AttendancePageHeader } from "../components/attendance-page-header";
 import { ChoiceChips } from "../components/choice-chips";
 import { reportExportPath, reportFileName } from "./export-path";
 
@@ -111,28 +112,25 @@ function ReportBody({
 
   return (
     <>
-      <Panel as="section" className="space-y-3 p-4 sm:p-5">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">
-            {report.term?.session_name} · {report.term?.name}
-          </h1>
-          <p className="text-sm text-gray-06">
-            {[
-              formatDayRange(report.range.start, report.range.end),
-              report.range.school_days !== undefined ? `${report.range.school_days} school days` : null,
-              "drawn from registers actually taken",
-            ].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-        {report.terms.length > 1 && (
+      <AttendancePageHeader
+        title="Attendance reports"
+        description={`${report.term?.session_name} · ${report.term?.name}`}
+        meta={[
+          formatDayRange(report.range.start, report.range.end),
+          report.range.school_days !== undefined ? `${report.range.school_days} school days` : null,
+          "Drawn from registers actually taken",
+        ]}
+      />
+      {report.terms.length > 1 && (
+        <Panel as="section" className="max-w-full overflow-x-auto p-3 sm:p-4">
           <ChoiceChips
             ariaLabel="Term"
             options={report.terms.map((t) => ({ value: t.id, label: `${t.name} ${t.session_name}` }))}
             value={term}
             onChange={onTerm}
           />
-        )}
-      </Panel>
+        </Panel>
+      )}
 
       {report.trend && <Trend weeks={report.trend} />}
       <ByClass report={report} exportArgs={exportArgs} />
@@ -300,8 +298,8 @@ function ByClass({ report, exportArgs }: { report: Report; exportArgs: ExportArg
               }
             : {}),
         }))}
-        hidePagination
         cardBreakpoint="lg"
+        hidePagination
         emptyText="No classes in scope"
       />
     </Panel>
@@ -321,6 +319,7 @@ function ByLevel({ rows }: { rows: NonNullable<Report["by_level"]> }) {
           Absences: row.absent,
           Lateness: row.late,
         }))}
+        cardBreakpoint="lg"
         hidePagination
         emptyText="No levels in scope"
       />
@@ -363,6 +362,7 @@ function Chronic({ report, exportArgs }: { report: Report; exportArgs: ExportArg
             "Days excused": row.excused,
             "Days not taken": row.not_taken,
           }))}
+          cardBreakpoint="lg"
           hidePagination
         />
       )}
@@ -407,6 +407,7 @@ function NotTaken({ report, exportArgs }: { report: Report; exportArgs: ExportAr
           currentPage={page}
           totalPage={Math.ceil(rows.length / NOT_TAKEN_PAGE)}
           onPageChange={(next) => setPage(Number(next) || 1)}
+          cardBreakpoint="lg"
         />
       )}
     </Panel>
@@ -430,6 +431,7 @@ function LessonsMissed({ rows }: { rows: NonNullable<Report["lessons_missed"]> }
           Missed: row.missed,
           Students: row.students.length ? row.students.join(", ") : "None",
         }))}
+        cardBreakpoint="lg"
         hidePagination
       />
     </Panel>

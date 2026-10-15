@@ -3,6 +3,7 @@ import { ClipboardList } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import PageAccessDenied from "@/components/custom/page-access-denied";
+import { Panel } from "@/components/custom/surface";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { routesPath } from "@/routes/routesPath";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 
 import { ClosedDayNotice } from "../components/closed-day-notice";
+import { AttendancePageHeader } from "../components/attendance-page-header";
 import { DayPicker } from "../components/day-picker";
 import { useAttendanceDay } from "../use-attendance-day";
 import { timeOnDay } from "../time-on-day";
@@ -53,17 +55,12 @@ export default function AttendanceLessons() {
   const list = data?.data;
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">
-            {formatDay(date, { weekday: "long", month: "long" })}
-          </h1>
-          <p className="text-sm text-gray-06">
-            {[applies ? label : null, "Lessons in levels that mark them"].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-        <DayPicker date={date} today={today} onChange={setDate} />
-      </div>
+      <AttendancePageHeader
+        title="Lesson registers"
+        description="Track scheduled lessons and complete each lesson register from one daily view."
+        meta={[formatDay(date, { weekday: "long", month: "long" }), applies ? label : null]}
+        actions={<DayPicker date={date} today={today} onChange={setDate} />}
+      />
 
       {isError ? (
         <OutlinedNotice
@@ -80,7 +77,13 @@ export default function AttendanceLessons() {
       ) : !list.lesson_marking_on ? (
         <LessonMarkingOff />
       ) : (
-        <LessonTable rows={list.lessons} date={date} isToday={isToday} branchDimension={list.branch_dimension} />
+        <Panel as="section" className="overflow-hidden">
+          <div className="border-b border-border px-4 py-4 sm:px-5">
+            <h2 className="font-mont text-base font-semibold text-black-01">Lesson register queue</h2>
+            <p className="mt-0.5 text-sm text-gray-06">Open a lesson to record who attended and when it was submitted.</p>
+          </div>
+          <LessonTable rows={list.lessons} date={date} isToday={isToday} branchDimension={list.branch_dimension} />
+        </Panel>
       )}
     </PageShell>
   );
@@ -171,6 +174,7 @@ function LessonTable({
         ),
       }))}
       onRowClick={(row: LessonListRow) => row && open(row)}
+      cardBreakpoint="lg"
       hidePagination
       emptyText="No lessons on this day"
     />

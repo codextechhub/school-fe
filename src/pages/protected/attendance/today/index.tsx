@@ -75,6 +75,7 @@ function AdminToday({ date, today, isToday, setDate }: DayProps & { isToday: boo
   return (
     <>
       <DayHeader
+        title="Attendance at a glance"
         date={date}
         today={today}
         setDate={setDate}
@@ -103,7 +104,13 @@ function TeacherToday({ date, today, setDate }: DayProps) {
   const hub = data?.data;
   return (
     <>
-      <DayHeader date={date} today={today} setDate={setDate} sub={["Your class register and lessons for the day"]} />
+      <DayHeader
+        title="Your attendance day"
+        date={date}
+        today={today}
+        setDate={setDate}
+        sub={["Your class register and lessons for the day"]}
+      />
       {isError ? (
         <LoadError onRetry={refetch} />
       ) : isLoading || !hub ? (
@@ -116,19 +123,25 @@ function TeacherToday({ date, today, setDate }: DayProps) {
 }
 
 function DayHeader({
+  title,
   date,
   today,
   setDate,
   sub,
   action,
-}: DayProps & { sub: Array<string | null>; action?: React.ReactNode }) {
+}: DayProps & { title: string; sub: Array<string | null>; action?: React.ReactNode }) {
   const { formatDay } = useSchoolDisplay();
-  const line = sub.filter(Boolean).join(" · ");
+  const line = [formatDay(date, { weekday: "long", month: "long" }), ...sub]
+    .filter(Boolean)
+    .join(" · ");
   return (
-    <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
+    <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">
-        <h1 className="font-mont text-lg font-semibold text-black-01">
-          {formatDay(date, { weekday: "long", month: "long" })}
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
+          {date === today ? "Today" : "Attendance"}
+        </p>
+        <h1 className="mt-1 font-mont text-2xl font-semibold tracking-tight text-black-01 sm:text-3xl">
+          {title}
         </h1>
         {line && <p className="text-sm text-gray-06">{line}</p>}
       </div>

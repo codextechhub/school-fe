@@ -1,9 +1,9 @@
-import { Link, useNavigate } from "react-router";
+import { useState } from "react";
+import { Link } from "react-router";
 import { ClipboardCheck, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import CustomTable from "@/components/custom/custom-table";
-import KpiCard from "@/components/custom/kpi-card";
 import { Panel } from "@/components/custom/surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ import { PersonAvatar } from "@/pages/protected/students/person-avatar";
 import { ClosedDayNotice } from "../components/closed-day-notice";
 import { MARKS, markLabel, noticeText } from "../marks";
 import { timeOnDay } from "../time-on-day";
+import { FocusedRegister } from "./focused-register";
 
 /**
  * The administrator's view of one day across every class in their branches.
@@ -45,6 +46,8 @@ import { timeOnDay } from "../time-on-day";
 export function AdminHub({ hub, isToday }: { hub: AdminHubData; isToday: boolean }) {
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
   const lessonAccess = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_LESSON);
+  const { hasPermission } = usePermissions();
+  const [selectedClassId, setSelectedClassId] = useState<number | null>(null);
 
   if (hub.closed) {
     return <ClosedDayNotice closed={hub.closed} dateLabel={hub.date_label} />;
@@ -53,6 +56,25 @@ export function AdminHub({ hub, isToday }: { hub: AdminHubData; isToday: boolean
   const showKpis = !!hub.kpis && !access.isHidden("counts");
   const showNotTaken = !!hub.not_taken && !access.isHidden("status");
   const missed = !lessonAccess.isHidden("mark") ? hub.missed_lessons ?? [] : [];
+  const notTaken = showNotTaken ? hub.not_taken ?? [] : [];
+  const canTake = hasPermission(P.TAKE_ANY_REGISTER);
+  const focusedClassId = canTake
+    ? notTaken.some((row) => row.class_id === selectedClassId)
+      ? selectedClassId
+      : notTaken[0]?.class_id ?? null
+    : null;
+
+  const focusClass = (classId: number) => {
+    setSelectedClassId(classId);
+    if (window.matchMedia("(max-width: 1279px)").matches) {
+      window.requestAnimationFrame(() => {
+        document.getElementById("attendance-focused-register")?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      });
+    }
+  };
 
   return (
     <>
@@ -60,24 +82,37 @@ export function AdminHub({ hub, isToday }: { hub: AdminHubData; isToday: boolean
         <ClassesWithoutBranch names={hub.classes_without_branch} />
       )}
       {showKpis && hub.kpis && <HubKpiStrip kpis={hub.kpis} isToday={isToday} />}
-      {showNotTaken && (
-        <NotTakenPanel
-          rows={hub.not_taken ?? []}
-          date={hub.date}
-          isToday={isToday}
-          branchDimension={hub.branch_dimension}
-        />
-      )}
-      {missed.length > 0 && <MissedLessonPanel rows={missed} date={hub.date} />}
-      <AbsentPanel rows={hub.absent} isToday={isToday} date={hub.date} dateLabel={hub.date_label} />
-      {hub.pending_corrections_preview && (
-        <CorrectionPreview correction={hub.pending_corrections_preview} />
-      )}
+      <div
+        className={focusedClassId
+          ? "grid min-w-0 grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.8fr)]"
+          : "grid min-w-0 grid-cols-1 gap-4"}
+      >
+        <div className="grid min-w-0 grid-cols-1 content-start gap-4">
+          {showNotTaken && (
+            <NotTakenPanel
+              rows={notTaken}
+              date={hub.date}
+              isToday={isToday}
+              branchDimension={hub.branch_dimension}
+              focusedClassId={focusedClassId}
+              onFocusClass={focusClass}
+            />
+          )}
+          {missed.length > 0 && <MissedLessonPanel rows={missed} date={hub.date} />}
+          <AbsentPanel rows={hub.absent} isToday={isToday} date={hub.date} dateLabel={hub.date_label} />
+          {hub.pending_corrections_preview && (
+            <CorrectionPreview correction={hub.pending_corrections_preview} />
+          )}
+        </div>
+        {focusedClassId && (
+          <FocusedRegister classId={focusedClassId} date={hub.date} isToday={isToday} />
+        )}
+      </div>
     </>
   );
 }
 
-/** Six figures for the day, seven where lessons are marked. */
+/** Compact daily figures, with optional lesson and correction counts. */
 function HubKpiStrip({ kpis, isToday }: { kpis: HubKpis; isToday: boolean }) {
   const notTaken = kpis.not_taken;
   const cards = [
@@ -85,34 +120,68 @@ function HubKpiStrip({ kpis, isToday }: { kpis: HubKpis; isToday: boolean }) {
       label: isToday ? "In school today" : "In school",
       value: kpis.rate == null ? "None yet" : `${kpis.rate}%`,
       foot: `${notTaken} register${notTaken === 1 ? "" : "s"} not ${isToday ? "yet " : ""}taken`,
+      tone: "green" as const,
     },
-    { label: "Absent", value: kpis.absent, foot: "Unexplained" },
-    { label: "Late", value: kpis.late, foot: "Counted as present too" },
-    { label: "Excused", value: kpis.excused, foot: "With a reason code" },
+    { label: "Absent", value: kpis.absent, foot: "Students marked absent", tone: "red" as const },
+    { label: "Late", value: kpis.late, foot: "Counted as present too", tone: "amber" as const },
+    { label: "Excused", value: kpis.excused, foot: "With a reason code", tone: "blue" as const },
     {
       label: isToday ? "Not yet taken" : "Not taken",
       value: notTaken,
       foot: notTaken ? "Chase the class teacher" : "Every class is in",
-      tone: notTaken ? ("warn" as const) : undefined,
+      tone: notTaken ? ("amber" as const) : ("green" as const),
     },
     ...(kpis.missed_a_lesson !== undefined
-      ? [{ label: "Missed a lesson", value: kpis.missed_a_lesson, foot: "In school, absent from a lesson" }]
+      ? [{ label: "Missed a lesson", value: kpis.missed_a_lesson, foot: "In school, absent from a lesson", tone: "violet" as const }]
       : []),
     ...(kpis.corrections_waiting !== undefined
       ? [{
           label: "Corrections waiting",
           value: kpis.corrections_waiting,
           foot: "Needs your decision",
-          tone: kpis.corrections_waiting ? ("warn" as const) : undefined,
+          tone: kpis.corrections_waiting ? ("amber" as const) : ("green" as const),
         }]
       : []),
   ];
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
       {cards.map((card) => (
-        <KpiCard key={card.label} {...card} />
+        <HubMetric key={card.label} {...card} />
       ))}
     </div>
+  );
+}
+
+const METRIC_TONE = {
+  green: { dot: "bg-emerald-600", wash: "bg-emerald-50", text: "text-emerald-700" },
+  red: { dot: "bg-rose-500", wash: "bg-rose-50", text: "text-rose-700" },
+  amber: { dot: "bg-amber-600", wash: "bg-amber-50", text: "text-amber-700" },
+  blue: { dot: "bg-blue-600", wash: "bg-blue-50", text: "text-blue-700" },
+  violet: { dot: "bg-violet-600", wash: "bg-violet-50", text: "text-violet-700" },
+};
+
+function HubMetric({
+  label,
+  value,
+  foot,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  foot: string;
+  tone: keyof typeof METRIC_TONE;
+}) {
+  const palette = METRIC_TONE[tone];
+  return (
+    <Panel className="relative overflow-hidden px-4 py-4">
+      <span className={`absolute -right-5 -top-5 size-14 rounded-full ${palette.wash}`} aria-hidden="true" />
+      <div className="relative flex items-center gap-2 text-xs font-medium text-gray-06">
+        <span className={`size-2 rounded-full ${palette.dot}`} aria-hidden="true" />
+        <span>{label}</span>
+      </div>
+      <p className="relative mt-3 font-mont text-2xl font-semibold tracking-tight text-black-01">{value}</p>
+      <p className={`relative mt-1.5 text-xs ${palette.text}`}>{foot}</p>
+    </Panel>
   );
 }
 
@@ -136,14 +205,17 @@ function NotTakenPanel({
   date,
   isToday,
   branchDimension,
+  focusedClassId,
+  onFocusClass,
 }: {
   rows: NotTakenRow[];
   date: string;
   isToday: boolean;
   branchDimension: boolean;
+  focusedClassId: number | null;
+  onFocusClass: (classId: number) => void;
 }) {
   const { hasPermission } = usePermissions();
-  const navigate = useNavigate();
   const canRemind = hasPermission(P.REMIND_CLASS_TEACHER);
   const canTake = hasPermission(P.TAKE_ANY_REGISTER);
   const showActions = canRemind || canTake;
@@ -183,12 +255,13 @@ function NotTakenPanel({
                       {canTake && (
                         <Button
                           size="sm"
+                          variant={focusedClassId === row.class_id ? "outline" : "default"}
                           onClick={(event) => {
                             event.stopPropagation();
-                            navigate(routesPath.PROTECTED.ATTENDANCE.REGISTER_ID(row.class_id, isToday ? undefined : date));
+                            onFocusClass(row.class_id);
                           }}
                         >
-                          Take register
+                          {focusedClassId === row.class_id ? "In focus" : "Take register"}
                         </Button>
                       )}
                     </span>
@@ -196,6 +269,8 @@ function NotTakenPanel({
                 }
               : {}),
           }))}
+          onRowClick={canTake ? (row: NotTakenRow) => row && onFocusClass(row.class_id) : undefined}
+          cardBreakpoint="lg"
           hidePagination
         />
       )}
@@ -363,6 +438,7 @@ function AbsentPanel({
                 : {}),
             };
           })}
+          cardBreakpoint="lg"
           hidePagination
         />
       )}

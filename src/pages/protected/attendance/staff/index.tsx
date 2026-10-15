@@ -31,6 +31,7 @@ import { routesPath } from "@/routes/routesPath";
 import { ConfirmDialog } from "@/pages/protected/students/drawers/confirm-dialog";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 
+import { AttendancePageHeader } from "../components/attendance-page-header";
 import { ClosedDayNotice } from "../components/closed-day-notice";
 import { DayPicker } from "../components/day-picker";
 import { LateArrivalDrawer } from "../register/mark-drawers";
@@ -77,15 +78,12 @@ export default function StaffRegisterPage() {
   const day = data?.data;
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">
-            Staff register · {formatDay(date, { weekday: "long", month: "long" })}
-          </h1>
-          <p className="text-sm text-gray-06">This register records what an administrator saw. There is no clock-in.</p>
-        </div>
-        <DayPicker date={date} today={today} onChange={setDate} />
-      </div>
+      <AttendancePageHeader
+        title="Staff register"
+        description="Record who is present, late, absent, or already on approved leave."
+        meta={[formatDay(date, { weekday: "long", month: "long" }), "This is an administrator record, not a clock-in system"]}
+        actions={<DayPicker date={date} today={today} onChange={setDate} />}
+      />
 
       {isError ? (
         <OutlinedNotice
