@@ -71,3 +71,127 @@ export type SetupStatus = "DRAFT" | "IN_USE" | "RETIRED";
 
 /** Where a correction to a published result stands. */
 export type AmendmentStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+// ── The teacher's hub (`hub/mine/`) ─────────────────────────────────────────
+
+/** What the card for one of the teacher's own sheets offers to do. */
+export type SheetCta = "ENTER" | "CONTINUE" | "REVISE" | "VIEW";
+
+/** A sheet the reader is main teacher of. */
+export interface MySheet {
+  class: Ref;
+  subject: Ref;
+  /** Students with every component entered, of `roll`. */
+  entered: number;
+  roll: number;
+  exam_paper: ExamPaper | null;
+  status: SheetStatus;
+  cta: SheetCta;
+}
+
+/** Work the reader's other hats carry: a class they lead, a department they head. */
+export interface Duty {
+  kind: "CLASS_TEACHER" | "HEAD_OF_DEPARTMENT";
+  class: Ref | null;
+  department: Ref | null;
+  /** Sheets waiting for the head to moderate. */
+  waiting: number | null;
+  subjects_in: number | null;
+  subjects_due: number | null;
+  stage: ClassStage | null;
+}
+
+export interface TeacherHub {
+  term: TermRef;
+  sheets: MySheet[];
+  duties: Duty[];
+}
+
+// ── The score sheet (`sheets/<class>/<subject>/`) ───────────────────────────
+
+/** Which sheet, for which term (the current one when omitted). */
+export interface SheetKey {
+  classId: number;
+  subjectId: number;
+  term?: number;
+}
+
+/** One column of the sheet. */
+export interface SheetComponent {
+  id: number;
+  name: string;
+  short_name: string;
+  max_score: number;
+  is_exam: boolean;
+}
+
+/** One cell: a whole mark, a marker, or neither (blank). */
+export interface SheetCell {
+  component: number;
+  mark: number | null;
+  marker: Marker | null;
+}
+
+/**
+ * One student's line. The worked-out figures follow the `row_result` switch
+ * and are absent when it is closed; `cells` follows the `mark` switch.
+ */
+export interface SheetRow {
+  student: StudentRef;
+  cells?: SheetCell[];
+  total?: number | null;
+  obtainable?: number | null;
+  percentage?: string | null;
+  grade?: string | null;
+  remark?: string | null;
+  is_fail?: boolean | null;
+  complete?: boolean;
+  excused_note?: string | null;
+}
+
+export interface Sheet {
+  class: Ref;
+  subject: Ref;
+  term: Ref;
+  main_teacher: Ref | null;
+  assistants: string[];
+  exam_paper: ExamPaper | null;
+  status: SheetStatus;
+  needs_moderation: boolean;
+  is_elective: boolean;
+  /** Elective only: students taking it, of `roll` on the class. */
+  takers: number | null;
+  roll: number | null;
+  returned: { by: string | null; at: string; note?: string } | null;
+  saved_at: string | null;
+  progress?: { complete: number; total: number };
+  /** The reader may save marks now: main teacher (or `enter_any`), and not locked. */
+  can_enter: boolean;
+  can_submit: boolean;
+  /** Blank cells across the sheet. */
+  blank_count: number;
+  components: SheetComponent[];
+  rows: SheetRow[];
+}
+
+/** One cell to save. A mark and a marker are exclusive; both null blanks it. */
+export interface CellWrite {
+  student: number;
+  component: number;
+  mark: number | null;
+  marker: Marker | null;
+}
+
+/** A cell the server refused, in a 422 `CELLS_REFUSED`. */
+export interface RefusedCell {
+  student: number;
+  component: number;
+  code: string;
+  message: string;
+}
+
+/** Where a submitted sheet goes next. */
+export interface SubmitResult {
+  next: "MODERATION" | "CLASS_TEACHER";
+  sheet: Sheet;
+}

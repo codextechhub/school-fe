@@ -84,6 +84,7 @@ const AREA_BY_PREFIX: [prefix: string, area: ProductArea][] = [
   ["/academic-structure", "School management"],
   ["/academic-calendar", "School management"],
   ["/attendance", "School management"],
+  ["/gradebook", "School management"],
   ["/timetables", "School management"],
   ["/overview", "School management"],
   ["/staff", "School management"],

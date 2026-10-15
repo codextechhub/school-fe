@@ -474,6 +474,20 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ATTENDANCE.STAFF },
   },
   {
+    id: "view-my-score-sheets",
+    label: "View my score sheets",
+    // A teacher's own sheets for the term, each opening onto the grid.
+    aliases: [
+      "score sheet", "enter scores", "enter marks", "my sheets", "gradebook",
+      "continuous assessment", "exam scores", "submit scores", "results entry",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { any: [P.ENTER_OWN_SCORES, P.ENTER_ANY_SCORES] },
+    run: { to: R.GRADEBOOK.INDEX },
+  },
+  {
     id: "view-classes",
     label: "View classes",
     aliases: ["class list", "class rosters"],

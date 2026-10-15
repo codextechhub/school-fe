@@ -34,6 +34,7 @@ import {
   Wallet,
   CalendarRange,
   ArrowLeftRight,
+  Award,
   Building2,
   Contact,
   GraduationCap,
@@ -789,6 +790,26 @@ export function AppSidebar({
             url: routesPath.PROTECTED.ATTENDANCE.REPORTS,
             isActive: location.startsWith(routesPath.PROTECTED.ATTENDANCE.REPORTS),
           }] : []),
+        ],
+      },
+      {
+        // Results from score sheet to report card. Each sub-item is gated on
+        // the key its screen reads, and appears with its screen.
+        title: "Gradebook",
+        capability: "gradebook",
+        url: "#",
+        icon: Award,
+        isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX),
+        childActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX),
+        permission: [P.ENTER_OWN_SCORES, P.ENTER_ANY_SCORES],
+        permissionMode: "any",
+        items: [
+          {
+            // A teacher's own sheets. A sheet opened from it lights it too.
+            title: "My sheets",
+            url: routesPath.PROTECTED.GRADEBOOK.INDEX,
+            isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX),
+          },
         ],
       },
     ],

@@ -6,6 +6,7 @@ import { settingsRoutes } from "./settings-routes";
 import { workflowRoutes } from "./workflow-routes";
 import { academicRoutes } from "./academic-routes";
 import { attendanceRoutes } from "./attendance-routes";
+import { gradebookRoutes } from "./gradebook-routes";
 import { classesRoutes } from "./classes-routes";
 import { studentsRoutes } from "./students-routes";
 import { staffRoutes } from "./staff-routes";
@@ -40,6 +41,7 @@ export const protectedChildren: RouteObject[] = [
   ...workflowRoutes,
   ...academicRoutes,
   ...attendanceRoutes,
+  ...gradebookRoutes,
   ...classesRoutes,
   ...studentsRoutes,
   ...staffRoutes,

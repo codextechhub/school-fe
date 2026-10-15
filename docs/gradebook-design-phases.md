@@ -237,6 +237,23 @@ upload button stays out until Phase 9. The Gradebook sidebar group under
 Academics starts here, gated on the `gradebook` capability, with only the items
 whose screens exist.
 
+**As built.** `/gradebook` is My sheets, `/gradebook/sheets/:classId/:subjectId`
+the sheet. Where it differs from the design:
+
+1. Each cell is saved on its own when the cursor leaves it, because the server
+   saves a batch all or nothing and one bad cell would hold back the rest. A
+   mark that fails the check (over the maximum, below 0, not whole) is never
+   sent and says why under the cell.
+2. Subject tabs list only the reader's own sheets in that class: no endpoint
+   lists a class's subjects to a teacher, and a tab must never open a refusal.
+3. The duty cards (compile the class, moderation queue) are information only
+   until Phases 3 and 4 build the screens they open.
+4. The sidebar offers My sheets only to a reader who can enter scores; an
+   administrator reaches results through the hub in Phase 3.
+5. The phone view adds a student picker beside Previous and Next.
+6. A sheet that is not the reader's says so and links back to My sheets,
+   rather than offering Try again.
+
 ### Phase 2: setup, and the three things outside the gradebook a real school needs
 
 So a school that is not seeded can run a term. Assessment setup (structures,

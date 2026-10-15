@@ -345,5 +345,13 @@ export const routesPath = {
       /** Every branch's staff register for the day. */
       STAFF: "/attendance/staff",
     },
+    // Gradebook. `INDEX` is the reader's own sheets and duties for the term.
+    GRADEBOOK: {
+      INDEX: "/gradebook",
+      SHEET: "/gradebook/sheets/:classId/:subjectId",
+      /** One subject's sheet for one class; the term rides in `?term=`, omitted for the current one. */
+      SHEET_ID: (classId: number | string, subjectId: number | string, term?: number) =>
+        `/gradebook/sheets/${classId}/${subjectId}${term ? `?term=${term}` : ""}`,
+    },
   },
 };

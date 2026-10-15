@@ -97,7 +97,7 @@ export const ROLES_AND_PERMISSIONS_GUIDES = [
     relatedGuideIds: ["school.roles.create-and-edit-role"],
     estimatedMinutes: 5,
     owner: OWNER,
-    reviewedAt: "2026-10-12",
+    reviewedAt: "2026-10-15",
     risk: "high",
     status: "published",
     article: () => import("../content/roles-and-permissions/field-access"),

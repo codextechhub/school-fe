@@ -14,6 +14,7 @@ import { CALENDAR_AND_TIMETABLES_GUIDES } from "./calendar-and-timetables";
 import { DATA_IMPORTS_AND_EXPORTS_GUIDES } from "./data-imports-and-exports";
 import { FINANCE_AND_PAYMENTS_GUIDES } from "./finance-and-payments";
 import { GETTING_STARTED_GUIDES } from "./getting-started";
+import { GRADEBOOK_GUIDES } from "./gradebook";
 import { PROCUREMENT_AND_INVENTORY_GUIDES } from "./procurement-and-inventory";
 import { ROLES_AND_PERMISSIONS_GUIDES } from "./roles-and-permissions";
 import { SCHOOL_SETUP_GUIDES } from "./school-setup";
@@ -29,6 +30,7 @@ export const GUIDE_REGISTRY: readonly GuideRecord[] = [
   ...ACADEMICS_GUIDES,
   ...CALENDAR_AND_TIMETABLES_GUIDES,
   ...ATTENDANCE_GUIDES,
+  ...GRADEBOOK_GUIDES,
   ...ROLES_AND_PERMISSIONS_GUIDES,
   ...APPROVALS_AND_WORKFLOW_GUIDES,
   ...FINANCE_AND_PAYMENTS_GUIDES,
