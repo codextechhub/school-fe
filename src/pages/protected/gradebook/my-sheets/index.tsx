@@ -29,10 +29,10 @@ const CTA_TEXT: Record<SheetCta, string> = {
  * A sheet is listed when the reader is its main teacher. An assistant reads a
  * sheet but is not listed for it, because they cannot enter or submit it.
  *
- * Duties (the class the reader leads, the department they head) are listed for
- * what they say: how far the class has got, how many sheets wait for the head.
- * They are not links, because compiling a class and moderating are their own
- * screens.
+ * Duties (the class the reader leads, the department they head) say how far
+ * the class has got and how many sheets wait for the head. A head's card opens
+ * the moderation queue; a class teacher's is information until the broadsheet
+ * that compiles the class exists.
  */
 export default function MySheets() {
   const { data, isLoading, isError, error, refetch } = useGetMySheetsQuery();
@@ -146,11 +146,25 @@ function DutyCard({ duty }: { duty: Duty }) {
       ? `${duty.waiting} sheet${duty.waiting === 1 ? "" : "s"} waiting for you`
       : "Nothing waiting for you"
     : `${duty.subjects_in ?? 0} of ${duty.subjects_due ?? 0} subjects in`;
-  return (
-    <li className="min-w-0 rounded-md border border-border px-4 py-3">
+  const body = (
+    <>
       <p className="text-xs text-gray-05">{hat}</p>
       <p className="truncate font-medium text-black-01">{title}</p>
       <p className="text-xs text-gray-06">{meta}</p>
+    </>
+  );
+  return (
+    <li className="min-w-0">
+      {head ? (
+        <Link
+          to={routesPath.PROTECTED.GRADEBOOK.MODERATION}
+          className="block rounded-md border border-border px-4 py-3 transition-colors hover:bg-primary/5"
+        >
+          {body}
+        </Link>
+      ) : (
+        <div className="rounded-md border border-border px-4 py-3">{body}</div>
+      )}
     </li>
   );
 }

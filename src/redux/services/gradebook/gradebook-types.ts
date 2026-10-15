@@ -355,3 +355,32 @@ export interface ResultsHub {
   late: LateSheet[];
   classes_without_branch: Ref[];
 }
+
+// ── Moderation (`moderation/`) ──────────────────────────────────────────────
+
+/**
+ * A sheet in a moderated programme, as the head of its department sees it.
+ * The class figures follow the `class_stats` switch and are absent when closed.
+ */
+export interface ModerationRow {
+  class: Ref;
+  subject: Ref;
+  branch: Ref | null;
+  main_teacher: Ref | null;
+  marked: number;
+  roll: number;
+  class_average?: string | null;
+  highest?: number | null;
+  lowest?: number | null;
+  pass_rate?: number | null;
+  status: SheetStatus;
+  /** The other classes that offer the same subject this term, by name. */
+  compare: string[];
+  /** Submitted and waiting for this reader, who heads its department. */
+  can_decide: boolean;
+}
+
+export interface ModerationQueue {
+  branch_dimension: boolean;
+  sheets: ModerationRow[];
+}

@@ -65,6 +65,10 @@ import {
   useGetAttendanceSettingsQuery,
   useGetCorrectionsQuery,
 } from "@/redux/services/attendance/attendance-api";
+import {
+  useGetGradebookSettingsQuery,
+  useGetMySheetsQuery,
+} from "@/redux/services/gradebook/gradebook-api";
 import { openSettingsSections } from "@/pages/protected/settings/sections";
 
 // A nav item may declare a permission (single code or a list). When absent the
@@ -203,6 +207,19 @@ export function AppSidebar({
     skip: onboarding || !hasPermission(P.TAKE_ANY_REGISTER) || !hasCapability("attendance"),
   });
   const marksLessons = (attendanceSettings?.data.lesson_marking_levels.length ?? 0) > 0;
+  // Moderation is a door only where it applies: a hub reader at a school that
+  // moderates a programme, or a teacher who heads a department. Each is asked
+  // only of the readers it could answer for.
+  const readsResultsHub = hasPermission(P.VIEW_RESULTS_HUB);
+  const { data: gradebookSettings } = useGetGradebookSettingsQuery(undefined, {
+    skip: onboarding || !readsResultsHub || !hasPermission(P.VIEW_ASSESSMENT_SETUP) || !hasCapability("gradebook"),
+  });
+  const { data: mySheets } = useGetMySheetsQuery(undefined, {
+    skip: onboarding || readsResultsHub || !hasPermission(P.MODERATE_SHEETS) || !hasCapability("gradebook"),
+  });
+  const offersModeration = readsResultsHub
+    ? (gradebookSettings?.data.moderated_programs.length ?? 1) > 0
+    : !!mySheets?.data.duties.some((duty) => duty.kind === "HEAD_OF_DEPARTMENT");
   const waiting = deriveSidebarWorkCounts({
     applicants: summary?.data?.applicants,
     unassignedStudents: summary?.data?.unassigned,
@@ -802,6 +819,7 @@ export function AppSidebar({
         isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX),
         childActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX),
         permission: [
+          P.VIEW_RESULTS_HUB,
           P.ENTER_OWN_SCORES,
           P.ENTER_ANY_SCORES,
           P.VIEW_ELECTIVE_TAKERS,
@@ -809,13 +827,29 @@ export function AppSidebar({
         ],
         permissionMode: "any",
         items: [
-          // A teacher's own sheets. A sheet opened from it lights it too.
-          ...(hasAnyPermission(P.ENTER_OWN_SCORES, P.ENTER_ANY_SCORES) ? [{
-            title: "My sheets",
+          // Every class's progress, for a reader who works the whole branch.
+          // A sheet opened from it lights it too.
+          ...(readsResultsHub ? [{
+            title: "Results this term",
             url: routesPath.PROTECTED.GRADEBOOK.INDEX,
             isActive:
-              location.startsWith(routesPath.PROTECTED.GRADEBOOK.INDEX) &&
-              !location.startsWith(routesPath.PROTECTED.GRADEBOOK.ELECTIVES),
+              location === routesPath.PROTECTED.GRADEBOOK.INDEX ||
+              location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/sheets`),
+          }] : []),
+          // A teacher's own sheets; for a teacher a sheet lights this instead.
+          ...(hasAnyPermission(P.ENTER_OWN_SCORES, P.ENTER_ANY_SCORES) ? [{
+            title: "My sheets",
+            url: routesPath.PROTECTED.GRADEBOOK.MINE,
+            isActive:
+              location.startsWith(routesPath.PROTECTED.GRADEBOOK.MINE) ||
+              (!readsResultsHub &&
+                (location === routesPath.PROTECTED.GRADEBOOK.INDEX ||
+                  location.startsWith(`${routesPath.PROTECTED.GRADEBOOK.INDEX}/sheets`))),
+          }] : []),
+          ...(offersModeration && hasAnyPermission(P.MODERATE_SHEETS, P.VIEW_RESULTS_HUB) ? [{
+            title: "Moderation",
+            url: routesPath.PROTECTED.GRADEBOOK.MODERATION,
+            isActive: location.startsWith(routesPath.PROTECTED.GRADEBOOK.MODERATION),
           }] : []),
           ...(hasPermission(P.VIEW_ELECTIVE_TAKERS) ? [{
             title: "Who takes what",

@@ -346,9 +346,14 @@ export const routesPath = {
       /** Every branch's staff register for the day. */
       STAFF: "/attendance/staff",
     },
-    // Gradebook. `INDEX` is the reader's own sheets and duties for the term.
+    // Gradebook. `INDEX` is Results this term: the results hub for a reader who
+    // works every class, the reader's own sheets for everyone else. Which one
+    // is decided by the reader's keys, not by the address.
     GRADEBOOK: {
       INDEX: "/gradebook",
+      /** The reader's own sheets and duties, whatever else they may read. */
+      MINE: "/gradebook/mine",
+      MODERATION: "/gradebook/moderation",
       SHEET: "/gradebook/sheets/:classId/:subjectId",
       /** One subject's sheet for one class; the term rides in `?term=`, omitted for the current one. */
       SHEET_ID: (classId: number | string, subjectId: number | string, term?: number) =>

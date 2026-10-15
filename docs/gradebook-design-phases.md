@@ -292,6 +292,23 @@ Admin hub with branch tabs, KPIs, by-class table, late list with Remind and the
 locked-account link (only when the server sends it). Moderation queue with
 approve and the Return drawer.
 
+**As built.** `/gradebook` chooses by role, as attendance's Today does: the
+results hub for a reader of `gradebook.hub.view`, the reader's own sheets for
+everyone else, which also live at `/gradebook/mine`. Moderation is
+`/gradebook/moderation`. Where it differs from the design:
+
+1. Branch tabs are the app's branch lens in the sidebar, not tabs on the page.
+2. The by-class table has no Broadsheet action until Phase 4 builds it.
+3. Remind is withheld on a sheet waiting for its head; a reminded sheet says
+   "Reminded today". A teacher who cannot sign in links to their staff record,
+   and only a reader who can unlock staff accounts is told.
+4. Moderation appears in the sidebar only where it applies: to a hub reader at
+   a school that moderates a programme, and to a teacher who heads a
+   department. A head's duty card on My sheets opens it.
+5. The three missing late reasons were checked against temporary database
+   states and put back; adding them to the seeder is still owed (see the Phase
+   0 table).
+
 ### Phase 4: broadsheet and compiling
 
 Broadsheet with gaps, attendance warning, position column, print stylesheet.

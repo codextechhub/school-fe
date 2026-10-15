@@ -5,6 +5,7 @@ import type {
   CellWrite,
   GradebookSettings,
   GradebookSettingsWrite,
+  ModerationQueue,
   RemarkTemplate,
   ResultsHub,
   Scale,
@@ -51,6 +52,38 @@ export const gradebookApi = baseApi.injectEndpoints({
     getResultsHub: builder.query<Envelope<ResultsHub>, TermArgs | void>({
       query: (args) => ({ url: `/gradebook/hub/`, method: "GET", params: termParams(args ?? {}) }),
       providesTags: ["GradebookProgress"],
+    }),
+
+    /** Sends the sheet's main teacher a reminder, once per sheet per school day. */
+    remindTeacher: builder.mutation<Envelope<unknown>, SheetKey>({
+      query: (key) => ({ url: `${sheetUrl(key)}remind/`, method: "POST", params: termParams({ term: key.term }) }),
+      invalidatesTags: ["GradebookProgress"],
+    }),
+
+    /**
+     * Moderated sheets: a head's own departments, or every one in the reader's
+     * branches for a reader of the results hub (who reads but cannot decide).
+     */
+    getModerationQueue: builder.query<Envelope<ModerationQueue>, TermArgs | void>({
+      query: (args) => ({ url: `/gradebook/moderation/`, method: "GET", params: termParams(args ?? {}) }),
+      providesTags: ["GradebookProgress"],
+    }),
+
+    /** The head approves a submitted sheet; it goes on to the class teacher. */
+    approveSheet: builder.mutation<Envelope<unknown>, SheetKey>({
+      query: (key) => ({ url: `${sheetUrl(key)}approve/`, method: "POST", params: termParams({ term: key.term }) }),
+      invalidatesTags: (_result, _error, key) => ["GradebookProgress", sheetTag(key)],
+    }),
+
+    /** The head sends a submitted sheet back to its main teacher, with a note. */
+    returnSheet: builder.mutation<Envelope<unknown>, SheetKey & { note: string }>({
+      query: ({ note, ...key }) => ({
+        url: `${sheetUrl(key)}return/`,
+        method: "POST",
+        params: termParams({ term: key.term }),
+        body: { note },
+      }),
+      invalidatesTags: (_result, _error, { note: _note, ...key }) => ["GradebookProgress", sheetTag(key)],
     }),
 
     getMySheets: builder.query<Envelope<TeacherHub>, { term?: number } | void>({
@@ -184,6 +217,10 @@ export const gradebookApi = baseApi.injectEndpoints({
 
 export const {
   useGetResultsHubQuery,
+  useRemindTeacherMutation,
+  useGetModerationQueueQuery,
+  useApproveSheetMutation,
+  useReturnSheetMutation,
   useGetMySheetsQuery,
   useGetSheetQuery,
   useSaveScoresMutation,

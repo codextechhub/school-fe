@@ -474,6 +474,33 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.ATTENDANCE.STAFF },
   },
   {
+    id: "view-results-this-term",
+    label: "View results this term",
+    // Every class's progress from score sheet to published result.
+    aliases: [
+      "results hub", "gradebook", "results progress", "late sheets", "sheets not in",
+      "remind a teacher", "who has not entered scores", "results this term",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { perm: P.VIEW_RESULTS_HUB },
+    run: { to: R.GRADEBOOK.INDEX },
+  },
+  {
+    id: "view-moderation-queue",
+    label: "View the moderation queue",
+    aliases: [
+      "moderation", "moderate sheets", "approve sheet", "return sheet",
+      "head of department", "compare classes",
+    ],
+    section: "Academics",
+    group: "Gradebook",
+    kind: "view",
+    gate: { any: [P.MODERATE_SHEETS, P.VIEW_RESULTS_HUB] },
+    run: { to: R.GRADEBOOK.MODERATION },
+  },
+  {
     id: "view-my-score-sheets",
     label: "View my score sheets",
     // A teacher's own sheets for the term, each opening onto the grid.
@@ -485,7 +512,7 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     group: "Gradebook",
     kind: "view",
     gate: { any: [P.ENTER_OWN_SCORES, P.ENTER_ANY_SCORES] },
-    run: { to: R.GRADEBOOK.INDEX },
+    run: { to: R.GRADEBOOK.MINE },
   },
   {
     id: "view-who-takes-what",
