@@ -39,6 +39,16 @@ export default function EnterScoresArticle() {
         <p>On a phone the sheet shows one student at a time, with a box for each component and ABS and Excused beside it. Use <strong>Next</strong> and <strong>Previous</strong> at the foot of the screen, or pick a student from the list at the top. It is the same sheet, so marks entered on a phone appear on the computer and the other way round.</p>
       </GuideSection>
 
+      <GuideSection id="upload" title="Upload marks from a spreadsheet">
+        <GuideSteps>
+          <GuideStep title="Download the template">On the sheet, select <strong>Upload marks</strong>, then <strong>Download the template</strong>. It lists every student with their admission number and the marks already entered.</GuideStep>
+          <GuideStep title="Fill it in">Type each mark, or ABS or EXC. Leave a cell blank to keep what the sheet already has.</GuideStep>
+          <GuideStep title="Upload and check">Choose the file. Nothing is saved yet: each row shows a new mark in green, a mark that replaces one already entered in amber, and any problem in red, such as an admission number nobody holds or a mark over the maximum.</GuideStep>
+          <GuideStep title="Save the rows you want">The rows that change something start ticked. Rows with a problem cannot be saved; fix them in the file and upload it again.</GuideStep>
+        </GuideSteps>
+        <GuideCallout tone="info" title="If the sheet changed meanwhile">When someone changes a mark after your file was checked, nothing is saved and the file is checked again, so newer marks are never overwritten.</GuideCallout>
+      </GuideSection>
+
       <GuideSection id="submit" title="Submit the sheet">
         <p><strong>Submit sheet</strong> works once every cell has a mark, ABS or Excused; until then it says how many students are still blank. Submitting locks the sheet for you.</p>
         <p>Where the subject&apos;s department is moderated, the sheet then goes to the head of the department, who approves it or sends it back. Otherwise it goes straight on to the class teacher, who compiles the class.</p>

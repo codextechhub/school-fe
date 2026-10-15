@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { FieldAccessMap } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { P } from "@/permissions";
 import type { Sheet } from "@/redux/services/gradebook/gradebook-types";
 
 /**
@@ -26,11 +27,12 @@ import type { Sheet } from "@/redux/services/gradebook/gradebook-types";
  */
 let fieldAccess: FieldAccessMap = {};
 let sheet: Sheet;
+let uploadsScores = true;
 
 vi.mock("@/hooks/use-permissions", () => ({
   usePermissions: () => ({
     fieldAccess,
-    hasPermission: () => true,
+    hasPermission: (code: string) => code !== P.UPLOAD_SCORES || uploadsScores,
     hasAnyPermission: () => true,
     hasAllPermissions: () => true,
     hasModuleAccess: () => true,
@@ -51,6 +53,9 @@ vi.mock("@/redux/services/gradebook/gradebook-api", () => ({
   useGetMySheetsQuery: () => ({ data: undefined }),
   useSaveScoresMutation: () => [vi.fn()],
   useSubmitSheetMutation: () => [vi.fn(), { isLoading: false }],
+  useDownloadSheetTemplateMutation: () => [vi.fn(), { isLoading: false }],
+  usePreviewSheetImportMutation: () => [vi.fn(), { isLoading: false }],
+  useConfirmSheetImportMutation: () => [vi.fn(), { isLoading: false }],
 }));
 
 import ScoreSheet from "./index";
@@ -112,6 +117,7 @@ beforeEach(() => {
   root = createRoot(container);
   fieldAccess = {};
   sheet = englishSheet();
+  uploadsScores = true;
 });
 
 afterEach(() => {
@@ -133,6 +139,7 @@ function render() {
 
 const inputs = () => container.querySelectorAll("input[data-sheet-cell]");
 const headers = () => Array.from(container.querySelectorAll("th")).map((th) => th.textContent);
+const upload = () => Array.from(container.querySelectorAll("button")).find((b) => b.textContent === "Upload marks");
 const submit = () =>
   Array.from(container.querySelectorAll("button")).find((b) => b.textContent === "Submit sheet");
 
@@ -142,6 +149,18 @@ describe("score sheet Field Access", () => {
     expect(inputs().length).toBeGreaterThan(0);
     expect(container.querySelector('[aria-label="Daniel Afolabi, 1st CA"]')).not.toBeNull();
     expect(submit()).toBeDefined();
+  });
+
+  it("offers Upload marks only where the marks are writable and the upload key is held", () => {
+    render();
+    expect(upload()).toBeDefined();
+    uploadsScores = false;
+    render();
+    expect(upload()).toBeUndefined();
+    uploadsScores = true;
+    fieldAccess = { [FIELD_RESOURCE.GRADEBOOK_SHEET]: { hidden: [], read_only: ["mark", "marker", "cells"], open_on_create: [] } };
+    render();
+    expect(upload()).toBeUndefined();
   });
 
   it("shows the marks as text, with nothing to type in, when they are read-only", () => {

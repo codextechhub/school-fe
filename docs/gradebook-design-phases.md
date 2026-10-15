@@ -220,6 +220,7 @@ the phase that needs it:
 | Two published arms of one subject (the analytics compare card) | Phase 8 |
 | An earlier published term (movers, past terms on the Results tab) and a cumulative third-term card | Phases 6 and 8 |
 | Admission numbers on any class but SSS1 B (screens must already cope with a blank one) | every phase; the seeder only numbers the class its upload uses |
+| A family that owes Finance (fee holds balances) | Phase 5; seeded 2026-10-15, see Phase 9 |
 
 Three defects found and fixed on the way, in the backend: the local database
 had never applied the gradebook's migrations; four seeders printed the school
@@ -450,6 +451,33 @@ lens. Where they differ from the design:
 
 Template download, the preview with per-cell outcomes and issues, choosing
 rows, confirm, and the "sheet changed" refusal. Entirely undrawn.
+
+**As built.** "Upload marks" sits on the score sheet beside Submit, for a
+reader who may enter its marks and holds the upload key. A wide drawer
+downloads the template, checks a file (Excel or CSV) without saving, and
+shows every row: a new mark in green, a replacing one in amber with the mark
+it replaces, an unchanged one in grey, a blank as "left as is", and each
+problem in red where it belongs. The ready rows that change something start
+ticked; rows with a problem cannot be ticked. Saving writes the ticked rows
+and the answer replaces the cached sheet. A sheet changed after the check is
+refused by the server; the drawer says nothing was saved and checks the same
+file again. A file whose headings do not fit says so and offers nothing.
+
+**Seed.** The gradebook seeder bills three Lagoon View families for the term
+through the Finance layer's cohort run (one released pupil of JSS1 A, two
+holdable pupils of SSS1 A), from the finance module's starter fee structure
+(`seed_finance_ar_demo --entity LAGOONVIEW`). Fee holds then show balances and
+a due date. The bills fall due at the term's end, which showed the holds list
+printing "-" for a bill not yet overdue; it now says when it falls due.
+
+**Not seeded: an earlier published term.** The year before (2025/2026) is
+archived with empty rolls, and both the students module (placements) and the
+staff module (teaching) refuse to write into a closed year, as they should.
+Replaying it honestly needs the year reopened while the seeder runs, which
+would make every screen at both schools read 2025/2026 as the running year
+for those minutes. The movers table and the year block on a last-term card
+stay covered by tests (the seeder's own last-term tests reach them with the
+test clock) until that is decided.
 
 ### Field Access, phase by phase
 

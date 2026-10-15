@@ -23,6 +23,7 @@ export const GRADEBOOK_GUIDES = [
       { id: "enter-marks", title: "Enter marks" },
       { id: "absent-and-excused", title: "Absent and excused" },
       { id: "on-a-phone", title: "On a phone" },
+      { id: "upload", title: "Upload marks from a spreadsheet" },
       { id: "submit", title: "Submit the sheet" },
       { id: "returned", title: "A sheet that comes back" },
       { id: "common-problems", title: "Common problems" },

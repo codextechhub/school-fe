@@ -21,6 +21,7 @@ import type {
   CompileWrite,
   GradebookSettings,
   GradebookSettingsWrite,
+  ImportPreview,
   HoldLiftResult,
   HoldRow,
   HoldsArgs,
@@ -431,6 +432,54 @@ export const gradebookApi = baseApi.injectEndpoints({
       invalidatesTags: ["GradebookProgress"],
     }),
 
+    /** The sheet as an Excel file to fill in offline, under the server's file name. */
+    downloadSheetTemplate: builder.mutation<DownloadedFile, SheetKey>({
+      query: (key) => ({
+        url: `${sheetUrl(key)}template/`,
+        method: "GET",
+        params: termParams({ term: key.term }),
+        responseHandler: async (response) => {
+          if (!response.ok) return response.json();
+          const disposition = response.headers.get("Content-Disposition") ?? "";
+          const filename = /filename="?([^";]+)"?/.exec(disposition)?.[1] ?? "score-sheet.xlsx";
+          return { url: URL.createObjectURL(await response.blob()), filename };
+        },
+      }),
+      extraOptions: { silent: true },
+    }),
+
+    /**
+     * Checks an uploaded file against the sheet and saves nothing. Silent: the
+     * upload drawer shows every refusal where it belongs.
+     */
+    previewSheetImport: builder.mutation<Envelope<ImportPreview>, SheetKey & { file: File }>({
+      query: ({ file, ...key }) => {
+        const body = new FormData();
+        body.append("file", file);
+        return { url: `${sheetUrl(key)}import/`, method: "POST", params: termParams({ term: key.term }), body };
+      },
+      extraOptions: { silent: true },
+    }),
+
+    /** Saves the chosen rows of a checked upload. Answers with the sheet, written into the cache. */
+    confirmSheetImport: builder.mutation<Envelope<Sheet>, SheetKey & { token: string; rows: number[] }>({
+      query: ({ token, rows, ...key }) => ({
+        url: `${sheetUrl(key)}import/${token}/confirm/`,
+        method: "POST",
+        body: { rows },
+      }),
+      extraOptions: { silent: true },
+      async onQueryStarted({ token: _token, rows: _rows, ...key }, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(gradebookApi.util.updateQueryData("getSheet", key, () => data));
+        } catch {
+          // The drawer reads the refusal off the mutation's own result.
+        }
+      },
+      invalidatesTags: ["GradebookProgress"],
+    }),
+
     submitSheet: builder.mutation<Envelope<SubmitResult>, SheetKey>({
       query: (key) => ({
         url: `${sheetUrl(key)}submit/`,
@@ -562,6 +611,9 @@ export const {
   useGetSheetQuery,
   useSaveScoresMutation,
   useSubmitSheetMutation,
+  useDownloadSheetTemplateMutation,
+  usePreviewSheetImportMutation,
+  useConfirmSheetImportMutation,
   useGetStructuresQuery,
   useCreateStructureMutation,
   useUpdateStructureMutation,

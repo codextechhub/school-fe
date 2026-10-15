@@ -916,3 +916,43 @@ export interface DownloadedFile {
   url: string;
   filename: string;
 }
+
+// ── Uploading a score sheet (`sheets/<c>/<s>/import/`) ─────────────────────
+
+/** A problem in an uploaded file or one of its rows; `component` names the column. */
+export interface ImportIssue {
+  code: string;
+  message: string;
+  component?: number;
+}
+
+/**
+ * What one uploaded cell would do. `value` and `existing` are a whole mark,
+ * ABS or EXC, or null; `outcome` is null where the cell has an issue. All
+ * three state a mark, so they follow the mark switch.
+ */
+export interface ImportCell {
+  component: number;
+  value?: number | string | null;
+  outcome?: "NEW" | "SAME" | "REPLACES" | "BLANK" | null;
+  existing?: number | string | null;
+}
+
+export interface ImportRow {
+  /** The row in the spreadsheet. */
+  row_number: number;
+  admission_number: string;
+  /** Null when the admission number names nobody the reader can see. */
+  student: Ref | null;
+  cells: ImportCell[];
+  issues: ImportIssue[];
+}
+
+/** A checked upload. A file whose headings do not fit has `file_issues`, no token and no rows. */
+export interface ImportPreview {
+  token: string | null;
+  expires_at: string | null;
+  summary: { rows: number; ready: number; with_issues: number; replaces: number };
+  file_issues: ImportIssue[];
+  rows: ImportRow[];
+}

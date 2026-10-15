@@ -8,8 +8,10 @@ import { Panel } from "@/components/custom/surface";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useFieldAccess } from "@/components/finance-ui";
+import { usePermissions } from "@/hooks/use-permissions";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { P } from "@/permissions";
 import { cn } from "@/lib/utils";
 import {
   useGetMySheetsQuery,
@@ -28,6 +30,7 @@ import { SheetStatusChip } from "../components/sheet-status-chip";
 import { rowsWithBlanks } from "./cells";
 import { SheetGrid } from "./sheet-grid";
 import { SheetPhone } from "./sheet-phone";
+import { UploadDrawer } from "./upload-drawer";
 import { useSheetSaver } from "./use-sheet-saver";
 
 /**
@@ -50,6 +53,9 @@ import { useSheetSaver } from "./use-sheet-saver";
  * but not write them sees the grid without inputs. The worked-out figures and
  * the progress count go when `row_result` is hidden, and the return note when
  * `note` is.
+ *
+ * A reader who may enter marks and holds the upload key can also fill the
+ * sheet from a spreadsheet (Upload marks), checked and confirmed in a drawer.
  */
 export default function ScoreSheet() {
   const params = useParams();
@@ -108,7 +114,10 @@ function SheetBody({
   const reload = useCallback(() => onReload(), [onReload]);
   const saver = useSheetSaver(sheetKey, reload);
   const [confirming, setConfirming] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [submit, submitState] = useSubmitSheetMutation();
+  const { hasPermission } = usePermissions();
+  const uploads = editable && hasPermission(P.UPLOAD_SCORES);
 
   const onSubmit = async () => {
     const result = await submit(sheetKey);
@@ -143,6 +152,7 @@ function SheetBody({
             showProgress={showFigures}
             saving={saver.saving}
             onSubmit={() => setConfirming(true)}
+            onUpload={uploads ? () => setUploading(true) : undefined}
           />
           <div className="hidden md:block">
             <SheetGrid sheet={sheet} editable={editable} showFigures={showFigures} saver={saver} />
@@ -160,6 +170,8 @@ function SheetBody({
           )}
         </>
       )}
+
+      {uploading && <UploadDrawer sheet={sheet} sheetKey={sheetKey} onClose={() => setUploading(false)} />}
 
       <ConfirmDialog
         tone="primary"
@@ -280,12 +292,14 @@ function SheetToolbar({
   showProgress,
   saving,
   onSubmit,
+  onUpload,
 }: {
   sheet: Sheet;
   editable: boolean;
   showProgress: boolean;
   saving: boolean;
   onSubmit: () => void;
+  onUpload?: () => void;
 }) {
   const { formatInstantTime, formatRelativeDay } = useSchoolDisplay();
   const locked = isLockedStatus(sheet.status);
@@ -314,9 +328,16 @@ function SheetToolbar({
         {saveState}
       </span>
       {editable && (
-        <Button className="ml-auto" onClick={onSubmit} disabled={!sheet.can_submit || saving}>
-          {submitLabel}
-        </Button>
+        <span className="ml-auto flex flex-wrap gap-2">
+          {onUpload && (
+            <Button variant="outline" onClick={onUpload} disabled={saving}>
+              Upload marks
+            </Button>
+          )}
+          <Button onClick={onSubmit} disabled={!sheet.can_submit || saving}>
+            {submitLabel}
+          </Button>
+        </span>
       )}
     </div>
   );
