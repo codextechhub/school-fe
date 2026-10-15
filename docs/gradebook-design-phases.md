@@ -206,14 +206,17 @@ guide and catalogue route, and its Field Access wiring (end of this section).
 
 Sunrise Academy has `admin@`, `chinedu.okeke@`, `amina.garba@`,
 `tolu.fashola@` and `ngozi.ibekwe@`; it has no branch dimension, no ranking,
-no ratings and no moderation.
+no ratings and no moderation. Its JSS2 A carries the three late reasons that
+name a person, read by `admin@`: Mathematics led by `yetunde.ogunleye@`
+(resigned, so "last working day"), English Language led by `emmanuel.okon@`
+(suspended, so "cannot sign in", with the staff record link), and Civic
+Education with no main teacher. Lagoon View has no free sheet to carry them.
 
 States the seed does **not** reach yet, each to be added to the seeder before
 the phase that needs it:
 
 | Missing state | Needed by |
 |---|---|
-| Late list "cannot sign in", "last working day" and "no main teacher" reasons | Phase 3 |
 | Two published arms of one subject (the analytics compare card) | Phase 8 |
 | An earlier published term (movers, past terms on the Results tab) and a cumulative third-term card | Phases 6 and 8 |
 | Admission numbers on any class but SSS1 B (screens must already cope with a blank one) | every phase; the seeder only numbers the class its upload uses |
@@ -305,9 +308,9 @@ everyone else, which also live at `/gradebook/mine`. Moderation is
 4. Moderation appears in the sidebar only where it applies: to a hub reader at
    a school that moderates a programme, and to a teacher who heads a
    department. A head's duty card on My sheets opens it.
-5. The three missing late reasons were checked against temporary database
-   states and put back; adding them to the seeder is still owed (see the Phase
-   0 table).
+5. The three late reasons that name a person (last working day, cannot sign
+   in, no main teacher) are seeded at Sunrise Academy, JSS2 A (see the Phase 0
+   seed check).
 
 ### Phase 4: broadsheet and compiling
 
