@@ -700,8 +700,7 @@ button:focus-visible .school-mark__pen {
 
   .report-card th,
   .report-card td {
-    padding-top: 2px !important;
-    padding-bottom: 2px !important;
+    padding: 2px 3px !important;
     height: auto !important;
   }
 

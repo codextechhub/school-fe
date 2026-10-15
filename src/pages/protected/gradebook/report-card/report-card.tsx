@@ -16,12 +16,20 @@ import type { CardLine, Cumulative, ReportCard } from "@/redux/services/gradeboo
  * because a held card is printed only for the school's own file.
  *
  * Several cards print one to a page: each is its own page box.
+ *
+ * On the last term of a school year the card carries the year. Each
+ * subject's totals for the earlier terms and its annual average are columns
+ * of the marks table, beside this term's, as school report cards print them,
+ * and the year's own lines (annual average, position, promotion) join this
+ * term's totals. One table rather than two is what keeps a card of fifteen
+ * subjects on one page.
  */
 export function ReportCardSheet({ card, className }: { card: ReportCard; className?: string }) {
   const first = card.subjects[0] ?? {};
   const showCells = card.components.length > 0 && card.subjects.some((subject) => subject.cells);
   const showFigures = "total" in first;
   const showStats = card.subjects.some((subject) => "class_average" in subject);
+  const year = card.cumulative ? yearColumns(card.cumulative) : null;
   const { letterhead } = card;
   const address = [letterhead.branch_name, letterhead.branch_address, letterhead.phone].filter(Boolean).join(" · ");
 
@@ -54,10 +62,10 @@ export function ReportCardSheet({ card, className }: { card: ReportCard; classNa
         ))}
       </dl>
 
-      <Table className="text-[13px]">
+      <Table className="text-[13px] [&_th]:whitespace-normal [&_th]:leading-tight">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[26%] min-w-36">Subject</TableHead>
+            <TableHead className="w-[22%] min-w-36">Subject</TableHead>
             {showCells &&
               card.components.map((component) => (
                 <TableHead key={component.short_name} className="text-center">
@@ -70,6 +78,12 @@ export function ReportCardSheet({ card, className }: { card: ReportCard; classNa
             {showStats && <TableHead className="text-center">Class avg</TableHead>}
             {showStats && <TableHead className="text-center">High</TableHead>}
             {showStats && <TableHead className="text-center">Low</TableHead>}
+            {year?.earlier.map((term) => (
+              <TableHead key={term} className="text-center">
+                {term}
+              </TableHead>
+            ))}
+            {year?.annual && <TableHead className="text-center">Annual avg</TableHead>}
             {showFigures && <TableHead>Remark</TableHead>}
           </TableRow>
         </TableHeader>
@@ -88,13 +102,24 @@ export function ReportCardSheet({ card, className }: { card: ReportCard; classNa
               {showStats && <TableCell className="text-center">{subject.class_average ?? "-"}</TableCell>}
               {showStats && <TableCell className="text-center">{subject.highest ?? "-"}</TableCell>}
               {showStats && <TableCell className="text-center">{subject.lowest ?? "-"}</TableCell>}
+              {year?.earlier.map((term, index) => (
+                <TableCell key={term} className="text-center">
+                  {year.totals(subject.name)[index] || "-"}
+                </TableCell>
+              ))}
+              {year?.annual && <TableCell className="text-center">{year.average(subject.name) ?? "-"}</TableCell>}
               {showFigures && <TableCell>{subject.remark ?? "-"}</TableCell>}
             </TableRow>
           ))}
         </TableBody>
       </Table>
 
-      {card.totals.length > 0 && <Lines lines={card.totals} columns />}
+      {(card.totals.length > 0 || card.cumulative) && (
+        <div className="space-y-1">
+          <Lines lines={[...card.totals, ...(card.cumulative ? yearLines(card.cumulative) : [])]} columns />
+          {card.cumulative?.promotion_line && <p className="text-sm font-semibold">{card.cumulative.promotion_line}</p>}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {card.attendance && (
@@ -113,7 +138,6 @@ export function ReportCardSheet({ card, className }: { card: ReportCard; classNa
         )}
       </div>
 
-      {card.cumulative && <YearBlock cumulative={card.cumulative} />}
 
       {"teacher_comment" in card && (
         <Block title="Class teacher's comment">
@@ -159,7 +183,32 @@ function Lines({ lines, columns = false }: { lines: CardLine[]; columns?: boolea
   );
 }
 
-/** The school year, on the last term's card and Results tab: each subject per term and the annual figures. */
+/**
+ * The columns a last-term card adds to its marks table: each earlier term's
+ * total (this term's is the card's own Total) and the annual average, matched
+ * to the subject by name. A part the reader may not read is absent from the
+ * payload, and its columns are left out.
+ */
+function yearColumns(cumulative: Cumulative) {
+  const bySubject = new Map(cumulative.subjects.map((subject) => [subject.name, subject]));
+  const showsTotals = cumulative.subjects.some((subject) => subject.totals);
+  return {
+    earlier: showsTotals ? cumulative.terms.slice(0, -1) : [],
+    annual: cumulative.subjects.some((subject) => "annual_average" in subject),
+    totals: (name: string) => bySubject.get(name)?.totals ?? [],
+    average: (name: string) => bySubject.get(name)?.annual_average,
+  };
+}
+
+/** The year's own lines on a last-term card, printed with this term's totals. */
+function yearLines(cumulative: Cumulative): CardLine[] {
+  return [
+    ...(cumulative.annual_average ? [{ label: "Annual average", value: cumulative.annual_average }] : []),
+    ...(cumulative.annual_position ? [{ label: "Annual position", value: cumulative.annual_position }] : []),
+  ];
+}
+
+/** The school year on the Results tab: each subject per term and the annual figures. */
 export function YearBlock({ cumulative }: { cumulative: Cumulative }) {
   const showsAnnual = cumulative.subjects.some((subject) => "annual_average" in subject);
   const showsTotals = cumulative.subjects.some((subject) => subject.totals);

@@ -207,6 +207,41 @@ describe("report card", () => {
     }
   });
 
+  it("puts the year beside this term on a last-term card, and its lines with the totals", () => {
+    render(
+      <ReportCardSheet
+        card={{
+          ...card,
+          cumulative: {
+            terms: ["First Term", "Second Term", "Third Term"],
+            subjects: [{ name: "Mathematics", totals: ["22", "24", "29"], annual_average: "25.00" }],
+            annual_average: "40.75",
+            annual_position: "6th of 7",
+            promotion_line: "Promoted to JSS2 A",
+          },
+        }}
+      />,
+    );
+    expect(headers()).toEqual(expect.arrayContaining(["First Term", "Second Term", "Annual avg"]));
+    expect(headers()).not.toContain("Third Term");
+    const maths = Array.from(container.querySelectorAll("tr")).find((tr) => tr.textContent?.startsWith("Mathematics"));
+    expect(maths?.textContent).toContain("2224");
+    expect(maths?.textContent).toContain("25.00");
+    for (const text of ["Annual average", "40.75", "Annual position", "6th of 7", "Promoted to JSS2 A"]) {
+      expect(container.textContent).toContain(text);
+    }
+  });
+
+  it("leaves the year's columns out when the server withheld them", () => {
+    render(
+      <ReportCardSheet
+        card={{ ...card, cumulative: { terms: ["First Term", "Second Term", "Third Term"], subjects: [{ name: "Mathematics" }] } }}
+      />,
+    );
+    expect(headers()).not.toContain("First Term");
+    expect(headers()).not.toContain("Annual avg");
+  });
+
   it("says a held card is held, on screen only", () => {
     render(<ReportCardSheet card={{ ...card, held: true }} />);
     const note = container.querySelector('[role="status"]');
