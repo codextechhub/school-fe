@@ -17,6 +17,13 @@ export default defineConfig({
     // happy-dom provides document.cookie / sessionStorage / localStorage for
     // the auth-session utilities under test.
     environment: "happy-dom",
+    // Node 25 and later put their own `localStorage` on the global object,
+    // undefined without `--localstorage-file`, and happy-dom does not replace
+    // a global that already exists. Turning Node's off leaves happy-dom's.
+    // Only a Node that knows the flag gets it; an older one would refuse to start.
+    execArgv: process.allowedNodeEnvironmentFlags.has("--no-experimental-webstorage")
+      ? ["--no-experimental-webstorage"]
+      : [],
     // Discovery skips node_modules by default; the package lives there now.
     exclude: ["**/dist/**", "**/node_modules/**/node_modules/**"],
     include: [
