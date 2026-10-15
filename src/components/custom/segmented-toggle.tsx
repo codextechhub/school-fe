@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 /**
- * The view switch: Cards / Table, List / Tree.
+ * A compact switch for views and mutually exclusive filters.
  *
  * The highlight SLIDES to what you pressed rather than blinking out of one
  * option and into another. That is not decoration: the block behind the label
@@ -20,6 +20,8 @@ export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
   icon?: React.ElementType;
+  /** A short total shown after the label. */
+  count?: React.ReactNode;
 }
 
 export function SegmentedToggle<T extends string>({
@@ -53,7 +55,6 @@ export function SegmentedToggle<T extends string>({
             type="button"
             onClick={() => onChange(option.value)}
             aria-pressed={active}
-            aria-label={`${option.label} view`}
             className={cn(
               "relative inline-flex items-center gap-1.5 rounded-full px-3 py-1",
               "text-xs whitespace-nowrap transition-colors",
@@ -75,6 +76,11 @@ export function SegmentedToggle<T extends string>({
               <option.icon className="relative z-10 size-3.5" />
             )}
             <span className="relative z-10">{option.label}</span>
+            {option.count !== undefined && (
+              <span className="relative z-10 text-[11px] font-semibold tabular-nums">
+                {option.count}
+              </span>
+            )}
           </button>
         );
       })}

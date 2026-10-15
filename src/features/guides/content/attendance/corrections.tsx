@@ -8,14 +8,15 @@ export default function CorrectionsArticle() {
       </GuideSection>
 
       <GuideSection id="read-the-queue" title="Read the queue">
-        <p><strong>Waiting for a decision</strong> lists each request with the child, the class, the day, the mark it is now and the mark asked for, the reason and note, and who asked. Select the day to open that register, or the child&apos;s name to open their attendance. <strong>Decided</strong> lists the requests already settled, newest first.</p>
+        <p><strong>Pending</strong> lists each waiting request with the child, class and requested mark change. Select a request to keep the queue in place while its full evidence opens beside it. On a phone, the selected review opens below the queue. <strong>Decided</strong> lists the requests already settled, newest first.</p>
+        <p>The search checks only the page you are viewing. Use the page controls to move through the full queue.</p>
       </GuideSection>
 
       <GuideSection id="decide" title="Approve or reject">
         <GuideSteps>
           <GuideStep title="Approve">Changes the mark. The original stays in the register&apos;s history, and a change away from Absent tells the guardian who was emailed that the mark was corrected.</GuideStep>
           <GuideStep title="Reject">Leaves the mark as it is. The request and your decision stay on the student&apos;s record.</GuideStep>
-          <GuideStep title="Add a note">Both ask for an optional note, kept on the student&apos;s record. Use it to say what you saw, such as a hospital card, or why you refused.</GuideStep>
+          <GuideStep title="Add a note">Write an optional decision note in the selected request, then choose Approve or Reject and confirm. The note stays on the student&apos;s record. Use it to say what you saw, such as a hospital card, or why you refused.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="info" title="Your own requests">Nobody decides a correction they asked for. Another administrator decides it.</GuideCallout>
       </GuideSection>

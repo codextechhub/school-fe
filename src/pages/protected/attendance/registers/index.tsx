@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import PageAccessDenied from "@/components/custom/page-access-denied";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { Panel } from "@/components/custom/surface";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
@@ -228,16 +229,25 @@ export default function ClassRegisters() {
                 />
               </label>
               {fieldPolicy.showStatus && (
-                <div className="flex max-w-full overflow-x-auto rounded-lg bg-white-05 p-1" aria-label="Filter registers by status">
-                  <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
-                    All <span>{classes.length}</span>
-                  </FilterButton>
-                  <FilterButton active={filter === "action"} onClick={() => setFilter("action")}>
-                    Needs action <span>{directoryLoading ? "…" : summary.inProgress + summary.notStarted}</span>
-                  </FilterButton>
-                  <FilterButton active={filter === "submitted"} onClick={() => setFilter("submitted")}>
-                    Submitted <span>{directoryLoading ? "…" : summary.submitted}</span>
-                  </FilterButton>
+                <div className="max-w-full overflow-x-auto">
+                  <SegmentedToggle<RegisterDirectoryFilter>
+                    value={filter}
+                    options={[
+                      { value: "all", label: "All", count: classes.length },
+                      {
+                        value: "action",
+                        label: "Needs action",
+                        count: directoryLoading ? "…" : summary.inProgress + summary.notStarted,
+                      },
+                      {
+                        value: "submitted",
+                        label: "Submitted",
+                        count: directoryLoading ? "…" : summary.submitted,
+                      },
+                    ]}
+                    onChange={setFilter}
+                    ariaLabel="Register status filter"
+                  />
                 </div>
               )}
             </div>
@@ -363,29 +373,6 @@ function RegisterSummary({
         );
       })}
     </section>
-  );
-}
-
-function FilterButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-xs font-medium transition-all",
-        active ? "bg-white text-primary shadow-sm" : "text-gray-06 hover:text-black-01",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

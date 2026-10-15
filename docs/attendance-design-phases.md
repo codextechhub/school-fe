@@ -253,9 +253,17 @@ The test submitted JSS2 B (lagoon-view, 12 October 2026).
 
 ### Phase 3: corrections and the student's Attendance tab
 
-- Corrections at `/attendance/corrections`: waiting and decided lists, approve
-  and reject (with the decision note from 2.2 item 4, if approved),
+- Corrections at `/attendance/corrections`: a paginated Pending or Decided
+  queue beside one selected request review, with approve and reject (and the
+  decision note from 2.2 item 4, if writable),
   `CORRECTION_STALE` and `SELF_DECISION` refusals, a requester's own-only view.
+- Correction summary counts use server pagination totals. Approved and rejected
+  counts are described only for the loaded page because the endpoint does not
+  return a global decision split. Search also labels itself as page-only.
+- The correction workspace applies `attendance.correction` Field Access to the
+  recorded mark, requested mark, arrival time, reason, request note, requester,
+  request time, decider, decision time and decision note. A hidden field leaves
+  the queue and review; a read-only decision note is never submitted.
 - Nav badge from `corrections/?status=pending` for approvers.
 - Student profile gains an **Attendance** tab (`?tab=attendance`), gated on
   `attendance.register.view`: term pills from `terms`, five counts, the
