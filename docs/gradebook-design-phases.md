@@ -434,6 +434,12 @@ gradebook. Where it differs from the design:
    leaves held students out and names them above the cards.
 5. Student names on the release list open the student's Results tab, where
    each published term has "Preview and print".
+6. Report cards opens as a release desk with compact class totals, a bounded
+   student list and one focused delivery record. Selecting a student brings
+   their guardian, release state, email outcome and preview action together;
+   the existing individual and class print routes remain the print layers.
+   Guardian facts and email-derived summaries follow their existing Field
+   Access choices, so the redesign adds no API field or new choice.
 
 ### Phase 7: amendments
 

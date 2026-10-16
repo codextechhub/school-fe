@@ -12,13 +12,13 @@ export default function ReportCardsArticle() {
       </GuideSection>
 
       <GuideSection id="read-the-release" title="Read the release">
-        <p>Each student shows their primary guardian, whether the result was released or held, and what became of the email: emailed and when, held with nothing sent, no email on file, or not sent.</p>
+        <p>The release summary shows how many students were released, held and emailed. Select a student to bring their primary guardian, release state, report-card action and email outcome into focus: emailed and when, held with nothing sent, no email on file, or not sent.</p>
         <GuideCallout tone="info" title="What the email says">The email tells the guardian the report card is ready to collect. Nothing from the result is in it: no score, grade, position, comment, attachment or link.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="print" title="Preview and print">
         <GuideSteps>
-          <GuideStep title="One student">Select <strong>Preview</strong> on their row, then <strong>Print this report card</strong>. It prints on one A4 page, black and white.</GuideStep>
+          <GuideStep title="One student">Select the student, then <strong>Preview report card</strong> in the focused panel. <strong>Print this report card</strong> prints one A4 page in black and white.</GuideStep>
           <GuideStep title="The whole class">Select <strong>Print class</strong>. Every released student&apos;s card prints, one to a page. Held students are left out, and the page names them.</GuideStep>
         </GuideSteps>
       </GuideSection>

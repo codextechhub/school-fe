@@ -11,7 +11,7 @@ import type { Release, ReportCard, StudentResults } from "@/redux/services/grade
  *
  * Lagoon View published JSS1 A. Temitope Adegoke was released; Zainab Afolabi
  * is held. Field Access is enforced by the server, which leaves a field out
- * of the payload; these screens must then drop the column, line or block
+ * of the payload; these screens must then drop the fact, line or block
  * rather than print a blank or a zero under its heading.
  */
 let asksCorrections = true;
@@ -141,26 +141,38 @@ const cardLinks = () =>
   new Set(Array.from(container.querySelectorAll('a[href^="/gradebook/report-cards/"]')).map((a) => a.getAttribute("href")));
 const headers = () => Array.from(container.querySelectorAll("th")).map((th) => th.textContent?.trim());
 const render = (node: ReactNode) => act(() => root.render(<MemoryRouter>{node}</MemoryRouter>));
+const selectStudent = async (name: string) => {
+  const button = Array.from(container.querySelectorAll("button")).find((candidate) => candidate.textContent?.includes(name));
+  expect(button).toBeDefined();
+  await act(async () => button!.click());
+};
 
 describe("release list", () => {
-  it("shows each guardian, result and email state, previews released and held cards, and prints the class", () => {
+  it("shows each guardian, result and email state, previews released and held cards, and prints the class", async () => {
     render(<ReleasePage />);
-    expect(headers()).toEqual(["Student", "Primary guardian", "Result", "Email", "Report card"]);
+    expect(container.textContent).toContain("Primary guardian");
+    expect(container.textContent).toContain("Email");
+    expect(container.textContent).toContain("Emailed");
     expect(container.textContent).toContain("No email on file");
     expect(container.textContent).toContain("Held, nothing sent");
-    expect(container.textContent).toContain("1 held, not included");
+    expect(container.textContent).toContain("Not included in class print");
     expect(cardLinks()).toEqual(
-      new Set(["/gradebook/report-cards/82", "/gradebook/report-cards/82/528", "/gradebook/report-cards/82/373"]),
+      new Set(["/gradebook/report-cards/82", "/gradebook/report-cards/82/528"]),
     );
+    await selectStudent("Zainab Afolabi");
+    expect(container.textContent).toContain("Staff preview only");
+    expect(cardLinks()).toEqual(new Set(["/gradebook/report-cards/82", "/gradebook/report-cards/82/373"]));
   });
 
-  it("drops the guardian and email columns when the server leaves them out", () => {
+  it("drops the guardian and email facts when the server leaves them out", () => {
     releaseData = {
       ...release,
       rows: release.rows.map(({ guardian: _g, email_state: _e, emailed_at: _a, ...row }) => row),
     };
     render(<ReleasePage />);
-    expect(headers()).toEqual(["Student", "Result", "Report card"]);
+    expect(container.textContent).not.toContain("Primary guardian");
+    expect(container.textContent).not.toContain("Email");
+    expect(container.textContent).not.toContain("Emailed");
     expect(container.textContent).not.toContain("Mrs. B. Adegoke");
   });
 
@@ -173,7 +185,7 @@ describe("release list", () => {
       rows: release.rows.map((row) => ({ ...row, result_state: "NOT_PUBLISHED", email_state: null })),
     };
     render(<ReleasePage />);
-    expect(container.textContent).toContain("Not published yet, so nothing has been released or sent.");
+    expect(container.textContent).toContain("is not published, so nothing has been released or sent.");
     expect(cardLinks().size).toBe(0);
   });
 });
