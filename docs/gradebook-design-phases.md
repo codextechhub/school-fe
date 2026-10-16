@@ -466,6 +466,14 @@ either amendment key. Where they differ from the design:
    Approve is never offered to the person who asked.
 4. Approvals keeps a line saying how many corrections wait, with a link to
    them, for a reader who decides corrections.
+5. Corrections opens as a compact decision desk. Exact term totals come from
+   the existing paginated status filters, and the shared sliding control moves
+   between all, needs-review, approved and rejected requests. Selecting a row
+   focuses its marks, reason and audit trail; one review drawer keeps Approve
+   and Reject beside the record being judged. The request list is bounded and
+   the focused record stacks below it on phones. No API field or Field Access
+   choice was added: hidden reasons, decision notes, marks and figures still
+   leave their complete sections.
 
 ### Phase 8: analytics and exports
 

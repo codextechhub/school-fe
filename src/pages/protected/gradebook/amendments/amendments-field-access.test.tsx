@@ -74,19 +74,22 @@ let drawerForm: AmendmentForm = form;
 const raise = vi.fn();
 
 vi.mock("@/redux/services/gradebook/gradebook-api", () => ({
-  useGetAmendmentsQuery: () => ({
-    data: {
-      success: true,
-      message: "",
-      pagination: { currentPage: 1, pageSize: 25, totalItems: rows.length, totalPages: 1, next: null, previous: null },
-      data: rows,
-      branch_dimension: false,
-    },
-    isLoading: false,
-    isFetching: false,
-    isError: false,
-    refetch: vi.fn(),
-  }),
+  useGetAmendmentsQuery: (args?: { status?: string }) => {
+    const filtered = args?.status ? rows.filter((row) => row.status === args.status) : rows;
+    return {
+      data: {
+        success: true,
+        message: "",
+        pagination: { currentPage: 1, pageSize: 25, totalItems: filtered.length, totalPages: 1, next: null, previous: null },
+        data: filtered,
+        branch_dimension: false,
+      },
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      refetch: vi.fn(),
+    };
+  },
   useApproveAmendmentMutation: () => [vi.fn(), { isLoading: false }],
   useRejectAmendmentMutation: () => [vi.fn(), { isLoading: false }],
   useGetAmendmentFormQuery: () => ({ data: { data: drawerForm }, isLoading: false, isError: false }),
@@ -123,6 +126,7 @@ const access = (resource: string, hidden: string[], readOnly: string[]) => {
 };
 const labels = () => Array.from(document.body.querySelectorAll("button, a")).map((b) => b.textContent);
 const button = (text: string) => Array.from(document.body.querySelectorAll("button")).find((b) => b.textContent === text);
+const buttonContaining = (text: string) => Array.from(document.body.querySelectorAll("button")).find((b) => b.textContent?.includes(text));
 const type = async (input: HTMLInputElement | HTMLTextAreaElement, value: string) => {
   const proto = input instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
   await act(async () => {
@@ -135,29 +139,47 @@ const renderDrawer = () =>
   act(() => root.render(<CorrectionDrawer target={{ classId: 82, studentId: 381, subjectId: 41 }} onClose={vi.fn()} />));
 
 describe("corrections list", () => {
-  it("shows why, the marks before and after, and offers the decision to the approver", () => {
+  it("shows why, the marks before and after, and opens both decisions for the approver", async () => {
     renderPage();
     expect(container.textContent).toContain("The examination was added up wrongly.");
     expect(container.textContent).toContain("7 · 26 · total 33, F");
     expect(container.textContent).toContain("7 · 36 · total 43, D");
-    expect(labels()).toEqual(expect.arrayContaining(["Approve", "Reject", "View report card"]));
+    expect(labels()).toEqual(expect.arrayContaining(["Review decision", "View report card"]));
+    await act(async () => button("Review decision")!.click());
+    expect(labels()).toEqual(expect.arrayContaining(["Approve correction", "Reject correction"]));
   });
 
   it("offers no decision on a correction the reader asked for, or to a reader without the decide key", () => {
     rows = [{ ...waiting, can_decide: false }];
     renderPage();
-    expect(labels()).not.toContain("Approve");
+    expect(labels()).not.toContain("Review decision");
     rows = [waiting];
     decides = false;
     renderPage();
-    expect(labels()).not.toContain("Approve");
+    expect(labels()).not.toContain("Review decision");
   });
 
-  it("withholds Reject, but not Approve, when the decision note may not be written", () => {
+  it("withholds Reject, but not Approve, when the decision note may not be written", async () => {
     access(FIELD_RESOURCE.GRADEBOOK_AMENDMENT, [], ["decision_note"]);
     renderPage();
-    expect(labels()).not.toContain("Reject");
-    expect(labels()).toContain("Approve");
+    await act(async () => button("Review decision")!.click());
+    expect(labels()).not.toContain("Reject correction");
+    expect(labels()).toContain("Approve correction");
+    expect(document.body.querySelector("textarea")).toBeNull();
+  });
+
+  it("uses the sliding status filter without mixing rows from another state", async () => {
+    rows = [
+      waiting,
+      { ...waiting, id: 8, status: "APPROVED", student: { id: 382, name: "Amina Yusuf", admission_number: "LV/0382" }, can_decide: false },
+    ];
+    renderPage();
+    expect(container.textContent).toContain("Tunde Bello");
+    expect(container.textContent).toContain("Amina Yusuf");
+    await act(async () => buttonContaining("Approved")!.click());
+    expect(container.textContent).not.toContain("Tunde Bello");
+    expect(container.textContent).toContain("Amina Yusuf");
+    expect(buttonContaining("Approved")?.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("drops the reason and the marks the server withheld", () => {

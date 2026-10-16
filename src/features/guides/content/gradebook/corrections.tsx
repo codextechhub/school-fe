@@ -21,7 +21,8 @@ export default function CorrectionsArticle() {
       </GuideSection>
 
       <GuideSection id="decide" title="Approve or reject">
-        <p>Open <strong>Gradebook</strong>, <strong>Corrections</strong>. Each correction shows the marks as published and as corrected, and why. <strong>Approve</strong> takes an optional note; <strong>Reject</strong> needs one.</p>
+        <p>Open <strong>Gradebook</strong>, <strong>Corrections</strong>. The summary and sliding filter separate requests that need review from approved and rejected corrections. Select a request to focus its published marks, requested marks, reason and full decision trail.</p>
+        <p>Select <strong>Review decision</strong>. <strong>Approve correction</strong> takes an optional note; <strong>Reject correction</strong> needs one.</p>
         <p>Approving changes only that student&apos;s report card. It is re-issued as the next version, the published one is kept, and where the result was released the guardian is told an updated report card is ready.</p>
       </GuideSection>
 
