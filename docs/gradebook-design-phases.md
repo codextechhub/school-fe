@@ -295,7 +295,11 @@ the design:
    shared academics drawer.
 6. Who takes what lives at `/gradebook/who-takes-what?class=`. Its classes are
    the results hub's for a hub reader, otherwise the class the reader leads;
-   each tick saves alone, and removing a student with marks is refused.
+   each change saves alone, and removing a student with marks is refused. The
+   allocation board opens by student, can turn to a subject-led view, and keeps
+   students without any optional subject in their own sliding view. Selecting
+   a row focuses the complete choice list beside it on desktop and below it on
+   phones.
 
 ### Phase 3: results hub, reminders and moderation
 

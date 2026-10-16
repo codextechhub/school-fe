@@ -11,10 +11,12 @@ export default function WhoTakesWhatArticle() {
         ]} />
       </GuideSection>
 
-      <GuideSection id="tick-the-grid" title="Tick the grid">
+      <GuideSection id="record-choices" title="Record the choices">
         <GuideSteps>
           <GuideStep title="Open it">Open <strong>Gradebook</strong>, then <strong>Who takes what</strong>. An administrator chooses the class at the top; a class teacher sees the class they lead.</GuideStep>
-          <GuideStep title="Tick">Each column is a subject that is not core, with how many students take it. Tick a box to put a student on the subject, untick it to take them off. Each tick is saved as you make it.</GuideStep>
+          <GuideStep title="Start with Students">Choose a student to see every optional subject for the class. Tick a subject to put the student on it, or untick it to take them off. Each change is saved immediately.</GuideStep>
+          <GuideStep title="Review by subject">Switch to <strong>Subjects</strong> to choose one subject and review the full class against it.</GuideStep>
+          <GuideStep title="Find missing choices">Switch to <strong>No choices yet</strong> to see students who are not recorded against any optional subject.</GuideStep>
         </GuideSteps>
       </GuideSection>
 
@@ -24,7 +26,7 @@ export default function WhoTakesWhatArticle() {
 
       <GuideSection id="common-problems" title="Common problems">
         <GuideSteps>
-          <GuideStep title="The boxes cannot be ticked">You are not the class teacher, or an administrator for its branch. The line above the grid says so.</GuideStep>
+          <GuideStep title="The boxes cannot be changed">You are not the class teacher, or an administrator for its branch. The line above the board says so.</GuideStep>
           <GuideStep title="A subject is missing">It is core at the class&apos;s level, so everybody takes it, or it is not offered at that level.</GuideStep>
           <GuideStep title="No class to set">You do not lead a class this term.</GuideStep>
         </GuideSteps>
