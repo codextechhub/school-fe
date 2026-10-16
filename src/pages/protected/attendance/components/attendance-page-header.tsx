@@ -1,10 +1,13 @@
+import { PageHeader } from "@/components/layout/page-header";
+
 /**
  * Shared heading for Attendance pages.
  *
- * The heading keeps the title, purpose, scope, and date controls in a stable
- * order. Its title matches the other directory and worklist pages. Actions
- * wrap below the title on narrow screens, so a long branch or date never
- * stretches the page beyond the viewport.
+ * Draws through `PageHeader`, so its size matches every other menu screen.
+ * The purpose line comes first and the scope line (branch, date range,
+ * provenance) sits under it as a second line, with empty entries dropped.
+ * Actions wrap below the title on narrow screens, so a long branch or date
+ * never stretches the page beyond the viewport.
  */
 export function AttendancePageHeader({
   title,
@@ -20,15 +23,17 @@ export function AttendancePageHeader({
   const detail = meta.filter(Boolean).join(" · ");
 
   return (
-    <header className="flex min-w-0 flex-wrap items-start justify-between gap-4">
-      <div className="min-w-0 max-w-3xl">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-          {title}
-        </h1>
-        {description && <p className="mt-1 text-sm text-gray-06">{description}</p>}
-        {detail && <p className="mt-1 text-xs text-gray-05">{detail}</p>}
-      </div>
-      {actions && <div className="flex max-w-full flex-wrap items-center gap-2">{actions}</div>}
-    </header>
+    <PageHeader
+      title={title}
+      description={
+        description || detail ? (
+          <>
+            {description}
+            {detail && <span className={description ? "mt-0.5 block" : "block"}>{detail}</span>}
+          </>
+        ) : undefined
+      }
+      actions={actions}
+    />
   );
 }

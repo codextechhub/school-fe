@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Stamp } from "lucide-react";
 
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,20 +78,17 @@ export default function ApprovalsPage() {
 
   return (
     <PageShell className="content-start gap-4" grid>
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">Approvals and publishing</h1>
-          <p className="text-sm text-gray-06">
-            Compiled classes waiting on the principal. Publishing locks the results; a change after that is an
-            amendment.
-          </p>
-        </div>
-        {offersBatch && (
-          <Button disabled={chosen.length === 0} onClick={() => setPublishing(chosen)}>
-            {chosen.length > 1 ? `Publish ${chosen.length} classes` : "Publish the ticked class"}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Approvals and publishing"
+        description="Compiled classes waiting on the principal. Publishing locks the results; a change after that is an amendment."
+        actions={
+          offersBatch ? (
+            <Button disabled={chosen.length === 0} onClick={() => setPublishing(chosen)}>
+              {chosen.length > 1 ? `Publish ${chosen.length} classes` : "Publish the ticked class"}
+            </Button>
+          ) : undefined
+        }
+      />
 
       {decidesCorrections && corrections > 0 && (
         <p role="status" className="flex flex-wrap items-center gap-2 rounded-md border border-border bg-white px-4 py-3 text-sm text-black-01">

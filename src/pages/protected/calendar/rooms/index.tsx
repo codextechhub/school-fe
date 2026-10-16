@@ -24,6 +24,7 @@ import { blankRoom, roomDraftFrom } from "../components/room-draft";
 import { RoomFilters } from "./room-filters";
 import { BLANK_ROOM_FACETS, type RoomFacets } from "./room-facets";
 import { RoomDirectory } from "./room-directory";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
 
@@ -138,28 +139,24 @@ export default function Rooms() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            Rooms
-          </h1>
-          <p className="mt-1 text-sm text-gray-01">
-            Manage the spaces used for lessons and examinations.
-          </p>
-        </div>
-        <PermissionGate
-          permission={P.CREATE_TIMETABLE_ENTRY}
-          disabled={readOnlyYear}
-        >
-          <Button
-            className="shrink-0 text-sm"
-            onClick={() => open(null)}
-            disabled={!canCreate}
+      <PageHeader
+        title="Rooms"
+        description="Manage the spaces used for lessons and examinations."
+        actions={
+          <PermissionGate
+            permission={P.CREATE_TIMETABLE_ENTRY}
+            disabled={readOnlyYear}
           >
-            <Plus /> Add room
-          </Button>
-        </PermissionGate>
-      </div>
+            <Button
+              className="shrink-0 text-sm"
+              onClick={() => open(null)}
+              disabled={!canCreate}
+            >
+              <Plus /> Add room
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       <Panel as="section" className="p-4 sm:p-5">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">

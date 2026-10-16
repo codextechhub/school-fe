@@ -13,6 +13,7 @@ import KpiCard from "@/components/custom/kpi-card";
 import PermissionGate from "@/components/custom/permission-gate";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { Panel as Surface } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -115,16 +116,14 @@ export default function TeachingDuties() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-          Teaching duties
-        </h1>
-        <p className="mt-1 max-w-3xl text-sm text-gray-01">
-          {summaryQuery.data
+      <PageHeader
+        title="Teaching duties"
+        description={
+          summaryQuery.data
             ? `See who teaches every class subject in ${summaryQuery.data.session.name}, set class teachers, and follow timetable clashes.`
-            : "See who teaches every class subject, set class teachers, and follow timetable clashes."}
-        </p>
-      </div>
+            : "See who teaches every class subject, set class teachers, and follow timetable clashes."
+        }
+      />
 
       <div
         data-guide="staff-teaching.summary"

@@ -51,6 +51,7 @@ import {
 } from "./components/onboarding-chips";
 import { OutlinedNotice } from "./components/outlined-notice";
 import { PageShell } from "@/components/layout/page-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 
@@ -175,15 +176,10 @@ function GoLive({ state }: { state: OnboardingState }) {
 
   return (
     <PageShell className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold font-mont text-black-01">
-          Going live
-        </h2>
-        <p className="mt-1 text-sm text-gray-01 max-w-[70ch] text-pretty">
-          When your required steps are done you can ask XVS to take your school
-          live. XVS reviews every request by hand.
-        </p>
-      </div>
+      <PageHeader
+        title="Going live"
+        description="When your required steps are done you can ask XVS to take your school live. XVS reviews every request by hand."
+      />
 
       <GateCard state={state} titleOf={titleOf} latest={latest} />
 

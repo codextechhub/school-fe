@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Panel } from "@/components/custom/surface";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { routesPath } from "@/routes/routesPath";
 import { useBranchLens } from "@/hooks/use-branch-lens";
@@ -594,16 +595,14 @@ export default function EnrolStudent() {
 
   return (
     <PageShell className="content-start gap-6 pb-24" grid>
-      <div className="min-w-0">
-        <h2 className="text-lg font-semibold text-black-01">
-          {asApplicant ? "Save an applicant" : "Enrol a student"}
-        </h2>
-        <p className="mt-1 text-sm text-gray-01">
-          {asApplicant
+      <PageHeader
+        title={asApplicant ? "Save an applicant" : "Enrol a student"}
+        description={
+          asApplicant
             ? "An applicant is on nobody's register yet. They take no seat, and they are confirmed onto the roll once the school decides."
-            : "A student joins the roll and takes a seat in a class today."}
-        </p>
-      </div>
+            : "A student joins the roll and takes a seat in a class today."
+        }
+      />
 
       {/* The choice, said rather than implied.
           Two unlabelled pills asked the reader to work out that they were

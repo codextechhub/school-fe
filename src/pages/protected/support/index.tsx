@@ -4,6 +4,7 @@ import { Headset, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import CustomTable from "@/components/custom/custom-table";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import Tabs from "@/components/custom/tab";
 import { useDebounce } from "@/hooks/use-debounce";
@@ -78,20 +79,18 @@ export default function SupportDesk() {
 
   return (
     <PageShell className="space-y-5 text-black-01">
-      <div data-guide="support.heading" className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-semibold font-mont text-black-01">Support</p>
-          <p className="mt-0.5 text-xs text-gray-01">
-            Issues raised at your school. Anything you cannot solve here can be
-            sent to XVS.
-          </p>
-        </div>
-        {/* The same panel the headset opens, so there is one form and not two. */}
-        <Button className="h-10" onClick={() => requestSupportOpen()}>
-          <Plus className="size-4" />
-          Raise an issue
-        </Button>
-      </div>
+      <PageHeader
+        data-guide="support.heading"
+        title="Support"
+        description="Issues raised at your school. Anything you cannot solve here can be sent to XVS."
+        actions={
+          // The same panel the headset opens, so there is one form.
+          <Button className="h-10" onClick={() => requestSupportOpen()}>
+            <Plus className="size-4" />
+            Raise an issue
+          </Button>
+        }
+      />
 
       <div data-guide="support.filters" className="flex flex-wrap items-center justify-between gap-3">
         {/* The same switcher the rest of the app uses, so a filter behaves the

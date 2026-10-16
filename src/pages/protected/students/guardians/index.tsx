@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Link2, Search, Users, UsersRound } from "lucide-react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Panel } from "@/components/custom/surface";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +33,10 @@ import { CheckNamePill, FooterLead, PersonCard, SiblingsPill } from "./person-ca
  * "Names to check" narrows the list to guardians whose name the platform split
  * from one line and nobody has confirmed yet; each carries a CHECK NAME pill,
  * and its page opens the confirmation.
+ *
+ * A guardian carries no branch of their own, so a narrowed list says whose
+ * students it follows rather than letting a shorter list look like a smaller
+ * school.
  */
 export default function Guardians() {
   const navigate = useNavigate();
@@ -75,19 +80,16 @@ export default function Guardians() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-          Guardians
-        </h1>
-        <p className="mt-1 text-sm text-gray-01">
-          The people your school calls, with students grouped under each
-          guardian.
-          {/* A guardian carries no branch of their own, so say what the
-              narrowing actually means rather than letting a shorter list look
-              like a smaller school. */}
-          {narrowed ? ` Showing the guardians of ${label}'s students.` : ""}
-        </p>
-      </div>
+      <PageHeader
+        title="Guardians"
+        description={
+          <>
+            The people your school calls, with students grouped under each
+            guardian.
+            {narrowed ? ` Showing the guardians of ${label}'s students.` : ""}
+          </>
+        }
+      />
 
       <div className="grid gap-3 md:grid-cols-[minmax(13rem,0.75fr)_minmax(0,1.6fr)]">
         <Panel as="section" className="flex items-center gap-3 rounded-xl p-4 sm:p-5">

@@ -49,6 +49,7 @@ import type {
 import { ReceivablesTab } from "@/pages/protected/finance/dashboard-receivables";
 import { SpendTab } from "@/pages/protected/finance/dashboard-spend";
 import { PageShell } from "@/components/layout/page-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { NoEntityState } from "@/components/finance-ui/no-entity-state";
 import { toArray } from "@/redux/services/finance/api-types";
 import { collectedLabel, dashboardWords } from "@/pages/protected/finance/dashboard-words";
@@ -194,49 +195,49 @@ export default function FinanceDashboard() {
   return (
     <FinanceShell>
       <PageShell className="finance-dashboard space-y-5 text-black-01" data-guide="finance-overview.page">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h1 className="font-mont text-lg font-semibold text-gray-01">Finance overview</h1>
-              <InfoHint ariaLabel="About Finance overview">
-                A view of these books built from what you may read. Each card appears only when you hold access to the figures behind it. The switch at the top changes the collection figures; everything else is as of the date shown.
-              </InfoHint>
-            </div>
-            <p className="mt-0.5 font-mont text-xs text-gray-05">
-              {head ? [head.window?.name, head.as_of ? `as of ${fmtDate(head.as_of)}` : null, head.narrowed ? "your branches only" : null]
-                .filter(Boolean).join(" · ") : "-"}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {windowTabs.length > 1 && (
-              <TabStrip items={windowTabs} value={head?.window.key ?? windowTabs[0].value}
-                onChange={(w) => setPicked({ entity: entity!, period, window: w })}
-                variant="pill-compact" ariaLabel="Figures for" />
-            )}
-            {periods.length > 0 && (
-              <select value={period} aria-label="As of period"
-                onChange={(e) => setPicked({ entity: entity!, period: e.target.value, window: windowKey })}
-                className="h-8 rounded-md border border-white-02 bg-white px-2 font-mont text-xs font-medium text-gray-01">
-                <option value="">Today</option>
-                {periods.map((p) => (
-                  <option key={p.id} value={p.period_no}>End of {p.name}</option>
-                ))}
-              </select>
-            )}
-            {canRecordPayment && (
-              <button onClick={() => navigate(F.RECORD_PAYMENT)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-white px-3 font-mont text-xs font-semibold text-primary hover:bg-primary/5">
-                <ReceiptText className="size-3.5" /> Record receipt
-              </button>
-            )}
-            {canCreateInvoice && (
-              <button onClick={() => navigate(`${F.RECEIVABLES}/invoices?action=new`)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-mont text-xs font-semibold text-white hover:bg-primary/90">
-                <Plus className="size-3.5" /> New invoice
-              </button>
-            )}
-          </div>
-        </div>
+        <PageHeader
+          title="Finance overview"
+          titleAside={
+            <InfoHint ariaLabel="About Finance overview">
+              A view of these books built from what you may read. Each card appears only when you hold access to the figures behind it. The switch at the top changes the collection figures; everything else is as of the date shown.
+            </InfoHint>
+          }
+          description={
+            head ? [head.window?.name, head.as_of ? `as of ${fmtDate(head.as_of)}` : null, head.narrowed ? "your branches only" : null]
+              .filter(Boolean).join(" · ") : "-"
+          }
+          actions={
+            <>
+              {windowTabs.length > 1 && (
+                <TabStrip items={windowTabs} value={head?.window.key ?? windowTabs[0].value}
+                  onChange={(w) => setPicked({ entity: entity!, period, window: w })}
+                  variant="pill-compact" ariaLabel="Figures for" />
+              )}
+              {periods.length > 0 && (
+                <select value={period} aria-label="As of period"
+                  onChange={(e) => setPicked({ entity: entity!, period: e.target.value, window: windowKey })}
+                  className="h-8 rounded-md border border-white-02 bg-white px-2 font-mont text-xs font-medium text-gray-01">
+                  <option value="">Today</option>
+                  {periods.map((p) => (
+                    <option key={p.id} value={p.period_no}>End of {p.name}</option>
+                  ))}
+                </select>
+              )}
+              {canRecordPayment && (
+                <button onClick={() => navigate(F.RECORD_PAYMENT)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-white px-3 font-mont text-xs font-semibold text-primary hover:bg-primary/5">
+                  <ReceiptText className="size-3.5" /> Record receipt
+                </button>
+              )}
+              {canCreateInvoice && (
+                <button onClick={() => navigate(`${F.RECEIVABLES}/invoices?action=new`)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-mont text-xs font-semibold text-white hover:bg-primary/90">
+                  <Plus className="size-3.5" /> New invoice
+                </button>
+              )}
+            </>
+          }
+        />
 
         {viewTabs.length > 1 && (
           <TabStrip items={viewTabs} value={tab} onChange={showView} variant="pill-full"

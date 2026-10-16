@@ -3,6 +3,7 @@ import { FileText, Printer } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,29 +151,33 @@ function ReleaseBody({ release }: { release: Release }) {
 
   return (
     <>
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">Report cards and release · {release.class.name}</h1>
-          <p className="text-sm text-gray-06">
+      <PageHeader
+        title={`Report cards and release · ${release.class.name}`}
+        description={
+          <>
             {published
               ? `Published ${release.published_at ? formatDate(release.published_at) : ""} · ${release.class_size} students`
               : "Not published yet, so nothing has been released or sent."}
-          </p>
-          {release.held_count > 0 && (
-            <Badge variant="pending" className="mt-2 rounded-full">
-              {release.held_count} held, not included
-            </Badge>
-          )}
-        </div>
-        {published && (
-          <Button variant="outline" asChild>
-            <Link to={routesPath.PROTECTED.GRADEBOOK.CLASS_CARDS_ID(release.class.id)}>
-              <Printer className="size-4" aria-hidden="true" />
-              Print class
-            </Link>
-          </Button>
-        )}
-      </div>
+            {release.held_count > 0 && (
+              <span className="mt-1.5 block">
+                <Badge variant="pending" className="rounded-full">
+                  {release.held_count} held, not included
+                </Badge>
+              </span>
+            )}
+          </>
+        }
+        actions={
+          published ? (
+            <Button variant="outline" asChild>
+              <Link to={routesPath.PROTECTED.GRADEBOOK.CLASS_CARDS_ID(release.class.id)}>
+                <Printer className="size-4" aria-hidden="true" />
+                Print class
+              </Link>
+            </Button>
+          ) : undefined
+        }
+      />
 
       <Panel as="section" className="min-w-0">
         <CustomTable

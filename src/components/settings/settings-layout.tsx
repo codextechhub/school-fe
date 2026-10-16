@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ElementType, type ReactNode, type Ref
 import { ArrowRight, CheckCircle2, ChevronDown, CircleDashed, History, LockKeyhole } from "lucide-react";
 import { Link } from "react-router";
 import { PageShell } from "@/components/layout/page-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -322,21 +323,20 @@ export function ConsoleSettingsLayout({
 
   return (
     <PageShell className="space-y-5 px-4.5 pb-6 pt-14 text-black-01 sm:py-6">
-      <div data-guide={guideTargetPrefix ? `${guideTargetPrefix}.heading` : undefined} className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5">
-            <h1 className="font-mont text-xl font-semibold text-gray-01">{title}</h1>
-            {titleHelp}
-          </div>
-          <p className="mt-1 max-w-3xl font-mont text-xs leading-5 text-gray-05">{description}</p>
-        </div>
-        {scopeLabel ? (
-          <Badge variant="outline" className="max-w-full gap-1.5 px-2.5 py-1 font-mont text-xs">
-            <span className="size-1.5 shrink-0 rounded-full bg-green-01" />
-            <span className="truncate">{scopeLabel}</span>
-          </Badge>
-        ) : null}
-      </div>
+      <PageHeader
+        data-guide={guideTargetPrefix ? `${guideTargetPrefix}.heading` : undefined}
+        title={title}
+        titleAside={titleHelp}
+        description={description}
+        actions={
+          scopeLabel ? (
+            <Badge variant="outline" className="max-w-full gap-1.5 px-2.5 py-1 font-mont text-xs">
+              <span className="size-1.5 shrink-0 rounded-full bg-green-01" />
+              <span className="truncate">{scopeLabel}</span>
+            </Badge>
+          ) : null
+        }
+      />
 
       <div
         ref={boxRef}
@@ -420,12 +420,19 @@ function RailLink({
   );
 }
 
+/**
+ * The heading of the open settings section.
+ *
+ * It is the section's content header, so it matches `PageHeader` in size and
+ * colour: a 16px semi-bold title over a 12px grey description. It stays an
+ * `<h2>` because the console's own title above it is the page's `<h1>`.
+ */
 export function SettingsSectionHeader({ title, description, action }: { title: string; description: string; action?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h2 className="font-mont text-base font-semibold text-gray-01">{title}</h2>
-        <p className="mt-1 max-w-2xl font-mont text-xs leading-5 text-gray-05">{description}</p>
+      <div className="min-w-0">
+        <h2 className="break-words font-mont font-semibold text-black-01">{title}</h2>
+        <p className="mt-0.5 text-xs text-gray-01">{description}</p>
       </div>
       {action}
     </div>

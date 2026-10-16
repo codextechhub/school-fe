@@ -1,6 +1,7 @@
 import { useParams, useSearchParams } from "react-router";
 import { FileText, Printer } from "lucide-react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -63,22 +64,23 @@ export default function ClassCardsPage() {
         <Skeleton className="mx-auto h-[70vh] w-full max-w-[210mm] rounded-md" />
       ) : (
         <>
-          <div className="print-hide flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <h1 className="font-mont text-lg font-semibold text-black-01">
-                {cards.class.name} · {cards.term.name}
-              </h1>
-              <p className="text-sm text-gray-06">
+          <PageHeader
+            className="print-hide"
+            title={`${cards.class.name} · ${cards.term.name}`}
+            description={
+              <>
                 {cards.cards.length} report card{cards.cards.length === 1 ? "" : "s"}, one to a page.
                 {cards.left_out_count > 0 &&
                   ` Left out: ${cards.left_out.map((item) => `${item.student.name} (${WHY[item.reason]})`).join(", ")}.`}
-              </p>
-            </div>
-            <Button disabled={cards.cards.length === 0} onClick={() => window.print()}>
-              <Printer className="size-4" aria-hidden="true" />
-              Print the class
-            </Button>
-          </div>
+              </>
+            }
+            actions={
+              <Button disabled={cards.cards.length === 0} onClick={() => window.print()}>
+                <Printer className="size-4" aria-hidden="true" />
+                Print the class
+              </Button>
+            }
+          />
           {cards.cards.length === 0 ? (
             <OutlinedNotice
               icon={FileText}

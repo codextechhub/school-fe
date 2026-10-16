@@ -34,6 +34,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { SearchSelect } from "@/components/custom/search-select";
 import { P } from "@/permissions";
@@ -394,22 +395,24 @@ export default function OrganogramPage() {
   return (
     <>
       <PageShell className="space-y-5 text-black-01">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="font-mont font-semibold text-gray-01">Organogram</p>
-            <p className="mt-0.5 text-xs text-gray-01">Who reports to whom across the school</p>
-          </div>
-          <div className="flex w-full min-w-0 flex-wrap items-center gap-2 sm:w-auto">
-            <OrgSearch positions={positions} onJumpUser={jumpToUser} onJumpPosition={jumpToPosition} />
-            {canManage && (
-              <Button asChild variant="outline" size="sm">
-                <Link to={routesPath.PROTECTED.STAFF.ORGANOGRAM_MANAGE}>
-                  <Settings2 className="size-3.5" /> Manage
-                </Link>
-              </Button>
-            )}
-          </div>
-        </div>
+        {/* Actions take the full width on a phone so the search box can. */}
+        <PageHeader
+          className="[&>:last-child]:w-full sm:[&>:last-child]:w-auto"
+          title="Organogram"
+          description="Who reports to whom across the school"
+          actions={
+            <>
+              <OrgSearch positions={positions} onJumpUser={jumpToUser} onJumpPosition={jumpToPosition} />
+              {canManage && (
+                <Button asChild variant="outline" size="sm">
+                  <Link to={routesPath.PROTECTED.STAFF.ORGANOGRAM_MANAGE}>
+                    <Settings2 className="size-3.5" /> Manage
+                  </Link>
+                </Button>
+              )}
+            </>
+          }
+        />
 
         {canViewSummary && summary && (
           <div className="grid grid-cols-2 gap-y-2 sm:flex sm:flex-wrap sm:items-center sm:divide-x sm:divide-white-02">

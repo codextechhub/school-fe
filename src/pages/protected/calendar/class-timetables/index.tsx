@@ -59,6 +59,7 @@ import {
 import { DuplicateDrawer } from "../components/duplicate-drawer";
 import { ExportButton } from "@/components/custom/export-button";
 import { ClassPicker } from "./class-picker";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { canManageRow } from "@/lib/can-manage";
 
@@ -316,58 +317,60 @@ export default function ClassTimetables() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="print-hide flex flex-wrap items-start justify-between gap-3">
-        <PageHeading />
-        <div data-guide="class-timetable.actions" className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            className="text-sm"
-            onClick={() => window.print()}
-          >
-            <Printer className="size-4" /> Print
-          </Button>
-          {/* Print serves the noticeboard workflow while export serves the
-              spreadsheet workflow and keeps its independent permission. */}
-          <ExportButton
-            screen="calendar.timetable"
-            params={{
-              school_class: current ?? undefined,
-              branch: currentRow?.branch ?? undefined,
-            }}
-          />
-          {canEdit && (
+      <PageHeading
+        className="print-hide"
+        actions={
+          <div data-guide="class-timetable.actions" className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               className="text-sm"
-              onClick={() => setDupOpen(true)}
+              onClick={() => window.print()}
             >
-              <Copy className="size-4" /> Duplicate from…
+              <Printer className="size-4" /> Print
             </Button>
-          )}
-          {canManage && (grid?.filled ?? 0) > 0 && (
-            <Button
-              variant="outline"
-              className="text-sm text-error-text"
-              onClick={() => setConfirm("clear")}
+            {/* Print serves the noticeboard workflow while export serves the
+                spreadsheet workflow and keeps its independent permission. */}
+            <ExportButton
+              screen="calendar.timetable"
+              params={{
+                school_class: current ?? undefined,
+                branch: currentRow?.branch ?? undefined,
+              }}
+            />
+            {canEdit && (
+              <Button
+                variant="outline"
+                className="text-sm"
+                onClick={() => setDupOpen(true)}
+              >
+                <Copy className="size-4" /> Duplicate from…
+              </Button>
+            )}
+            {canManage && (grid?.filled ?? 0) > 0 && (
+              <Button
+                variant="outline"
+                className="text-sm text-error-text"
+                onClick={() => setConfirm("clear")}
+              >
+                <Eraser className="size-4" /> Clear
+              </Button>
+            )}
+            <PermissionGate
+              permission={P.PUBLISH_TIMETABLE}
+              disabled={readOnlyYear}
             >
-              <Eraser className="size-4" /> Clear
-            </Button>
-          )}
-          <PermissionGate
-            permission={P.PUBLISH_TIMETABLE}
-            disabled={readOnlyYear}
-          >
-            <Button
-              className="text-sm"
-              onClick={runPublish}
-              disabled={!canPublish || publishing}
-            >
-              <Send className="size-4" />
-              {published ? "Republish" : "Publish"}
-            </Button>
-          </PermissionGate>
-        </div>
-      </div>
+              <Button
+                className="text-sm"
+                onClick={runPublish}
+                disabled={!canPublish || publishing}
+              >
+                <Send className="size-4" />
+                {published ? "Republish" : "Publish"}
+              </Button>
+            </PermissionGate>
+          </div>
+        }
+      />
 
       <div data-guide="class-timetable.class-bar" className="print-hide flex flex-wrap items-center justify-between gap-3">
         <ClassPicker classes={classes} current={current} onPick={setClassId} />
@@ -554,15 +557,19 @@ export default function ClassTimetables() {
   );
 }
 
-function PageHeading() {
+function PageHeading({
+  actions,
+  className,
+}: {
+  actions?: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="min-w-0">
-      <h1 className="font-mont text-lg font-semibold text-black-01">
-        Class Timetables
-      </h1>
-      <p className="mt-1 text-sm text-gray-06 text-pretty">
-        Build each class's week, resolve clashes, then publish it.
-      </p>
-    </div>
+    <PageHeader
+      title="Class Timetables"
+      description="Build each class's week, resolve clashes, then publish it."
+      actions={actions}
+      className={className}
+    />
   );
 }

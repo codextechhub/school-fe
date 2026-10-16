@@ -64,6 +64,7 @@ import {
   NO_FILTERS,
   type PaperFilters,
 } from "./paper-filters";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { canManageRow } from "@/lib/can-manage";
 
@@ -247,50 +248,53 @@ export default function ExamScheduling() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="print-hide flex flex-wrap items-start justify-between gap-3">
-        <PageHeading periodName={exam.name} />
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            className="text-sm"
-            onClick={() => window.print()}
-          >
-            <Printer className="size-4" /> Print
-          </Button>
-          <ExportButton
-            screen="calendar.exam_papers"
-            params={{ branch: lens.branch === "all" ? undefined : lens.branch }}
-          />
-          <PermissionGate
-            permission={P.CREATE_EXAM}
-            disabled={readOnlyYear}
-          >
+      <PageHeading
+        periodName={exam.name}
+        className="print-hide"
+        actions={
+          <>
             <Button
               variant="outline"
               className="text-sm"
-              disabled={!canCreate || published}
-              onClick={() =>
-                setPaper({ values: blankPaper(exam.start_date), slot: null })
-              }
+              onClick={() => window.print()}
             >
-              <Plus className="size-4" /> Add paper
+              <Printer className="size-4" /> Print
             </Button>
-          </PermissionGate>
-          <PermissionGate
-            permission={P.PUBLISH_EXAM_TIMETABLE}
-            disabled={readOnlyYear}
-          >
-            <Button
-              className="text-sm"
-              onClick={runPublish}
-              disabled={!canPublish || !canManageRow(exam) || publishing || published}
+            <ExportButton
+              screen="calendar.exam_papers"
+              params={{ branch: lens.branch === "all" ? undefined : lens.branch }}
+            />
+            <PermissionGate
+              permission={P.CREATE_EXAM}
+              disabled={readOnlyYear}
             >
-              <Send className="size-4" />
-              {published ? "Published" : "Publish"}
-            </Button>
-          </PermissionGate>
-        </div>
-      </div>
+              <Button
+                variant="outline"
+                className="text-sm"
+                disabled={!canCreate || published}
+                onClick={() =>
+                  setPaper({ values: blankPaper(exam.start_date), slot: null })
+                }
+              >
+                <Plus className="size-4" /> Add paper
+              </Button>
+            </PermissionGate>
+            <PermissionGate
+              permission={P.PUBLISH_EXAM_TIMETABLE}
+              disabled={readOnlyYear}
+            >
+              <Button
+                className="text-sm"
+                onClick={runPublish}
+                disabled={!canPublish || !canManageRow(exam) || publishing || published}
+              >
+                <Send className="size-4" />
+                {published ? "Published" : "Publish"}
+              </Button>
+            </PermissionGate>
+          </>
+        }
+      />
 
       {exams.length > 1 ? (
         <div className="print-hide flex flex-wrap items-center justify-between gap-3">
@@ -554,18 +558,26 @@ export default function ExamScheduling() {
   );
 }
 
-function PageHeading({ periodName }: { periodName?: string }) {
+function PageHeading({
+  periodName,
+  actions,
+  className,
+}: {
+  periodName?: string;
+  actions?: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="min-w-0">
-      <h1 className="font-mont text-lg font-semibold text-black-01">
-        Exam Scheduling
-      </h1>
-      <p className="mt-1 text-sm text-gray-06 text-pretty">
-        {periodName
+    <PageHeader
+      title="Exam Scheduling"
+      description={
+        periodName
           ? `Papers placed inside ${periodName}.`
-          : "Build and publish the papers inside each dated exam period."}
-      </p>
-    </div>
+          : "Build and publish the papers inside each dated exam period."
+      }
+      actions={actions}
+      className={className}
+    />
   );
 }
 

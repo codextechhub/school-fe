@@ -238,6 +238,17 @@ are kept in step - a fix to one of them belongs in both:
   width is sized to its min-content - so one nowrap table drags the whole page
   off the right of the screen. **There is therefore no `grid` class to pass:
   there is a `grid` prop, and it always emits `grid grid-cols-1 min-w-0`.**
+- **Every menu screen's heading is `PageHeader`**
+  (`src/components/layout/page-header.tsx`): the page's `<h1>`, a one-line
+  description, an optional `titleAside` (an `InfoHint`, a pill) and `actions`
+  on the right. It is the Support screen's size, 16px title over a 12px grey
+  description, and a page never sets its own heading size. The shared
+  `@xvs/finance` screens import it from the host the same way they take
+  `PageShell`, so they match too, and console-fe supplies its own with the
+  same props. A test fails on any raw `<h1>` in a page that is not on its
+  exempt list. The exempt ones are deliberate: hero banners (the dashboard
+  greeting, the guides) and record headers that carry a person's or a
+  record's name.
 - **Scrolling boxes use `ScrollArea`** (`src/components/ui/scroll-area.tsx`),
   not `overflow-y-auto` on the box itself. A native scrollbar takes its width
   out of the element, so a table shifts its columns the moment it becomes

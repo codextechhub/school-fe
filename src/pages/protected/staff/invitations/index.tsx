@@ -16,6 +16,7 @@ import KpiCard from "@/components/custom/kpi-card";
 import PermissionGate from "@/components/custom/permission-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { cn } from "@/lib/utils";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -256,20 +257,18 @@ export default function StaffInvitations() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            Invitations
-          </h1>
-          <p className="mt-1 text-sm text-gray-01">{summary}</p>
-        </div>
-        <PermissionGate permission={P.INVITE_TEACHER}>
-          <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
-            <UserPlus className="size-4" />
-            Add staff
-          </Button>
-        </PermissionGate>
-      </div>
+      <PageHeader
+        title="Invitations"
+        description={summary}
+        actions={
+          <PermissionGate permission={P.INVITE_TEACHER}>
+            <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
+              <UserPlus className="size-4" />
+              Add staff
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       {tabs.length > 1 && (
         <div

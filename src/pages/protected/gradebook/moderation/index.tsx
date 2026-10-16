@@ -4,6 +4,7 @@ import { ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,13 +48,10 @@ export default function ModerationQueue() {
 
   return (
     <PageShell className="content-start gap-4" grid>
-      <div className="min-w-0">
-        <h1 className="font-mont text-lg font-semibold text-black-01">Moderation</h1>
-        <p className="text-sm text-gray-06">
-          Sheets in moderated programmes, compared across the classes that offer them. Approve a sheet, or return it
-          to its teacher with a note.
-        </p>
-      </div>
+      <PageHeader
+        title="Moderation"
+        description="Sheets in moderated programmes, compared across the classes that offer them. Approve a sheet, or return it to its teacher with a note."
+      />
       {isError ? (
         <OutlinedNotice
           icon={ClipboardCheck}

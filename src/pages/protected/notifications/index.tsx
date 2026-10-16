@@ -7,6 +7,7 @@ import { NotificationEventIcon } from "@/components/custom/notification-event-ic
 import { cn } from "@/lib/utils";
 import { useDebounce } from "@/hooks/use-debounce";
 import { formatRelativeDate } from "@/utils/relative-date";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import Tabs from "@/components/custom/tab";
 import {
@@ -87,27 +88,25 @@ export default function Notifications() {
 
   return (
     <PageShell className="space-y-5 text-black-01">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="font-semibold font-mont text-black-01">
-            Notification Centre
-          </p>
-          <p className="mt-0.5 text-xs text-gray-01">
-            {tenantIsPending
-              ? "Everything that has happened while your school gets ready."
-              : "Everything that has happened across your school."}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          className="h-10"
-          disabled={!unreadCount || markingAll}
-          onClick={() => markAll()}
-        >
-          <CheckCheck className="size-4" />
-          {markingAll ? "Marking…" : "Mark all as read"}
-        </Button>
-      </div>
+      <PageHeader
+        title="Notification Centre"
+        description={
+          tenantIsPending
+            ? "Everything that has happened while your school gets ready."
+            : "Everything that has happened across your school."
+        }
+        actions={
+          <Button
+            variant="outline"
+            className="h-10"
+            disabled={!unreadCount || markingAll}
+            onClick={() => markAll()}
+          >
+            <CheckCheck className="size-4" />
+            {markingAll ? "Marking…" : "Mark all as read"}
+          </Button>
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         {/* The app's own switcher: one highlight that slides between tabs

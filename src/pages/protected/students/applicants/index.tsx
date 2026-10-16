@@ -16,6 +16,7 @@ import {
   Panel,
 } from "@/components/custom/surface";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -121,27 +122,27 @@ export default function Applicants() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            Applicants
-          </h1>
-          <p className="mt-1 text-sm text-gray-01">
+      <PageHeader
+        title="Applicants"
+        description={
+          <>
             Review admissions for {multiBranch ? branchLabel : "this school"}
             {sessionName ? ` in ${sessionName}` : ""}.
-          </p>
-        </div>
-        <PermissionGate permission={ENROL_PERMISSIONS} mode="all">
-          <Button
-            onClick={() =>
-              navigate(`${routesPath.PROTECTED.STUDENTS.ENROL}?applicant=1`)
-            }
-          >
-            <UserPlus className="size-4" />
-            Add applicant
-          </Button>
-        </PermissionGate>
-      </div>
+          </>
+        }
+        actions={
+          <PermissionGate permission={ENROL_PERMISSIONS} mode="all">
+            <Button
+              onClick={() =>
+                navigate(`${routesPath.PROTECTED.STUDENTS.ENROL}?applicant=1`)
+              }
+            >
+              <UserPlus className="size-4" />
+              Add applicant
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       <PipelineNav
         active={stage}

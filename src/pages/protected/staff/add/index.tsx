@@ -6,6 +6,7 @@ import { ArrowLeft, Info, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DatePickerInput } from "@/components/ui/date-picker-input";
 import { NativeSelect } from "@/components/ui/native-select";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Panel as Surface } from "@/components/custom/surface";
 import { routesPath } from "@/routes/routesPath";
@@ -354,12 +355,15 @@ export default function AddStaff() {
           <ArrowLeft className="size-3.5" />
           Back to directory
         </button>
-        <h2 className="mt-2 text-lg font-semibold text-black-01">Add staff</h2>
-        <p className="mt-1 text-sm text-gray-01">
-          {awaitsApproval
-            ? "One form. They are invited by email once the hire is approved in Workflow."
-            : "One form. They are invited by email as soon as you save."}
-        </p>
+        <PageHeader
+          className="mt-2"
+          title="Add staff"
+          description={
+            awaitsApproval
+              ? "One form. They are invited by email once the hire is approved in Workflow."
+              : "One form. They are invited by email as soon as you save."
+          }
+        />
       </div>
 
       <Surface as="section" className="grid gap-6 px-6 py-5.5">

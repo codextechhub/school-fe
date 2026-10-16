@@ -1,6 +1,7 @@
 import { useSearchParams } from "react-router";
 import { EyeOff, ListChecks, UsersRound } from "lucide-react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Panel } from "@/components/custom/surface";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -42,30 +43,27 @@ export default function WhoTakesWhat() {
 
   return (
     <PageShell className="content-start gap-4" grid>
-      <div className="flex min-w-0 flex-wrap items-end justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">Who takes what</h1>
-          <p className="text-sm text-gray-06">
-            Core subjects are everyone&apos;s and are not on this grid. A student who does not take a subject is on
-            no sheet, no average and no position for it.
-          </p>
-        </div>
-        {classes.list.length > 1 && current && (
-          <label className="flex min-w-0 items-center gap-2 text-sm text-gray-06">
-            Class
-            <NativeSelect
-              value={String(current.id)}
-              onChange={(event) => setSearch({ class: event.target.value }, { replace: true })}
-            >
-              {classes.list.map((c) => (
-                <NativeSelectOption key={c.id} value={String(c.id)}>
-                  {c.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </label>
-        )}
-      </div>
+      <PageHeader
+        title="Who takes what"
+        description="Core subjects are everyone's and are not on this grid. A student who does not take a subject is on no sheet, no average and no position for it."
+        actions={
+          classes.list.length > 1 && current ? (
+            <label className="flex min-w-0 items-center gap-2 text-sm text-gray-06">
+              Class
+              <NativeSelect
+                value={String(current.id)}
+                onChange={(event) => setSearch({ class: event.target.value }, { replace: true })}
+              >
+                {classes.list.map((c) => (
+                  <NativeSelectOption key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </NativeSelectOption>
+                ))}
+              </NativeSelect>
+            </label>
+          ) : undefined
+        }
+      />
 
       {classes.isLoading ? (
         <Skeleton className="h-64 w-full rounded-md" />

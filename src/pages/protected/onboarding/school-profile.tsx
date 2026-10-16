@@ -14,6 +14,7 @@ import { LogoField } from "@/components/school-profile/logo-field";
 import { SchoolProfileForm } from "@/components/school-profile/school-profile-form";
 import { OutlinedNotice } from "./components/outlined-notice";
 import { PageShell } from "@/components/layout/page-shell";
+import { PageHeader } from "@/components/layout/page-header";
 
 /**
  * The school's own profile - the "Complete your school profile" step.
@@ -92,15 +93,10 @@ function ProfileForm({ profile }: { profile: SchoolProfile }) {
 
   return (
     <PageShell className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold font-mont text-black-01">
-          Your school profile
-        </h2>
-        <p className="mt-1 text-sm text-gray-01 max-w-[70ch] text-pretty">
-          The details XVS uses across every module. Most of it was filled in
-          when your school was created; the rest is yours to confirm.
-        </p>
-      </div>
+      <PageHeader
+        title="Your school profile"
+        description="The details XVS uses across every module. Most of it was filled in when your school was created; the rest is yours to confirm."
+      />
 
       {canEdit && missing.length > 0 && (
         <div className="rounded-md border border-yellow-01/40 bg-yellow-01/8 px-4 py-3 max-w-200">

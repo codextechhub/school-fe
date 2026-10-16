@@ -39,6 +39,7 @@ import { StockTab } from "@/pages/protected/procurement/dashboard-stock";
 import { SuppliersTab } from "@/pages/protected/procurement/dashboard-suppliers";
 import { routesPath } from "@/routes/routes-path";
 import { PageShell } from "@/components/layout/page-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { NoEntityState } from "@/components/finance-ui/no-entity-state";
 import {
   AllClear, DASH_COLORS, LinkAction, Panel, compactMoney, plural,
@@ -438,37 +439,37 @@ export default function ProcurementDashboard() {
   return (
     <ProcurementShell>
       <PageShell className="procurement-dashboard space-y-5 text-black-01" data-guide="procurement-overview.page">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <h1 className="font-mont text-lg font-semibold text-gray-01">Procurement overview</h1>
-              <InfoHint ariaLabel="About the procurement overview">
-                Built from what you may read: each card appears only when you hold access to the documents behind it. The switch at the top changes spend, categories, top vendors and what was paid; everything else is where things stand today. Approvals are your own.
-              </InfoHint>
-            </div>
-            <p className="mt-0.5 font-mont text-xs text-gray-05">
-              {head ? [head.window.name, `as of ${fmtDate(head.as_of)}`, head.narrowed ? "your branches only" : null].filter(Boolean).join(" · ") : "-"}
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            {windowTabs.length > 1 && (
-              <TabStrip items={windowTabs} value={head?.window.key ?? windowTabs[0].value}
-                onChange={(w) => setPicked({ entity: entity!, window: w })} variant="pill-compact" ariaLabel="Figures for" />
-            )}
-            {can(P.PROC_CREATE_REQUISITION) && (
-              <button onClick={() => navigate(`${R.REQUISITIONS}?action=new`)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-white px-3 font-mont text-xs font-semibold text-primary hover:bg-primary/5">
-                <Plus className="size-3.5" /> New requisition
-              </button>
-            )}
-            {can(P.PROC_CREATE_PURCHASE_ORDER) && (
-              <button onClick={() => navigate(`${R.PURCHASE_ORDERS}?action=new`)}
-                className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-mont text-xs font-semibold text-white hover:bg-primary/90">
-                <Plus className="size-3.5" /> New purchase order
-              </button>
-            )}
-          </div>
-        </div>
+        <PageHeader
+          title="Procurement overview"
+          titleAside={
+            <InfoHint ariaLabel="About the procurement overview">
+              Built from what you may read: each card appears only when you hold access to the documents behind it. The switch at the top changes spend, categories, top vendors and what was paid; everything else is where things stand today. Approvals are your own.
+            </InfoHint>
+          }
+          description={
+            head ? [head.window.name, `as of ${fmtDate(head.as_of)}`, head.narrowed ? "your branches only" : null].filter(Boolean).join(" · ") : "-"
+          }
+          actions={
+            <>
+              {windowTabs.length > 1 && (
+                <TabStrip items={windowTabs} value={head?.window.key ?? windowTabs[0].value}
+                  onChange={(w) => setPicked({ entity: entity!, window: w })} variant="pill-compact" ariaLabel="Figures for" />
+              )}
+              {can(P.PROC_CREATE_REQUISITION) && (
+                <button onClick={() => navigate(`${R.REQUISITIONS}?action=new`)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md border border-primary/30 bg-white px-3 font-mont text-xs font-semibold text-primary hover:bg-primary/5">
+                  <Plus className="size-3.5" /> New requisition
+                </button>
+              )}
+              {can(P.PROC_CREATE_PURCHASE_ORDER) && (
+                <button onClick={() => navigate(`${R.PURCHASE_ORDERS}?action=new`)}
+                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 font-mont text-xs font-semibold text-white hover:bg-primary/90">
+                  <Plus className="size-3.5" /> New purchase order
+                </button>
+              )}
+            </>
+          }
+        />
 
         {viewTabs.length > 1 && (
           <TabStrip items={viewTabs} value={tab} onChange={showView} variant="pill-full"

@@ -17,6 +17,7 @@ import { TimetableGrid } from "../components/timetable-grid";
 import { warningsFromDays } from "../components/grid-shape";
 import { splitWarnings } from "../components/publish-check";
 import { PersonPicker } from "./person-picker";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 
 /**
@@ -246,13 +247,9 @@ function Figure({
 
 function PageHeading() {
   return (
-    <div className="min-w-0">
-      <h1 className="font-mont text-lg font-semibold text-black-01">
-        Teacher Timetables
-      </h1>
-      <p className="mt-1 text-sm text-gray-06 text-pretty">
-        Derived from the class timetables. Edits happen there.
-      </p>
-    </div>
+    <PageHeader
+      title="Teacher Timetables"
+      description="Derived from the class timetables. Edits happen there."
+    />
   );
 }

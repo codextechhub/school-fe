@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import CustomTable from "@/components/custom/custom-table";
 import KpiCard from "@/components/custom/kpi-card";
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -79,12 +80,7 @@ function HubBody({ hub }: { hub: Hub }) {
 
   return (
     <>
-      <div className="min-w-0">
-        <h1 className="font-mont text-lg font-semibold text-black-01">
-          Results for {hub.term.name}, {hub.term.session}
-        </h1>
-        <p className="text-sm text-gray-06">{subtitle}</p>
-      </div>
+      <PageHeader title={`Results for ${hub.term.name}, ${hub.term.session}`} description={subtitle} />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <KpiCard label="Subject sheets in" value={`${k.sheets_in} of ${k.sheets_due}`} foot={still ? `${still} still to come` : "Every sheet is in"} />

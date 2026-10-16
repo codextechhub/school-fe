@@ -11,6 +11,7 @@ import {
 import { modulesWithFields } from "@/components/custom/field-access-overrides";
 import PageAccessDenied from "@/components/custom/page-access-denied";
 import { SearchSelect } from "@/components/custom/search-select";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -158,20 +159,24 @@ export default function FieldAccess() {
 
   return (
     <PageShell className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-[65ch]">
-          <h1 className="text-xl font-semibold font-mont text-black-01">Field Access</h1>
-          <p className="mt-1 text-sm text-gray-01">Set each role's Read and Write switches, field by field. Write always includes Read.</p>
-          {readOnly && hasPermission(P.UPDATE_FIELD_ACCESS) && (
-            <p className="mt-2 text-xs text-gray-01">{roleReadOnlySentence(readOnly, "see")}</p>
-          )}
-        </div>
-        {canManage && (
-          <Button disabled={!Object.keys(drafts).length} loading={saving.isLoading} onClick={() => void submit()}>
-            Save {Object.keys(drafts).length ? `${Object.keys(drafts).length} changes` : "changes"}
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Field Access"
+        description={
+          <>
+            Set each role's Read and Write switches, field by field. Write always includes Read.
+            {readOnly && hasPermission(P.UPDATE_FIELD_ACCESS) && (
+              <span className="mt-1 block">{roleReadOnlySentence(readOnly, "see")}</span>
+            )}
+          </>
+        }
+        actions={
+          canManage && (
+            <Button disabled={!Object.keys(drafts).length} loading={saving.isLoading} onClick={() => void submit()}>
+              Save {Object.keys(drafts).length ? `${Object.keys(drafts).length} changes` : "changes"}
+            </Button>
+          )
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 rounded-md border border-white-02 bg-white p-4 sm:grid-cols-3">
         <SearchSelect

@@ -13,6 +13,7 @@ import KpiCard from "@/components/custom/kpi-card";
 import PermissionGate from "@/components/custom/permission-gate";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { Panel as Surface } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -146,15 +147,10 @@ export default function StaffPosting() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-          Posting &amp; reach
-        </h1>
-        <p className="mt-1 max-w-3xl text-sm text-gray-01">
-          Place staff in the right branch and see which people reach it through
-          their roles.
-        </p>
-      </div>
+      <PageHeader
+        title="Posting & reach"
+        description="Place staff in the right branch and see which people reach it through their roles."
+      />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <KpiCard

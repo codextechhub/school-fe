@@ -1,6 +1,7 @@
 import { Link } from "react-router";
 import { BookOpenCheck, ChevronRight, ClipboardList } from "lucide-react";
 
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Panel } from "@/components/custom/surface";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -76,12 +77,10 @@ function HubBody({ hub }: { hub: TeacherHub }) {
 
   return (
     <>
-      <div className="min-w-0">
-        <h1 className="font-mont text-lg font-semibold text-black-01">My sheets this {term}</h1>
-        <p className="text-sm text-gray-06">
-          {hub.term.name}, {hub.term.session} · each subject you own the marks for, and the work your other roles carry.
-        </p>
-      </div>
+      <PageHeader
+        title={`My sheets this ${term}`}
+        description={`${hub.term.name}, ${hub.term.session} · each subject you own the marks for, and the work your other roles carry.`}
+      />
 
       {hub.sheets.length > 0 && (
         <ul className="grid gap-3">

@@ -24,6 +24,7 @@ import type {
   ImportTemplateListItem,
 } from "@/redux/services/dashboard/import-types";
 import { PageShell } from "@/components/layout/page-shell";
+import { PageHeader } from "@/components/layout/page-header";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { downloadBlob, fetchAttachmentBlob } from "@/utils/attachment-download";
 
@@ -418,26 +419,21 @@ export default function OnboardingImport() {
 
   return (
     <PageShell className="gap-5" grid>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 max-w-[62ch]">
-          <h1 className="text-lg font-semibold text-black-01 font-mont text-balance">
-            Upload Initial Datasets
-          </h1>
-          <p className="mt-1 text-sm text-gray-01 text-pretty">
-            Pick the template that matches your file, download it if you need the
-            format, then run it through the import wizard.
-          </p>
-        </div>
-        <PermissionGate permission={P.UPDATE_ONBOARDING_TASK}>
-          <Button
-            className="h-10 shrink-0"
-            disabled={!allDone || transitionState.isLoading}
-            onClick={() => void finishDataSetup()}
-          >
-            Finish data setup
-          </Button>
-        </PermissionGate>
-      </div>
+      <PageHeader
+        title="Upload Initial Datasets"
+        description="Pick the template that matches your file, download it if you need the format, then run it through the import wizard."
+        actions={
+          <PermissionGate permission={P.UPDATE_ONBOARDING_TASK}>
+            <Button
+              className="h-10 shrink-0"
+              disabled={!allDone || transitionState.isLoading}
+              onClick={() => void finishDataSetup()}
+            >
+              Finish data setup
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       {/* Required datasets: the progress card, before either table. */}
       <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5 min-w-0">

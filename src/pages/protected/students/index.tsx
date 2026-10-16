@@ -13,6 +13,7 @@ import {
 import CustomTable from "@/components/custom/custom-table";
 import PermissionGate from "@/components/custom/permission-gate";
 import { usePermissions } from "@/hooks/use-permissions";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
 import { canRunImport } from "@/components/custom/import-wizard/import-access";
@@ -216,39 +217,39 @@ export default function StudentDirectory() {
   return (
     <PageShell className="content-start gap-5" grid>
       {/* ── Who this page is about, and the two ways in ──────────────────── */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            Student Directory
-          </h1>
-          <p className="mt-1 text-sm text-gray-01">
+      <PageHeader
+        title="Student Directory"
+        description={
+          <>
             Every student at {multiBranch ? branchLabel : "this school"}
             {summary?.session ? ` for ${summary.session}` : ""}.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          {canRunImport("students", hasPermission) && (
-            <button
-              type="button"
-              onClick={() => setImporting(true)}
-              className="inline-flex h-10.5 items-center gap-2 rounded-lg border border-white-02 bg-white px-4 text-sm font-medium text-gray-01 hover:bg-gray-03 hover:text-primary"
-            >
-              <Upload className="size-4" />
-              Import
-            </button>
-          )}
-          <PermissionGate permission={ENROL_PERMISSIONS} mode="all">
-            <button
-              type="button"
-              onClick={() => navigate(routesPath.PROTECTED.STUDENTS.ENROL)}
-              className="inline-flex h-10.5 items-center gap-2 rounded-lg bg-primary px-4.5 text-sm font-medium text-white hover:bg-primary/90"
-            >
-              <UserPlus className="size-4" />
-              Enrol student
-            </button>
-          </PermissionGate>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <>
+            {canRunImport("students", hasPermission) && (
+              <button
+                type="button"
+                onClick={() => setImporting(true)}
+                className="inline-flex h-10.5 items-center gap-2 rounded-lg border border-white-02 bg-white px-4 text-sm font-medium text-gray-01 hover:bg-gray-03 hover:text-primary"
+              >
+                <Upload className="size-4" />
+                Import
+              </button>
+            )}
+            <PermissionGate permission={ENROL_PERMISSIONS} mode="all">
+              <button
+                type="button"
+                onClick={() => navigate(routesPath.PROTECTED.STUDENTS.ENROL)}
+                className="inline-flex h-10.5 items-center gap-2 rounded-lg bg-primary px-4.5 text-sm font-medium text-white hover:bg-primary/90"
+              >
+                <UserPlus className="size-4" />
+                Enrol student
+              </button>
+            </PermissionGate>
+          </>
+        }
+      />
 
       {/* Under a past year the roll and the classes are that year's, and the
           status chips are not - status has no year to read. Said plainly,

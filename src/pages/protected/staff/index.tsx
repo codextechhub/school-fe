@@ -7,6 +7,7 @@ import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
 import { canRunImport } from "@/components/custom/import-wizard/import-access";
 import PermissionGate from "@/components/custom/permission-gate";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,10 @@ import { PersonAvatar } from "../students/person-avatar";
  * Employment and account state use separate columns because they answer
  * different questions. Counts, role options, and branch applicability come
  * from the list response so the summary and the rows share one filter scope.
+ *
+ * The heading names a branch only when one is actually being read.
+ * `branchLabel` says "All branches" when nothing is narrowed, and "employed at
+ * All branches" reads like a place rather than an absence of one.
  */
 export default function StaffDirectory() {
   const navigate = useNavigate();
@@ -161,34 +166,31 @@ export default function StaffDirectory() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            Staff Directory
-          </h1>
-          {/* Named only when a branch is actually being read. `branchLabel`
-              says "All branches" when nothing is narrowed, and "employed at All
-              branches" reads like a place rather than an absence of one. */}
-          <p className="mt-1 text-sm text-gray-01">
+      <PageHeader
+        title="Staff Directory"
+        description={
+          <>
             Everybody employed at{" "}
             {multiBranch && narrowed ? branchLabel : "this school"}.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2.5">
-          {canRunImport("staff", hasPermission) && (
-            <Button variant="outline" onClick={() => setImporting(true)}>
-              <Upload className="size-4" />
-              Import
-            </Button>
-          )}
-          <PermissionGate permission={P.INVITE_TEACHER}>
-            <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
-              <UserPlus className="size-4" />
-              Add staff
-            </Button>
-          </PermissionGate>
-        </div>
-      </div>
+          </>
+        }
+        actions={
+          <>
+            {canRunImport("staff", hasPermission) && (
+              <Button variant="outline" onClick={() => setImporting(true)}>
+                <Upload className="size-4" />
+                Import
+              </Button>
+            )}
+            <PermissionGate permission={P.INVITE_TEACHER}>
+              <Button onClick={() => navigate(routesPath.PROTECTED.STAFF.ADD)}>
+                <UserPlus className="size-4" />
+                Add staff
+              </Button>
+            </PermissionGate>
+          </>
+        }
+      />
 
       <CountsHeader
         counts={counts}

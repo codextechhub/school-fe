@@ -5,6 +5,7 @@ import { Plus, Search, ShieldCheck } from "lucide-react";
 import CustomTable from "@/components/custom/custom-table";
 import PageAccessDenied from "@/components/custom/page-access-denied";
 import PermissionGate from "@/components/custom/permission-gate";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,13 +78,11 @@ export default function Roles() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 max-w-3xl">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">Roles &amp; Permissions</h1>
-          <p className="mt-1 text-sm text-gray-01">See who can do what across your school. Open a role to review its permissions, people and branch reach.</p>
-        </div>
-        <PermissionGate permission={P.CREATE_ROLE}><Button data-guide="roles.new" onClick={() => navigate(routesPath.PROTECTED.ROLES.NEW)}><Plus /> Create role</Button></PermissionGate>
-      </div>
+      <PageHeader
+        title="Roles & Permissions"
+        description="See who can do what across your school. Open a role to review its permissions, people and branch reach."
+        actions={<PermissionGate permission={P.CREATE_ROLE}><Button data-guide="roles.new" onClick={() => navigate(routesPath.PROTECTED.ROLES.NEW)}><Plus /> Create role</Button></PermissionGate>}
+      />
 
       <div data-guide="roles.summary" className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <div className="rounded-xl border border-border bg-white p-4 sm:p-5"><p className="text-xs font-medium text-gray-05">Total roles</p><p className="mt-1 text-2xl font-semibold text-black-01">{all.length}</p></div>

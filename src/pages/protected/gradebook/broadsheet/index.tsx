@@ -4,6 +4,7 @@ import { ClipboardList, Printer, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -123,25 +124,23 @@ function BroadsheetBody({ sheet, classKey }: { sheet: Broadsheet; classKey: Clas
         </div>
       )}
 
-      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">{sheet.class.name} · broadsheet</h1>
-          <p className="text-sm text-gray-06">
-            {[sheet.term.name, sheet.class_teacher ? `class teacher ${sheet.class_teacher.name}` : "no class teacher", `${sheet.rows.length} students`].join(" · ")}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 print-hide">
-          <Button variant="outline" onClick={() => window.print()}>
-            <Printer className="size-4" aria-hidden="true" />
-            Print
-          </Button>
-          {offersSubmit && (
-            <Button disabled={!sheet.can_submit || submitting.isLoading} onClick={() => setConfirming(true)}>
-              {submitLabel}
+      <PageHeader
+        title={`${sheet.class.name} · broadsheet`}
+        description={[sheet.term.name, sheet.class_teacher ? `class teacher ${sheet.class_teacher.name}` : "no class teacher", `${sheet.rows.length} students`].join(" · ")}
+        actions={
+          <div className="flex flex-wrap gap-2 print-hide">
+            <Button variant="outline" onClick={() => window.print()}>
+              <Printer className="size-4" aria-hidden="true" />
+              Print
             </Button>
-          )}
-        </div>
-      </div>
+            {offersSubmit && (
+              <Button disabled={!sheet.can_submit || submitting.isLoading} onClick={() => setConfirming(true)}>
+                {submitLabel}
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       {sheet.attendance_warning && sheet.attendance_warning.days_not_taken > 0 && (
         <Note>

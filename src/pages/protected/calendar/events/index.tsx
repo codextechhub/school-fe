@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import PermissionGate from "@/components/custom/permission-gate";
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import PromptModal from "@/components/modal/prompt-modal";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
@@ -169,29 +170,24 @@ export default function CalendarEvents() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            Events
-          </h1>
-          <p className="mt-1 text-sm text-gray-01">
-            Plan holidays, breaks, exam periods and school events
-            {sessionName ? ` for ${sessionName}` : ""}.
-          </p>
-        </div>
-        <PermissionGate
-          permission={P.CREATE_CALENDAR_EVENT}
-          disabled={readOnlyYear}
-        >
-          <Button
-            className="shrink-0 text-sm"
-            onClick={() => openForm(null)}
-            disabled={!canCreate}
+      <PageHeader
+        title="Events"
+        description={`Plan holidays, breaks, exam periods and school events${sessionName ? ` for ${sessionName}` : ""}.`}
+        actions={
+          <PermissionGate
+            permission={P.CREATE_CALENDAR_EVENT}
+            disabled={readOnlyYear}
           >
-            <Plus /> Add event
-          </Button>
-        </PermissionGate>
-      </div>
+            <Button
+              className="shrink-0 text-sm"
+              onClick={() => openForm(null)}
+              disabled={!canCreate}
+            >
+              <Plus /> Add event
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       <Panel as="section" className="p-4 sm:p-5">
         <div className="flex min-w-0 flex-wrap items-center gap-2.5">

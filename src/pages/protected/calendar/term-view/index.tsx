@@ -45,6 +45,7 @@ import { eventDeleteBody } from "../components/event-delete";
 import { EventDetail, EventDrawer } from "../components/event-drawer";
 import { blankEvent, draftFrom } from "../components/event-draft";
 import { eventVariant } from "../components/event-kind";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import {
   daysBetween,
@@ -198,21 +199,17 @@ export default function TermView() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            {words.Term} view
-          </h1>
-          <p className="mt-1 text-sm text-gray-01">
-            See the shape of {session.name} and open any day to manage its events.
-          </p>
-        </div>
-        {canCreate && (
-          <Button onClick={() => setAddingOn(today || session.start_date)}>
-            <Plus className="size-4" /> Add event
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title={`${words.Term} view`}
+        description={`See the shape of ${session.name} and open any day to manage its events.`}
+        actions={
+          canCreate ? (
+            <Button onClick={() => setAddingOn(today || session.start_date)}>
+              <Plus className="size-4" /> Add event
+            </Button>
+          ) : undefined
+        }
+      />
 
       <Panel as="section" className="p-5 sm:p-6" aria-labelledby="school-year-heading">
         <div className="flex flex-wrap items-center justify-between gap-3">

@@ -6,6 +6,7 @@ import { AlertTriangle, ArrowRight, Check, GraduationCap } from "lucide-react";
 import KpiCard from "@/components/custom/kpi-card";
 import PermissionGate from "@/components/custom/permission-gate";
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -75,7 +76,7 @@ function PromotionWorkflow({
   // An acknowledgement, never a default: unticked every time the plan changes.
   const [goOverCapacity, setGoOverCapacity] = useState(false);
   const previewSequence = useRef(0);
-  const pageTop = useRef<HTMLElement>(null);
+  const pageTop = useRef<HTMLDivElement>(null);
 
   const { data: sessionsData, isLoading: sessionsLoading } = useGetSessionsQuery();
   const [preview, { isLoading: previewing }] = usePreviewPromotionMutation();
@@ -195,28 +196,27 @@ function PromotionWorkflow({
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <header
+      <PageHeader
         ref={pageTop}
-        className="flex min-w-0 scroll-mt-20 flex-wrap items-start justify-between gap-3"
-      >
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-            Promotion
-          </h1>
-          <p className="mt-1 max-w-3xl text-sm text-gray-01">
+        className="min-w-0 scroll-mt-20"
+        title="Promotion"
+        description={
+          <>
             The end-of-session move. Every student on the roll goes up, repeats,
             graduates or is held before anything is written.
+            {narrowed && (
+              <span className="mt-2 block w-fit rounded-md bg-white-03 px-2.5 py-1 text-xs font-medium text-primary">
+                {branchLabel} only
+              </span>
+            )}
+          </>
+        }
+        actions={
+          <p className="shrink-0 rounded-full bg-white-03 px-3 py-1.5 text-xs font-medium text-gray-05">
+            Step {step + 1} of {STEPS.length} · {STEPS[step]}
           </p>
-          {narrowed && (
-            <p className="mt-2 inline-flex rounded-md bg-white-03 px-2.5 py-1 text-xs font-medium text-primary">
-              {branchLabel} only
-            </p>
-          )}
-        </div>
-        <p className="shrink-0 rounded-full bg-white-03 px-3 py-1.5 text-xs font-medium text-gray-05">
-          Step {step + 1} of {STEPS.length} · {STEPS[step]}
-        </p>
-      </header>
+        }
+      />
 
       {step === 0 && (
         <section className="grid gap-4" aria-labelledby="sessions-heading">

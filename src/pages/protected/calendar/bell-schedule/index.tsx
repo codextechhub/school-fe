@@ -28,6 +28,7 @@ import type {
 } from "@/redux/services/calendar/calendar-types";
 import { PeriodDrawer } from "../components/period-drawer";
 import { blankPeriod, periodDraftFrom } from "../components/period-draft";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { useActionParam } from "@/hooks/use-action-param";
 import {
@@ -242,28 +243,24 @@ export default function BellSchedule() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0">
-          <h1 className="font-mont text-lg font-semibold text-black-01">
-            Bell Schedule
-          </h1>
-          <p className="mt-1 min-w-0 text-sm text-gray-06 text-pretty">
-            Set the daily periods every class and teacher timetable uses.
-          </p>
-        </div>
-        <PermissionGate
-          permission={P.CREATE_TIMETABLE_ENTRY}
-          disabled={readOnlyYear}
-        >
-          <Button
-            className="shrink-0 text-sm"
-            onClick={() => open(null)}
-            disabled={!canCreate}
+      <PageHeader
+        title="Bell Schedule"
+        description="Set the daily periods every class and teacher timetable uses."
+        actions={
+          <PermissionGate
+            permission={P.CREATE_TIMETABLE_ENTRY}
+            disabled={readOnlyYear}
           >
-            <Plus /> Add period
-          </Button>
-        </PermissionGate>
-      </div>
+            <Button
+              className="shrink-0 text-sm"
+              onClick={() => open(null)}
+              disabled={!canCreate}
+            >
+              <Plus /> Add period
+            </Button>
+          </PermissionGate>
+        }
+      />
 
       {isLoading ? (
         <>

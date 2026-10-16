@@ -21,6 +21,7 @@ import { InvitationsPanel } from "./components/invitations-panel";
 import { roleDetailPath } from "@/pages/protected/roles/role-paths";
 import { useOnboardingState } from "./use-onboarding-state";
 import { PageShell } from "@/components/layout/page-shell";
+import { PageHeader } from "@/components/layout/page-header";
 
 /**
  * "Confirm Default Roles & RBAC" - one screen, two tabs, opened from two cards.
@@ -151,35 +152,35 @@ export default function OnboardingRoles() {
 
   return (
     <PageShell className="space-y-5">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div className="min-w-0 max-w-[60ch]">
-          <h2 className="text-lg font-semibold font-mont text-black-01">
-            {canSeeRoles
-              ? "Confirm Default Roles & Permissions"
-              : "Add Staff & Invitations"}
-          </h2>
-          <p className="mt-1 text-sm text-gray-01 text-pretty">
-            {canSeeRoles
-              ? `XVS has set ${school?.name ?? "your school"} up with a baseline of roles. Look them over, add any of your own, and invite the people who will operate the system.`
-              : "The people who will operate the system, and whether their invitations have landed."}
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2.5">
-          <Button
-            variant="outline"
-            onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.INDEX)}
-          >
-            <ArrowLeft />
-            Back to control room
-          </Button>
-          {/* Completing the step needs the step key as well as the roles key. */}
-          <PermissionGate permission={[P.VIEW_ROLES, P.UPDATE_ONBOARDING_TASK]} mode="all">
-            <Button onClick={confirm} loading={confirming} disabled={alreadyDone}>
-              {alreadyDone ? "Confirmed" : "Save and continue"}
+      <PageHeader
+        title={
+          canSeeRoles
+            ? "Confirm Default Roles & Permissions"
+            : "Add Staff & Invitations"
+        }
+        description={
+          canSeeRoles
+            ? `XVS has set ${school?.name ?? "your school"} up with a baseline of roles. Look them over, add any of your own, and invite the people who will operate the system.`
+            : "The people who will operate the system, and whether their invitations have landed."
+        }
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => navigate(routesPath.PROTECTED.ONBOARDING.INDEX)}
+            >
+              <ArrowLeft />
+              Back to control room
             </Button>
-          </PermissionGate>
-        </div>
-      </div>
+            {/* Completing the step needs the step key as well as the roles key. */}
+            <PermissionGate permission={[P.VIEW_ROLES, P.UPDATE_ONBOARDING_TASK]} mode="all">
+              <Button onClick={confirm} loading={confirming} disabled={alreadyDone}>
+                {alreadyDone ? "Confirmed" : "Save and continue"}
+              </Button>
+            </PermissionGate>
+          </>
+        }
+      />
 
       {/* One live tab is not a choice, so the strip only appears when the
           reader can actually open both halves. */}

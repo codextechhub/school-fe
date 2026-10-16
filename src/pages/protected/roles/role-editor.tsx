@@ -6,6 +6,7 @@ import { ArrowLeft, Lock } from "lucide-react";
 import { AccessCataloguePicker } from "@/components/custom/access-catalogue-picker";
 import { BranchReachPicker } from "@/components/custom/branch-reach-picker";
 import PageAccessDenied from "@/components/custom/page-access-denied";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -194,7 +195,7 @@ export default function RoleEditor() {
   return (
     <PageShell className="content-start gap-5" grid>
       <button type="button" onClick={() => navigate(creating ? base : roleDetailPath(base, key))} className="flex items-center gap-2 text-sm font-medium text-primary hover:underline"><ArrowLeft className="size-4" /> Back to {creating ? "roles" : "role"}</button>
-      <div><h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">{creating ? "Create Role" : `Edit ${detail?.name}`}</h1><p className="mt-1 text-sm text-gray-01">Name the job, choose its branch reach, and grant the permissions it needs.</p></div>
+      <PageHeader title={creating ? "Create Role" : `Edit ${detail?.name}`} description="Name the job, choose its branch reach, and grant the permissions it needs." />
       {errors.form && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{errors.form}</p>}
       {readOnly && <p className="rounded-lg border border-border bg-gray-04 p-3 text-sm text-gray-01">{roleReadOnlySentence(readOnly)}</p>}
       <div className="grid min-w-0 grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(320px,0.9fr)_minmax(0,1.1fr)]">

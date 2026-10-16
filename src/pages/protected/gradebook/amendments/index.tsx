@@ -4,6 +4,7 @@ import { FilePen } from "lucide-react";
 import { toast } from "sonner";
 
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -80,13 +81,10 @@ export default function AmendmentsPage() {
 
   return (
     <PageShell className="content-start gap-4" grid>
-      <div className="min-w-0">
-        <h1 className="font-mont text-lg font-semibold text-black-01">Corrections</h1>
-        <p className="text-sm text-gray-06">
-          Changes asked for to results already published. Ask for one from the student&apos;s Results tab, on the
-          subject it concerns.
-        </p>
-      </div>
+      <PageHeader
+        title="Corrections"
+        description="Changes asked for to results already published. Ask for one from the student's Results tab, on the subject it concerns."
+      />
 
       <div role="tablist" aria-label="Status" className="flex max-w-full gap-1 overflow-x-auto">
         {FILTERS.map((filter) => (

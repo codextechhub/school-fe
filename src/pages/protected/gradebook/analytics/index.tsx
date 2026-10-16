@@ -3,6 +3,7 @@ import { ChartColumn, Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,15 +51,14 @@ export default function AnalyticsPage() {
 
   return (
     <PageShell className="content-start gap-4" grid>
-      <div className="min-w-0">
-        <h1 className="font-mont text-lg font-semibold text-black-01">Performance analytics</h1>
-        {report && (
-          <p className="text-sm text-gray-06">
-            {report.term.name}, {report.term.session} ·{" "}
-            {report.scope.published_count === 1 ? "1 published class" : `${report.scope.published_count} published classes`}
-          </p>
-        )}
-      </div>
+      <PageHeader
+        title="Performance analytics"
+        description={
+          report
+            ? `${report.term.name}, ${report.term.session} · ${report.scope.published_count === 1 ? "1 published class" : `${report.scope.published_count} published classes`}`
+            : undefined
+        }
+      />
       {status === 403 ? (
         <OutlinedNotice
           icon={ChartColumn}

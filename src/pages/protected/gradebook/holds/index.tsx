@@ -3,6 +3,7 @@ import { Search, TriangleAlert, Wallet } from "lucide-react";
 
 import CustomTable from "@/components/custom/custom-table";
 import { Panel } from "@/components/custom/surface";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -88,15 +89,17 @@ export default function FeeHoldsPage() {
 
   return (
     <PageShell className="content-start gap-4" grid>
-      <div className="min-w-0">
-        <h1 className="font-mont text-lg font-semibold text-black-01">Fee holds</h1>
-        <p className="text-sm text-gray-06">
-          {showsBalance && data?.as_of && !financeDown
-            ? `Students in ${data.term.name}'s classes. Balances are read from Finance as of ${formatDateTime(data.as_of)}, as context for your decision. `
-            : "Students in this term's classes. "}
-          No result is ever held automatically.
-        </p>
-      </div>
+      <PageHeader
+        title="Fee holds"
+        description={
+          <>
+            {showsBalance && data?.as_of && !financeDown
+              ? `Students in ${data.term.name}'s classes. Balances are read from Finance as of ${formatDateTime(data.as_of)}, as context for your decision. `
+              : "Students in this term's classes. "}
+            No result is ever held automatically.
+          </>
+        }
+      />
 
       {status === 403 ? (
         <OutlinedNotice

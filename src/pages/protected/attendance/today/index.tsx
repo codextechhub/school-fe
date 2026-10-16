@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { ClipboardCheck } from "lucide-react";
 
 import PageAccessDenied from "@/components/custom/page-access-denied";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -122,6 +123,11 @@ function TeacherToday({ date, today, setDate }: DayProps) {
   );
 }
 
+/**
+ * The Today heading. The day picker always sits in the actions, after any
+ * page action. On the current day the scope line opens with "Today", so the
+ * reader can tell the live day from a past one picked in the date control.
+ */
 function DayHeader({
   title,
   date,
@@ -130,23 +136,18 @@ function DayHeader({
   sub,
   action,
 }: DayProps & { title: string; sub: Array<string | null>; action?: React.ReactNode }) {
-  const line = sub.filter(Boolean).join(" · ");
+  const line = [date === today ? "Today" : null, ...sub].filter(Boolean).join(" · ");
   return (
-    <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">
-          {date === today ? "Today" : "Attendance"}
-        </p>
-        <h1 className="mt-1 font-mont text-2xl font-semibold tracking-tight text-black-01 sm:text-3xl">
-          {title}
-        </h1>
-        {line && <p className="text-sm text-gray-06">{line}</p>}
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
-        {action}
-        <DayPicker date={date} today={today} onChange={setDate} />
-      </div>
-    </div>
+    <PageHeader
+      title={title}
+      description={line || undefined}
+      actions={
+        <>
+          {action}
+          <DayPicker date={date} today={today} onChange={setDate} />
+        </>
+      }
+    />
   );
 }
 

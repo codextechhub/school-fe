@@ -32,6 +32,7 @@ import { ProgressRing } from "./components/progress-ring";
 import { TaskCard } from "./components/task-card";
 import { taskMeta } from "./task-catalog";
 import { PageShell } from "@/components/layout/page-shell";
+import { PageHeader } from "@/components/layout/page-header";
 
 /**
  * The Onboarding Control Room - the home base for a school that is not live yet.
@@ -153,23 +154,18 @@ function ControlRoom({ state }: { state: OnboardingState }) {
 
   return (
     <PageShell className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold font-mont text-black-01">
-            Onboarding Control Room
-          </h2>
-          <p className="mt-1 text-sm text-gray-01 text-pretty">
-            Everything your school needs before it can go live. Take the steps in
-            any order.
-          </p>
-        </div>
-        {isLive && (
-          <Button onClick={() => navigate(routesPath.PROTECTED.OVERVIEW.INDEX)}>
-            Go to dashboard
-            <ArrowRight />
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Onboarding Control Room"
+        description="Everything your school needs before it can go live. Take the steps in any order."
+        actions={
+          isLive && (
+            <Button onClick={() => navigate(routesPath.PROTECTED.OVERVIEW.INDEX)}>
+              Go to dashboard
+              <ArrowRight />
+            </Button>
+          )
+        }
+      />
 
       {/* ── Progress summary ───────────────────────────────────────────── */}
       <section data-guide="onboarding.status" className="bg-white rounded-md border border-white-02 px-4 py-5 sm:px-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-center">

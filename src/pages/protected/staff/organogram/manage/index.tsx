@@ -17,6 +17,7 @@ import { Briefcase, Building2, Spline } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router";
 import { cn } from "@/lib/utils";
 import PageAccessDenied from "@/components/custom/page-access-denied";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
@@ -56,12 +57,10 @@ export default function OrganogramManage() {
 
   return (
     <PageShell className="space-y-5 text-black-01">
-      <div>
-        <p className="font-mont font-semibold text-gray-01">Manage organogram</p>
-        <p className="mt-0.5 text-xs text-gray-01">
-          The school&apos;s units, the posts in them and who holds each, and the dotted lines between posts.
-        </p>
-      </div>
+      <PageHeader
+        title="Manage organogram"
+        description="The school's units, the posts in them and who holds each, and the dotted lines between posts."
+      />
 
       <div role="tablist" className="flex max-w-full items-center gap-1 overflow-x-auto border-b border-white-02">
         {TABS.map((t) => (

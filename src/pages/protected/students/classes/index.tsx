@@ -10,6 +10,7 @@ import { Panel as Surface } from "@/components/custom/surface";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { NativeSelect } from "@/components/ui/native-select";
+import { PageHeader } from "@/components/layout/page-header";
 import { PageShell } from "@/components/layout/page-shell";
 import { useStudentsLens } from "@/hooks/use-students-lens";
 import { cn } from "@/lib/utils";
@@ -233,20 +234,20 @@ export default function ClassesAndTransfers() {
 
   return (
     <PageShell className="content-start gap-5" grid>
-      <div className="min-w-0">
-        <h1 className="text-2xl font-semibold tracking-[-0.02em] text-black-01">
-          Classes &amp; transfers
-        </h1>
-        <p className="mt-1 max-w-3xl text-sm text-gray-01">
-          Place students who have no class, and move students between classes
-          {multiBranch
-            ? branchLabel === "All branches"
-              ? " across all branches"
-              : ` at ${branchLabel}`
-            : " in this school"}
-          {sessionName ? ` during ${sessionName}` : ""}.
-        </p>
-      </div>
+      <PageHeader
+        title="Classes & transfers"
+        description={
+          <>
+            Place students who have no class, and move students between classes
+            {multiBranch
+              ? branchLabel === "All branches"
+                ? " across all branches"
+                : ` at ${branchLabel}`
+              : " in this school"}
+            {sessionName ? ` during ${sessionName}` : ""}.
+          </>
+        }
+      />
 
       <ViewSwitch value={view} unplacedCount={unplacedTotal} onChange={selectView} />
 
