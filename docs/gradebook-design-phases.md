@@ -391,6 +391,12 @@ the design:
    it names both outcomes and the toast says which happened.
 7. Seed gap: no Lagoon View family owes Finance anything, so a non-zero
    balance and "oldest unpaid" are covered by tests only.
+8. Approvals is a decision desk with a sliding Awaiting and Published switch,
+   compact summary cards, a selectable class queue, and one focused release
+   detail. Batch checkboxes stay separate from row selection, and every
+   existing return, comment, broadsheet and publish flow is preserved. The
+   desk derives its totals from the existing approval response and introduces
+   no Field Access choice or API field.
 
 ### Phase 6: release, report cards and the student's Results tab
 

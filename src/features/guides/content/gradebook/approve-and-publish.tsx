@@ -12,7 +12,7 @@ export default function ApproveAndPublishArticle() {
       </GuideSection>
 
       <GuideSection id="read-the-class" title="Read the class">
-        <p>Each class shows how many of its subjects are in, its class teacher and its stage. The line under it names any student whose result is held over fees, and who held it. Select <strong>Open broadsheet</strong> to read every student&apos;s marks and open any student&apos;s report.</p>
+        <p>The decision desk separates classes awaiting approval from those already published. Select a class to bring its subjects, class teacher, stage and held results into focus. A held result names the student and who held it. Select <strong>Open broadsheet</strong> to read every student&apos;s marks and open any student&apos;s report.</p>
       </GuideSection>
 
       <GuideSection id="comments" title="Write the principal's comments">

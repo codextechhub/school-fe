@@ -122,7 +122,6 @@ describe("approvals Field Access", () => {
     renderPage();
     expect(labels()).toEqual(expect.arrayContaining(["Return", "Principal's comments", "Approve and publish"]));
     expect(container.textContent).toContain("Sade Adeyemi is held by Ngozi Ibekwe.");
-    expect(container.textContent).toContain("No result in this class is held.");
   });
 
   it("withholds Return, but not publishing, when the return note may not be written", () => {
@@ -146,6 +145,18 @@ describe("approvals Field Access", () => {
     renderPage();
     expect(container.querySelectorAll('[role="checkbox"]')).toHaveLength(2);
     expect(labels()).toContain("Publish the ticked class");
+  });
+
+  it("moves the focused detail to published history without offering a decision", () => {
+    renderPage();
+    const publishedTab = Array.from(container.querySelectorAll("button")).find((button) =>
+      button.textContent?.includes("Published"),
+    );
+    act(() => publishedTab?.click());
+    expect(container.textContent).toContain("JSS1 A");
+    expect(container.textContent).toContain("No result in this class is held.");
+    expect(labels()).not.toContain("Return");
+    expect(labels()).toContain("Principal's comments");
   });
 });
 
