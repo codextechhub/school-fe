@@ -70,18 +70,18 @@ export default function ForgotPassword() {
                 Forgot Password
               </h4>
               <p className="text-sm font-medium text-gray-01 font-mont">
-                Enter the ID or email linked to your account. We will email you a reset link.
+                Enter your email or ID and we will email you a reset link. A pupil with no email of their own gets it through their parent or guardian.
               </p>
             </div>
 
             <div className="mt-4 mb-9">
               <CustomInput
-                label="ID"
+                label="Email or ID"
                 id="identifier"
                 autoComplete="username"
                 autoCapitalize="none"
                 spellCheck={false}
-                placeholder="Enter your ID"
+                placeholder="Email, staff ID or admission number"
                 className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
                 {...formik.getFieldProps("identifier")}
                 error={formik.touched.identifier ? formik.errors.identifier : ""}

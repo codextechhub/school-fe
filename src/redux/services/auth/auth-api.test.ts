@@ -134,6 +134,23 @@ describe("the school portal refuses a platform account", () => {
   });
 });
 
+describe("a pupil's sign-in belongs to the student app", () => {
+  it("opens no staff session, so the login page can hand it across", async () => {
+    const payload = loginPayload("SCHOOL");
+    const pupil = { ...payload, data: { ...payload.data, device_app: { path: "/student/" } } };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(pupil)));
+
+    const store = makeStore();
+    const result = await store.dispatch(
+      authApi.endpoints.login.initiate({ identifier: "LV/2026/0030", password: "pw" }),
+    );
+
+    expect(result.data?.data.device_app).toEqual({ path: "/student/" });
+    expect(getAccessToken()).toBe("");
+    expect(store.getState().auth.user).toBeFalsy();
+  });
+});
+
 describe("cookie-authenticated logout", () => {
   it("sends CSRF with no credential in the body", async () => {
     document.cookie = "csrftoken=csrf-value; Path=/";

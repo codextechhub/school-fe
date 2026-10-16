@@ -1,14 +1,14 @@
 import * as Yup from "yup";
 
 /**
- * An account named by an email address or by the school's own staff ID, typed
- * into one box. The server tells them apart by the `@`, so the only shape
+ * An account named by an email address or by an ID the school issued (a staff
+ * ID, or a pupil's admission number), typed into one box. The server tells them apart by the `@`, so the only shape
  * checked here is that an address with an `@` is a whole address. Sign-in and
  * forgot-password share it, so the two boxes accept the same things.
  */
 const identifierField = Yup.string()
   .trim()
-  .required("Enter your ID")
+  .required("Enter your email or ID")
   .test(
     "email-if-address",
     "Invalid email address",

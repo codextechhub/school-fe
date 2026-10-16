@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import NoSchoolNotice from "@/components/auth/no-school-notice";
 import { currentSchoolSlug } from "@/utils/school-host";
+import { handOverToStudentApp, openStudentAppSignIn } from "@/utils/student-app-handover";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -54,6 +55,14 @@ export default function Login() {
             );
             return;
           }
+          // A pupil belongs in the student app: hand the sign-in across and
+          // open it, or send them to its own sign-in if the hand-over fails.
+          if (res.data.device_app) {
+            const app = res.data.device_app;
+            return handOverToStudentApp().then((opened) => {
+              if (!opened) openStudentAppSignIn(app);
+            });
+          }
           navigate(
             signInTarget(consumeReturnTo(), res.data.tenant?.status === "PENDING"),
             { replace: true },
@@ -95,12 +104,12 @@ export default function Login() {
 
       <form onSubmit={formik.handleSubmit} className="mt-4 space-y-4">
         <CustomInput
-          label="ID"
+          label="Email or ID"
           id="identifier"
           autoComplete="username"
           autoCapitalize="none"
           spellCheck={false}
-          placeholder="Enter your ID"
+          placeholder="Email, staff ID or admission number"
           className="bg-gray-03 h-11 placeholder:text-[#21212166] placeholder:text-sm"
           {...formik.getFieldProps("identifier")}
           onChange={(e) => {

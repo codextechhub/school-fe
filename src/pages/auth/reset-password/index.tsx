@@ -9,11 +9,12 @@ import { routesPath } from "@/routes/routesPath";
 import { resetPasswordSchema } from "@/schema/auth";
 import { PasswordRules, passwordFieldErrors } from "@/components/auth/set-password";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { useFormik } from "formik";
+import { openStudentAppSignIn } from "@/utils/student-app-handover";
 
 export default function ResetPassword() {
   const { activation_key } = useParams<{ activation_key: string }>();
@@ -56,14 +57,20 @@ export default function ResetPassword() {
     },
   });
 
+  // A reset does not sign anybody in. Staff go on to this app's sign-in, a
+  // pupil to the student app's.
+  const studentApp = preview?.data.device_app;
+  const continueToSignIn = useCallback(() => {
+    if (studentApp) openStudentAppSignIn(studentApp);
+    else navigate(routesPath.AUTH.LOGIN, { replace: true });
+  }, [studentApp, navigate]);
+
   useEffect(() => {
     if (success) {
-      const t = setTimeout(() => {
-        navigate(routesPath.AUTH.LOGIN, { replace: true });
-      }, 7000);
+      const t = setTimeout(continueToSignIn, 7000);
       return () => clearTimeout(t);
     }
-  }, [success, navigate]);
+  }, [success, continueToSignIn]);
 
   if (previewLoading) {
     return (
@@ -135,9 +142,9 @@ export default function ResetPassword() {
                 className="bg-gray-03 h-11 text-gray-01"
               />
               <CustomInput
-                label="Email"
+                label={preview.data.email ? "Email" : "Signs in with"}
                 id="email"
-                value={preview.data.email}
+                value={preview.data.email || preview.data.sign_in_as || ""}
                 readOnly
                 className="bg-gray-03 h-11 text-gray-01"
               />
@@ -216,24 +223,23 @@ export default function ResetPassword() {
               </p>
             </div>
 
-            <Button
-              className="w-full h-11 mt-9"
-              onClick={() => navigate(routesPath.AUTH.LOGIN, { replace: true })}
-            >
+            <Button className="w-full h-11 mt-9" onClick={continueToSignIn}>
               Continue to Login
             </Button>
 
-            <div className="text-center mt-6">
-              <Link
-                to={routesPath.AUTH.LOGIN}
-                className="font-mont font-medium text-sm text-black-01 inline-flex justify-center items-center group"
-              >
-                <figure className="size-fit mr-1.5 group-hover:-translate-x-1 ease-linear transition-all">
-                  {svgIcons.arrowLeft}
-                </figure>
-                Back to Log In
-              </Link>
-            </div>
+            {!studentApp && (
+              <div className="text-center mt-6">
+                <Link
+                  to={routesPath.AUTH.LOGIN}
+                  className="font-mont font-medium text-sm text-black-01 inline-flex justify-center items-center group"
+                >
+                  <figure className="size-fit mr-1.5 group-hover:-translate-x-1 ease-linear transition-all">
+                    {svgIcons.arrowLeft}
+                  </figure>
+                  Back to Log In
+                </Link>
+              </div>
+            )}
           </div>
         )}
       </motion.div>

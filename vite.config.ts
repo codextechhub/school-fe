@@ -210,9 +210,16 @@ export default defineConfig({
     // it treats as same-origin and waves through without consulting
     // CSRF_TRUSTED_ORIGINS - and that list cannot express a wildcard port, so
     // rewriting the Host would pin development to one.
+    //
+    // `/student` goes to the student app's dev server (student-fe, port 5175),
+    // which production serves at /student/ on this same origin. A pupil who
+    // signs in here is handed across to it, and the hand-over travels in
+    // sessionStorage, which is per origin, so the two have to share one here as
+    // they do in production. `ws` carries its hot reload.
     proxy: {
       "/v1": { target: devApiTarget, changeOrigin: false },
       "/media": { target: devApiTarget, changeOrigin: false },
+      "/student": { target: "http://localhost:5175", changeOrigin: false, ws: true },
     },
   },
   plugins: [

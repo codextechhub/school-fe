@@ -14,6 +14,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { useFormik } from "formik";
+import { openStudentAppSignIn } from "@/utils/student-app-handover";
 
 export default function ActivateAccount() {
   const { activation_key } = useParams<{ activation_key: string }>();
@@ -35,12 +36,16 @@ export default function ActivateAccount() {
     validationSchema: resetPasswordSchema,
     onSubmit: (values) => {
       setApiError("");
-      // Activation only sets the password + marks the account active - it
-      // returns `{ message }`, NOT a login-shaped payload. Show the success
-      // panel and send the user to sign in.
+      // Activation sets the password and signs nobody in. Staff see the
+      // success panel and go on to this app's sign-in; a pupil's account
+      // belongs in the student app, so they go straight to its sign-in.
+      const studentApp = preview?.data.device_app;
       activateAccount({ activation_key: activation_key!, ...values })
         .unwrap()
-        .then(() => setSuccess(true))
+        .then(() => {
+          if (studentApp) openStudentAppSignIn(studentApp);
+          else setSuccess(true);
+        })
         .catch((err) => {
           // A refused password goes under its box; only the rest is a banner.
           const perField = passwordFieldErrors(err);
@@ -128,9 +133,9 @@ export default function ActivateAccount() {
                 className="bg-gray-03 h-11 text-gray-01"
               />
               <CustomInput
-                label="Email"
+                label={preview.data.email ? "Email" : "Signs in with"}
                 id="email"
-                value={preview.data.email}
+                value={preview.data.email || preview.data.sign_in_as || ""}
                 readOnly
                 className="bg-gray-03 h-11 text-gray-01"
               />

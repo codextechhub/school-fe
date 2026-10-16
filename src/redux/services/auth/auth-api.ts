@@ -12,7 +12,7 @@ import { routesPath } from "@/routes/routesPath";
 import { recordActivity } from "@/utils/session-activity";
 import { resetSessionInvalidation } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
-import type { LoginResponse } from "./auth-types";
+import type { LinkPreview, LoginResponse } from "./auth-types";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { setAccessToken } from "@/utils/access-token";
 import { getCsrfToken } from "@/utils/csrf";
@@ -99,6 +99,10 @@ export const authApi = baseApi.injectEndpoints({
             return;
           }
 
+          // A pupil's sign-in is handed to the student app by the login page;
+          // this app writes no session for it.
+          if (data?.data?.device_app) return;
+
           // A fresh, valid session - re-enable token refresh in case a prior
           // session in this JS context invalidated it.
           resetSessionInvalidation();
@@ -148,7 +152,7 @@ export const authApi = baseApi.injectEndpoints({
         body: { ...payload, tenant: currentSchoolSlug() },
       }),
     }),
-    passwordResetPreview: builder.query<{ message: string; data: { email: string; full_name: string } }, string>({
+    passwordResetPreview: builder.query<{ message: string; data: LinkPreview }, string>({
       query: (activation_key) => ({
         url: `/user/auth/reset-password/${activation_key}/preview/`,
         method: "GET",
@@ -161,7 +165,7 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
     }),
-    activationPreview: builder.query<{ message: string; data: { email: string; full_name: string } }, string>({
+    activationPreview: builder.query<{ message: string; data: LinkPreview }, string>({
       query: (activation_key) => ({
         url: `/user/auth/activate/${activation_key}/preview/`,
         method: "GET",
