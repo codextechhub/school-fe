@@ -84,7 +84,8 @@ describe("moderation Field Access", () => {
     render();
     expect(container.textContent).toContain("56.40%");
     expect(container.textContent).toContain("Compared with SSS1 A, which offers the same subject.");
-    expect(labels()).toEqual(expect.arrayContaining(["View sheet", "Return with a note", "Approve"]));
+    expect(container.querySelector('[role="button"][aria-label="Open Mathematics for SSS1 B"]')).not.toBeNull();
+    expect(labels()).toEqual(expect.arrayContaining(["Return with a note", "Approve"]));
   });
 
   it("drops the class figures when they are hidden", () => {

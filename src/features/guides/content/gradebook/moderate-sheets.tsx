@@ -12,7 +12,7 @@ export default function ModerateSheetsArticle() {
       </GuideSection>
 
       <GuideSection id="read-a-sheet" title="Read a sheet">
-        <p>Open <strong>Gradebook</strong>, then <strong>Moderation</strong>, or the moderation card on your own sheets. Each sheet shows its teacher, how many students are marked, the class average, the highest and lowest totals, the pass rate, and the other classes that offer the same subject, so a column that looks out of line stands out. Sheets waiting for your decision come first. Select <strong>View sheet</strong> to read every mark.</p>
+        <p>Open <strong>Gradebook</strong>, then <strong>Moderation</strong>, or the moderation card on your own sheets. The board separates sheets waiting for review, returned to teachers, and approved. Each card shows its teacher, how many students are marked, the class average, the highest and lowest totals, the pass rate, and the other classes that offer the same subject, so a result that looks out of line stands out. Select a card to open the full sheet and read every mark.</p>
       </GuideSection>
 
       <GuideSection id="approve" title="Approve">

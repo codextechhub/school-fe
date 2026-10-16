@@ -325,6 +325,11 @@ everyone else, which also live at `/gradebook/mine`. Moderation is
    heading to its score sheet, whose subject switch uses the same sliding
    interaction. These are layout and navigation changes over the existing hub,
    sheet and result fields; no Field Access choice or API shape changes.
+7. Moderation is a department board with Waiting for review, Returned and
+   Approved columns. Its summary counts only sheets the reader may decide,
+   while the board keeps every readable sheet visible. Selecting a card opens
+   the full score sheet; Return and Approve stay on actionable cards. The board
+   reuses the existing moderation response and Field Access choices.
 
 ### Phase 4: broadsheet and compiling
 
