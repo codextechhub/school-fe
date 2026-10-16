@@ -13,7 +13,7 @@ import type { HoldRow, HoldsArgs, HoldsPage } from "@/redux/services/gradebook/g
  *
  * Mrs Ngozi Ibekwe is bursar at Lagoon View. Zainab Afolabi's family owes
  * ₦125,000 and her result is held; Tunde Bello owes nothing. The balance
- * switch removes the balance columns and the "who owe" filter with them,
+ * switch removes the finance facts and the "needs attention" view with them,
  * because filtering on a balance would tell the reader who owes. A role that
  * may not write the reason cannot hold, and still lifts without a note.
  */
@@ -95,28 +95,59 @@ afterEach(() => {
 const holdAccess = (hidden: string[], readOnly: string[]) => {
   fieldAccess = { [FIELD_RESOURCE.GRADEBOOK_HOLD]: { hidden, read_only: readOnly, open_on_create: [] } };
 };
-const headers = () => Array.from(container.querySelectorAll("th")).map((th) => th.textContent);
 const labels = () => Array.from(document.body.querySelectorAll("button")).map((b) => b.textContent);
 const render = () => act(() => root.render(<MemoryRouter><FeeHoldsPage /></MemoryRouter>));
+const selectStudent = async (name: string) => {
+  const button = Array.from(container.querySelectorAll("button")).find((candidate) => candidate.textContent?.includes(name));
+  expect(button).toBeDefined();
+  await act(async () => button!.click());
+};
 
 describe("fee holds Field Access", () => {
   it("shows the balances, opens on the families who owe, and offers hold and lift", () => {
     render();
-    expect(headers()).toEqual(expect.arrayContaining(["Balance (Finance)", "Oldest unpaid", "Action"]));
+    expect(container.textContent).toContain("Balance from Finance");
+    expect(container.textContent).toContain("Oldest unpaid");
+    expect(container.textContent).toContain("Outstanding shown");
     expect(container.textContent).toContain("₦125,000.00");
     expect(container.textContent).toContain("Two terms unpaid.");
-    expect(container.textContent).toContain("44 days");
+    expect(container.textContent).toContain("44 days overdue");
     expect(asked.at(-1)).toMatchObject({ owes: true });
-    expect(labels()).toEqual(expect.arrayContaining(["Lift hold", "Hold result"]));
+    expect(labels()).toContain("Lift hold");
+  });
+
+  it("focuses the selected student and slides to the whole roll", async () => {
+    render();
+    await selectStudent("Tunde Bello");
+    expect(labels()).toContain("Hold result");
+    expect(container.textContent).toContain("No hold is active");
+
+    const wholeRoll = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Whole roll")!;
+    await act(async () => wholeRoll.click());
+    expect(wholeRoll.getAttribute("aria-pressed")).toBe("true");
+    expect(asked.at(-1)).toMatchObject({ owes: false, page: 1 });
+  });
+
+  it("opens the hold drawer from the focused student", async () => {
+    render();
+    await selectStudent("Tunde Bello");
+    const holdButton = Array.from(document.body.querySelectorAll("button")).find((button) => button.textContent === "Hold result")!;
+    await act(async () => holdButton.click());
+    expect(document.body.textContent).toContain("Hold Tunde Bello's result");
+    expect(document.body.textContent).toContain("Reason for the hold");
+    expect(document.body.querySelector("textarea")).not.toBeNull();
   });
 
   it("drops the balances and the owes filter when the balance is hidden", () => {
     holdAccess(["balance", "oldest_unpaid_on", "days_owed"], []);
     page = { ...page, data: page.data.map(({ balance: _b, oldest_unpaid_on: _o, days_owed: _d, ...row }) => row), as_of: undefined, finance_available: undefined };
     render();
-    expect(headers()).not.toContain("Balance (Finance)");
-    expect(headers()).not.toContain("Oldest unpaid");
-    expect(container.querySelector('[role="switch"]')).toBeNull();
+    expect(container.textContent).not.toContain("Balance from Finance");
+    expect(container.textContent).not.toContain("Oldest unpaid");
+    expect(container.textContent).not.toContain("Outstanding shown");
+    expect(container.textContent).not.toContain("Families owing");
+    expect(container.querySelector('[aria-label="Fee hold list"]')).toBeNull();
+    expect(labels()).not.toContain("Refresh Finance");
     expect(asked.at(-1)).toMatchObject({ owes: false });
     expect(container.textContent).not.toContain("as of");
   });
@@ -124,7 +155,9 @@ describe("fee holds Field Access", () => {
   it("withholds Hold result when the reason may not be written, and lifts without a note", async () => {
     holdAccess([], ["reason", "lift_note"]);
     render();
+    await selectStudent("Tunde Bello");
     expect(labels()).not.toContain("Hold result");
+    await selectStudent("Zainab Afolabi");
     const liftButton = Array.from(document.body.querySelectorAll("button")).find((b) => b.textContent === "Lift hold")!;
     await act(async () => liftButton.click());
     expect(document.body.querySelector("textarea")).toBeNull();
@@ -141,11 +174,11 @@ describe("fee holds Field Access", () => {
     expect(container.textContent).toContain("by Ngozi Ibekwe");
   });
 
-  it("reads only, with no Action column, for a role with the view key alone", () => {
+  it("reads only, with no hold action, for a role with the view key alone", () => {
     manages = false;
     render();
-    expect(headers()).not.toContain("Action");
     expect(labels()).not.toContain("Lift hold");
+    expect(labels()).not.toContain("Hold result");
   });
 
   it("says when a bill falls due while it is not yet overdue", () => {
@@ -153,6 +186,13 @@ describe("fee holds Field Access", () => {
     render();
     expect(container.textContent).toContain("₦18,687.50");
     expect(container.textContent).toMatch(/Due .*2026/);
+  });
+
+  it("keeps a released result read only", () => {
+    page = { ...page, data: [{ ...tunde, released: true, released_on: "2026-10-14T10:00:00Z" }] };
+    render();
+    expect(container.textContent).toContain("a released result cannot be held");
+    expect(labels()).not.toContain("Hold result");
   });
 
   it("says when Finance cannot answer, rather than showing zero", () => {

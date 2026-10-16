@@ -397,6 +397,12 @@ the design:
    existing return, comment, broadsheet and publish flow is preserved. The
    desk derives its totals from the existing approval response and introduces
    no Field Access choice or API field.
+9. Fee holds is a family ledger with a sliding Needs attention and Whole roll
+   switch, compact page summaries, a selectable student list and one focused
+   hold detail. The student list scrolls inside its panel, and selecting a row
+   brings the detail into view at phone and tablet widths. Finance-derived
+   facts and summaries follow the existing balance Read choice; the redesign
+   adds no API field or Field Access choice.
 
 ### Phase 6: release, report cards and the student's Results tab
 

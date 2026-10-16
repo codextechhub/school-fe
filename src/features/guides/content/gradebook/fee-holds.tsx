@@ -12,14 +12,15 @@ export default function FeeHoldsArticle() {
       </GuideSection>
 
       <GuideSection id="read-the-list" title="Read the list">
-        <p>The list opens on the families who owe, with anyone already held, so you can lift a hold once a family pays. Turn the switch off to see every student. Search by name or admission number, or pick a class.</p>
+        <p>The ledger opens on the families who owe, with anyone already held, so you can lift a hold once a family pays. Slide from <strong>Needs attention</strong> to <strong>Whole roll</strong> to see every student. Search by name or admission number, or pick a class.</p>
         <p>Balances come from Finance at the time shown at the top. They are context for your decision, not a rule. No mark appears on this screen.</p>
         <GuideCallout tone="warning" title="When Finance cannot answer">The balances are blank, never zero, and every student is listed. You can still place and lift holds.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="hold" title="Hold a result">
         <GuideSteps>
-          <GuideStep title="Select Hold result">On the student&apos;s row.</GuideStep>
+          <GuideStep title="Select the student">Their Finance context and current hold come into focus.</GuideStep>
+          <GuideStep title="Select Hold result">Use the action in the focused student panel.</GuideStep>
           <GuideStep title="Write the reason">It is required. The reason stays on this screen; the principal sees only that the result is held, and by whom.</GuideStep>
         </GuideSteps>
       </GuideSection>
