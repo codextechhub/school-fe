@@ -11,6 +11,7 @@ const PROBLEMS = [
   { title: "Everything is greyed out", body: "You can read settings but not change them. Changing needs the finance settings update permission, and because a setting applies to every branch, someone who covers the whole school. At a school with one branch, its bursar covers the whole school." },
   { title: "An account is missing from a mapping list", body: "Each role only offers active, postable accounts of the type it expects. Create or fix the account in the Chart of Accounts first." },
   { title: "Save stays disabled", body: "Nothing has changed, or a number is out of range. The message beside the button says which." },
+  { title: "A setting is grey, or missing, while the others change", body: "Every setting has its own Read and Write switch under Field Access. A grey one is a setting your role may read and not change; a missing one is a setting your role may not read, and a panel with nothing left in it does not appear." },
 ] as const;
 
 export default function FinanceSettingsArticle() {
@@ -61,7 +62,7 @@ export default function FinanceSettingsArticle() {
       </GuideSection>
 
       <GuideSection id="banking-and-cash" title="Banking and cash">
-        <p><strong>Reconciliation date tolerance (days)</strong> lets automatic matching pair lines whose dates differ by up to that many days. <strong>Default receipt allocation</strong> is <strong>Oldest due first</strong> or <strong>Largest balance first</strong>. <strong>Petty cash low-balance threshold (%)</strong> flags a float for a top-up. <strong>Allow grouped automatic matches</strong> lets one bank line match several ledger lines with the same total. Select <strong>Save banking policy</strong>. A choice made on the screen itself always wins over these defaults.</p>
+        <p><strong>Reconciliation date tolerance (days)</strong> lets automatic matching pair lines whose dates differ by up to that many days. <strong>Default receipt allocation</strong> is <strong>Oldest due first</strong> or <strong>Largest balance first</strong>. <strong>Petty cash low-balance threshold (%)</strong> flags a float for a top-up. <strong>Allow grouped automatic matches</strong> lets one bank line match several ledger lines with the same total. <strong>Apply bank transfers to open bills automatically</strong>, on unless you turn it off, settles a family&apos;s open bills as soon as their transfer into their own account number is booked, in the receipt allocation order above; off, every transfer waits as credit for somebody to allocate. Select <strong>Save banking policy</strong>. A choice made on the screen itself always wins over these defaults.</p>
         <p>Below them, the <strong>Online payments</strong> panel chooses who holds the school&apos;s online payments and sets up each branch&apos;s collection account with the provider.</p>
       </GuideSection>
 
