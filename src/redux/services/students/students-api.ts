@@ -12,6 +12,8 @@ import type {
   AdmissionRulesUpdate,
   PromotionRules,
   PromotionRulesUpdate,
+  StudentPortalRules,
+  StudentPortalRulesUpdate,
   BulkResultRow,
   BranchMoveOptions,
   BranchMoveResult,
@@ -776,6 +778,17 @@ export const studentsApi = baseApi.injectEndpoints({
       invalidatesTags: ["Students"],
     }),
 
+    getStudentPortalRules: builder.query<Envelope<StudentPortalRules>, void>({
+      query: () => ({ url: `/students/portal-rules/`, method: "GET" }),
+      providesTags: ["StudentPortalRules"],
+    }),
+
+    updateStudentPortalRules: builder.mutation<Envelope<StudentPortalRules>, StudentPortalRulesUpdate>({
+      query: (body) => ({ url: `/students/portal-rules/`, method: "PUT", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["StudentPortalRules"],
+    }),
+
     /** Move an applicant between the school's stages, or extend an offer. */
     moveApplicantStage: builder.mutation<
       Envelope<StudentRow>,
@@ -832,6 +845,8 @@ export const {
   useMoveApplicantStageMutation,
   useGetPromotionRulesQuery,
   useUpdatePromotionRulesMutation,
+  useGetStudentPortalRulesQuery,
+  useUpdateStudentPortalRulesMutation,
   useGetClassSeatsQuery,
   usePreviewPromotionMutation,
   useRunPromotionMutation,

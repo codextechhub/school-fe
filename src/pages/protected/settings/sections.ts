@@ -29,6 +29,7 @@ export const SCHOOL_SETTINGS_SECTIONS = [
   "guardians",
   "admissions",
   "promotion",
+  "student-portal",
   "academics",
   "calendar",
   "attendance",
@@ -96,6 +97,7 @@ export const SECTION_GATES: Record<
   guardians: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   admissions: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   promotion: { anyOf: [P.VIEW_SETTINGS], capability: "students" },
+  "student-portal": { anyOf: [P.VIEW_SETTINGS], capability: "students" },
   academics: { anyOf: [P.VIEW_SETTINGS] },
   calendar: { anyOf: [P.VIEW_SETTINGS] },
   // Gated on the key that saves it, as admission numbers are: every teacher

@@ -162,6 +162,7 @@ export const routesPath = {
       GUARDIANS: "/settings/guardians",
       ADMISSIONS: "/settings/admissions",
       PROMOTION: "/settings/promotion",
+      STUDENT_PORTAL: "/settings/student-portal",
       ACADEMICS: "/settings/academics",
       DISPLAY: "/settings/display",
       CALENDAR: "/settings/calendar",

@@ -1163,6 +1163,16 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { to: R.SETTINGS.STAFF_IDS },
   },
   {
+    id: "view-student-portal-settings",
+    label: "View student portal rules",
+    aliases: ["student portal", "pupil portal", "student photo", "students change photo"],
+    section: "Settings",
+    group: "School settings",
+    kind: "view",
+    gate: { any: SECTION_GATES["student-portal"].anyOf },
+    run: { to: R.SETTINGS.STUDENT_PORTAL },
+  },
+  {
     id: "view-admission-number-settings",
     label: "View admission number rule",
     aliases: ["admission numbers", "admission number format", "numbering"],

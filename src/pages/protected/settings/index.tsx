@@ -14,6 +14,7 @@ import {
   LayoutGrid,
   Landmark,
   ListChecks,
+  MonitorSmartphone,
   School,
   ShieldCheck,
   UserPlus,
@@ -43,6 +44,7 @@ import { EnrolmentSection } from "./sections/enrolment-section";
 import { GuardiansSection } from "./sections/guardians-section";
 import { AdmissionsSection } from "./sections/admissions-section";
 import { PromotionSection } from "./sections/promotion-section";
+import { StudentPortalSection } from "./sections/student-portal-section";
 import { AcademicsSection } from "./sections/academics-section";
 import { CalendarSection } from "./sections/calendar-section";
 import { MoreSection } from "./sections/more-section";
@@ -87,6 +89,7 @@ const SECTION_META: Record<
   "admission-numbers": { title: "Admission numbers", description: "The rule for new numbers", icon: Hash, group: "students" },
   guardians: { title: "Guardians", description: "Contacts and siblings", icon: Users, group: "students" },
   promotion: { title: "Promotion", description: "Arms, holds and full classes", icon: GraduationCap, group: "students" },
+  "student-portal": { title: "Student portal", description: "What students change themselves", icon: MonitorSmartphone, group: "students" },
   academics: { title: "Academic structure", description: "The school year and arms", icon: CalendarRange, group: "academics" },
   calendar: { title: "Calendar and timetables", description: "Teaching days, periods, exams", icon: CalendarClock, group: "academics" },
   attendance: { title: "Attendance", description: "Lessons, notices, reasons", icon: ClipboardCheck, group: "academics" },
@@ -107,6 +110,7 @@ const PANELS: Record<Exclude<SchoolSettingsSection, "overview">, () => React.JSX
   guardians: GuardiansSection,
   admissions: AdmissionsSection,
   promotion: PromotionSection,
+  "student-portal": StudentPortalSection,
   academics: AcademicsSection,
   calendar: CalendarSection,
   attendance: AttendanceSection,
@@ -217,6 +221,7 @@ const OVERVIEW_TEXT: Record<SchoolSettingsSection, string> = {
   guardians: "How many guardians a child needs, whether their email is required, how siblings are recognised, and your own relationship words.",
   admissions: "Your school's own admission steps, how long an offer stays open, and the documents needed before an applicant is enrolled.",
   promotion: "Who moves up at the end of the year, whether a year group keeps its arms or is spread across classes, and what a full class does.",
+  "student-portal": "What students may change for themselves once they can sign in, such as their own photograph.",
   academics: "Whether your school says Term or Semester, the ones every new year starts with, and the arms offered for new classes.",
   calendar: "The days your school teaches, the day its week starts, which events close it, what a timetable needs to publish, and who may invigilate.",
   attendance: "Which levels mark every lesson, whether guardians are emailed about an absence, the chronic-absence line, how long a register stays open, and your reasons for excusing an absence.",

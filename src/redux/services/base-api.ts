@@ -553,6 +553,11 @@ export const baseApi = createApi({
     // The school's own fee due rule (FAL), read and written by the Finance
     // Settings fees section.
     "FeeDuePolicy",
+    // Whether this school's students may pay their own fees, and the smallest
+    // part payment, read and written beside the fee due date.
+    "StudentPaymentRules",
+    // What students may do for themselves in the student portal.
+    "StudentPortalRules",
     "ExportCapabilities",
     "ExportCatalogue",
     "ExportDefinitions",

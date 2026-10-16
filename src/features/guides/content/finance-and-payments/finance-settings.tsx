@@ -37,7 +37,7 @@ export default function FinanceSettingsArticle() {
           <GuideStep title="Banking and cash">Defaults for bank matching, receipt allocation and petty cash alerts, and the Online payments panel, which has a guide of its own.</GuideStep>
           <GuideStep title="Reference data">Links to the Chart of accounts, Tax codes and Cost centres.</GuideStep>
           <GuideStep title="Approvals"><strong>Manage workflows</strong> opens the approval templates. This section appears only to people allowed to see them.</GuideStep>
-          <GuideStep title="Fee due dates">When fee bills fall due. It has a guide of its own.</GuideStep>
+          <GuideStep title="Fee due dates">When fee bills fall due, and whether students may pay their own fees from the student portal. It has a guide of its own.</GuideStep>
           <GuideStep title="Receivables">Credit on new bills, the concession limit, fees billed ahead, doubtful-debt bands, deposits and how a payer&apos;s payment is split. Explained in the guide to fees billed ahead, deposits and doubtful debts.</GuideStep>
           <GuideStep title="Payroll">How PAYE is worked out, which deductions apply, how payslips reach staff, and earlier pay. Explained in the payroll guide.</GuideStep>
         </GuideSteps>

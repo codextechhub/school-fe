@@ -624,6 +624,20 @@ export interface AdmissionRulesUpdate {
 }
 
 /**
+ * What students may do for themselves in the student portal
+ * (`/v1/students/portal-rules/`). One rule for every branch.
+ */
+export interface StudentPortalRules {
+  /** A student may change or remove their own photograph. Default true. */
+  photo_self_edit: boolean;
+}
+
+/** What the student portal rules save sends. */
+export interface StudentPortalRulesUpdate extends StudentPortalRules {
+  reason?: string;
+}
+
+/**
  * The school's promotion rules (`/v1/students/promotion-rules/`).
  *
  * `capacity_mode` is promotion's own rule; `FOLLOW_ENROLMENT` means promotion

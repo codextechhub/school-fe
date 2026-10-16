@@ -9,7 +9,8 @@ import { useGuideWords, type TermWords } from "../../guide-words";
 
 const problems = (w: TermWords) => [
   { title: `The rules show no ${w.term} or session dates`, body: `The school has no active academic session yet. Set up the academic calendar; the ${w.term} and session rules start resolving once it exists.` },
-  { title: "Save stays disabled", body: "Nothing has changed, or the number of days is not a whole number between 0 and 365." },
+  { title: "Save stays disabled", body: "Nothing has changed, the number of days is not a whole number between 0 and 365, or the smallest part payment is not a whole number of naira." },
+  { title: "A student says there is no Pay button", body: "Students paying their own fees is turned off, or the student has nothing left to pay. Check the switch under the due date rule." },
   { title: "The rule could not be loaded", body: "Reading it needs the fees view permission, and saving it needs the fees update permission. Ask whoever manages roles." },
 ] as const;
 
@@ -42,6 +43,18 @@ export default function FeeDueDatesArticle() {
         <p>Changing the rule does not move the due dates on bills already raised.</p>
         <GuideCallout tone="info" title="Where the rule is used">
           Every fee run from a fee structure uses it: Generate invoices and Batch generate on Receivables work the date out from this rule and show it in the preview before anything is billed. A single invoice raised with New invoice does not: it takes the Due date typed on its form, or Default invoice due days from the Documents section when that is left empty.
+        </GuideCallout>
+      </GuideSection>
+
+      <GuideSection id="students-paying" title="Students paying their own fees">
+        <p>Below the due date rule, <strong>Students paying their own fees</strong> decides whether a student may pay from the student portal. Fees are normally paid by a parent or guardian in their own app; this is for a family that cannot. It is on unless the school turns it off.</p>
+        <GuideSteps>
+          <GuideStep title="Choose whether students may pay">Turn <strong>Students may pay their own fees</strong> off and students still see what they owe, but no Pay button. Turned on, card and bank details are entered on the payment provider&apos;s page, never in the portal.</GuideStep>
+          <GuideStep title="Set the smallest part payment">Type it in whole naira, such as 1,000. A student paying part of a bill must pay at least this; paying the whole balance of a bill is always allowed, however small it is.</GuideStep>
+          <GuideStep title="Select Save">The rule applies to the next payment a student starts. One rule covers every branch.</GuideStep>
+        </GuideSteps>
+        <GuideCallout tone="info" title="Where a student's payment goes">
+          It is settled into the student&apos;s own fees account like any online payment, and the student is told when it is confirmed.
         </GuideCallout>
       </GuideSection>
 

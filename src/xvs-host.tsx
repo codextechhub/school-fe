@@ -185,8 +185,9 @@ export const createsWorkflowTemplates = false;
  *  explaining which version of an approval path they are running. */
 export const platformName = "XVS";
 
-/** When this school's fee bills fall due. */
-export { default as FeeDuePolicyPanel } from "@/pages/protected/school-finance/fee-due-policy";
+/** The school's own fee rules: when fee bills fall due, and whether students
+ *  may pay their own fees. The package names the slot after the first. */
+export { default as FeeDuePolicyPanel } from "@/pages/protected/school-finance/fee-settings";
 
 /** Who a fee structure bills: chosen classes, previewed, then billed through
  *  the school's own route, which keeps to the term the structure prices and
