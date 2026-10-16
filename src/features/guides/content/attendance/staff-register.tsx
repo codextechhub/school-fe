@@ -4,7 +4,7 @@ export default function StaffRegisterArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>The staff register records what an administrator saw; there is no clock-in. Open <strong>Attendance</strong>, then <strong>Staff register</strong>, or select <strong>Staff register</strong> on the Today screen. Each branch has its own register, listing the staff whose home branch it is. Use the date to open an earlier day.</p>
+        <p>The staff register records what an administrator saw; there is no clock-in. Open <strong>Attendance</strong>, then <strong>Staff register</strong>, or select <strong>Staff register</strong> on the Today screen. The summary and branch cards show what is complete and what still needs attention. Open a branch card to mark its full register. Use the date to open an earlier day.</p>
       </GuideSection>
 
       <GuideSection id="mark-staff" title="Mark the staff">

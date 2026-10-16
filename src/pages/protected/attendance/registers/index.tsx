@@ -22,7 +22,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useFieldAccess } from "@/components/finance-ui";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { usePermissions } from "@/hooks/use-permissions";
-import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
@@ -74,7 +73,6 @@ export default function ClassRegisters() {
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
   const { date, today, setDate } = useAttendanceDay();
   const { branch, applies, label } = useBranchLens();
-  const { formatDay } = useSchoolDisplay();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<RegisterDirectoryFilter>("all");
@@ -180,7 +178,7 @@ export default function ClassRegisters() {
       <AttendancePageHeader
         title="Class registers"
         description="See every class at a glance, follow incomplete registers, and open the class that needs attention."
-        meta={[formatDay(date, { weekday: "long", month: "long" }), applies ? label : null]}
+        meta={[applies ? label : null]}
         actions={<DayPicker date={date} today={today} onChange={setDate} />}
       />
 

@@ -130,10 +130,7 @@ function DayHeader({
   sub,
   action,
 }: DayProps & { title: string; sub: Array<string | null>; action?: React.ReactNode }) {
-  const { formatDay } = useSchoolDisplay();
-  const line = [formatDay(date, { weekday: "long", month: "long" }), ...sub]
-    .filter(Boolean)
-    .join(" · ");
+  const line = sub.filter(Boolean).join(" · ");
   return (
     <div className="flex min-w-0 flex-wrap items-start justify-between gap-3">
       <div className="min-w-0">

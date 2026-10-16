@@ -362,6 +362,14 @@ seeder topped up 13 October: both branches, the leave and leaving rows, the
 no-home-branch group, an Absent and back to Present round trip at the Annex,
 and the page at 390px.
 
+**Directory redesigned 15 October 2026.** Staff register opens with school-wide
+attendance totals and one card per branch. Each branch card previews the first
+staff rows, shows completion when counts are readable, and opens the full
+marking workspace below the directory. People with no home branch sit in a
+compact warning that expands into the existing locked list. `attendance.staff`
+Field Access controls the status, counts, marks and submitter details shown in
+the new directory. Hidden counts are not rebuilt from the roster rows.
+
 All six phases are built.
 
 ### Responsive redesign and Field Access coverage

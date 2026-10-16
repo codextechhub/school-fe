@@ -67,7 +67,6 @@ export default function AttendanceLessons() {
   const { hasPermission } = usePermissions();
   const { date, today, isToday, setDate } = useAttendanceDay();
   const { branch, applies, label } = useBranchLens();
-  const { formatDay } = useSchoolDisplay();
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_LESSON);
   const allowed = hasPermission(P.TAKE_ANY_REGISTER);
   const [filter, setFilter] = useState<LessonDirectoryFilter>("all");
@@ -129,7 +128,7 @@ export default function AttendanceLessons() {
       <AttendancePageHeader
         title="Lesson registers"
         description="Track every scheduled lesson, follow incomplete registers, and open the lesson that needs attention."
-        meta={[formatDay(date, { weekday: "long", month: "long" }), applies ? label : null]}
+        meta={[applies ? label : null]}
         actions={<DayPicker date={date} today={today} onChange={setDate} />}
       />
 

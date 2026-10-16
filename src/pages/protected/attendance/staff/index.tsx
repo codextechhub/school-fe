@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { Briefcase } from "lucide-react";
+import {
+  ArrowRight,
+  Briefcase,
+  CheckCircle2,
+  Clock3,
+  TriangleAlert,
+  UserRoundX,
+  UsersRound,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import PageAccessDenied from "@/components/custom/page-access-denied";
@@ -38,6 +46,11 @@ import { LateArrivalDrawer } from "../register/mark-drawers";
 import { RegisterRowItem, type RowMode } from "../register/register-rows";
 import { timeOnDay } from "../time-on-day";
 import { useAttendanceDay } from "../use-attendance-day";
+import { MARKS, markLabel } from "../marks";
+import { PersonAvatar } from "@/pages/protected/students/person-avatar";
+import { cn } from "@/lib/utils";
+import { staffRegisterFieldPolicy } from "./staff-register-policy";
+import { staffGroupProgress, summarizeStaffAttendance } from "./staff-register-state";
 
 const STAFF_MARKS: AttendanceMark[] = ["P", "L", "A"];
 
@@ -60,8 +73,16 @@ export default function StaffRegisterPage() {
   const { hasPermission } = usePermissions();
   const { date, today, setDate } = useAttendanceDay();
   const { branch } = useBranchLens();
-  const { formatDay } = useSchoolDisplay();
+  const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_STAFF);
   const allowed = hasPermission(P.VIEW_STAFF_REGISTER);
+  const [focusedBranchId, setFocusedBranchId] = useState<number | null>(null);
+  const [showNoHomeBranch, setShowNoHomeBranch] = useState(false);
+  const fieldPolicy = staffRegisterFieldPolicy({
+    statusHidden: access.isHidden("status"),
+    countsHidden: access.isHidden("counts"),
+    markHidden: access.isHidden("mark"),
+    takenByHidden: access.isHidden("taken_by"),
+  });
   const { data, isLoading, isError, refetch } = useGetStaffRegisterQuery(
     { date, branch },
     { skip: !allowed },
@@ -76,12 +97,29 @@ export default function StaffRegisterPage() {
   }
 
   const day = data?.data;
+  const summary = summarizeStaffAttendance(day?.groups ?? []);
+  const focused = day?.groups.find((group) => group.branch.id === focusedBranchId) ?? null;
+  const focusBranch = (group: StaffGroup) => {
+    setFocusedBranchId(group.branch.id);
+    setShowNoHomeBranch(false);
+    window.requestAnimationFrame(() => {
+      document.getElementById("staff-branch-register")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+  const reviewNoHomeBranch = () => {
+    setFocusedBranchId(null);
+    setShowNoHomeBranch(true);
+    window.requestAnimationFrame(() => {
+      document.getElementById("staff-no-home-branch")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
+
   return (
     <PageShell className="content-start gap-5" grid>
       <AttendancePageHeader
         title="Staff register"
         description="Record who is present, late, absent, or already on approved leave."
-        meta={[formatDay(date, { weekday: "long", month: "long" }), "This is an administrator record, not a clock-in system"]}
+        meta={["This is an administrator record, not a clock-in system"]}
         actions={<DayPicker date={date} today={today} onChange={setDate} />}
       />
 
@@ -99,16 +137,42 @@ export default function StaffRegisterPage() {
         <ClosedDayNotice closed={day.closed} dateLabel={day.date_label} />
       ) : (
         <>
-          {day.groups.map((group) => (
-            <BranchRegister
-              key={group.branch.id}
-              group={group}
-              date={date}
-              heading={day.branch_dimension ? group.branch.name : "Staff"}
-            />
-          ))}
-          {day.no_home_branch && day.no_home_branch.count > 0 && (
-            <NoHomeBranch rows={day.no_home_branch.rows} />
+          {fieldPolicy.showCounts && <StaffSummary summary={summary} />}
+
+          <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-2">
+            {day.groups.map((group) => (
+              <BranchOverviewCard
+                key={group.branch.id}
+                group={group}
+                date={date}
+                showBranch={day.branch_dimension}
+                policy={fieldPolicy}
+                onOpen={() => focusBranch(group)}
+              />
+            ))}
+            {day.no_home_branch && day.no_home_branch.count > 0 && (
+              <NoHomeBranchNotice
+                count={day.no_home_branch.count}
+                showCount={fieldPolicy.showCounts}
+                onReview={reviewNoHomeBranch}
+              />
+            )}
+          </div>
+
+          {focused && (
+            <div id="staff-branch-register" className="scroll-mt-5">
+              <BranchRegister
+                group={focused}
+                date={date}
+                heading={day.branch_dimension ? focused.branch.name : "Staff"}
+                showTakenBy={fieldPolicy.showTakenBy}
+              />
+            </div>
+          )}
+          {showNoHomeBranch && day.no_home_branch && (
+            <div id="staff-no-home-branch" className="scroll-mt-5">
+              <NoHomeBranch rows={day.no_home_branch.rows} />
+            </div>
           )}
           <p className="text-sm text-gray-06">
             On leave is filled in from approved leave in Staff Management and cannot be marked over.
@@ -117,6 +181,156 @@ export default function StaffRegisterPage() {
         </>
       )}
     </PageShell>
+  );
+}
+
+function StaffSummary({ summary }: { summary: ReturnType<typeof summarizeStaffAttendance> }) {
+  const cards = [
+    { label: "Expected today", value: summary.expected, icon: UsersRound, tone: "blue" },
+    { label: "Present", value: summary.present, icon: CheckCircle2, tone: "green" },
+    { label: "Late", value: summary.late, icon: Clock3, tone: "amber" },
+    { label: "Needs marking", value: summary.needsMarking, icon: TriangleAlert, tone: "red" },
+  ];
+
+  return (
+    <section aria-label="Staff attendance summary" className="grid min-w-0 grid-cols-2 gap-3 xl:grid-cols-4">
+      {cards.map((card) => {
+        const Icon = card.icon;
+        return (
+          <Panel key={card.label} className="flex min-w-0 items-center gap-3 p-3.5">
+            <span className={cn(
+              "grid size-10 shrink-0 place-items-center rounded-lg",
+              card.tone === "blue" && "bg-blue-50 text-blue-700",
+              card.tone === "green" && "bg-emerald-50 text-emerald-700",
+              card.tone === "amber" && "bg-amber-50 text-amber-700",
+              card.tone === "red" && "bg-rose-50 text-rose-700",
+            )}>
+              <Icon className="size-4.5" aria-hidden="true" />
+            </span>
+            <span className="min-w-0 flex-1 text-xs text-gray-06">{card.label}</span>
+            <strong className="text-2xl font-semibold tracking-[-0.02em] text-black-01">{card.value}</strong>
+          </Panel>
+        );
+      })}
+    </section>
+  );
+}
+
+function BranchOverviewCard({
+  group,
+  date,
+  showBranch,
+  policy,
+  onOpen,
+}: {
+  group: StaffGroup;
+  date: string;
+  showBranch: boolean;
+  policy: ReturnType<typeof staffRegisterFieldPolicy>;
+  onOpen: () => void;
+}) {
+  const fmt = useSchoolDisplay();
+  const progress = policy.showCounts ? staffGroupProgress(group) : null;
+  const preview = group.rows.slice(0, 3);
+  const remaining = Math.max(0, group.rows.length - preview.length);
+  const submitted = group.status === "SUBMITTED";
+  const status = policy.showStatus
+    ? submitted
+      ? { label: "Submitted", variant: "active" as const }
+      : group.counts?.unmarked
+        ? { label: `${group.counts.unmarked} unmarked`, variant: "pending" as const }
+        : group.status === "READY"
+          ? { label: "Ready", variant: "blue" as const }
+          : group.status === "IN_PROGRESS"
+            ? { label: "In progress", variant: "pending" as const }
+            : { label: "Not started", variant: "inactive" as const }
+    : null;
+  const submittedLine = policy.showTakenBy && submitted
+    ? [
+        group.submitted_at ? timeOnDay(fmt, group.submitted_at, date) : null,
+        group.submitted_by_name ? `by ${group.submitted_by_name}` : null,
+      ].filter(Boolean).join(" ")
+    : null;
+
+  return (
+    <Panel as="section" className="flex min-w-0 flex-col overflow-hidden">
+      <div className="flex min-w-0 flex-wrap items-start justify-between gap-3 border-b border-border p-4">
+        <div className="min-w-0">
+          <h2 className="truncate text-base font-semibold text-black-01">
+            {showBranch ? group.branch.name : "Staff register"}
+          </h2>
+          {progress && (
+            <p className="mt-0.5 text-xs text-gray-05">
+              {progress.marked} of {progress.markable} markable staff completed
+            </p>
+          )}
+          {submittedLine && <p className="mt-0.5 truncate text-xs text-gray-05">Submitted {submittedLine}</p>}
+        </div>
+        {status && <Badge variant={status.variant} className="rounded-full">{status.label}</Badge>}
+      </div>
+
+      <ul className="flex-1 divide-y divide-border">
+        {preview.map((row) => (
+          <li key={row.staff.id} className="flex min-w-0 items-center gap-3 px-4 py-3">
+            <PersonAvatar name={row.staff.name} className="size-8 shrink-0" textClassName="text-[10px]" />
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium text-black-01">{row.staff.name}</span>
+              {(row.role || row.exit) && (
+                <span className="mt-0.5 block truncate text-xs text-gray-05">
+                  {[row.role, row.exit?.text].filter(Boolean).join(" · ")}
+                </span>
+              )}
+            </span>
+            <StaffPreviewStatus row={row} showMark={policy.showMark} />
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-border bg-white-05 px-4 py-3">
+        <span className="text-xs text-gray-05">
+          {policy.showCounts && remaining > 0 ? `${remaining} more staff ${remaining === 1 ? "member" : "members"}` : "Open the full branch register"}
+        </span>
+        <Button size="sm" variant={submitted ? "outline" : "default"} onClick={onOpen}>
+          {submitted ? "Open register" : group.status === "READY" ? "Review and submit" : "Open register"}
+          <ArrowRight className="size-3.5" aria-hidden="true" />
+        </Button>
+      </div>
+    </Panel>
+  );
+}
+
+function StaffPreviewStatus({ row, showMark }: { row: StaffRegisterRow; showMark: boolean }) {
+  if (row.lock_reason === "ON_LEAVE") return <Badge variant="inactive" className="rounded-full">On leave</Badge>;
+  if (row.lock_reason === "NO_HOME_BRANCH") return <Badge variant="pending" className="rounded-full">No home branch</Badge>;
+  if (!showMark || row.mark === undefined) return null;
+  if (!row.mark) return <Badge variant="inactive" className="rounded-full">Unmarked</Badge>;
+  return <Badge variant={MARKS[row.mark].badge} className="rounded-full">{markLabel(row.mark)}</Badge>;
+}
+
+function NoHomeBranchNotice({
+  count,
+  showCount,
+  onReview,
+}: {
+  count: number;
+  showCount: boolean;
+  onReview: () => void;
+}) {
+  return (
+    <Panel as="section" className="flex min-w-0 flex-wrap items-center justify-between gap-3 p-4 xl:col-span-2">
+      <div className="flex min-w-0 items-start gap-3">
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-amber-50 text-amber-700">
+          <UserRoundX className="size-4" aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-black-01">
+            {showCount ? `${count} ${count === 1 ? "person has" : "people have"} no home branch` : "Some staff have no home branch"}
+          </h2>
+          <p className="mt-1 text-xs text-gray-05">They cannot be marked until a home branch is added to their staff record.</p>
+        </div>
+      </div>
+      <Button variant="outline" size="sm" onClick={onReview}>Review people</Button>
+    </Panel>
   );
 }
 
@@ -176,7 +390,17 @@ function StaffLock({ row }: { row: StaffRegisterRow }) {
  * Anyone who holds the staff register's mark key may change a submitted row
  * while the school's edit window is open; after that the day's marks stand.
  */
-function BranchRegister({ group, date, heading }: { group: StaffGroup; date: string; heading: string }) {
+function BranchRegister({
+  group,
+  date,
+  heading,
+  showTakenBy,
+}: {
+  group: StaffGroup;
+  date: string;
+  heading: string;
+  showTakenBy: boolean;
+}) {
   const { hasPermission } = usePermissions();
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_STAFF);
   const fmt = useSchoolDisplay();
@@ -221,7 +445,7 @@ function BranchRegister({ group, date, heading }: { group: StaffGroup; date: str
 
   const status = !access.isHidden("status") && group.status
     ? submitted
-      ? `Submitted${group.submitted_at ? ` ${timeOnDay(fmt, group.submitted_at, date)}` : ""}${group.submitted_by_name ? ` by ${group.submitted_by_name}` : ""}`
+      ? `Submitted${showTakenBy && group.submitted_at ? ` ${timeOnDay(fmt, group.submitted_at, date)}` : ""}${showTakenBy && group.submitted_by_name ? ` by ${group.submitted_by_name}` : ""}`
       : unmarked > 0
         ? `${unmarked} still unmarked`
         : "Ready to submit"
