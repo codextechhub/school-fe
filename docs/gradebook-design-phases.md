@@ -480,11 +480,17 @@ either amendment key. Where they differ from the design:
 The four analytics cards and both exports, CSV and xlsx.
 
 **As built.** Analytics are `/gradebook/analytics`, following the branch
-lens. Where they differ from the design:
+lens. The overview board starts with compact published-class, subject,
+weighted-average and pass-rate cards. Subject rows combine the published
+classes and open a focused class comparison; needs-attention signals flow to
+their content height beside class summaries, term movement and ranking. On a
+phone the focused subject, movement cards and supporting panels stack without
+turning the page into a horizontal table. Further details:
 
-1. Export is a menu offering CSV or Excel (the design drew CSV only, B8),
-   for a holder of the export key alone. The file is the server's, cut from
-   the same figures as the screen, and keeps the server's file name.
+1. One page-level Export menu offers the subject and term-movement tables as
+   CSV or Excel, for a holder of the export key alone. The file is the
+   server's, cut from the same figures as the screen, and keeps the server's
+   file name.
 2. Every part appears only when it has something to say: the comparison
    only where two classes share a subject, the top of each class only at a
    school that ranks and for a reader of both positions and averages.

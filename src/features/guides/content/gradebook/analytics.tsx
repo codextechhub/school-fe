@@ -13,16 +13,17 @@ export default function AnalyticsArticle() {
 
       <GuideSection id="read" title="Read the figures">
         <GuideSteps>
-          <GuideStep title="By subject and class">Each subject in each published class: its average, how many students reached each grade, the pass rate and how many were marked.</GuideStep>
-          <GuideStep title="The same subject across classes">Where more than one class offers a subject, each class&apos;s average and the gap between highest and lowest.</GuideStep>
-          <GuideStep title="Term on term">Each student&apos;s overall average against their most recent earlier published term, biggest fall first. A student with no earlier published result is not listed.</GuideStep>
+          <GuideStep title="Start with the term summary">See how many classes and subjects are represented. Where your role may read class figures, the overview also shows the weighted average mark and pass rate across the published subject entries.</GuideStep>
+          <GuideStep title="Choose a subject">The subject list combines its published classes. Select one to see each class&apos;s average, pass rate and marked count together.</GuideStep>
+          <GuideStep title="Review the signals">Needs attention keeps the largest visible class gaps and falls together. They are prompts for review, not judgements on a teacher.</GuideStep>
+          <GuideStep title="Compare terms">Each student&apos;s overall average is compared with their most recent earlier published term. A student with no earlier published result is not listed.</GuideStep>
           <GuideStep title="Top of each class">Where the school ranks, who leads each class.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="info" title="A question, not a verdict">A gap between classes is a question for the head of department, not a judgement on a teacher.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="export" title="Download a table">
-        <p>Select <strong>Export</strong> on the subject table or the term-on-term table and choose CSV or Excel. The file holds the same figures as the screen, and each download is recorded.</p>
+        <p>Select <strong>Export</strong> at the top of the page, choose the subject performance or term movement table, then choose CSV or Excel. The file holds the same figures as the screen, and each download is recorded.</p>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">

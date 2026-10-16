@@ -6,13 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Analytics } from "@/redux/services/gradebook/gradebook-types";
 
 /**
- * Analytics draw what the server sends and nothing else.
+ * The analytics overview draws what the server sends and nothing else.
  *
  * Lagoon View published JSS1 A and JSS1 B, which both offer Mathematics. Tunde
  * Bello's overall average fell from 68.00 last term to 61.50. The class
  * figures, the overall averages and the positions are withheld by the server
- * where the reader may not read them; the screen must then drop the columns
- * and parts rather than print a blank under their headings.
+ * where the reader may not read them; the screen must then drop every card,
+ * bar, comparison and table value derived from those fields.
  */
 let exports = true;
 
@@ -90,6 +90,10 @@ beforeEach(() => {
   root = createRoot(container);
   data = report;
   exports = true;
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn().mockReturnValue({ matches: false }),
+  });
 });
 
 afterEach(() => {
@@ -97,32 +101,36 @@ afterEach(() => {
   container.remove();
 });
 
-const headers = () => Array.from(container.querySelectorAll("th")).map((th) => th.textContent);
 const exportButtons = () => Array.from(container.querySelectorAll("button")).filter((b) => b.textContent?.includes("Export"));
 const render = () => act(() => root.render(<MemoryRouter><AnalyticsPage /></MemoryRouter>));
 
 describe("analytics", () => {
-  it("draws all four parts, with an export on the two tables that have one", () => {
+  it("draws the overview, focus, review signals and movement from published results", () => {
     render();
-    expect(headers()).toEqual(expect.arrayContaining(["Average", "Grade spread", "Pass rate", "This term", "Change"]));
-    expect(container.textContent).toContain("A 5 · F 2");
+    expect(container.textContent).toContain("Published classes2");
+    expect(container.textContent).toContain("Average mark60.8%");
+    expect(container.textContent).toContain("Pass rate89%");
+    expect(container.textContent).toContain("A 5");
+    expect(container.textContent).toContain("F 2");
     expect(container.textContent).toContain("Gap of 6.60 points");
+    expect(container.textContent).toContain("Mathematics has a 6.60-point gap");
     expect(container.textContent).toContain("-6.50");
     expect(container.textContent).toContain("Zainab Afolabi");
-    expect(exportButtons()).toHaveLength(2);
+    expect(exportButtons()).toHaveLength(1);
   });
 
-  it("drops the class figures when they are withheld", () => {
+  it("drops every class-figure summary and comparison when they are withheld", () => {
     data = {
       ...report,
       subjects: report.subjects.map(({ average: _a, spread: _s, pass_rate: _p, ...row }) => row),
       compare: [],
     };
     render();
-    expect(headers()).not.toContain("Average");
-    expect(headers()).not.toContain("Grade spread");
-    expect(headers()).not.toContain("Pass rate");
-    expect(container.textContent).not.toContain("across classes");
+    expect(container.textContent).not.toContain("Average mark");
+    expect(container.textContent).not.toContain("Pass rate");
+    expect(container.textContent).not.toContain("Grade spread");
+    expect(container.textContent).not.toContain("6.60-point gap");
+    expect(container.textContent).toContain("27 marked");
   });
 
   it("drops the overall averages and the top of each class when they are withheld", () => {
@@ -132,8 +140,8 @@ describe("analytics", () => {
       tops: undefined,
     };
     render();
-    expect(headers()).not.toContain("Change");
     expect(container.textContent).not.toContain("68.00");
+    expect(container.textContent).not.toContain("6.50 points below");
     expect(container.textContent).not.toContain("Top of each class");
   });
 
@@ -141,6 +149,30 @@ describe("analytics", () => {
     exports = false;
     render();
     expect(exportButtons()).toHaveLength(0);
+  });
+
+  it("moves the subject focus when a subject row is selected", () => {
+    data = {
+      ...report,
+      subjects: [
+        ...report.subjects,
+        {
+          subject: { id: 42, name: "English Language" },
+          class: { id: 82, name: "JSS1 A" },
+          average: "72.00",
+          spread: [{ grade: "A", count: 11 }],
+          pass_rate: 96,
+          marked: 27,
+        },
+      ],
+    };
+    render();
+    const choice = Array.from(container.querySelectorAll("button")).find((button) => button.textContent?.includes("English Language"));
+    expect(choice).toBeTruthy();
+    act(() => choice?.click());
+    expect(choice?.getAttribute("aria-pressed")).toBe("true");
+    expect(container.querySelector("aside")?.textContent).toContain("English Language");
+    expect(container.querySelector("aside")?.textContent).toContain("72%");
   });
 
   it("says when nothing is published, and when no student has an earlier term", () => {
