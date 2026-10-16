@@ -370,6 +370,17 @@ compact warning that expands into the existing locked list. `attendance.staff`
 Field Access controls the status, counts, marks and submitter details shown in
 the new directory. Hidden counts are not rebuilt from the roster rows.
 
+**Reports redesigned 16 October 2026.** Attendance Reports opens on a term
+overview with readable headline figures, the weekly trend, a short attention
+queue and a class preview. Sliding tabs separate the full class table, students
+at risk, register gaps and missed lessons. Downloads move to one menu beside the
+term control. The overview and tabs repeat the backend Field Access boundaries:
+`attendance.register.counts` controls rates, lateness, school days, levels and
+students at risk; `attendance.register.status` controls register gaps; and the
+missed-lesson view requires both `attendance.lesson.mark` and
+`attendance.lesson.counts`. An omitted block is never reconstructed from other
+readable rows.
+
 All six phases are built.
 
 ### Responsive redesign and Field Access coverage
