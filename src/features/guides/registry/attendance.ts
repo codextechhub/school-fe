@@ -135,7 +135,7 @@ export const ATTENDANCE_GUIDES = [
     sections: [
       { id: "before-you-start", title: "Before you start" },
       { id: "read-the-term", title: "Read the {term}" },
-      { id: "chronic", title: "Chronic absence" },
+      { id: "chronic", title: "Students at risk" },
       { id: "not-taken", title: "Registers not taken" },
       { id: "download", title: "Download a table" },
     ],
