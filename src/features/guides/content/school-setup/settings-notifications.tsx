@@ -3,7 +3,8 @@ import { GuideCallout, GuideSection, GuideStep, GuideSteps } from "../../article
 const LINES = [
   ["An Email switch", "You choose. The text under the event says where its current setting comes from."],
   ["Always sent", "A transactional event, such as a receipt or a password reset. It always emails, because the person it concerns is owed it, so there is no switch."],
-  ["No switch and no label", "The event has no email. It shows in the bell only."],
+  ["No switch and no label", "The event has no email or push. It shows in the bell only."],
+  ["A student says they get no push", "Push reaches only a phone or tablet where the student installed the app and allowed notifications, and only while the event's Push switch is on."],
 ] as const;
 
 const PROBLEMS = [
@@ -51,6 +52,7 @@ export default function SettingsNotificationsArticle() {
         <GuideSteps>
           <GuideStep title="Find the event">Scroll to the group the event belongs to.</GuideStep>
           <GuideStep title="Flip the switch">Turn the <strong>Email</strong> switch on or off. It saves straight away and XVS confirms whether the event will be emailed. There is no separate Save, so leaving the page loses nothing.</GuideStep>
+          <GuideStep title="Push to phones">Some events, such as a new notice, a released result and a confirmed payment, also have a <strong>Push</strong> switch. A push reaches the phone or tablet of somebody who installed the student app and allowed notifications. It says what happened, such as <strong>Your Second Term result is ready</strong>, and never a mark, a position or an amount, because it can show on a locked screen.</GuideStep>
         </GuideSteps>
         <p>At the whole school, a changed event reads <strong>Your school&apos;s choice.</strong> Until then it reads <strong>The XVS default.</strong> At a branch, the text says <strong>Set for this branch.</strong>, <strong>Follows your school&apos;s choice.</strong>, <strong>Follows the XVS default.</strong>, or <strong>Set for the whole school only</strong> for an email that is not about one branch.</p>
         <p>A branch&apos;s own choice has a <strong>Use the school&apos;s choice</strong> button beside it, which drops the branch&apos;s choice so it follows the whole school again.</p>

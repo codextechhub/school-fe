@@ -16,7 +16,7 @@ import type { Envelope } from "../onboarding/onboarding-types";
  * whole school, a transactional event (a receipt, a password reset) always
  * sends, and the in-app channel is always on.
  */
-export type NotificationChannel = "in_app" | "email";
+export type NotificationChannel = "in_app" | "email" | "push";
 
 export interface NotificationSettingRow {
   event_type_key: string;

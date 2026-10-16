@@ -33,12 +33,13 @@ interface EventLine {
   label: string;
   transactional: boolean;
   email?: NotificationSettingRow;
+  push?: NotificationSettingRow;
 }
 
 /** The line under an event: what decides it, at the scope being read. */
 function describe(line: EventLine, atBranch: boolean): string {
   if (line.transactional) return "Always emailed, because the person it concerns is owed it.";
-  const email = line.email;
+  const email = line.email ?? line.push;
   if (!email) return "Shown in the bell only. This event has no email.";
   if (atBranch && email.branch_scoped === false) {
     return "Set for the whole school only, because this email is not about one branch.";
@@ -58,7 +59,9 @@ function describe(line: EventLine, atBranch: boolean): string {
  * changes their own branches and reads the whole school's; the server says so
  * per row (`can_edit`), and a switch the reader may not move is shown still.
  *
- * Email is the only channel offered as a choice. The bell carries every event,
+ * Email and push are the channels offered as a choice. Push reaches the phones
+ * of people who installed a XVS app and allowed notifications, with text that
+ * names what happened and never a figure. The bell carries every event,
  * and a transactional event (a receipt, a password reset) always emails; both
  * are shown as facts, since the server refuses to turn either off.
  *
@@ -107,15 +110,25 @@ export function NotificationsSection() {
       transactional: row.is_transactional,
     };
     if (row.channel === "email") line.email = row;
+    if (row.channel === "push") line.push = row;
     events.set(row.event_type_key, line);
     groups.set(group, events);
   }
 
-  const change = async (row: NotificationSettingRow, next: boolean | null, done: string) => {
-    setPending(row.event_type_key);
+  const change = async (
+    changed: NotificationSettingRow[],
+    next: boolean | null,
+    done: string,
+  ) => {
+    if (changed.length === 0) return;
+    setPending(changed[0].event_type_key);
     try {
       await save({
-        updates: [{ event_type_key: row.event_type_key, channel: "email", is_enabled: next }],
+        updates: changed.map((row) => ({
+          event_type_key: row.event_type_key,
+          channel: row.channel,
+          is_enabled: next,
+        })),
         branch: branch || undefined,
       }).unwrap();
       toast.success(done);
@@ -134,7 +147,7 @@ export function NotificationsSection() {
     <div className="space-y-5">
       <SettingsSectionHeader
         title="Notifications"
-        description="Choose which events also send an email. The events in the list always appear in the bell inside XVS, whatever you choose for their email."
+        description="Choose which events also send an email, and which are pushed to the phones of people who allowed notifications. The events in the list always appear in the bell inside XVS, whatever you choose."
       />
 
       {showsApprovals ? <ApprovalEmails /> : null}
@@ -185,8 +198,14 @@ export function NotificationsSection() {
         [...groups.entries()].map(([group, events]) => (
           <SettingsPanel key={group} title={group}>
             {[...events.values()].map((line) => {
-              const email = line.email;
-              const editable = !!email && (email.can_edit ?? true);
+              const channels = [
+                { row: line.email, name: "Email", on: "emailed", off: "no longer be emailed" },
+                { row: line.push, name: "Push", on: "pushed to phones", off: "no longer be pushed to phones" },
+              ].filter((c): c is typeof c & { row: NotificationSettingRow } => !!c.row);
+              const editable = (row: NotificationSettingRow) => row.can_edit ?? true;
+              const ownChoices = channels
+                .map((c) => c.row)
+                .filter((row) => atBranch && row.source === "branch" && editable(row));
               return (
                 <SettingsRow
                   key={line.key}
@@ -196,36 +215,38 @@ export function NotificationsSection() {
                   badge={
                     line.transactional ? (
                       <PolicyBadge kind="enforced">Always sent</PolicyBadge>
-                    ) : email ? (
+                    ) : channels.length > 0 ? (
                       <span className="flex flex-wrap items-center justify-end gap-2">
-                        {atBranch && email.source === "branch" && editable ? (
+                        {ownChoices.length > 0 ? (
                           <Button
                             variant="outline"
                             size="xs"
                             disabled={pending !== null}
-                            onClick={() => change(email, null, `${line.label} now follows the whole school at ${scopeName}.`)}
+                            onClick={() => change(ownChoices, null, `${line.label} now follows the whole school at ${scopeName}.`)}
                           >
                             <RotateCcw className="size-3" />
                             Use the school&apos;s choice
                           </Button>
                         ) : null}
-                        <label className="flex items-center gap-2 font-mont text-xs font-normal text-gray-05">
-                          Email
-                          <Switch
-                            aria-label={`Email: ${line.label}`}
-                            checked={email.is_enabled}
-                            disabled={!editable || pending !== null}
-                            onCheckedChange={(next) =>
-                              change(
-                                email,
-                                next,
-                                next
-                                  ? `${line.label} will be emailed for ${scopeName}.`
-                                  : `${line.label} will no longer be emailed for ${scopeName}.`,
-                              )
-                            }
-                          />
-                        </label>
+                        {channels.map(({ row, name, on, off }) => (
+                          <label key={name} className="flex items-center gap-2 font-mont text-xs font-normal text-gray-05">
+                            {name}
+                            <Switch
+                              aria-label={`${name}: ${line.label}`}
+                              checked={row.is_enabled}
+                              disabled={!editable(row) || pending !== null}
+                              onCheckedChange={(next) =>
+                                change(
+                                  [row],
+                                  next,
+                                  next
+                                    ? `${line.label} will be ${on} for ${scopeName}.`
+                                    : `${line.label} will ${off} for ${scopeName}.`,
+                                )
+                              }
+                            />
+                          </label>
+                        ))}
                       </span>
                     ) : null
                   }
