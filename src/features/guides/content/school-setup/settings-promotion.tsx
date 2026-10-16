@@ -75,6 +75,10 @@ export default function SettingsPromotionArticle() {
         <Cards items={CHOICES.capacity} />
       </GuideSection>
 
+      <GuideSection id="pass-mark" title="Pass mark">
+        <p>Type the average, in percent, your school treats as the mark for moving up, for example <strong>50</strong>, or leave the box empty if you set none. The promotion screen shows it beside the outcomes as a guide for whoever records them. It promotes and holds back nobody: a student averaging 45% is still promoted if your school decides so. Students and families never see it.</p>
+      </GuideSection>
+
       <GuideSection id="save-the-rules" title="Save the rules">
         <p>Select <strong>Save promotion rules</strong>. XVS confirms with <strong>Promotion rules saved.</strong> and the next promotion run follows them.</p>
       </GuideSection>
@@ -84,7 +88,7 @@ export default function SettingsPromotionArticle() {
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="You are done when">Suspended students, students not yet attending, arms and full classes each have the choice your school agreed, and the promotion screen shows the destinations you expect.</GuideCallout>
+        <GuideCallout tone="tip" title="You are done when">Suspended students, students not yet attending, arms and full classes each have the choice your school agreed, the pass mark is your school's or empty, and the promotion screen shows the destinations you expect.</GuideCallout>
       </GuideSection>
     </div>
   );

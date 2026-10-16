@@ -389,7 +389,10 @@ export interface PromotionPlan {
     arm_note?: string | null;
   }[];
   /** The school's promotion rules this plan was worked out under. */
-  rules?: Pick<PromotionRules, "suspended" | "not_placed" | "arms">;
+  rules?: Pick<PromotionRules, "suspended" | "not_placed" | "arms"> & {
+    /** The school's pass mark, for guidance beside the outcomes; null when none is set. */
+    pass_mark?: number | null;
+  };
   /**
    * Target classes the run would fill past their capacity. The run refuses
    * them (PROMOTION_OVER_CAPACITY) until it is sent `allow_over_capacity`.
@@ -629,6 +632,12 @@ export interface PromotionRules {
   capacity_mode: PromotionCapacityMode;
   effective_capacity_mode: CapacityMode;
   enrolment_capacity_mode: CapacityMode;
+  /**
+   * The average, in percent, the school treats as the mark for moving up.
+   * Shown to staff for guidance and deciding nothing; null when none is set.
+   * Never shown to a pupil or a family.
+   */
+  pass_mark: number | null;
   options: {
     suspended: LabelledOption[];
     not_placed: LabelledOption[];
@@ -641,10 +650,14 @@ export type PromotionHoldOrMove = "HOLD" | "PROMOTE";
 export type PromotionArms = "SAME_ARM" | "SPREAD";
 export type PromotionCapacityMode = "FOLLOW_ENROLMENT" | CapacityMode;
 
+/**
+ * What the promotion rules save sends. `pass_mark` is optional: left out it is
+ * kept as it is, and null clears it.
+ */
 export type PromotionRulesUpdate = Pick<
   PromotionRules,
   "suspended" | "not_placed" | "arms" | "capacity_mode"
-> & { reason?: string };
+> & { pass_mark?: number | null; reason?: string };
 
 export type GuardianRulesUpdate = Pick<
   GuardianRules,

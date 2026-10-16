@@ -524,6 +524,12 @@ function LevelMapping({ plan }: { plan: PromotionPlan }) {
         {plan.rules?.arms === "SPREAD" &&
           " Your school spreads each year group evenly across the next level's classes, so move anyone who belongs elsewhere afterwards."}
       </p>
+      {plan.rules?.pass_mark != null && (
+        <p className="mt-2 text-sm text-gray-05">
+          Your school&apos;s pass mark for promotion is {plan.rules.pass_mark}%. It is a guide:
+          decide each student on their record.
+        </p>
+      )}
       <ul className="mt-4 grid gap-2">
         {plan.level_map.map((row) => {
           const destination = destinationOf(plan, row);

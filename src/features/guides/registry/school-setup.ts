@@ -493,6 +493,7 @@ export const SCHOOL_SETUP_GUIDES = [
       { id: "not-yet-attending", title: "Students not yet attending" },
       { id: "arms", title: "Arms" },
       { id: "full-classes", title: "Full classes during promotion" },
+      { id: "pass-mark", title: "Pass mark" },
       { id: "save-the-rules", title: "Save the rules" },
       { id: "common-problems", title: "Common problems" },
       { id: "completion-check", title: "Completion check" },

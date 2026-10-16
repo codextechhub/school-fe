@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   SettingsPanel,
   SettingsSectionHeader,
@@ -20,6 +21,7 @@ import type {
 } from "@/redux/services/students/students-types";
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { useSettingsWrite } from "../use-settings-write";
+import { readPassMark } from "./pass-mark";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 interface Choice<T extends string> {
@@ -96,7 +98,8 @@ const CAPACITY: Choice<PromotionCapacityMode>[] = [
   },
 ];
 
-const FIELDS = ["suspended", "not_placed", "arms", "capacity_mode"] as const;
+const FIELDS = ["suspended", "not_placed", "arms", "capacity_mode", "pass_mark"] as const;
+
 
 /**
  * The school's rules for the end-of-year promotion.
@@ -111,6 +114,10 @@ const FIELDS = ["suspended", "not_placed", "arms", "capacity_mode"] as const;
  * a new admission into a full class may still want a whole year group to move
  * up and be sorted out in September. Until the school sets one, promotion
  * follows the enrolment rule.
+ *
+ * The pass mark is guidance for staff and decides nothing: the promotion
+ * preview shows it beside the outcomes, and whoever records them still decides
+ * each student. Pupils and families never see it.
  */
 export function PromotionSection() {
   const query = useGetPromotionRulesQuery();
@@ -144,16 +151,20 @@ function PromotionForm({ rules }: { rules: PromotionRules }) {
   const [notPlaced, setNotPlaced] = useState(rules.not_placed);
   const [arms, setArms] = useState(rules.arms);
   const [capacity, setCapacity] = useState(rules.capacity_mode);
+  const [passMark, setPassMark] = useState(rules.pass_mark == null ? "" : String(rules.pass_mark));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const mark = readPassMark(passMark);
+  const passMarkChanged = !mark.problem && mark.value !== (rules.pass_mark ?? null);
   const changed =
     suspended !== rules.suspended ||
     notPlaced !== rules.not_placed ||
     arms !== rules.arms ||
-    capacity !== rules.capacity_mode;
+    capacity !== rules.capacity_mode ||
+    passMarkChanged;
 
   const onSave = async () => {
-    if (!changed) return;
+    if (!changed || mark.problem) return;
     setErrors({});
     try {
       await save({
@@ -161,6 +172,7 @@ function PromotionForm({ rules }: { rules: PromotionRules }) {
         not_placed: notPlaced,
         arms,
         capacity_mode: capacity,
+        ...(passMarkChanged ? { pass_mark: mark.value } : {}),
       }).unwrap();
       toast.success("Promotion rules saved.");
     } catch (error) {
@@ -206,10 +218,35 @@ function PromotionForm({ rules }: { rules: PromotionRules }) {
         <ErrorLine text={errors.capacity_mode} />
       </SettingsPanel>
 
+      <SettingsPanel
+        title="Pass mark"
+        description="A guide for staff, shown beside the outcomes on the promotion screen. It promotes and holds back nobody, and students and families never see it."
+      >
+        <label className="block min-w-0 px-4 py-4 sm:px-5">
+          <span className="font-mont text-sm font-medium text-gray-01">Pass mark (%)</span>
+          <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
+            Leave it empty if your school sets no pass mark.
+          </span>
+          <Input
+            className="mt-2 max-w-32"
+            type="number"
+            inputMode="numeric"
+            min={1}
+            max={100}
+            placeholder="e.g. 50"
+            disabled={!canSave}
+            aria-invalid={mark.problem ? true : undefined}
+            value={passMark}
+            onChange={(event) => setPassMark(event.target.value)}
+          />
+        </label>
+        <ErrorLine text={mark.problem || errors.pass_mark} />
+      </SettingsPanel>
+
       {canSave ? (
         <div className="flex flex-wrap items-center justify-end gap-3">
           {changed ? <span className="font-mont text-xs text-gray-05">Unsaved changes</span> : null}
-          <Button onClick={onSave} loading={saving} disabled={!changed || saving}>
+          <Button onClick={onSave} loading={saving} disabled={!changed || saving || Boolean(mark.problem)}>
             Save promotion rules
           </Button>
         </div>
