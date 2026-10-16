@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from "react";
-import { useParams, useSearchParams } from "react-router";
+import { Link, useParams, useSearchParams } from "react-router";
 import { ClipboardList, Printer, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ import { ConfirmDialog } from "@/pages/protected/students/drawers/confirm-dialog
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { parseApiError } from "@/utils/api-error";
 
+import { CLASS_STAGE } from "../components/class-stage";
 import { CompileDrawer } from "./compile-drawer";
 
 const ordinal = (n: number) => {
@@ -44,7 +45,8 @@ const ordinal = (n: number) => {
  * Prints landscape for the results meeting, the gradebook chrome left off.
  *
  * Field Access: the average, the position and the comment status follow their
- * result switches, and a hidden one leaves its column.
+ * result switches. The compact summary repeats only data whose source field is
+ * readable, so a hidden field leaves both its table column and summary card.
  */
 export default function BroadsheetPage() {
   const params = useParams();
@@ -105,6 +107,14 @@ function BroadsheetBody({ sheet, classKey }: { sheet: Broadsheet; classKey: Clas
     : comments
       ? `${comments} comment${comments === 1 ? "" : "s"} to write`
       : "Submit the class";
+  const subjectsIn = sheet.subjects.filter((subject) => subject.in).length;
+  const commentsReady = sheet.rows.filter((row) => row.comment_done).length;
+  const readableAverages = (showAverage ? sheet.rows : [])
+    .flatMap((row) => row.average === null || row.average === undefined ? [] : [Number(row.average)])
+    .filter((value) => Number.isFinite(value));
+  const classAverage = readableAverages.length
+    ? `${(readableAverages.reduce((sum, value) => sum + value, 0) / readableAverages.length).toFixed(1)}%`
+    : "-";
 
   const onSubmit = async () => {
     const result = await submit(classKey);
@@ -142,6 +152,17 @@ function BroadsheetBody({ sheet, classKey }: { sheet: Broadsheet; classKey: Clas
         }
       />
 
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
+        <SummaryCard label="Current stage">
+          <Badge variant={CLASS_STAGE[sheet.stage].variant} className="rounded-full">
+            {CLASS_STAGE[sheet.stage].text}
+          </Badge>
+        </SummaryCard>
+        <SummaryCard label="Subject sheets" value={`${subjectsIn} of ${sheet.subjects.length}`} />
+        {showComment && <SummaryCard label="Comments ready" value={`${commentsReady} of ${sheet.rows.length}`} />}
+        {showAverage && <SummaryCard label="Class average" value={classAverage} />}
+      </div>
+
       {sheet.attendance_warning && sheet.attendance_warning.days_not_taken > 0 && (
         <Note>
           {sheet.attendance_warning.days_not_taken} school day{sheet.attendance_warning.days_not_taken === 1 ? "" : "s"} this
@@ -167,7 +188,12 @@ function BroadsheetBody({ sheet, classKey }: { sheet: Broadsheet; classKey: Clas
               <TableHead className="sticky left-0 z-10 min-w-44 bg-white">Student</TableHead>
               {sheet.subjects.map((subject) => (
                 <TableHead key={subject.id} className="text-center" title={subject.name}>
-                  {subject.short}
+                  <Link
+                    to={routesPath.PROTECTED.GRADEBOOK.SHEET_ID(sheet.class.id, subject.id, classKey.term)}
+                    className="font-semibold text-black-01 hover:text-primary hover:underline"
+                  >
+                    {subject.short}
+                  </Link>
                   {!subject.in && (
                     <div className="text-[11px] font-normal text-gray-05">{subject.main_teacher?.name ?? "No teacher"}</div>
                   )}
@@ -238,6 +264,23 @@ function BroadsheetBody({ sheet, classKey }: { sheet: Broadsheet; classKey: Clas
         busy={submitting.isLoading}
       />
     </>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  children,
+}: {
+  label: string;
+  value?: string;
+  children?: ReactNode;
+}) {
+  return (
+    <Panel className="space-y-1.5 px-3.5 py-3">
+      <p className="text-xs font-medium text-gray-06">{label}</p>
+      {children ?? <p className="font-mont text-lg font-semibold text-black-01">{value}</p>}
+    </Panel>
   );
 }
 

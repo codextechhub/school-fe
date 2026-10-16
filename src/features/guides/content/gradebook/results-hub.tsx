@@ -10,14 +10,15 @@ export default function ResultsHubArticle() {
           <GuideStep title="Classes compiled, awaiting approval, published">How many classes have every subject in and their comments written, how many are with the principal, and how many are published. A published result is locked: a change to it is an amendment.</GuideStep>
           <GuideStep title="Results held">How many results are held over fees, and so not released to the family.</GuideStep>
         </GuideSteps>
+        <p>Use the sliding stage switch to show all classes, classes still entering scores, classes being compiled, or classes that have reached approval or publication.</p>
       </GuideSection>
 
       <GuideSection id="by-class" title="By class">
-        <p>Each class with how many of its subjects are in, the stage it has reached (Entering, Compiling, Awaiting approval or Published) and its class teacher. <strong>Returned</strong> beside the stage means the principal sent the class back.</p>
+        <p>Each class shows how many subject sheets are in, the stage it has reached (Entering, Compiling, Awaiting approval or Published) and its class teacher. <strong>Returned</strong> beside the stage means the principal sent the class back. Select anywhere on the row to open the broadsheet; a subject heading on the broadsheet opens that score sheet.</p>
       </GuideSection>
 
       <GuideSection id="late-sheets" title="What is late">
-        <p>Every sheet due this term that is not in, with the reason the platform knows: how many students are entered, that the head has not moderated it yet, that it was returned and by whom, that its teacher&apos;s last working day is coming, or that nobody is its main teacher. Where the teacher cannot sign in, a role that can unlock staff accounts is told so, with a link to their staff record. Select <strong>Open sheet</strong> to read it.</p>
+        <p><strong>Needs attention</strong> lists every sheet due this term that is not in, with the reason the platform knows: how many students are entered, that the head has not moderated it yet, that it was returned and by whom, that its teacher&apos;s last working day is coming, or that nobody is its main teacher. Where the teacher cannot sign in, a role that can unlock staff accounts is told so, with a link to their staff record. Select <strong>Open sheet</strong> to read it.</p>
       </GuideSection>
 
       <GuideSection id="remind" title="Remind a teacher">

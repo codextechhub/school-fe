@@ -1,9 +1,10 @@
 import { useCallback, useState } from "react";
-import { Link, useParams, useSearchParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 import { ClipboardList, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 
 import { PageShell } from "@/components/layout/page-shell";
+import { SegmentedToggle } from "@/components/custom/segmented-toggle";
 import { Panel } from "@/components/custom/surface";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,7 +13,6 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useSchoolDisplay } from "@/hooks/use-school-display";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { P } from "@/permissions";
-import { cn } from "@/lib/utils";
 import {
   useGetMySheetsQuery,
   useGetSheetQuery,
@@ -208,7 +208,7 @@ function SheetHeader({ sheet }: { sheet: Sheet }) {
   const fmt = useSchoolDisplay();
   const paper = examPaperText(fmt, sheet.exam_paper);
   return (
-    <Panel as="section" className="space-y-4 p-4 sm:p-5">
+    <Panel as="section" className="space-y-3 p-3.5 sm:p-4">
       <div className="min-w-0">
         <h1 className="font-mont text-lg font-semibold text-black-01">
           {sheet.subject.name} · {sheet.class.name}
@@ -258,31 +258,24 @@ function Fact({ label, value }: { label: string; value: string }) {
  * class gets no strip at all.
  */
 function SubjectTabs({ sheet, sheetKey }: { sheet: Sheet; sheetKey: SheetKey }) {
+  const navigate = useNavigate();
   const { data } = useGetMySheetsQuery(sheetKey.term ? { term: sheetKey.term } : undefined);
   const mine = (data?.data.sheets ?? []).filter((s) => s.class.id === sheet.class.id);
   if (mine.length < 2) return null;
+
   return (
-    <nav aria-label="Your subjects in this class" className="max-w-full overflow-x-auto">
-      <ul className="flex gap-1 border-b border-border">
-        {mine.map((s) => {
-          const current = s.subject.id === sheet.subject.id;
-          return (
-            <li key={s.subject.id}>
-              <Link
-                to={routesPath.PROTECTED.GRADEBOOK.SHEET_ID(s.class.id, s.subject.id, sheetKey.term)}
-                aria-current={current ? "page" : undefined}
-                className={cn(
-                  "-mb-px inline-block whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium",
-                  current ? "border-primary text-primary" : "border-transparent text-gray-06 hover:text-black-01",
-                )}
-              >
-                {s.subject.name}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
+    <div className="max-w-full overflow-x-auto pb-1">
+      <SegmentedToggle
+        ariaLabel="Your subjects in this class"
+        value={String(sheet.subject.id)}
+        options={mine.map((item) => ({ value: String(item.subject.id), label: item.subject.name }))}
+        onChange={(subjectId) => {
+          const target = mine.find((item) => item.subject.id === Number(subjectId));
+          if (!target) return;
+          navigate(routesPath.PROTECTED.GRADEBOOK.SHEET_ID(target.class.id, target.subject.id, sheetKey.term));
+        }}
+      />
+    </div>
   );
 }
 
@@ -318,7 +311,7 @@ function SheetToolbar({
     blankRows > 0 ? `${blankRows} student${blankRows === 1 ? "" : "s"} still blank` : "Submit sheet";
 
   return (
-    <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+    <Panel className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 px-3.5 py-3 sm:px-4">
       {showProgress && sheet.progress && (
         <span className="text-sm font-medium text-black-01">
           {sheet.progress.complete} of {sheet.progress.total} complete
@@ -339,7 +332,7 @@ function SheetToolbar({
           </Button>
         </span>
       )}
-    </div>
+    </Panel>
   );
 }
 

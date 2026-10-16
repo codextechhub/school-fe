@@ -312,6 +312,12 @@ everyone else, which also live at `/gradebook/mine`. Moderation is
 5. The three late reasons that name a person (last working day, cannot sign
    in, no main teacher) are seeded at Sunrise Academy, JSS2 A (see the Phase 0
    seed check).
+6. The results hub is a compact control room: five short summary cards, a
+   sliding stage filter, clickable class rows with sheet progress, and a
+   content-height Needs attention panel. The broadsheet links each subject
+   heading to its score sheet, whose subject switch uses the same sliding
+   interaction. These are layout and navigation changes over the existing hub,
+   sheet and result fields; no Field Access choice or API shape changes.
 
 ### Phase 4: broadsheet and compiling
 
