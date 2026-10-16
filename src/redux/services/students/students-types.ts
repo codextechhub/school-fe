@@ -630,10 +630,12 @@ export interface AdmissionRulesUpdate {
 export interface StudentPortalRules {
   /** A student may change or remove their own photograph. Default true. */
   photo_self_edit: boolean;
+  /** Days a student stays signed in to the student app between uses, 1 to 90. Default 30. */
+  session_days: number;
 }
 
-/** What the student portal rules save sends. */
-export interface StudentPortalRulesUpdate extends StudentPortalRules {
+/** What the student portal rules save sends: either rule, or both. */
+export interface StudentPortalRulesUpdate extends Partial<StudentPortalRules> {
   reason?: string;
 }
 
