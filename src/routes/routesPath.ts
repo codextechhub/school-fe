@@ -131,6 +131,9 @@ export const routesPath = {
     // The notification centre. Open during onboarding, which is when a school
     // gets most of its post.
     NOTIFICATIONS: "/notifications",
+    // Notices the school posts to its pupils: drafted, published and
+    // withdrawn by staff, read by pupils in their portal.
+    NOTICES: "/notices",
     // The school's own support desk. Its staff raise tickets here and whoever
     // holds the triage key works them; only what they escalate reaches CodeX.
     // Open before go-live too - a school being set up is exactly when it needs

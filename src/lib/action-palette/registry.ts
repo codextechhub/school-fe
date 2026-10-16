@@ -94,6 +94,31 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     gate: null,
     run: { to: R.NOTIFICATIONS },
   },
+  {
+    // Gated like the screen and its sidebar item.
+    id: "view-notices",
+    label: "View notices",
+    aliases: ["announcements", "bulletin", "noticeboard", "notices to pupils"],
+    section: "Overview",
+    group: "Notices",
+    kind: "view",
+    gate: { perm: P.BROWSE_NOTICES },
+    capability: "student_portal",
+    run: { to: R.NOTICES },
+  },
+  {
+    // The screen's New notice drawer, gated on either posting key, as its
+    // button is.
+    id: "post-notice",
+    label: "Post a notice",
+    aliases: ["new notice", "announce", "send an announcement", "tell the pupils"],
+    section: "Overview",
+    group: "Notices",
+    kind: "do",
+    gate: { any: [P.POST_NOTICES, P.POST_CLASS_NOTICES] },
+    capability: "student_portal",
+    run: { to: `${R.NOTICES}?action=new` },
+  },
 
   // ── People ─────────────────────────────────────────────────────────────────
   //

@@ -102,7 +102,7 @@ describe("PortalAccessPanel", () => {
     };
     await render();
 
-    expect(container.textContent).toContain("Chiamaka has no sign-in for the pupil portal.");
+    expect(container.textContent).toContain("Chiamaka has no sign-in for the student portal.");
     await act(async () => button("Give portal access")?.click());
     await act(async () => button("Give access")?.click());
     expect(give).toHaveBeenCalledWith(7);

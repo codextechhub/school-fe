@@ -39,7 +39,7 @@ export default function FindStudentRecordArticle() {
         <p>Select a row, or choose <strong>Open profile</strong> from the row menu. The header shows the child&apos;s name, status, admission number, class, level, branch and year. Under it, a short path shows where they stand on <strong>Applicant</strong>, <strong>Enrolled</strong>, <strong>Active</strong>. A student outside that path, such as a graduated one, gets a sentence instead.</p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {[
-            { tab: "Overview", body: "Personal details, school details, the academic and document snapshots, missing information, the primary guardian and recent activity." },
+            { tab: "Overview", body: "Personal details, school details, the academic and document snapshots, missing information, the primary guardian, portal access and recent activity." },
             { tab: "Guardians", body: "Everyone linked to the student, their relationship and contact details, and the other students each one is also guardian of." },
             { tab: "Academic", body: "The current placement, the class history across years, and the subjects the student takes." },
             { tab: "Medical", body: "Blood group, allergies, conditions and the emergency contact, where your role may read them." },
@@ -52,6 +52,7 @@ export default function FindStudentRecordArticle() {
             </div>
           ))}
         </div>
+        <p><strong>Portal access</strong> on the Overview says whether the student has their own sign-in for the student portal, and the admission number and email they sign in with. Where your role may give access, select <strong>Give portal access</strong>: an invitation goes to the student&apos;s own email, if their record has one, and to their primary guardian&apos;s. <strong>Resend invitation</strong> sends a fresh link to a student who has not activated, and <strong>Take away access</strong> signs them out everywhere. A student who leaves the roll loses access on their own.</p>
         <p>The tab you open is kept in the page address, so you can send a colleague a link that opens straight on the Guardians or Documents tab.</p>
         <GuideCallout tone="info" title="Some details may be hidden from you">Your school decides which roles may read each personal and medical field. A field you may not read is left off the page entirely. That is different from <strong>Not recorded</strong>, which means the school has not entered it.</GuideCallout>
       </GuideSection>

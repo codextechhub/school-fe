@@ -166,6 +166,8 @@ const SCREENS_WITH_CREATE_LANDING = [
   routesPath.PROTECTED.ACADEMIC_CALENDAR.EVENTS,
   routesPath.PROTECTED.TIMETABLES.ROOMS,
   routesPath.PROTECTED.TIMETABLES.BELL_SCHEDULE,
+  // Its New notice drawer answers `?action=new`.
+  routesPath.PROTECTED.NOTICES,
   // Opens on its Posts tab, whose form answers `?action=new`.
   routesPath.PROTECTED.STAFF.ORGANOGRAM_MANAGE,
   // A package screen: its Dynamic Role tab answers `?tab=rules&action=new`.

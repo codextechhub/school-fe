@@ -157,7 +157,7 @@ export function PortalAccessPanel({ student }: { student: StudentDetail }) {
         }
         busy={takingAway.isLoading}
         title={`Take away ${name}'s portal access?`}
-        body={`${name} is signed out everywhere and can no longer sign in to the pupil portal. You can give access again later, and they keep the same account.`}
+        body={`${name} is signed out everywhere and can no longer sign in to the student portal. You can give access again later, and they keep the same account.`}
         confirmLabel="Take away access"
       />
     </Surface>

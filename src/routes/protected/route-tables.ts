@@ -11,6 +11,7 @@ import { classesRoutes } from "./classes-routes";
 import { studentsRoutes } from "./students-routes";
 import { staffRoutes } from "./staff-routes";
 import { supportRoutes } from "./support-routes";
+import { noticesRoutes } from "./notices-routes";
 import { financeRoutes } from "./finance-routes";
 import { procurementRoutes } from "./procurement-routes";
 import { dataImportRoutes } from "./data-import-routes";
@@ -46,6 +47,7 @@ export const protectedChildren: RouteObject[] = [
   ...studentsRoutes,
   ...staffRoutes,
   ...supportRoutes,
+  ...noticesRoutes,
   ...financeRoutes,
   ...procurementRoutes,
   ...dataImportRoutes,

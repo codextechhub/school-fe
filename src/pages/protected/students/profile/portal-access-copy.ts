@@ -28,6 +28,6 @@ export function describe(
     case "revoked":
       return `${name}'s portal access was taken away.`;
     default:
-      return `${name} has no sign-in for the pupil portal.`;
+      return `${name} has no sign-in for the student portal.`;
   }
 }

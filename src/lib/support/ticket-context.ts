@@ -80,6 +80,7 @@ const AREA_BY_PREFIX: [prefix: string, area: ProductArea][] = [
   ["/procurement", "Procurement"],
   ["/notifications", "Notifications"],
   ["/students", "School management"],
+  ["/notices", "School management"],
   ["/branches", "School management"],
   ["/academic-structure", "School management"],
   ["/academic-calendar", "School management"],

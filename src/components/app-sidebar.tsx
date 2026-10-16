@@ -24,6 +24,7 @@ import {
   Bell,
   BookOpen,
   BookOpenText,
+  Megaphone,
   Briefcase,
   Headset,
   MailCheck,
@@ -606,6 +607,17 @@ export function AppSidebar({
         icon: Bell,
         isActive: location.startsWith(routesPath.PROTECTED.NOTIFICATIONS),
         childActive: false,
+      },
+      {
+        // Notices to pupils. Gated like the screen, on reading notices, and
+        // sold as the school end of the Student Portal.
+        title: "Notices",
+        url: routesPath.PROTECTED.NOTICES,
+        icon: Megaphone,
+        isActive: location.startsWith(routesPath.PROTECTED.NOTICES),
+        childActive: false,
+        permission: P.BROWSE_NOTICES,
+        capability: "student_portal",
       },
       {
         // No permission, like Notifications. Raising a ticket is open to

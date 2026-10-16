@@ -26,6 +26,7 @@ export default function PlaceAndTransferArticle() {
       <GuideSection id="read-a-class-register" title="Read a class register">
         <p>Choose <strong>Class roster</strong> and search for a class in <strong>Class</strong>. The page shows its level and a bar of seats used, marked <strong>Full</strong> or <strong>Over by</strong> a number when it has reached or passed its capacity. The register lists each student with their admission number, status and primary guardian. Scroll the list to load more students.</p>
         <p>The class you choose is kept in the page address, so a link to it opens the same register.</p>
+        <p>Where your role may give portal access, <strong>Give the class portal access</strong> invites every student in the class to the student portal at once. Students who already have access are left as they are, and anyone who cannot be invited, for example a student with no admission number and no email, is listed with the reason.</p>
       </GuideSection>
 
       <GuideSection id="move-one-student" title="Move one student">
