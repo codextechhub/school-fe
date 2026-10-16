@@ -13,7 +13,7 @@ export default function EnterScoresArticle() {
       </GuideSection>
 
       <GuideSection id="open-a-sheet" title="Open a sheet">
-        <p>Open <strong>Gradebook</strong>, then <strong>My sheets</strong>. Each card is one subject in one class, with how many students are entered and when the examination paper is sat. Select the card to open its sheet. Where you teach more than one subject in the same class, tabs across the top of the sheet move between them.</p>
+        <p>Open <strong>Gradebook</strong>, then <strong>My sheets</strong>. The board separates sheets that need work, sheets ready to submit and sheets already submitted. Each card is one subject in one class, with how many students are complete and when the examination paper is sat. Select the card to open its sheet. On a phone, the three sections stack in the same order. Where you teach more than one subject in the same class, tabs across the top of the sheet move between them.</p>
         <p><strong>Your other duties</strong> lists the class you lead as class teacher and the department you head, with how far each has got.</p>
       </GuideSection>
 

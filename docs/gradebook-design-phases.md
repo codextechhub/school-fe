@@ -258,6 +258,13 @@ the sheet. Where it differs from the design:
 6. A sheet that is not the reader's says so and links back to My sheets,
    rather than offering Try again.
 
+**Teacher hub redesign.** My sheets is a compact class board with three honest
+workflow columns: needs work, ready to submit and submitted. The columns and
+the four summary figures are derived from the existing sheet status, roll and
+entered counts, so the redesign adds no response fields or Field Access choice.
+Cards keep the existing examination paper, status, progress and permitted
+action, and the columns stack in workflow order below the tablet breakpoint.
+
 ### Phase 2: setup, and the three things outside the gradebook a real school needs
 
 So a school that is not seeded can run a term. Assessment setup (structures,
