@@ -583,6 +583,12 @@ export const baseApi = createApi({
     "Users",
     "Branches",
     "Students",
+    // A pupil's own sign-in account. Its own tag so giving or taking away
+    // access refetches the access block and the profile's state without
+    // reloading the directory.
+    "PortalAccess",
+    // Notices the school posts to its pupils, read and written by staff.
+    "Notices",
     // JWT-protected photographs and logos are cached as local blob URLs. The
     // source path can stay unchanged when its bytes are replaced, so uploads
     // invalidate that path explicitly rather than showing the old image.

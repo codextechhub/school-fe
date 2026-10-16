@@ -101,6 +101,11 @@ export interface AllowedTransition {
  */
 export interface StudentDetail extends StudentScoped {
   id: number;
+  /**
+   * Where the pupil's own sign-in account stands. Absent when the viewer's
+   * role may not read portal access (`school.students.portal_access`).
+   */
+  portal_access?: PortalAccessStatus;
   student_number?: string;
   first_name?: string;
   middle_name?: string;
@@ -921,4 +926,34 @@ export interface BranchMoveWrite {
   effective_date?: string;
   reason: string;
   allow_over_capacity?: boolean;
+}
+
+/** Where a pupil's own sign-in account stands. */
+export type PortalAccessStatus = "none" | "invited" | "active" | "revoked";
+
+/**
+ * The portal access block on a pupil's record (`GET /students/{id}/portal-access/`).
+ *
+ * Empty when the viewer may not read portal access. Inside it, the admission
+ * number and email follow the student-number and email switches, so either may
+ * be absent while the rest of the block is shown.
+ */
+export interface PortalAccess {
+  has_access?: boolean;
+  status?: PortalAccessStatus;
+  invited_at?: string | null;
+  invitation_expires_at?: string | null;
+  last_sign_in_at?: string | null;
+  sign_in_identifiers?: { admission_number?: string; email?: string };
+}
+
+/** One pupil's result in a bulk grant of portal access. */
+export interface PortalAccessBulkRow {
+  student: number;
+  name: string;
+  ok: boolean;
+  code: string;
+  message: string;
+  /** True when the pupil already had access and was not invited again. */
+  already?: boolean;
 }

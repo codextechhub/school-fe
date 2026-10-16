@@ -31,6 +31,7 @@ import { formatDate } from "../format";
 import { PersonAvatar } from "../person-avatar";
 import { StudentStatusBadge } from "../status-badge";
 import { TransferDrawer } from "../drawers/transfer-drawer";
+import { ClassPortalAccess } from "./class-portal-access";
 import {
   assignmentImpact,
   loadNote,
@@ -361,17 +362,22 @@ export default function ClassesAndTransfers() {
           </Surface>
 
           <Surface as="section" className="overflow-hidden" aria-labelledby="roster-heading">
-            <div className="border-b border-border px-4 py-3 sm:px-5">
-              <h2 id="roster-heading" className="font-semibold text-black-01">
-                {rosterClass?.name ?? "Class register"}
-              </h2>
-              <p className="mt-0.5 text-xs text-gray-05">
-                {rosterData?.pagination.totalItems ?? rosterClass?.used ?? 0}{" "}
-                {(rosterData?.pagination.totalItems ?? rosterClass?.used ?? 0) === 1
-                  ? "student"
-                  : "students"}
-                {rosterClass?.level_name ? ` · ${rosterClass.level_name}` : ""}
-              </p>
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <h2 id="roster-heading" className="font-semibold text-black-01">
+                  {rosterClass?.name ?? "Class register"}
+                </h2>
+                <p className="mt-0.5 text-xs text-gray-05">
+                  {rosterData?.pagination.totalItems ?? rosterClass?.used ?? 0}{" "}
+                  {(rosterData?.pagination.totalItems ?? rosterClass?.used ?? 0) === 1
+                    ? "student"
+                    : "students"}
+                  {rosterClass?.level_name ? ` · ${rosterClass.level_name}` : ""}
+                </p>
+              </div>
+              {rosterClass && (rosterData?.pagination.totalItems ?? 0) > 0 ? (
+                <ClassPortalAccess classId={rosterClass.id} className={rosterClass.name} />
+              ) : null}
             </div>
 
             <div

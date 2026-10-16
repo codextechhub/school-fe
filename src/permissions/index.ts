@@ -27,6 +27,7 @@ import {
  *                       16=publish 17=import  18=export  19=apply
  *                       20=mark    21=mark any class    22=remind
  *                       23=enter   24=enter any sheet   25=submit
+ *                       26=issue   27=post
  *
  * ── Adding a permission ───────────────────────────────────────────────────────
  *   1. Pick the next free code in the right MM RR range.
@@ -92,6 +93,19 @@ const REGISTRY: Record<string, string> = {
   // import engine accepts it in place of its own validate and import keys on a
   // staff batch, but not in place of the upload key.
   "101617": "school.staff.import",
+
+  // ── school / pupil portal access  (MM=10, RR=17) ──────────────────────────
+  // Giving a pupil their own sign-in account, sending the invitation again,
+  // and taking the account away.
+  "101726": "school.portal_access.issue",
+
+  // ── school / notices  (MM=10, RR=18 and RR=19) ────────────────────────────
+  // Notices the school posts to its pupils. RR=18 posts to any audience inside
+  // the holder's branch reach; RR=19 posts only to the classes the holder
+  // teaches or leads.
+  "101801": "school.notices.view",
+  "101827": "school.notices.post",
+  "101927": "school.class_notices.post",
 
   // ── school / staff records  (MM=10, RR=11) ─────────────────────────────────
   // Employment history, qualifications and contract documents, kept apart from
@@ -469,6 +483,10 @@ export const P = {
   EXPORT_STUDENTS:         "100318",  // export the directory as it is filtered
   PROMOTE_STUDENTS:        "100307",  // advance a cohort to the next level
   MOVE_STUDENT_BRANCH:     "100320",  // move a pupil to another branch, fee account and all
+  GIVE_PORTAL_ACCESS:      "101726",  // give, resend and take away a pupil's portal sign-in
+  BROWSE_NOTICES:          "101801",  // read the school's notices to pupils
+  POST_NOTICES:            "101827",  // post notices to any audience in the holder's reach
+  POST_CLASS_NOTICES:      "101927",  // post notices to the classes the holder teaches
 
   // ── Staff Management ───────────────────────────────────────────────────────
   // The backend resource is still `teachers`, and these keys govern every

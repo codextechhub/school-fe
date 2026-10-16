@@ -63,6 +63,7 @@ import { StudentStatusBadge } from "../status-badge";
 import { Dot } from "../guardians/person-card";
 import { HistoryEntryItem } from "./history-entry";
 import { Lifecycle } from "./lifecycle";
+import { PortalAccessPanel } from "./portal-access-panel";
 import { EmptyRing } from "../empty-ring";
 import { Rows, type Row } from "./rows";
 import {
@@ -554,6 +555,12 @@ function Overview({
             <p className="text-sm text-amber-700">No guardian linked.</p>
           )}
         </Panel>
+
+        {student ? (
+          <LiveOnly>
+            <PortalAccessPanel student={student} />
+          </LiveOnly>
+        ) : null}
 
         <HealthSnapshot student={student} />
 
