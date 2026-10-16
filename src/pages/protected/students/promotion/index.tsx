@@ -29,6 +29,7 @@ import { routesPath } from "@/routes/routesPath";
 import { writeErrorMessage } from "@/utils/api-error";
 
 import { ConfirmDialog } from "../drawers/confirm-dialog";
+import { formatDate } from "../format";
 import { ClassGroups } from "./class-groups";
 import { reviewCounts } from "./promotion-model";
 import { OUTCOME, destinationOf } from "./outcome";
@@ -474,10 +475,17 @@ function PromotionWorkflow({
                 </p>
               }
             >
+              {plan && !plan.can_run && (
+                <p data-guide="promotion.opens-on" className="text-xs text-gray-05">
+                  Promotion opens on {formatDate(plan.run_opens_on)}, when this year&apos;s last term ends.
+                </p>
+              )}
               <Button
                 data-guide="promotion.run"
                 onClick={() => setConfirming(true)}
-                disabled={running || counts?.candidates === 0 || waitsForCapacity}
+                disabled={
+                  running || counts?.candidates === 0 || waitsForCapacity || plan?.can_run === false
+                }
               >
                 Run promotion
               </Button>

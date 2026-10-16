@@ -356,6 +356,14 @@ export type PromotionCause =
 export interface PromotionPlan {
   from_session: string;
   to_session: string;
+  /**
+   * The day a run opens: the end of the year's last term. A run before then
+   * is refused with PROMOTION_TOO_EARLY, because it would take every promoted
+   * student out of their class for the rest of the year. The preview is open
+   * at any time.
+   */
+  run_opens_on: string;
+  can_run: boolean;
   counts: {
     promote: number;
     repeat: number;

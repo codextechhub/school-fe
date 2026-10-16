@@ -55,6 +55,7 @@ export default function PromoteStudentsArticle() {
         <ProblemGrid items={[
           { title: "There is no year to promote into", body: "Next year has not been created, or it has already started. Select Go to Sessions, create the year, copy this year's classes into it, and come back." },
           { title: "Every student would be held", body: "Next year has no classes yet. Copy this year's classes forward in Academic Structure first." },
+          { title: "Promotion opens on a later date", body: "A promotion runs only once this year's last term has ended, because it takes every promoted student out of their class at once. You can preview and review it any time; Run promotion opens on the date shown." },
           { title: "Run promotion stays greyed", body: "The confirm step lists classes the run would put over capacity. Move students, or tick Go ahead and put these classes over capacity. Where your school never goes over capacity, raise the class capacity, add an arm, or hold some pupils back, then preview again." },
           { title: "Run promotion is missing", body: "Running a promotion needs both the promotion and the class assignment permissions. The page says so where the button would be." },
           { title: "Some students could not be written", body: "They were left where they are. Open each one from the directory, fix the cause, and place them with Classes & Transfers." },
