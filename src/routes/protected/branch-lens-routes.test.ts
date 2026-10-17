@@ -65,18 +65,36 @@ describe("branch switcher on Finance screens", () => {
 });
 
 describe("branch switcher on Procurement screens", () => {
-  it("shows only where a document is raised for the branch picked", () => {
+  it("shows wherever the list, report or new document follows the branch picked", () => {
     expect(withBranchLens(procurementRoutes).sort()).toEqual([
+      "/procurement/analytics",
+      "/procurement/analytics/ap-aging",
+      "/procurement/analytics/grir",
+      "/procurement/analytics/performance",
+      "/procurement/analytics/spend",
+      "/procurement/goods-receipts",
       "/procurement/inventory",
       "/procurement/inventory/items",
       "/procurement/inventory/locations",
       "/procurement/inventory/movements",
+      "/procurement/purchase-orders",
       "/procurement/requisitions",
       "/procurement/sourcing",
+      "/procurement/sourcing/quotations",
       "/procurement/sourcing/rfqs",
       "/procurement/vendor-invoices",
+      "/procurement/vendor-payments",
     ]);
   });
+
+  it.each(["/procurement", "/procurement/approvals", "/procurement/vendors", "/procurement/contracts", "/procurement/settings"])(
+    "stays off %s, which the server cannot narrow by branch",
+    (path) => {
+      const lenses = lensesByPath(procurementRoutes);
+      expect(lenses.has(path)).toBe(true);
+      expect(lenses.get(path)).toBeUndefined();
+    },
+  );
 });
 
 describe("session switcher", () => {
