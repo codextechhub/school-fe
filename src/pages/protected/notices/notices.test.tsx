@@ -1,10 +1,15 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { FieldAccessMap } from "@/components/finance-ui";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
-import type { Notice, NoticeAudienceOptions } from "@/redux/services/notices/notices-types";
+import type {
+  Notice,
+  NoticeAudienceOptions,
+  NoticeListArgs,
+} from "@/redux/services/notices/notices-types";
 
 /**
  * The staff Notices screens.
@@ -38,9 +43,21 @@ const PUBLISHED: Notice = {
   audience_count: 32,
   can_manage: true,
 };
+const DRAFT: Notice = {
+  id: 4,
+  title: "Sports day transport",
+  body: "Transport details are still being checked.",
+  status: "DRAFT",
+  audience: [{ kind: "LEVEL", id: 5, name: "JSS1" }],
+  audience_label: "JSS1",
+  created_by: "Kemi Bello",
+  created_at: "2026-10-12T10:00:00Z",
+  can_manage: true,
+};
 
 let fieldAccess: FieldAccessMap = {};
 let detail: Notice | undefined = PUBLISHED;
+let listQueries: { args?: NoticeListArgs; skip?: boolean }[] = [];
 const create = vi.fn();
 const update = vi.fn();
 const publish = vi.fn();
@@ -62,8 +79,37 @@ vi.mock("@/redux/services/notices/notices-api", () => ({
   usePublishNoticeMutation: () => [publish, { isLoading: false }],
   useWithdrawNoticeMutation: () => [withdraw, { isLoading: false }],
   useGetNoticeQuery: () => ({ data: detail ? { data: detail } : undefined }),
+  useGetNoticeAudienceOptionsQuery: () => ({ data: { data: OPTIONS } }),
+  useGetNoticesQuery: (args?: NoticeListArgs, options?: { skip?: boolean }) => {
+    listQueries.push({ args, skip: options?.skip });
+    const notices = [PUBLISHED, DRAFT];
+    const rows =
+      args?.status && args.status !== "all"
+        ? notices.filter((notice) => notice.status === args.status)
+        : notices;
+    return {
+      data: options?.skip
+        ? undefined
+        : {
+            data: rows,
+            pagination: {
+              currentPage: 1,
+              pageSize: 20,
+              totalItems: rows.length,
+              totalPages: 1,
+              next: null,
+              previous: null,
+            },
+          },
+      isLoading: false,
+      isFetching: false,
+      isError: false,
+      refetch: vi.fn(),
+    };
+  },
 }));
 
+import NoticesPage from "./index";
 import { NoticeDetail } from "./notice-detail";
 import { NoticeDrawer } from "./notice-drawer";
 import { problemsWith } from "./notice-copy";
@@ -111,6 +157,8 @@ describe("notice screens", () => {
       fn.mockReset();
       fn.mockReturnValue({ unwrap: () => Promise.resolve({ message: "Done." }) });
     }
+    listQueries = [];
+    window.matchMedia = vi.fn().mockReturnValue({ matches: false });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -216,5 +264,60 @@ describe("notice screens", () => {
     );
 
     expect(document.body.textContent).not.toContain("have read it");
+  });
+
+  it("keeps the list and selected notice together in the notice desk", async () => {
+    await act(async () =>
+      root.render(
+        <MemoryRouter>
+          <NoticesPage />
+        </MemoryRouter>,
+      ),
+    );
+
+    expect(document.querySelector('[aria-label="Notice desk"]')).toBeTruthy();
+    expect(document.body.textContent).toContain("PTA meeting Saturday");
+    expect(document.body.textContent).toContain("All parents are welcome.");
+    expect(document.querySelector('[aria-label="Open PTA meeting Saturday"]')?.getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("does not request or render status breakdowns when Status is hidden", async () => {
+    fieldAccess = { [FIELD_RESOURCE.NOTICES]: { hidden: ["status"], read_only: [] } };
+    await act(async () =>
+      root.render(
+        <MemoryRouter>
+          <NoticesPage />
+        </MemoryRouter>,
+      ),
+    );
+
+    expect(document.querySelector('[aria-label="Notice status"]')).toBeNull();
+    expect(document.body.textContent).not.toContain("Still being prepared");
+    expect(
+      listQueries
+        .filter(({ args }) => args?.status && args.status !== "all")
+        .every(({ skip }) => skip === true),
+    ).toBe(true);
+  });
+
+  it("removes hidden audience and publication values from the notice rows", async () => {
+    fieldAccess = {
+      [FIELD_RESOURCE.NOTICES]: {
+        hidden: ["audience", "publication"],
+        read_only: [],
+      },
+    };
+    await act(async () =>
+      root.render(
+        <MemoryRouter>
+          <NoticesPage />
+        </MemoryRouter>,
+      ),
+    );
+
+    const draftRow = document.querySelector('[aria-label="Open Sports day transport"]');
+    expect(draftRow?.textContent).not.toContain("JSS1");
+    expect(draftRow?.textContent).not.toContain("Kemi Bello");
+    expect(draftRow?.textContent).not.toContain("Created");
   });
 });

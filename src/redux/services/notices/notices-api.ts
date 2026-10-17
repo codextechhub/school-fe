@@ -1,4 +1,5 @@
 import { baseApi } from "../base-api";
+import { currentSchoolSlug } from "@/utils/school-host";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import type {
   Notice,
@@ -6,6 +7,17 @@ import type {
   NoticeListArgs,
   NoticeWrite,
 } from "./notices-types";
+
+/**
+ * The tenant assertion every staff Notices request carries.
+ *
+ * Notices are school-owned from list through lifecycle actions. Reading the
+ * slug from the school address keeps an immediate detail selection scoped even
+ * while the signed-in context is hydrating. The base query preserves this
+ * explicit assertion, and the backend still verifies that it belongs to the
+ * signed-in user.
+ */
+const noticeTenant = () => ({ tenant: currentSchoolSlug() });
 
 /**
  * Notices the school posts to its pupils, as staff read and write them.
@@ -21,7 +33,10 @@ export const noticesApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getNotices: builder.query<PaginatedEnvelope<Notice>, NoticeListArgs | void>({
       query: (args) => {
-        const params: Record<string, string | number> = { page: args?.page ?? 1 };
+        const params: Record<string, string | number> = {
+          ...noticeTenant(),
+          page: args?.page ?? 1,
+        };
         if (args?.status && args.status !== "all") params.status = args.status;
         if (args?.search) params.search = args.search;
         return { url: `/notices/`, method: "GET", params };
@@ -30,34 +45,47 @@ export const noticesApi = baseApi.injectEndpoints({
     }),
 
     getNotice: builder.query<Envelope<Notice>, number>({
-      query: (id) => ({ url: `/notices/${id}/`, method: "GET" }),
+      query: (id) => ({ url: `/notices/${id}/`, method: "GET", params: noticeTenant() }),
       providesTags: (_r, _e, id) => [{ type: "Notices", id }],
     }),
 
     getNoticeAudienceOptions: builder.query<Envelope<NoticeAudienceOptions>, void>({
-      query: () => ({ url: `/notices/audiences/`, method: "GET" }),
+      query: () => ({ url: `/notices/audiences/`, method: "GET", params: noticeTenant() }),
     }),
 
     createNotice: builder.mutation<Envelope<Notice>, NoticeWrite>({
-      query: (body) => ({ url: `/notices/`, method: "POST", body }),
+      query: (body) => ({ url: `/notices/`, method: "POST", body, params: noticeTenant() }),
       extraOptions: { silent: true },
       invalidatesTags: ["Notices"],
     }),
 
     updateNotice: builder.mutation<Envelope<Notice>, { id: number } & NoticeWrite>({
-      query: ({ id, ...body }) => ({ url: `/notices/${id}/`, method: "PATCH", body }),
+      query: ({ id, ...body }) => ({
+        url: `/notices/${id}/`,
+        method: "PATCH",
+        body,
+        params: noticeTenant(),
+      }),
       extraOptions: { silent: true },
       invalidatesTags: ["Notices"],
     }),
 
     publishNotice: builder.mutation<Envelope<Notice>, number>({
-      query: (id) => ({ url: `/notices/${id}/publish/`, method: "POST" }),
+      query: (id) => ({
+        url: `/notices/${id}/publish/`,
+        method: "POST",
+        params: noticeTenant(),
+      }),
       extraOptions: { silent: true },
       invalidatesTags: ["Notices"],
     }),
 
     withdrawNotice: builder.mutation<Envelope<Notice>, number>({
-      query: (id) => ({ url: `/notices/${id}/withdraw/`, method: "POST" }),
+      query: (id) => ({
+        url: `/notices/${id}/withdraw/`,
+        method: "POST",
+        params: noticeTenant(),
+      }),
       extraOptions: { silent: true },
       invalidatesTags: ["Notices"],
     }),
