@@ -199,6 +199,15 @@ export { default as FeeGenerationPanel } from "@/pages/protected/school-finance/
  *  Refresh button keeps the spinning arrow; see LoadingMark. */
 export { LoadingMark } from "@/components/custom/loading-mark";
 
+/** The branch and session lenses, pinned under the Finance and Procurement
+ *  menus the way they sit under the school's own.
+ *
+ *  Those areas swap the school's sidebar for the package's, so without this
+ *  the branch switcher vanishes on entering them. Which pills appear is still
+ *  decided by each route's `lenses` (see DashboardHandle), so a screen that
+ *  does not follow the branch shows no branch pill here either. */
+export { LensRail as ConsoleSidebarFooter } from "@/components/layout/lens-pills";
+
 /** The school's own crest at the top of the Finance sidebar, not the platform's.
  *
  *  The same component the school's own sidebar uses, deliberately: crossing

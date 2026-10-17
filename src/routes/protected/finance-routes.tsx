@@ -32,6 +32,20 @@ const Payments = lazy(() => import("@/pages/protected/finance/payments"));
 const F = routesPath.PROTECTED.FINANCE;
 
 /**
+ * The screens that follow the sidebar's branch switcher, and so show it.
+ *
+ * A screen follows it when the branch picked there decides something on the
+ * screen: which branch's rows a list shows, or which branch a new record is
+ * raised for. Mrs Bello, bursar for Ikeja and Lekki, switches to Lekki and a
+ * new invoice starts on Lekki. The rest read the whole school, or ask for the
+ * branch on their own (Reports keeps its own branch picker for closing a
+ * period), and show no switcher, because a switcher there would look as though
+ * it narrowed a page it does not touch. The session pill is left off
+ * throughout: no finance screen reads the school year.
+ */
+const BRANCH_LENS = { lenses: "branch" } satisfies DashboardHandle;
+
+/**
  * A school gets a SUBSET of the console's finance area, and the difference is
  * deliberate rather than an oversight. Three setup sections are left unmounted
  * because a school can never be granted them (see the adaptation spec):
@@ -72,36 +86,36 @@ export const financeRoutes: RouteObject[] = [
         path: `${F.SETUP}/${section}`, element: <Setup section={section} />,
       })),
 
-      { path: F.LEDGER, element: <GeneralLedger /> },
+      { path: F.LEDGER, element: <GeneralLedger />, handle: BRANCH_LENS },
 
-      { path: F.RECEIVABLES, element: <Receivables /> },
+      { path: F.RECEIVABLES, element: <Receivables />, handle: BRANCH_LENS },
       ...RECEIVABLES_SECTIONS.map((section) => ({
-        path: `${F.RECEIVABLES}/${section}`, element: <Receivables section={section} />,
+        path: `${F.RECEIVABLES}/${section}`, element: <Receivables section={section} />, handle: BRANCH_LENS,
       })),
 
-      { path: F.COLLECTIONS, element: <Collections /> },
+      { path: F.COLLECTIONS, element: <Collections />, handle: BRANCH_LENS },
       ...COLLECTIONS_SECTIONS.map((section) => ({
-        path: `${F.COLLECTIONS}/${section}`, element: <Collections section={section} />,
+        path: `${F.COLLECTIONS}/${section}`, element: <Collections section={section} />, handle: BRANCH_LENS,
       })),
 
-      { path: F.BANKING, element: <Banking /> },
+      { path: F.BANKING, element: <Banking />, handle: BRANCH_LENS },
       { path: F.BANK_RECON, element: <BankReconciliation /> },
 
-      { path: F.EXPENSES, element: <Expenses /> },
+      { path: F.EXPENSES, element: <Expenses />, handle: BRANCH_LENS },
       ...EXPENSES_SECTIONS.map((section) => ({
-        path: `${F.EXPENSES}/${section}`, element: <Expenses section={section} />,
+        path: `${F.EXPENSES}/${section}`, element: <Expenses section={section} />, handle: BRANCH_LENS,
       })),
 
-      { path: F.PAYROLL, element: <Payroll /> },
+      { path: F.PAYROLL, element: <Payroll />, handle: BRANCH_LENS },
 
-      { path: INTER_BRANCH_PATH, element: <InterBranch /> },
+      { path: INTER_BRANCH_PATH, element: <InterBranch />, handle: BRANCH_LENS },
       ...INTER_BRANCH_SECTIONS.map((section) => ({
-        path: `${INTER_BRANCH_PATH}/${section}`, element: <InterBranch section={section} />,
+        path: `${INTER_BRANCH_PATH}/${section}`, element: <InterBranch section={section} />, handle: BRANCH_LENS,
       })),
 
-      { path: F.BUDGETS, element: <BudgetsAssetsTax /> },
+      { path: F.BUDGETS, element: <BudgetsAssetsTax />, handle: BRANCH_LENS },
       ...BUDGETS_SECTIONS.map((section) => ({
-        path: `${F.BUDGETS}/${section}`, element: <BudgetsAssetsTax section={section} />,
+        path: `${F.BUDGETS}/${section}`, element: <BudgetsAssetsTax section={section} />, handle: BRANCH_LENS,
       })),
 
       { path: F.REPORTS, element: <Reports /> },
@@ -109,9 +123,9 @@ export const financeRoutes: RouteObject[] = [
         path: `${F.REPORTS}/${section}`, element: <Reports section={section} />,
       })),
 
-      { path: F.PAYMENTS, element: <Payments /> },
+      { path: F.PAYMENTS, element: <Payments />, handle: BRANCH_LENS },
       ...paymentsSections.map((section) => ({
-        path: `${F.PAYMENTS}/${section}`, element: <Payments section={section} />,
+        path: `${F.PAYMENTS}/${section}`, element: <Payments section={section} />, handle: BRANCH_LENS,
       })),
 
       { path: F.AUDIT, element: <FinanceAudit /> },

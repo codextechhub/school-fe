@@ -27,6 +27,15 @@ const ProcurementSettings = lazy(() => import("@/pages/protected/procurement/set
 const P = routesPath.PROTECTED.PROCUREMENT;
 
 /**
+ * The screens that follow the sidebar's branch switcher, and so show it: a
+ * requisition, a request for quotation, a stock location and an imported
+ * opening bill are raised for the branch picked there. The other screens read
+ * every branch in the reader's reach and show no switcher. See the same rule
+ * in finance-routes.
+ */
+const BRANCH_LENS = { lenses: "branch" } satisfies DashboardHandle;
+
+/**
  * Unlike Finance, this area is mounted WHOLE, and the difference is worth
  * stating rather than looking like an oversight.
  *
@@ -53,22 +62,22 @@ export const procurementRoutes: RouteObject[] = [
         path: `${P.VENDORS}/${section}`, element: <Vendors section={section} />,
       })),
 
-      { path: P.REQUISITIONS, element: <Requisitions /> },
+      { path: P.REQUISITIONS, element: <Requisitions />, handle: BRANCH_LENS },
       { path: P.PURCHASE_ORDERS, element: <PurchaseOrders /> },
       { path: P.GOODS_RECEIPTS, element: <GoodsReceipts /> },
-      { path: P.VENDOR_INVOICES, element: <VendorInvoices /> },
+      { path: P.VENDOR_INVOICES, element: <VendorInvoices />, handle: BRANCH_LENS },
       { path: P.VENDOR_PAYMENTS, element: <VendorPayments /> },
       { path: P.APPROVALS, element: <Approvals /> },
 
-      { path: P.SOURCING, element: <SourcingRfqs /> },
-      { path: `${P.SOURCING}/rfqs`, element: <SourcingRfqs /> },
+      { path: P.SOURCING, element: <SourcingRfqs />, handle: BRANCH_LENS },
+      { path: `${P.SOURCING}/rfqs`, element: <SourcingRfqs />, handle: BRANCH_LENS },
       { path: `${P.SOURCING}/quotations`, element: <SourcingQuotations /> },
 
       { path: P.CONTRACTS, element: <Contracts /> },
 
-      { path: P.INVENTORY, element: <Inventory /> },
+      { path: P.INVENTORY, element: <Inventory />, handle: BRANCH_LENS },
       ...INVENTORY_SECTIONS.map((section) => ({
-        path: `${P.INVENTORY}/${section}`, element: <Inventory section={section} />,
+        path: `${P.INVENTORY}/${section}`, element: <Inventory section={section} />, handle: BRANCH_LENS,
       })),
 
       { path: P.ANALYTICS, element: <Analytics /> },
