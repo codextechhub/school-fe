@@ -82,7 +82,7 @@ export const GRADEBOOK_GUIDES = [
     primaryRoute: R.GRADEBOOK.ELECTIVES,
     sections: [
       { id: "before-you-start", title: "Before you start" },
-      { id: "tick-the-grid", title: "Tick the grid" },
+      { id: "record-choices", title: "Record the choices" },
       { id: "taking-a-student-off", title: "Taking a student off a subject" },
       { id: "common-problems", title: "Common problems" },
     ],
