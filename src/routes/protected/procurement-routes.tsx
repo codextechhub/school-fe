@@ -27,11 +27,14 @@ const ProcurementSettings = lazy(() => import("@/pages/protected/procurement/set
 const P = routesPath.PROTECTED.PROCUREMENT;
 
 /**
- * The screens that follow the sidebar's branch switcher, and so show it: a
- * requisition, a request for quotation, a stock location and an imported
- * opening bill are raised for the branch picked there. The other screens read
- * every branch in the reader's reach and show no switcher. See the same rule
- * in finance-routes.
+ * The screens that follow the sidebar's branch switcher, and so show it: the
+ * document lists (requisitions, sourcing, orders, receipts, supplier bills and
+ * their credit notes, payments) and the analytics reports narrow to the branch
+ * picked there, and a requisition, a request for quotation, a stock location
+ * and an imported opening bill are raised for it. The approvals queue, vendors
+ * and contracts cannot be narrowed by branch on the server and show no
+ * switcher, nor do the dashboard and settings. See the same rule in
+ * finance-routes.
  */
 const BRANCH_LENS = { lenses: "branch" } satisfies DashboardHandle;
 
@@ -63,15 +66,15 @@ export const procurementRoutes: RouteObject[] = [
       })),
 
       { path: P.REQUISITIONS, element: <Requisitions />, handle: BRANCH_LENS },
-      { path: P.PURCHASE_ORDERS, element: <PurchaseOrders /> },
-      { path: P.GOODS_RECEIPTS, element: <GoodsReceipts /> },
+      { path: P.PURCHASE_ORDERS, element: <PurchaseOrders />, handle: BRANCH_LENS },
+      { path: P.GOODS_RECEIPTS, element: <GoodsReceipts />, handle: BRANCH_LENS },
       { path: P.VENDOR_INVOICES, element: <VendorInvoices />, handle: BRANCH_LENS },
-      { path: P.VENDOR_PAYMENTS, element: <VendorPayments /> },
+      { path: P.VENDOR_PAYMENTS, element: <VendorPayments />, handle: BRANCH_LENS },
       { path: P.APPROVALS, element: <Approvals /> },
 
       { path: P.SOURCING, element: <SourcingRfqs />, handle: BRANCH_LENS },
       { path: `${P.SOURCING}/rfqs`, element: <SourcingRfqs />, handle: BRANCH_LENS },
-      { path: `${P.SOURCING}/quotations`, element: <SourcingQuotations /> },
+      { path: `${P.SOURCING}/quotations`, element: <SourcingQuotations />, handle: BRANCH_LENS },
 
       { path: P.CONTRACTS, element: <Contracts /> },
 
@@ -80,12 +83,12 @@ export const procurementRoutes: RouteObject[] = [
         path: `${P.INVENTORY}/${section}`, element: <Inventory section={section} />, handle: BRANCH_LENS,
       })),
 
-      { path: P.ANALYTICS, element: <Analytics /> },
+      { path: P.ANALYTICS, element: <Analytics />, handle: BRANCH_LENS },
       // One path per section that exists, rather than `:section` matching
       // anything. An address for a report that does not exist falls through to
       // the app's 404 instead of reaching a page that has to decide.
       ...ANALYTICS_SECTIONS.map((section) => ({
-        path: `${P.ANALYTICS}/${section}`, element: <Analytics section={section} />,
+        path: `${P.ANALYTICS}/${section}`, element: <Analytics section={section} />, handle: BRANCH_LENS,
       })),
 
       { path: P.SETTINGS, element: <ProcurementSettings /> },
