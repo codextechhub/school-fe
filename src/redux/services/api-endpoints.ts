@@ -35,6 +35,7 @@ export const AUTH_ENDPOINTS = new Set([
   "passwordResetConfirm",
   "activationPreview",
   "activateAccount",
+  "getPasswordPolicy",
   "logout",
   // The payer routes. A Bearer token left over from a staff session on the
   // same browser must not ride along: the backend routes take no authentication

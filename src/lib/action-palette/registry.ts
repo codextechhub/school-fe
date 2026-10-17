@@ -1420,6 +1420,18 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     run: { command: "proxy" },
   },
   {
+    // Everybody's own password. No gate: the server changes it for any active
+    // account and only ever the caller's.
+    id: "change-password",
+    label: "Change password",
+    aliases: ["update password", "new password", "reset my password", "account security", "my account"],
+    section: "Account",
+    group: "Account",
+    kind: "view",
+    gate: null,
+    run: { to: R.ACCOUNT.SECURITY },
+  },
+  {
     id: "logout",
     label: "Logout",
     aliases: ["sign out", "log out"],
@@ -1502,6 +1514,9 @@ export const ACTIONS: ActionDef[] = [...SCHOOL_ACTIONS, ...CONSOLE_ACTIONS];
 const PENDING_SURFACE_PREFIXES: readonly string[] = [
   "/onboarding",
   "/notifications",
+  // A person's own account: a first administrator may need to replace the
+  // password they were sent before the school goes live.
+  "/account",
   // The staff module, minus one screen. Adding colleagues, chasing their
   // invitations and deciding who is based where are all steps on a school's own
   // checklist, and the backend declares `pending_tenant_surface` on each of

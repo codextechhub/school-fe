@@ -5,7 +5,7 @@ import { WorkspaceToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "../app-sidebar";
 import { schoolFinanceNav, schoolProcurementNav } from "./console-nav-for-school";
-import { ChevronLeft, Headset, IdCard, Loader2, LogOut, ReceiptText, Search, Undo2, UsersRound } from "lucide-react";
+import { ChevronLeft, Headset, IdCard, KeyRound, Loader2, LogOut, ReceiptText, Search, Undo2, UsersRound } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useLogout } from "@/hooks/use-logout";
 import useToggleModal from "@/hooks/use-toggle";
@@ -459,6 +459,10 @@ export default function DashboardLayout() {
                   <DropdownMenuItem onClick={() => navigate(routesPath.PROTECTED.STAFF.MY_PAYSLIPS)}>
                     <ReceiptText className="size-4" />
                     My payslips
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(routesPath.PROTECTED.ACCOUNT.SECURITY)}>
+                    <KeyRound className="size-4" />
+                    Change password
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={toggleLogout}>

@@ -17,6 +17,7 @@ import { procurementRoutes } from "./procurement-routes";
 import { dataImportRoutes } from "./data-import-routes";
 import { exportRoutes } from "./export-routes";
 import { onboardingRoutes } from "./onboarding-routes";
+import { accountRoutes } from "./account-routes";
 
 /**
  * Every screen inside the dashboard shell, without the shell itself.
@@ -47,6 +48,7 @@ export const protectedChildren: RouteObject[] = [
   ...studentsRoutes,
   ...staffRoutes,
   ...supportRoutes,
+  ...accountRoutes,
   ...noticesRoutes,
   ...financeRoutes,
   ...procurementRoutes,

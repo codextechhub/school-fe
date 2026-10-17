@@ -98,6 +98,7 @@ const AREA_BY_PREFIX: [prefix: string, area: ProductArea][] = [
   ["/data-imports", "Data imports"],
   ["/export", "Exports"],
   ["/support", "Support"],
+  ["/account", "Account"],
 ];
 
 /** The server's rule for `route_pattern`, mirrored so nothing invalid is sent. */

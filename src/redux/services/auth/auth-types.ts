@@ -18,6 +18,20 @@ export interface LinkPreview {
   device_app?: { path: string } | null
 }
 
+/**
+ * `GET /user/auth/password/policy/`: the rules the server enforces on every
+ * password it accepts. `requirements` is the same rules as sentences, in the
+ * order to show them.
+ */
+export interface PasswordPolicy {
+  min_length: number
+  require_uppercase: boolean
+  require_lowercase: boolean
+  require_digit: boolean
+  require_special: boolean
+  requirements: string[]
+}
+
 export interface LoginResponse extends ResponseMessage {
   data: {
     access: string

@@ -5,6 +5,7 @@ export default function ResetPasswordArticle() {
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
         <p>A reset link goes to the email address on your account, whether you ask with that email or with your staff ID. Never share a password or a reset link: nobody helping you needs either.</p>
+        <GuideCallout tone="tip" title="Still know your password?">You do not need a reset link to change it. While signed in, select your picture at the top right, then <strong>Change password</strong>, and enter your current password and the new one. See <em>Change your password</em>.</GuideCallout>
         <GuideChecklist items={[
           "You can open the email account on your XVS account.",
           "You are at your school's own web address.",

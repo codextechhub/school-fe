@@ -131,6 +131,12 @@ export const routesPath = {
     // The notification centre. Open during onboarding, which is when a school
     // gets most of its post.
     NOTIFICATIONS: "/notifications",
+    // The signed-in person's own sign-in account, whoever they are: the
+    // password belongs to the account, not to a staff record, so it lives
+    // here rather than under /staff/me.
+    ACCOUNT: {
+      SECURITY: "/account/security",
+    },
     // Notices the school posts to its pupils: drafted, published and
     // withdrawn by staff, read by pupils in their portal.
     NOTICES: "/notices",

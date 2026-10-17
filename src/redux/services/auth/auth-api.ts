@@ -12,7 +12,7 @@ import { routesPath } from "@/routes/routesPath";
 import { recordActivity } from "@/utils/session-activity";
 import { resetSessionInvalidation } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
-import type { LinkPreview, LoginResponse } from "./auth-types";
+import type { LinkPreview, LoginResponse, PasswordPolicy } from "./auth-types";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { setAccessToken } from "@/utils/access-token";
 import { getCsrfToken } from "@/utils/csrf";
@@ -178,6 +178,20 @@ export const authApi = baseApi.injectEndpoints({
         body,
       }),
     }),
+    // Public on the server, so it carries no token (AUTH_ENDPOINTS).
+    getPasswordPolicy: builder.query<{ message: string; data: PasswordPolicy }, void>({
+      query: () => ({ url: `/user/auth/password/policy/`, method: "GET" }),
+      extraOptions: { silent: true },
+    }),
+    // The signed-in person's own password. Silent because every refusal is
+    // shown on the form, under the box it is about; see ChangePasswordForm.
+    changeMyPassword: builder.mutation<
+      { message: string },
+      { current_password: string; password: string; confirm_password: string }
+    >({
+      query: (body) => ({ url: `/user/auth/password/change/`, method: "POST", body }),
+      extraOptions: { silent: true },
+    }),
     getMe: builder.query<MeResponse, void>({
       query: () => ({ url: `/user/auth/me/`, method: "GET" }),
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
@@ -215,6 +229,8 @@ export const {
   usePasswordResetConfirmMutation,
   useActivationPreviewQuery,
   useActivateAccountMutation,
+  useGetPasswordPolicyQuery,
+  useChangeMyPasswordMutation,
   useGetMeQuery,
   useLazyGetMeQuery,
 } = authApi;

@@ -46,6 +46,25 @@ describe("passwordFieldErrors", () => {
     ).toEqual({ confirm_password: "Passwords do not match." });
   });
 
+  it("reads a wrong current password onto its own box", () => {
+    expect(
+      passwordFieldErrors(refusal({ current_password: ["Current password is incorrect."] })),
+    ).toEqual({ current_password: "Current password is incorrect." });
+  });
+
+  it("puts a policy refusal that names no field under the new password", () => {
+    // The change service's own policy check answers with `messages` and no
+    // field name; it can only be about the password being chosen.
+    expect(
+      passwordFieldErrors(
+        refusal({
+          error_code: "PASSWORD_POLICY_VIOLATION",
+          messages: ["This password is too similar to the email address."],
+        }),
+      ),
+    ).toEqual({ password: "This password is too similar to the email address." });
+  });
+
   it("returns nothing for a refusal with no password field", () => {
     // An expired link has no box to sit under, so the page shows it as a
     // banner instead.
