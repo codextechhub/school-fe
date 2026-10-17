@@ -52,10 +52,10 @@ const SERVED_PATHS = new Set([
 
 /**
  * Which screens a school may open before go-live, straight off the route
- * handles. DashboardLayout closes a page when
- * `tenantIsPending && !onboardingRoute && !pendingSurface`, so those two flags
- * ARE the rule; the palette keeps its own prefix list and these tests are what
- * stop the two from drifting.
+ * handles. DashboardLayout closes a page when `isOpenBeforeGoLive` says no,
+ * and that reads the `onboarding` and `pendingSurface` flags, so those two
+ * flags ARE the rule; the palette keeps its own prefix list and these tests are
+ * what stop the two from drifting.
  *
  * Handles are inherited: the finance and procurement children sit under one
  * parent that carries the handle for all of them, exactly as DashboardLayout

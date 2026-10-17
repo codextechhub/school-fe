@@ -16,6 +16,7 @@ const state = vi.hoisted(() => ({
   held: [] as string[],
   entities: [] as { code: string }[],
   selected: null as string | null,
+  pending: false,
   mode: undefined as string | undefined,
   entitySkip: [] as boolean[],
   custodyCalls: [] as { entity: string | null | undefined; enabled: boolean }[],
@@ -40,7 +41,11 @@ vi.mock("@/hooks/use-permissions", async () => {
 });
 
 vi.mock("@/redux/store", () => ({
-  useAppSelector: () => state.selected,
+  useAppSelector: (select: (root: unknown) => unknown) =>
+    select({
+      auth: { tenant: { status: state.pending ? "PENDING" : "LIVE" } },
+      financeEntity: { selectedCode: state.selected },
+    }),
 }));
 
 vi.mock("@/redux/services/finance/entity-api", () => ({
@@ -82,6 +87,7 @@ beforeEach(() => {
   state.held = [];
   state.entities = [{ code: "MAIN" }];
   state.selected = null;
+  state.pending = false;
   state.mode = "HELD";
   state.entitySkip = [];
   state.custodyCalls = [];
@@ -109,6 +115,18 @@ describe("usePaletteSchool", () => {
     expect(state.entitySkip).toEqual([false]);
     expect(state.custodyCalls).toEqual([{ entity: "MAIN", enabled: true }]);
     expect(school.custody).toBe("HELD");
+  });
+
+  it("asks nothing of the books at a school that has not gone live", () => {
+    // St. Monica's bursar, still onboarding: finance answers TENANT_NOT_LIVE,
+    // and the header sits on Support and Notifications too.
+    state.pending = true;
+    state.selected = "MAIN";
+    state.held = [resolvePermissionKey(P.PAY_VIEW_PAYOUTS)];
+    const school = read();
+    expect(state.entitySkip).toEqual([true]);
+    expect(state.custodyCalls).toEqual([{ entity: null, enabled: false }]);
+    expect(school.custody).toBe("UNKNOWN");
   });
 
   it("reads custody for a payment settings reader as well", () => {

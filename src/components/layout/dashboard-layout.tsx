@@ -12,6 +12,7 @@ import useToggleModal from "@/hooks/use-toggle";
 import PromptModal from "@/components/modal/prompt-modal";
 import { Outlet, useLocation, useMatches, useNavigate } from "react-router";
 import { routesPath } from "@/routes/routesPath";
+import { isOpenBeforeGoLive } from "@/routes/open-before-go-live";
 import {
   DashboardHeaderContext,
   resolveHeaderTitle,
@@ -163,7 +164,6 @@ export default function DashboardLayout() {
     back: handleBack,
     onboarding: onboardingRoute = false,
     lens: showLens = false,
-    pendingSurface = false,
     sidebar,
   } = matches.reduce<DashboardHandle>(
     (acc, m) => ({ ...acc, ...((m.handle as DashboardHandle | undefined) ?? {}) }),
@@ -231,7 +231,7 @@ export default function DashboardLayout() {
   // A LIVE school gets the whole app back even on the control room, which after
   // go-live is a read-only record rather than home base.
   const onboarding = tenantIsPending;
-  const pageIsClosed = tenantIsPending && !onboardingRoute && !pendingSurface;
+  const pageIsClosed = tenantIsPending && !isOpenBeforeGoLive(matches);
 
   useTokenRefresh();
   useRouteAcknowledgement();

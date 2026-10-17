@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { userFacingMessage } from "@/utils/user-facing-message";
 import { askToPostWithoutApproval } from "@/lib/approval-confirm";
 import { routesPath } from "@/routes/routesPath";
+import { isOpenBeforeGoLive } from "@/routes/open-before-go-live";
 import { refreshTokenSingleFlight } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
 import { captureReturnTo } from "@/utils/return-to";
@@ -235,8 +236,16 @@ const restoreActorAfterCollapse = async (
  * route table imports pages that import this module, so a static import would
  * be circular. Guarded on the current path so a screen that fires several
  * closed requests at once navigates once, not once per request.
+ *
+ * A refused READ never moves a reader who stands on a screen open before
+ * go-live (`isOpenBeforeGoLive`). That screen has already been let in, so the
+ * read came from something around it, and its own error state answers it.
+ * For example: an admin at St. Monica's, still onboarding, reloads Support,
+ * and a panel on the page asks for something closed until go-live. They stay
+ * on Support, exactly as they would had they clicked their way there. A
+ * refused ACTION on such a screen still moves them, because they asked for it.
  */
-const redirectToOnboardingNotLive = () => {
+const redirectToOnboardingNotLive = (refusedRead: boolean) => {
   const target = routesPath.PROTECTED.ONBOARDING.NOT_LIVE;
   if (window.location.pathname === target) return;
   if (window.location.pathname.startsWith(routesPath.PROTECTED.ONBOARDING.INDEX)) {
@@ -244,9 +253,10 @@ const redirectToOnboardingNotLive = () => {
     // request, not the user opening a door - do not yank them off the page.
     return;
   }
-  void import("@/routes").then(({ router }) =>
-    router.navigate(target, { replace: true }),
-  );
+  void import("@/routes").then(({ router }) => {
+    if (refusedRead && isOpenBeforeGoLive(router.state.matches.map((match) => match.route))) return;
+    return router.navigate(target, { replace: true });
+  });
 };
 
 const extractFirstDetailError = (detail: unknown): string | null => {
@@ -488,7 +498,7 @@ export const baseQueryInterceptor: BaseQueryFn<
     // this way says nothing about the screen being read, and it must never
     // move the reader off it.
     if (res?.data?.error?.code === "TENANT_NOT_LIVE") {
-      if (!silent) redirectToOnboardingNotLive();
+      if (!silent) redirectToOnboardingNotLive(api.type === "query");
       return result;
     }
     // A refused field write is answered on the form, beside each field it names.

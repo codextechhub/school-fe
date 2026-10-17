@@ -5,6 +5,7 @@ import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useReaderReach } from "@/hooks/use-reader-reach";
 import { usePermissions } from "@/hooks/use-permissions";
 import type { PaletteSchool } from "@/lib/action-palette";
+import { selectTenantIsPending } from "@/redux/features/auth/auth-slice";
 import { selectEntityCode } from "@/redux/features/finance/entity-slice";
 import { useGetEntitiesQuery } from "@/redux/services/finance/entity-api";
 import { useAppSelector } from "@/redux/store";
@@ -22,9 +23,12 @@ import { useAppSelector } from "@/redux/store";
  *     a reader who may not read the setting and while the read is in flight.
  *
  * The search box sits on every page, so the books are looked up only for a
- * reader who may read custody at all. A class teacher holding no payments key
- * sends no finance request by opening the header, and gets UNKNOWN, which
- * hides Payouts and Batches exactly as their own keys already would.
+ * reader who may read custody at all, at a school that has gone live. A class
+ * teacher holding no payments key sends no finance request by opening the
+ * header, and gets UNKNOWN, which hides Payouts and Batches exactly as their
+ * own keys already would. A school still onboarding gets UNKNOWN too: its
+ * finance endpoints answer 403 `TENANT_NOT_LIVE`, and the palette offers it no
+ * finance action anyway.
  *
  *   - `wholeSchool` is `useReaderReach`, the reach the finance screens gate
  *     their whole-school actions on, so the box offers "Add a ledger account"
@@ -34,7 +38,8 @@ export function usePaletteSchool(): PaletteSchool {
   const { applies } = useBranchLens();
   const { wholeSchool } = useReaderReach();
   const { hasPermission } = usePermissions();
-  const readsCustody = mayReadCustody(hasPermission);
+  const tenantIsPending = useAppSelector(selectTenantIsPending);
+  const readsCustody = !tenantIsPending && mayReadCustody(hasPermission);
 
   const selected = useAppSelector(selectEntityCode);
   const { data } = useGetEntitiesQuery({ is_active: true }, { skip: !readsCustody });

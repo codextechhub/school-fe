@@ -1499,8 +1499,8 @@ export const ACTIONS: ActionDef[] = [...SCHOOL_ACTIONS, ...CONSOLE_ACTIONS];
  *
  * It is DERIVED from the destination rather than typed out, because the router
  * already answers this per screen and the typed copy was already wrong. The
- * wall is `tenantIsPending && !onboardingRoute && !pendingSurface` (see
- * dashboard-layout.tsx), and `pendingSurface: true` sits on the handle of every
+ * wall is `tenantIsPending && !isOpenBeforeGoLive(matches)` (see
+ * dashboard-layout.tsx and routes/open-before-go-live.ts), and `pendingSurface: true` sits on the handle of every
  * screen a school may use before go-live. The old list named Sessions & Terms,
  * Classes & Arms and the academic calendar as live-only. All three are pending
  * surfaces - building the academic structure is a REQUIRED go-live task - so

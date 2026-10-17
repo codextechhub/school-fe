@@ -5,17 +5,29 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   toastError: vi.fn(),
+  matches: [] as { route: { handle?: unknown } }[],
 }));
 
 // The route table imports pages that import base-api, so the real module is
 // never pulled in here - the interceptor only ever reaches for it lazily.
-vi.mock("@/routes", () => ({ router: { navigate: mocks.navigate } }));
+vi.mock("@/routes", () => ({
+  router: {
+    navigate: mocks.navigate,
+    state: {
+      get matches() {
+        return mocks.matches;
+      },
+    },
+  },
+}));
 vi.mock("sonner", () => ({
   toast: { error: mocks.toastError, info: vi.fn(), success: vi.fn() },
 }));
 
+import { matchRoutes } from "react-router";
 import { baseQueryInterceptor, isAuthRoute } from "./base-api";
 import { routesPath } from "@/routes/routesPath";
+import { protectedChildren } from "@/routes/protected/route-tables";
 
 const { navigate, toastError } = mocks;
 
@@ -43,11 +55,13 @@ const respondWith = (status: number, body: unknown) => {
   );
 };
 
+/** Stands the reader on `pathname`, with the router matching it against the real route table. */
 const setPath = (pathname: string) => {
   Object.defineProperty(window, "location", {
     configurable: true,
     value: { pathname, href: `http://test.local${pathname}` },
   });
+  mocks.matches = matchRoutes(protectedChildren, pathname) ?? [];
 };
 
 beforeEach(() => {
@@ -90,6 +104,50 @@ describe("TENANT_NOT_LIVE handling", () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     expect(navigate).not.toHaveBeenCalled();
+  });
+
+  /**
+   * St. Monica's is still onboarding. Its admin reloads Support; the header
+   * search box asks for the finance books on every page, and finance answers
+   * TENANT_NOT_LIVE. Support is open before go-live, so the admin stays on it,
+   * exactly as when they click their way there. Notifications sits outside
+   * /onboarding, so the address alone cannot say it is open.
+   */
+  it.each([
+    routesPath.PROTECTED.SUPPORT.INDEX,
+    routesPath.PROTECTED.NOTIFICATIONS,
+    routesPath.PROTECTED.ACCOUNT.SECURITY,
+  ])("keeps the reader on %s, open before go-live, when a read is refused", async (path) => {
+    setPath(path);
+    respondWith(403, {
+      success: false,
+      message: "This school is still being set up.",
+      error: { code: "TENANT_NOT_LIVE", detail: {} },
+    });
+
+    await baseQueryInterceptor("/finance/entities/?is_active=true", apiStub("query"), {});
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(navigate).not.toHaveBeenCalled();
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("still moves the reader when an action they took on an open screen is refused", async () => {
+    // The staff record is open before go-live; terminating somebody is not.
+    setPath(routesPath.PROTECTED.STAFF.INDEX);
+    respondWith(403, {
+      success: false,
+      message: "This school is still being set up.",
+      error: { code: "TENANT_NOT_LIVE", detail: {} },
+    });
+
+    await baseQueryInterceptor("/i/me/staff/7/terminate/", apiStub("mutation"), {});
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(navigate).toHaveBeenCalledWith(
+      routesPath.PROTECTED.ONBOARDING.NOT_LIVE,
+      { replace: true },
+    );
   });
 
   it("never moves the reader for a silent background request", async () => {
