@@ -29,13 +29,12 @@ apps therefore fail in opposite directions and neither notices alone:
 So move both applications in the same change, with `release.sh`, and commit both
 lockfiles.
 
-**A moved pin needs a reinstall, not an install.** The package's own version never
-changes between tags, so after the pin moves a plain `npm install` keeps the old
-copy, and the app fails with "Failed to resolve import" for whatever the new tag
-added. Run `rm -rf node_modules/@xvs/finance && npm install`. `npm run dev` and
-`npm test` check this first (`scripts/check-finance-install.mjs`), along with a
-linked copy and build tools installed for the wrong processor, and stop with the
-fix.
+**A moved pin must match the installed commit.** Older package tags share one
+version, so a plain `npm install` can keep an old copy after the pin moves.
+Run `rm -rf node_modules/@xvs/finance && npm install` if the install check
+reports a mismatch. `npm run dev`, `npm test` and `npm run build` run that check
+first (`scripts/check-finance-install.mjs`), including linked copies and build
+tools installed for the wrong processor.
 
 **A school-only screen stays here.** Anything the console has no use for - the
 fee due policy is the example, because its endpoint is the FAL's and CodeX bills

@@ -1,15 +1,12 @@
 #!/usr/bin/env node
 /**
- * Stops `npm run dev` and `npm test` early when the installed shared finance
+ * Stops development, tests and builds when the installed shared finance
  * package is not the one this app pins, and says how to fix it.
  *
- * `@xvs/finance` is a git dependency whose own version never changes between
- * tags, so after the pin moves (package.json and package-lock.json name a new
- * tag) a plain `npm install` keeps the old copy: npm compares versions, and
- * they match. The app then fails inside Vite with an unhelpful "Failed to
- * resolve import" for whatever the new tag added. npm records the commit it
- * actually installed in node_modules/.package-lock.json, so comparing that with
- * the lockfile tells the two apart.
+ * `@xvs/finance` is a git dependency. Earlier tags share one package version,
+ * so a plain `npm install` can keep an old copy after the pin moves. npm records
+ * the installed commit in node_modules/.package-lock.json, which this check
+ * compares with the pinned commit.
  *
  * It also refuses two other states that break the app in the same quiet way:
  * - the package linked to a FinPro checkout instead of installed as a real
@@ -57,7 +54,15 @@ export function financeInstallProblems(root) {
 
   const lock = readJson(path.join(root, "package-lock.json"));
   const pinned = commitOf(lock?.packages?.[KEY]);
-  if (!pinned) return problems;
+  const manifestPin = readJson(path.join(root, "package.json"))?.dependencies?.[PACKAGE];
+  const lockPin = lock?.packages?.[""]?.dependencies?.[PACKAGE];
+  if (manifestPin !== lockPin) {
+    problems.push(`${PACKAGE} differs between package.json and package-lock.json. Run: npm install`);
+  }
+  if (!pinned) {
+    problems.push(`${PACKAGE} has no pinned commit in package-lock.json. Run: npm install`);
+    return problems;
+  }
 
   const installedDir = path.join(root, KEY);
   let stat = null;
@@ -77,12 +82,14 @@ export function financeInstallProblems(root) {
 
   const hidden = readJson(path.join(root, "node_modules", ".package-lock.json"));
   const installed = commitOf(hidden?.packages?.[KEY]);
-  if (installed && installed !== pinned) {
+  if (!installed) {
+    problems.push(`${PACKAGE} has no installed commit recorded in node_modules/.package-lock.json. Run: ${reinstall}`);
+  } else if (installed !== pinned) {
     const tag = (readJson(path.join(root, "package.json"))?.dependencies?.[PACKAGE] ?? "").split("#")[1];
     problems.push(
       `${PACKAGE} installed here is commit ${installed.slice(0, 7)}, but this app pins ` +
         `${tag ? `${tag} (` : ""}${pinned.slice(0, 7)}${tag ? ")" : ""}. ` +
-        `npm keeps the old copy because the package's version number never changes. Run: ${reinstall}`,
+        `The installed copy is stale. Run: ${reinstall}`,
     );
   }
 

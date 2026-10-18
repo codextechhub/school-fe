@@ -6,6 +6,7 @@
   "scripts": {
     "predev": "node scripts/check-finance-install.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/check-finance-install.mjs",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint .",
