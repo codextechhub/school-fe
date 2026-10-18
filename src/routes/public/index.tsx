@@ -1,6 +1,7 @@
 import { lazy } from "react";
 import type { RouteObject } from "react-router";
 import { routesPath } from "../routesPath";
+import StudentAppRedirect from "./student-app-redirect";
 
 /**
  * Pages reachable by somebody who has no account and never will: a parent
@@ -16,6 +17,7 @@ const PayInvoice = lazy(() => import("@/pages/pay"));
 const PaymentReturn = lazy(() => import("@/pages/pay/return"));
 
 export const publicRoutes = [
+  { path: "/student", Component: StudentAppRedirect },
   { path: routesPath.PUBLIC.PAY_INVOICE, Component: PayInvoice },
   { path: routesPath.PUBLIC.PAYMENT_RETURN, Component: PaymentReturn },
 ] as RouteObject[];
