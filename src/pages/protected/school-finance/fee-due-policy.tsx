@@ -19,6 +19,11 @@
  * Reading the rule needs `school.fees.view`; changing it is a PATCH the server
  * refuses without `school.fees.update`. A reader without the second sees the
  * rule and its dates with the choices locked and no Save.
+ *
+ * Laid out as every Finance setting is: a name, its control, and the
+ * explanation behind the ⓘ beside it. The date under each rule and the term it
+ * was worked out against stay on the page, because they are the answer rather
+ * than an explanation of it.
  */
 
 import { useState } from "react";
@@ -26,10 +31,8 @@ import { CalendarClock } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  SettingsPanel,
-  SettingsSectionHeader,
-} from "@/components/settings/settings-layout";
+import { HintedPanel, SettingField } from "@/components/finance-ui";
+import { SettingsSectionHeader } from "@/components/settings/settings-layout";
 import { cn } from "@/lib/utils";
 import { useSettingsWrite } from "@/pages/protected/settings/use-settings-write";
 import { ReadOnlyNote } from "@/pages/protected/settings/sections/shared";
@@ -87,7 +90,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
     <div className="space-y-4">
       <SettingsSectionHeader
         title="Fee due dates"
-        description="When a fee bill falls due once it is raised. One rule for the whole school, so a child and their sibling at another branch are due on the same day."
+        description="When a fee bill falls due once it is raised."
         action={
           canEdit ? (
             <Button
@@ -103,15 +106,20 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
 
       <ReadOnlyNote reason={reason} subject="this rule" one />
 
-      <SettingsPanel
+      <HintedPanel
         title="Rule"
-        description={
-          session
-            ? `Dates below are worked out against ${term ? `${term}, ` : ""}${session}.`
-            : `This school has no active academic session yet, so ${words.term} and session dates cannot be worked out. The rules that need them will start resolving once the calendar is set up.`
-        }
+        hint="One rule for the whole school, so a child and their sibling at another branch are due on the same day."
       >
         <div className="p-4 sm:p-5">
+          {session ? (
+            <p className="mb-3 font-mont text-xs text-gray-05">
+              Dates worked out against {term ? `${term}, ` : ""}{session}.
+            </p>
+          ) : (
+            <p role="status" className="mb-3 rounded-md bg-amber-50 px-3 py-2 font-mont text-xs leading-5 text-amber-900">
+              This school has no active academic session yet, so {words.term} and session dates cannot be worked out. The rules that need them will start resolving once the calendar is set up.
+            </p>
+          )}
           <div className="grid gap-2.5 sm:grid-cols-2">
             {policy.options.map((option) => {
               const active = option.value === basis;
@@ -140,8 +148,7 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
                       <span className="block font-mont text-xs font-semibold text-gray-01">
                         {option.label}
                       </span>
-                      {/* The whole reason the screen is legible: the rule in the
-                          school's own calendar, not in the abstract. */}
+                      {/* The rule as a date in the school's own calendar. */}
                       <span className="mt-1 block font-mont text-[11px] leading-4 text-gray-05">
                         A bill raised today would be due{" "}
                         <span className="font-medium text-gray-02">
@@ -157,39 +164,35 @@ function FeeDuePolicyForm({ policy }: { policy: FeeDuePolicy }) {
 
           {basis === "DAYS_AFTER" ? (
             <div className="mt-4 border-t border-white-02 pt-4">
-              <label
-                htmlFor="fee-due-days"
-                className="font-mont text-xs font-medium text-gray-01"
+              <SettingField
+                label="Days after the bill"
+                hint="Zero means due the day it is raised. A whole number of days from 0 to 365."
               >
-                Days after the bill
-              </label>
-              <Input
-                id="fee-due-days"
-                type="number"
-                min={0}
-                max={365}
-                value={days}
-                onChange={(event) => setDays(event.target.value)}
-                disabled={!canEdit}
-                className="mt-1.5 max-w-32 font-mont text-xs"
-                aria-invalid={!daysValid}
-                aria-describedby="fee-due-days-help"
-              />
-              <p
-                id="fee-due-days-help"
-                className={cn(
-                  "mt-1.5 font-mont text-[11px] leading-4",
-                  daysValid ? "text-gray-05" : "text-red-01",
+                {(id) => (
+                  <>
+                    <Input
+                      id={id}
+                      type="number"
+                      min={0}
+                      max={365}
+                      value={days}
+                      onChange={(event) => setDays(event.target.value)}
+                      disabled={!canEdit}
+                      className="max-w-32 font-mont text-xs"
+                      aria-invalid={!daysValid}
+                    />
+                    {daysValid ? null : (
+                      <p role="alert" className="mt-1.5 font-mont text-[11px] leading-4 text-red-01">
+                        Enter a whole number of days between 0 and 365.
+                      </p>
+                    )}
+                  </>
                 )}
-              >
-                {daysValid
-                  ? "Zero means due the day it is raised."
-                  : "Enter a whole number of days between 0 and 365."}
-              </p>
+              </SettingField>
             </div>
           ) : null}
         </div>
-      </SettingsPanel>
+      </HintedPanel>
     </div>
   );
 }

@@ -11,6 +11,10 @@
  * One rule for every branch, so a branch-bound reader sees it and cannot save
  * it. Reading needs `school.fees.view`; saving needs `school.fees.update`.
  * School-only, as the fee due date beside it: the endpoint is the FAL's.
+ *
+ * Laid out as every Finance setting is: a name, its control, and the
+ * explanation behind the ⓘ beside it. A problem with the amount typed stays on
+ * the page, under the box.
  */
 
 import { useState } from "react";
@@ -18,8 +22,8 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { SettingsPanel, SettingsSectionHeader } from "@/components/settings/settings-layout";
+import { HintedPanel, SettingField, SettingToggle } from "@/components/finance-ui";
+import { SettingsSectionHeader } from "@/components/settings/settings-layout";
 import { useSettingsWrite } from "@/pages/protected/settings/use-settings-write";
 import { ReadOnlyNote } from "@/pages/protected/settings/sections/shared";
 import { P } from "@/permissions";
@@ -59,7 +63,7 @@ function StudentPaymentRulesForm({ rules }: { rules: StudentPaymentRules }) {
     <div className="space-y-4">
       <SettingsSectionHeader
         title="Students paying their own fees"
-        description="Fees are normally paid by a parent or guardian in their own app. You can let students pay in the student portal when their family cannot."
+        description="Whether students may pay their own fees in the student portal."
         action={
           canSave ? (
             <Button
@@ -75,50 +79,46 @@ function StudentPaymentRulesForm({ rules }: { rules: StudentPaymentRules }) {
 
       <ReadOnlyNote reason={reason} subject="these rules" />
 
-      <SettingsPanel title="Paying in the student portal">
-        <div className="grid gap-5 p-4 sm:p-5">
-          <label className="flex items-start gap-3">
-            <Switch
-              checked={enabled}
-              onCheckedChange={setEnabled}
-              disabled={!canSave}
-              aria-label="Students may pay their own fees"
-            />
-            <span className="min-w-0">
-              <span className="block font-mont text-sm font-medium text-gray-01">
-                Students may pay their own fees
-              </span>
-              <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
-                {enabled
-                  ? "Students see a Pay button on their invoices. Card and bank details are entered on the payment page, never in the portal."
-                  : "Students see their fees but cannot pay them. Their family pays in their own app or at the school."}
-              </span>
-            </span>
-          </label>
-
-          <label className="block min-w-0">
-            <span className="font-mont text-sm font-medium text-gray-01">
-              Smallest part payment (₦)
-            </span>
-            <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
-              A student can always pay the whole balance of an invoice, however small.
-            </span>
-            <Input
-              className="mt-2 max-w-40"
-              inputMode="numeric"
-              value={minimum}
-              disabled={!canSave || !enabled}
-              aria-invalid={read.problem ? true : undefined}
-              onChange={(event) => setMinimum(event.target.value)}
-            />
-            {read.problem ? (
-              <p role="alert" className="mt-1.5 font-mont text-[11px] text-destructive">
-                {read.problem}
-              </p>
-            ) : null}
-          </label>
+      <HintedPanel
+        title="Paying in the student portal"
+        hint="Fees are normally paid by a parent or guardian in their own app. Paying in the student portal is for a family that cannot."
+      >
+        <SettingToggle
+          label="Students may pay their own fees"
+          hint={<>
+            <p>On: students see a Pay button on their invoices. Card and bank details are entered on the payment page, never in the portal.</p>
+            <p>Off: students see their fees but cannot pay them. Their family pays in their own app or at the school.</p>
+          </>}
+          checked={enabled}
+          onCheckedChange={setEnabled}
+          disabled={!canSave}
+        />
+        <div className="px-4 py-4 sm:px-5">
+          <SettingField
+            label="Smallest part payment (₦)"
+            hint="In whole naira. A student can always pay the whole balance of an invoice, however small."
+          >
+            {(id) => (
+              <>
+                <Input
+                  id={id}
+                  className="max-w-40"
+                  inputMode="numeric"
+                  value={minimum}
+                  disabled={!canSave || !enabled}
+                  aria-invalid={read.problem ? true : undefined}
+                  onChange={(event) => setMinimum(event.target.value)}
+                />
+                {read.problem ? (
+                  <p role="alert" className="mt-1.5 font-mont text-[11px] text-destructive">
+                    {read.problem}
+                  </p>
+                ) : null}
+              </>
+            )}
+          </SettingField>
         </div>
-      </SettingsPanel>
+      </HintedPanel>
     </div>
   );
 }

@@ -79,6 +79,20 @@ describe("the student payment rules panel", () => {
     expect(save).toHaveBeenCalledWith({ min_part_payment: 250_000 });
   });
 
+  it("keeps both explanations behind their ⓘ, with the box named by its label", async () => {
+    await act(async () => root.render(<StudentPaymentRulesSettings />));
+    const text = () => document.body.textContent ?? "";
+    const input = container.querySelector("input[inputmode='numeric']") as HTMLInputElement;
+    expect(input.labels?.[0]?.textContent).toBe("Smallest part payment (₦)");
+    expect(text()).not.toContain("Students see a Pay button");
+    expect(text()).not.toContain("whole balance of an invoice");
+    await act(async () => container.querySelector<HTMLElement>('[aria-label="About Students may pay their own fees"]')!.click());
+    expect(text()).toContain("On: students see a Pay button on their invoices.");
+    expect(text()).toContain("Off: students see their fees but cannot pay them.");
+    await act(async () => container.querySelector<HTMLElement>('[aria-label="About Smallest part payment (₦)"]')!.click());
+    expect(text()).toContain("A student can always pay the whole balance of an invoice, however small.");
+  });
+
   it("sends only the switch when payments are turned off", async () => {
     await act(async () => root.render(<StudentPaymentRulesSettings />));
     const toggle = container.querySelector("[role='switch']") as HTMLButtonElement;
