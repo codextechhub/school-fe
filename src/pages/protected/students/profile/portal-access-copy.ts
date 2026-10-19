@@ -10,11 +10,15 @@ export const STATUS_LABEL: Record<string, string> = {
   revoked: "Taken away",
 };
 
-/** The panel's one sentence about where the pupil's access stands. */
+/**
+ * The panel's one sentence about where a person's access stands: a pupil's to
+ * the student portal, or a parent's to the parent app (`app`).
+ */
 export function describe(
   name: string,
   block: PortalAccess,
   prefs?: Parameters<typeof formatDate>[1],
+  app = "the student portal",
 ): string {
   switch (block.status) {
     case "invited":
@@ -26,8 +30,8 @@ export function describe(
         ? `${name} last signed in ${formatDateTime(block.last_sign_in_at, prefs)}.`
         : `${name} has activated their account and has not signed in since.`;
     case "revoked":
-      return `${name}'s portal access was taken away.`;
+      return `${name}'s access to ${app} was taken away.`;
     default:
-      return `${name} has no sign-in for the student portal.`;
+      return `${name} has no sign-in for ${app}.`;
   }
 }

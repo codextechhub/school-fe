@@ -99,9 +99,10 @@ export const authApi = baseApi.injectEndpoints({
             return;
           }
 
-          // A pupil's sign-in is handed to the student app by the login page;
-          // this app writes no session for it.
-          if (data?.data?.device_app) return;
+          // A pupil's sign-in is handed to the student app, and a parent's
+          // opens the parent app, by the login page; this app writes no
+          // session for either.
+          if (data?.data?.device_app || data?.data?.home_app) return;
 
           // A fresh, valid session - re-enable token refresh in case a prior
           // session in this JS context invalidated it.

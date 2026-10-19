@@ -215,11 +215,16 @@ export default defineConfig({
     // which production serves at /student/ on this same origin. A pupil who
     // signs in here is handed across to it, and the hand-over travels in
     // sessionStorage, which is per origin, so the two have to share one here as
-    // they do in production. `ws` carries its hot reload.
+    // they do in production. `ws` carries its hot reload. `/parent` goes to the
+    // parent app's dev server (parent-fe, port 5176) for the same reason: a
+    // parent who signs in here opens it signed in, on this origin's cookie.
+    // Both are anchored to their own path segment: a plain prefix key would
+    // also take this app's `/students/...` pages on a refresh.
     proxy: {
       "/v1": { target: devApiTarget, changeOrigin: false },
       "/media": { target: devApiTarget, changeOrigin: false },
-      "/student": { target: "http://localhost:5175", changeOrigin: false, ws: true },
+      "^/student(/|$)": { target: "http://localhost:5175", changeOrigin: false, ws: true },
+      "^/parent(/|$)": { target: "http://localhost:5176", changeOrigin: false, ws: true },
     },
   },
   plugins: [

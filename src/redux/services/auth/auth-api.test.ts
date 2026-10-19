@@ -151,6 +151,37 @@ describe("a pupil's sign-in belongs to the student app", () => {
   });
 });
 
+describe("a parent's sign-in belongs to the parent app", () => {
+  it("opens no staff session, so the parent app keeps its own", async () => {
+    const payload = loginPayload("SCHOOL");
+    const parent = { ...payload, data: { ...payload.data, device_app: null, home_app: { path: "/parent/" } } };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(parent)));
+
+    const store = makeStore();
+    const result = await store.dispatch(
+      authApi.endpoints.login.initiate({ identifier: "patricia.okafor@example.ng", password: "pw" }),
+    );
+
+    expect(result.data?.data.home_app).toEqual({ path: "/parent/" });
+    expect(getAccessToken()).toBe("");
+    expect(store.getState().auth.user).toBeFalsy();
+  });
+
+  it("opens a staff session for a teacher who is also a parent", async () => {
+    const payload = loginPayload("SCHOOL");
+    const teacher = { ...payload, data: { ...payload.data, device_app: null, home_app: null } };
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(jsonResponse(teacher)));
+
+    const store = makeStore();
+    await store.dispatch(
+      authApi.endpoints.login.initiate({ identifier: "kunle.adebayo@example.ng", password: "pw" }),
+    );
+
+    expect(getAccessToken()).not.toBe("");
+    expect(store.getState().auth.user).toBeTruthy();
+  });
+});
+
 describe("cookie-authenticated logout", () => {
   it("sends CSRF with no credential in the body", async () => {
     document.cookie = "csrftoken=csrf-value; Path=/";

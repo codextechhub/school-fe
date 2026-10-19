@@ -51,6 +51,10 @@ export default function GuardiansArticle() {
         <p>Each student has exactly one primary contact, the guardian the school calls first. When linking, tick <strong>Primary contact</strong> (or <strong>Primary contact for this student</strong> from the guardian&apos;s page). If the student already has one, the marker moves to this guardian rather than adding a second. A student with no primary contact makes the first guardian linked their primary contact.</p>
       </GuideSection>
 
+      <GuideSection id="parent-app" title="Give a parent the parent app">
+        <p>On the guardian&apos;s page, <strong>Parent app access</strong> says whether they can sign in to the parent app, where they follow their children&apos;s results, attendance, notices and fees and pay bills. Select <strong>Give parent app access</strong> and confirm: an invitation goes to the guardian&apos;s email, and they sign in with that email once they activate. A guardian who already has an account at the school, such as a teacher whose child attends, keeps that one account. Until they activate, <strong>Resend invitation</strong> sends a fresh link. <strong>Take away access</strong> signs them out of the parent app everywhere. These need permission to give portal access, and a branch administrator can act only on a guardian of a child at their branch.</p>
+      </GuideSection>
+
       <GuideSection id="common-problems" title="Common problems">
         <ProblemGrid items={[
           { title: "Edit details is missing", body: "Changing a guardian needs permission to edit student records." },

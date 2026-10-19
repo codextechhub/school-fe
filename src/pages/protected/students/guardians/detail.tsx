@@ -40,6 +40,7 @@ import { EmptyRing } from "../empty-ring";
 import { PhotoPicker } from "../photo-picker";
 import { StudentStatusBadge } from "../status-badge";
 import { EditGuardianDrawer } from "./edit-guardian-drawer";
+import { ParentAppAccessPanel } from "./parent-app-access-panel";
 import { CheckNamePill, SiblingsPill } from "./person-card";
 import {
   getGuardianProfileCompleteness,
@@ -322,6 +323,8 @@ export default function GuardianDetail() {
                 ]}
               />
             </ProfilePanel>
+
+            <ParentAppAccessPanel guardian={guardian} />
 
             <ProfilePanel title="Guardian summary" icon={UsersRound}>
               <SummaryList

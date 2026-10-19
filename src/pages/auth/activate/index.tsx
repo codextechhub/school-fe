@@ -15,6 +15,7 @@ import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { useFormik } from "formik";
 import { openStudentAppSignIn } from "@/utils/student-app-handover";
+import { openHomeAppSignIn } from "@/utils/home-app";
 
 export default function ActivateAccount() {
   const { activation_key } = useParams<{ activation_key: string }>();
@@ -38,12 +39,15 @@ export default function ActivateAccount() {
       setApiError("");
       // Activation sets the password and signs nobody in. Staff see the
       // success panel and go on to this app's sign-in; a pupil's account
-      // belongs in the student app, so they go straight to its sign-in.
+      // belongs in the student app and a parent's in the parent app, so they
+      // go straight to that app's sign-in.
       const studentApp = preview?.data.device_app;
+      const homeApp = preview?.data.home_app;
       activateAccount({ activation_key: activation_key!, ...values })
         .unwrap()
         .then(() => {
           if (studentApp) openStudentAppSignIn(studentApp);
+          else if (homeApp) openHomeAppSignIn(homeApp);
           else setSuccess(true);
         })
         .catch((err) => {

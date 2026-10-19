@@ -15,6 +15,7 @@ import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { useFormik } from "formik";
 import { openStudentAppSignIn } from "@/utils/student-app-handover";
+import { openHomeAppSignIn } from "@/utils/home-app";
 
 export default function ResetPassword() {
   const { activation_key } = useParams<{ activation_key: string }>();
@@ -58,12 +59,14 @@ export default function ResetPassword() {
   });
 
   // A reset does not sign anybody in. Staff go on to this app's sign-in, a
-  // pupil to the student app's.
+  // pupil to the student app's, a parent to the parent app's.
   const studentApp = preview?.data.device_app;
+  const homeApp = preview?.data.home_app;
   const continueToSignIn = useCallback(() => {
     if (studentApp) openStudentAppSignIn(studentApp);
+    else if (homeApp) openHomeAppSignIn(homeApp);
     else navigate(routesPath.AUTH.LOGIN, { replace: true });
-  }, [studentApp, navigate]);
+  }, [studentApp, homeApp, navigate]);
 
   useEffect(() => {
     if (success) {

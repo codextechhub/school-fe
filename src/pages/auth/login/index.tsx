@@ -12,6 +12,7 @@ import { Link, useNavigate } from "react-router";
 import NoSchoolNotice from "@/components/auth/no-school-notice";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { handOverToStudentApp, openStudentAppSignIn } from "@/utils/student-app-handover";
+import { openHomeApp } from "@/utils/home-app";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -63,6 +64,8 @@ export default function Login() {
               if (!opened) openStudentAppSignIn(app);
             });
           }
+          // A parent with no staff role belongs in the parent app.
+          if (res.data.home_app) return openHomeApp(res.data.home_app);
           navigate(
             signInTarget(consumeReturnTo(), res.data.tenant?.status === "PENDING"),
             { replace: true },

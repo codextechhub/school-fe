@@ -37,6 +37,36 @@ export const portalAccessApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * A guardian's own sign-in for the parent app. The same shape as a pupil's
+     * block, signing in with email only. Reading needs the student view key;
+     * giving, resending and taking away need the portal access key. A guardian
+     * who already has a working account (a teacher whose child attends) is
+     * answered as active and nothing is created.
+     */
+    getGuardianPortalAccess: builder.query<Envelope<PortalAccess>, number>({
+      query: (id) => ({ url: `/guardians/${id}/portal-access/`, method: "GET" }),
+      providesTags: (_r, _e, id) => [{ type: "PortalAccess", id: `guardian-${id}` }],
+    }),
+
+    giveGuardianPortalAccess: builder.mutation<Envelope<PortalAccess>, number>({
+      query: (id) => ({ url: `/guardians/${id}/portal-access/`, method: "POST" }),
+      extraOptions: { silent: true },
+      invalidatesTags: (_r, _e, id) => [{ type: "PortalAccess", id: `guardian-${id}` }, "Guardians"],
+    }),
+
+    resendGuardianPortalInvitation: builder.mutation<Envelope<PortalAccess>, number>({
+      query: (id) => ({ url: `/guardians/${id}/portal-access/reissue/`, method: "POST" }),
+      extraOptions: { silent: true },
+      invalidatesTags: (_r, _e, id) => [{ type: "PortalAccess", id: `guardian-${id}` }],
+    }),
+
+    takeAwayGuardianPortalAccess: builder.mutation<Envelope<PortalAccess>, number>({
+      query: (id) => ({ url: `/guardians/${id}/portal-access/`, method: "DELETE" }),
+      extraOptions: { silent: true },
+      invalidatesTags: (_r, _e, id) => [{ type: "PortalAccess", id: `guardian-${id}` }, "Guardians"],
+    }),
+
+    /**
      * Give portal access to every pupil in a class this year, or to named
      * pupils. One pupil's refusal never stops the others; each row says what
      * happened to that pupil.
@@ -58,4 +88,8 @@ export const {
   useResendPortalInvitationMutation,
   useTakeAwayPortalAccessMutation,
   useGivePortalAccessInBulkMutation,
+  useGetGuardianPortalAccessQuery,
+  useGiveGuardianPortalAccessMutation,
+  useResendGuardianPortalInvitationMutation,
+  useTakeAwayGuardianPortalAccessMutation,
 } = portalAccessApi;

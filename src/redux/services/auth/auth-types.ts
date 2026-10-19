@@ -16,6 +16,8 @@ export interface LinkPreview {
   sign_in_as?: string
   /** The student app's address for a pupil; null for staff. */
   device_app?: { path: string } | null
+  /** The parent app's address for a parent with no staff role; null otherwise. */
+  home_app?: { path: string } | null
 }
 
 /**
@@ -55,5 +57,11 @@ export interface LoginResponse extends ResponseMessage {
      * for staff.
      */
     device_app?: { path: string } | null
+    /**
+     * Set for a parent with no staff role: their sign-in belongs in the parent
+     * app at `path`, which keeps its own session, so this app writes none (see
+     * `openHomeApp`). Null for staff and for a teacher who is also a parent.
+     */
+    home_app?: { path: string } | null
   }
 }
