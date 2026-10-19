@@ -305,6 +305,12 @@ export interface GradebookSettings {
   /** Programme codes whose sheets go to a head of department first. */
   moderated_programs: string[];
   programs: { code: string; name: string; moderated: boolean }[];
+  /**
+   * Whether every parent with a parent app account hears of a child's released
+   * result, not only the primary guardian. Absent when the reader's role may
+   * not read it (Field Access `gradebook.setup.tell_every_parent`).
+   */
+  tell_every_parent?: boolean;
 }
 
 export type GradebookSettingsWrite = Partial<Omit<GradebookSettings, "programs">>;

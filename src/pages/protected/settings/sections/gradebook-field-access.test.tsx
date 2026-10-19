@@ -21,7 +21,10 @@ import type { GradebookSettings, Scale, Structure } from "@/redux/services/grade
  * - components hidden: no structures panel at all;
  * - maximums hidden: the structures show without their Maximum column;
  * - bands hidden: no scales panel; remarks hidden: bands without remarks;
- * - templates hidden or read-only: no panel, or no Edit templates.
+ * - templates hidden or read-only: no panel, or no Edit templates;
+ * - who is told of a released result: hidden, no Telling families panel;
+ *   read-only, the switch shows the school's choice and cannot move; writable,
+ *   turning it on sends that one setting.
  */
 let fieldAccess: FieldAccessMap = {};
 
@@ -50,7 +53,9 @@ const settings: GradebookSettings = {
   show_class_stats: true, rank_in_class: true, conduct_ratings: true, rating_key: true,
   rating_traits: ["Punctuality"], moderated_programs: ["SSS"],
   programs: [{ code: "SSS", name: "Senior Secondary", moderated: true }],
+  tell_every_parent: false,
 };
+const updateSettings = vi.fn(() => ({ unwrap: () => Promise.resolve({}) }));
 
 vi.mock("@/hooks/use-permissions", () => ({
   usePermissions: () => ({
@@ -90,7 +95,7 @@ vi.mock("@/redux/services/gradebook/gradebook-api", () => {
     useCreateScaleMutation: mutation,
     useUpdateScaleMutation: mutation,
     useSaveRemarkTemplatesMutation: mutation,
-    useUpdateGradebookSettingsMutation: mutation,
+    useUpdateGradebookSettingsMutation: () => [updateSettings, { isLoading: false }],
   };
 });
 
@@ -105,6 +110,7 @@ beforeEach(() => {
   container = document.createElement("div");
   root = createRoot(container);
   fieldAccess = {};
+  updateSettings.mockClear();
 });
 
 afterEach(() => act(() => root.unmount()));
@@ -164,5 +170,27 @@ describe("gradebook setup Field Access", () => {
     setup([], ["templates"]);
     expect(text()).toContain("Principal's remark templates");
     expect(buttons("Edit templates")).toBe(0);
+  });
+
+  it("offers who is told of a released result, greys it when read-only and drops it when hidden", () => {
+    const tellSwitch = () =>
+      container.querySelector<HTMLButtonElement>('[aria-label="Tell every parent with a parent app account"]');
+    setup();
+    expect(text()).toContain("Telling families about results");
+    expect(text()).toContain("Only the child's primary guardian is told");
+    expect(tellSwitch()?.disabled).toBe(false);
+    act(() => tellSwitch()?.click());
+    expect(updateSettings).toHaveBeenCalledWith({ tell_every_parent: true });
+
+    act(() => root.unmount());
+    root = createRoot(container);
+    setup([], ["tell_every_parent"]);
+    expect(text()).toContain("Telling families about results");
+    expect(tellSwitch()?.disabled).toBe(true);
+
+    act(() => root.unmount());
+    root = createRoot(container);
+    setup(["tell_every_parent"]);
+    expect(text()).not.toContain("Telling families about results");
   });
 });

@@ -38,6 +38,10 @@ export default function GradebookSetupArticle() {
         <p>Turn moderation on for a programme and its submitted score sheets go to the head of the subject&apos;s department, who approves them or sends them back, before the class teacher compiles the class. Name each department&apos;s head under Academic structure, Departments. A department with no head sends its sheets straight on.</p>
       </GuideSection>
 
+      <GuideSection id="families" title="Telling families about results">
+        <p>When a child&apos;s result is released, the child&apos;s primary guardian is told: by email, and in the parent app and on their phone if they use it. Turn on <strong>Tell every parent with a parent app account</strong> and the child&apos;s other parents who use the parent app are told too, in the app and on their phone. They are not emailed, so a family still gets one report card email. The switch saves as soon as you turn it and applies to the next results the school releases.</p>
+      </GuideSection>
+
       <GuideSection id="templates" title="Principal's remark templates">
         <p>One sentence for each band of overall average. When the principal writes the comments for a class, each band starts from its template and can be reworded for that class. Select <strong>Edit templates</strong>; one band must start at 0 so every average has a remark.</p>
       </GuideSection>

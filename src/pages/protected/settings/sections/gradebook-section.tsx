@@ -25,6 +25,7 @@ import { parseApiError } from "@/utils/api-error";
 import { useSettingsBranches } from "../use-settings-branches";
 import { useSettingsWrite } from "../use-settings-write";
 import { bandRanges } from "./gradebook/checks";
+import { FamiliesPanel } from "./gradebook/families-panel";
 import { ReportCardPanel } from "./gradebook/report-card-panel";
 import { ScaleDrawer, type ScaleDrawerMode } from "./gradebook/scale-drawer";
 import { ProgrammeRecords, type Programme } from "./gradebook/setup-records";
@@ -36,15 +37,17 @@ import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 /**
  * The school's gradebook rules: what each programme's marks are made of, how
  * they are graded, what prints on a report card, which programmes are
- * moderated, and the principal's remark templates.
+ * moderated, who in a family hears of a released result, and the principal's
+ * remark templates.
  *
  * Everything here binds every branch, so only a reader who covers the whole
  * school changes it, as the server insists; anyone else reads it. A rule a
  * published result rests on is locked, and is changed by copying it.
  *
  * Field Access governs the parts of the setup resource: the components, their
- * maximums, the bands, their remarks and the remark templates. A hidden part
- * leaves its panel or column; a read-only one leaves its editing controls.
+ * maximums, the bands, their remarks, the remark templates and who is told of a
+ * released result. A hidden part leaves its panel or column; a read-only one
+ * leaves its editing controls.
  */
 export function GradebookSection() {
   const settingsQuery = useGetGradebookSettingsQuery();
@@ -71,6 +74,7 @@ export function GradebookSection() {
       <StructuresPanel canSave={canSave} />
       <ScalesPanel canSave={canSave} />
       <ReportCardPanel settings={settings} canSave={canSave} />
+      <FamiliesPanel settings={settings} canSave={canSave} />
       <TemplatesPanel canSave={canSave} />
       <SettingsPanel
         title="Who takes what"
