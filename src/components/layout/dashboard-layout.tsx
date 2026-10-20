@@ -51,6 +51,7 @@ import { exitProxySession } from "@/utils/proxy-session";
 import { useSchoolWords } from "@/hooks/use-school-words";
 import { labelInSchoolWords } from "@/lib/school-words";
 import { HeaderAccountAvatar } from "./header-account-avatar";
+import { OtherAppsMenuItems } from "./other-apps-menu";
 
 const AppSearch = lazy(() =>
   import("./app-search").then((module) => ({ default: module.AppSearch })),
@@ -464,6 +465,7 @@ export default function DashboardLayout() {
                     <KeyRound className="size-4" />
                     Change password
                   </DropdownMenuItem>
+                  <OtherAppsMenuItems />
                   <DropdownMenuSeparator />
                   <DropdownMenuItem variant="destructive" onClick={toggleLogout}>
                     <LogOut className="size-4" />

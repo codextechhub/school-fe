@@ -1,5 +1,14 @@
 import type { BranchReach, FieldAccessPayload, SchoolInfo, TenantInfo, User } from "@/redux/features/auth/auth-types";
 
+/**
+ * An app the signed-in account can open beside the staff app: `parent_app` at
+ * `/parent/` for a member of staff who is a parent of a child on the roll.
+ */
+export interface OtherApp {
+  key: string
+  path: string
+}
+
 export interface ResponseMessage {
     status: boolean;
     message: string;
@@ -63,5 +72,7 @@ export interface LoginResponse extends ResponseMessage {
      * `openHomeApp`). Null for staff and for a teacher who is also a parent.
      */
     home_app?: { path: string } | null
+    /** The apps this account can open beside this one (see `OtherApp`). */
+    other_apps?: OtherApp[]
   }
 }

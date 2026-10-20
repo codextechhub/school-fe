@@ -12,7 +12,7 @@ import { routesPath } from "@/routes/routesPath";
 import { recordActivity } from "@/utils/session-activity";
 import { resetSessionInvalidation } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
-import type { LinkPreview, LoginResponse, PasswordPolicy } from "./auth-types";
+import type { LinkPreview, LoginResponse, OtherApp, PasswordPolicy } from "./auth-types";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { setAccessToken } from "@/utils/access-token";
 import { getCsrfToken } from "@/utils/csrf";
@@ -42,6 +42,8 @@ export interface MeResponse {
       tenant_slug: string;
       target: ProxyTargetIdentity;
     };
+    /** The apps this account can open beside this one; empty while proxying. */
+    other_apps?: OtherApp[];
   };
 }
 
