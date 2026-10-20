@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { useCapabilities } from "@/hooks/use-capabilities";
 import { useSchoolWords } from "@/hooks/use-school-words";
+import { useDebounce } from "@/hooks/use-debounce";
 import { BookOpenText, ChevronRight, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { routesPath } from "@/routes/routesPath";
@@ -166,6 +167,7 @@ export function AppSearch({
   // tab that learned something should be reflected the next time this list is
   // opened.
   const trimmed = query.trim();
+  const settledQuery = useDebounce(trimmed, 250);
   const ranked = useMemo(
     () => (resultsOpen ? rankActions(available, trimmed, loadPopularity(userId)) : []),
     [available, trimmed, userId, resultsOpen],
@@ -196,18 +198,18 @@ export function AppSearch({
   );
   const canSeeStaff = permissions.includes(resolvePermissionKey(P.BROWSE_TEACHERS));
   const longEnough = trimmed.length >= 2;
-  const askable = resultsOpen && !tenantIsPending && longEnough;
+  const askable = resultsOpen && !tenantIsPending && settledQuery.length >= 2;
 
-  const { data: studentHits } = useSearchStudentsQuery(trimmed, {
+  const { currentData: studentHits, isFetching: studentsFetching } = useSearchStudentsQuery(settledQuery, {
     skip: !askable || !canSeeStudents,
   });
-  const { data: staffHits } = useSearchStaffQuery(trimmed, {
+  const { currentData: staffHits } = useSearchStaffQuery(settledQuery, {
     skip: !askable || !canSeeStaff,
   });
   // Guardians hang off students: a school that may not open a child's record has
   // no business finding the household behind it, and there is no guardian key of
   // its own to ask for.
-  const { data: guardianHits } = useSearchGuardiansQuery(trimmed, {
+  const { currentData: guardianHits } = useSearchGuardiansQuery(settledQuery, {
     skip: !askable || !canSeeStudents,
   });
 
@@ -222,7 +224,7 @@ export function AppSearch({
    */
   const recordGroups = useMemo(() => {
     const cap = <T,>(rows: T[] | undefined) =>
-      longEnough ? (rows ?? []).slice(0, 5) : [];
+      longEnough && settledQuery === trimmed ? (rows ?? []).slice(0, 5) : [];
     return [
       {
         key: "students" as const,
@@ -258,7 +260,7 @@ export function AppSearch({
         })),
       },
     ].filter((group) => group.rows.length > 0);
-  }, [studentHits, staffHits, guardianHits, longEnough]);
+  }, [studentHits, staffHits, guardianHits, longEnough, settledQuery, trimmed]);
 
   /** Flattened in render order, which is the order the arrow keys walk. */
   const recordRows = useMemo(
@@ -546,10 +548,28 @@ export function AppSearch({
                 </button>
               );
             })}
+            {group.key === "students" && (studentHits?.data?.length ?? 0) > 5 && (
+              <button
+                type="button"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => openRecord(`${routesPath.PROTECTED.STUDENTS.INDEX}?search=${encodeURIComponent(trimmed)}`)}
+                className="w-full rounded-lg px-3 py-2 text-left text-xs font-medium text-primary hover:bg-gray-50"
+              >
+                See directory matches for the selected branch and year
+              </button>
+            )}
           </section>
         ))}
 
-        {view.rows.length === 0 && recordCount === 0 && guideRows.length === 0 ? (
+        {canSeeStudents && resultsOpen && longEnough &&
+          (settledQuery !== trimmed || studentsFetching) && (
+            <p className="px-3 py-2 text-xs text-gray-400" role="status">
+              Searching students...
+            </p>
+          )}
+
+        {view.rows.length === 0 && recordCount === 0 && guideRows.length === 0 &&
+          !(canSeeStudents && longEnough && (settledQuery !== trimmed || studentsFetching)) ? (
           <p className="px-3 py-4 text-center text-xs text-gray-400">
             {canSeeStudents && trimmed.length === 1
               ? "Keep typing to search students."

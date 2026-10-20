@@ -15,7 +15,7 @@ export default function FindStudentRecordArticle() {
 
       <GuideSection id="search-and-filter" title="Search and filter the directory">
         <GuideSteps>
-          <GuideStep title="Search">Type in <strong>Search name or admission no.</strong> The list narrows as you type and a line under the toolbar says how many students match.</GuideStep>
+          <GuideStep title="Search">Type into <strong>Search name or admission no.</strong> A fragment such as <em>am</em> can match the start, middle or end of a readable name or admission number. You can also type first and last names in either order, or the start of two names. The list narrows after a brief pause and says how many students match, including departed students when no status filter is set.</GuideStep>
           <GuideStep title="Filter">Select <strong>Filters</strong> to narrow by <strong>Class</strong>, <strong>Level</strong> or <strong>Status</strong>, or tick <strong>Unassigned class only</strong> to see students on the roll with no class. Select <strong>Done</strong> to close the panel. The button shows how many filters are on.</GuideStep>
           <GuideStep title="Clear what you set">Each filter appears as a chip under the toolbar. Select a chip to remove it, or <strong>Clear all</strong> to start again.</GuideStep>
           <GuideStep title="Choose a layout">Switch between <strong>List</strong> and <strong>Cards</strong>. The list shows the admission number, class, primary guardian and a <strong>Record</strong> bar that reads <strong>Ready</strong> or counts the gaps.</GuideStep>
@@ -73,7 +73,7 @@ export default function FindStudentRecordArticle() {
 
       <GuideSection id="common-problems" title="Common problems">
         <ProblemGrid items={[
-          { title: "A student I expect is not listed", body: "Check the branch and year in the sidebar, then clear every filter chip. A student who applied but was never enrolled appears with the Applicant status." },
+          { title: "A student I expect is not listed", body: "Check the branch and year in the sidebar, then clear every filter chip. The header search looks across the student records your role can access, while this directory follows the selected branch and year. A student who applied but was never enrolled appears with the Applicant status." },
           { title: "The class filter is missing a class", body: "Classes come from Academic Structure for the year you are looking at. A class that has not been set up for that year cannot be offered." },
           { title: "Edit student or Change status is missing", body: "Each action needs its own permission. Ask whoever manages roles at your school if you need one." },
           { title: "The earlier day shows an error", body: "The record has no history for the day you picked. Select Back to today and choose a day the calendar offers." },

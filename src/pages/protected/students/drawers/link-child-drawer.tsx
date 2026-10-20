@@ -9,6 +9,7 @@ import {
 } from "@/redux/services/students/students-api";
 import { useRelationshipOptions } from "../relationships";
 import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/use-debounce";
 
 import { Checkbox } from "@/components/ui/checkbox";
 
@@ -48,12 +49,12 @@ export function LinkChildDrawer({
   const [relationship, setRelationship] = useState("");
   const [primary, setPrimary] = useState(false);
 
-  const query = search.trim();
-  const { data, isFetching } = useSearchStudentsQuery(query, {
+  const query = useDebounce(search.trim(), 250);
+  const { currentData: data, isFetching } = useSearchStudentsQuery(query, {
     // One character is a keystroke, not a search.
-    skip: query.length < 2,
+    skip: !open || query.length < 2,
   });
-  const hits = data?.data ?? [];
+  const hits = query === search.trim() ? data?.data ?? [] : [];
 
   const [link, { isLoading }] = useLinkGuardianMutation();
   const valid = Boolean(picked && relationship);

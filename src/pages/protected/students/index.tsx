@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import {
   LayoutGrid,
   List,
@@ -22,6 +22,7 @@ import { ExportButton } from "@/components/custom/export-button";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import { routesPath } from "@/routes/routesPath";
 import { useStudentsLens } from "@/hooks/use-students-lens";
+import { useDebounce } from "@/hooks/use-debounce";
 import { cn } from "@/lib/utils";
 import {
   useGetClassSeatsQuery,
@@ -58,10 +59,12 @@ import { getDirectoryRecordHealth } from "./profile-completeness";
  */
 export default function StudentDirectory() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { lens, multiBranch, label: branchLabel, sessionName, pastYear } =
     useStudentsLens();
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("search") ?? "");
+  const settledSearch = useDebounce(search.trim(), 300);
   const [classId, setClassId] = useState("all");
   const [level, setLevel] = useState("all");
   const [status, setStatus] = useState<StudentStatus | "all">("all");
@@ -77,7 +80,7 @@ export default function StudentDirectory() {
 
   const listArgs = {
     ...lens,
-    search: search.trim() || undefined,
+    search: settledSearch || undefined,
     // "unassigned" is not a class id: the server reads it as "on the roll with
     // no class", which is a different query from any particular class.
     class: unassignedOnly ? "unassigned" : classId === "all" ? undefined : classId,

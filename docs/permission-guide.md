@@ -298,6 +298,7 @@ await enrol(access.writableOnly(body, CREATING));
 - **Adding a new guardian depends on its required fields.** `canCreateGuardian(access)` offers "Add a new one" only when the user may give every field a new guardian requires at creation; otherwise only the search for an existing guardian is offered.
 - A field the viewer cannot see is neither complete nor a gap: completeness scores count only the fields a record carries.
 - The request interceptor stays silent on `field_write_denied`; the form shows each message under its field.
+- Student searches match only readable first, middle and last names and admission numbers. The directory, header and product search use the same backend name matcher, so a hidden name part cannot be recovered by searching for it. The student result still applies the existing switches to its name and admission number.
 
 ### Every business field gets a decision
 
