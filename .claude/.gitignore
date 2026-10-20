@@ -1,1 +1,3 @@
 _*.mjs
+# Rendered demo videos: large, and re-made from the scripts beside them.
+demo-videos/out/
