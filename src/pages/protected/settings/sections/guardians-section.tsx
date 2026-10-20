@@ -33,6 +33,7 @@ const MATCHING_TEXT: Record<GuardianRules["matching"], string> = {
 
 const FIELDS = [
   "min_per_student",
+  "parent_app_auto_access",
   "email_required",
   "matching",
   "extra_relationships",
@@ -43,10 +44,16 @@ const MAX_EXTRAS = 10;
 /**
  * The school's rules for guardians.
  *
- * How many guardians each child needs, whether a new guardian must have an
- * email, how siblings are recognised, and the relationship words the school
- * uses beyond the fixed ones. Every form that adds or links a guardian, and
- * both imports, apply the same rules on the server.
+ * How many guardians each child needs, whether guardians get the parent app
+ * automatically, whether a new guardian must have an email, how siblings are
+ * recognised, and the relationship words the school uses beyond the fixed
+ * ones. Every form that adds or links a guardian, and both imports, apply the
+ * same rules on the server.
+ *
+ * While the parent app rule is on, a new guardian needs an email because that
+ * is where the invitation goes, so the email switch shows on and locked. The
+ * school's own email choice is kept underneath and comes back when the parent
+ * app rule is turned off.
  *
  * The email rule is a rule about a guardian's email address, so it is offered
  * only to somebody who may read that field. The server leaves the stored value
@@ -83,6 +90,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
   const emailRuleOffered = !useFieldAccess(FIELD_RESOURCE.GUARDIANS).isHidden("email");
 
   const [minimum, setMinimum] = useState(String(rules.min_per_student));
+  const [autoAccess, setAutoAccess] = useState(rules.parent_app_auto_access ?? false);
   const [emailRequired, setEmailRequired] = useState(rules.email_required);
   const [matching, setMatching] = useState(rules.matching);
   const [extras, setExtras] = useState<string[]>(rules.extra_relationships);
@@ -109,6 +117,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
 
   const changed =
     min !== rules.min_per_student ||
+    autoAccess !== (rules.parent_app_auto_access ?? false) ||
     emailRequired !== rules.email_required ||
     matching !== rules.matching ||
     extras.join("\n") !== rules.extra_relationships.join("\n");
@@ -126,6 +135,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
       await save({
         min_per_student: min,
         email_required: emailRequired,
+        parent_app_auto_access: autoAccess,
         matching,
         extra_relationships: extras,
       }).unwrap();
@@ -163,19 +173,42 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
         </div>
       </SettingsPanel>
 
+      {rules.parent_app_auto_access !== undefined ? (
+        <SettingsPanel title="Parent app">
+          <label className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
+            <span className="min-w-0">
+              <span className="block font-mont text-sm font-medium text-gray-01">Give parents the parent app automatically</span>
+              <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
+                Once a child is on the roll, each of their guardians is emailed an invitation to the
+                parent app. Guardians already on record are invited when next linked to a child or
+                given an email. Anyone whose access was taken away is not invited again.
+              </span>
+            </span>
+            <Switch
+              checked={autoAccess}
+              disabled={!canSave}
+              onCheckedChange={setAutoAccess}
+              aria-label="Give parents the parent app automatically"
+            />
+          </label>
+          <ErrorLine text={errors.parent_app_auto_access} padded />
+        </SettingsPanel>
+      ) : null}
+
       {emailRuleOffered ? (
         <SettingsPanel title="Contact details">
           <label className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
             <span className="min-w-0">
               <span className="block font-mont text-sm font-medium text-gray-01">Email required for a new guardian</span>
               <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
-                A phone number is always required. A guardian already on record without an email can
-                still be linked to another child.
+                {autoAccess
+                  ? "Required while parents get the parent app automatically, because the invitation goes to that email."
+                  : "A phone number is always required. A guardian already on record without an email can still be linked to another child."}
               </span>
             </span>
             <Switch
-              checked={emailRequired}
-              disabled={!canSave}
+              checked={autoAccess || emailRequired}
+              disabled={!canSave || autoAccess}
               onCheckedChange={setEmailRequired}
               aria-label="Email required for a new guardian"
             />

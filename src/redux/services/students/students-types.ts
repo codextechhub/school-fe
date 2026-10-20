@@ -578,10 +578,19 @@ export interface EnrolmentRules {
  */
 export interface GuardianRules {
   min_per_student: number;
+  /** The school's own email switch, kept as chosen while the parent app rule overrides it. */
   email_required: boolean;
   /**
-   * Whether the email rule binds the signed-in user: a user who cannot give a
-   * guardian's email is not held to it. Absent from an older server, where
+   * Whether each guardian is invited to the parent app as soon as a child of
+   * theirs is on the roll. While it is on, a new guardian needs an email
+   * whatever `email_required` says. Absent from an older server, which has
+   * no such rule.
+   */
+  parent_app_auto_access?: boolean;
+  /**
+   * Whether a new guardian's email is required of the signed-in user, by the
+   * email switch or the parent app rule: a user who cannot give a guardian's
+   * email is not held to it. Absent from an older server, where
    * `email_required` binds everyone.
    */
   binding_email_required?: boolean;
@@ -691,7 +700,7 @@ export type PromotionRulesUpdate = Pick<
 export type GuardianRulesUpdate = Pick<
   GuardianRules,
   "min_per_student" | "email_required" | "matching" | "extra_relationships"
-> & { reason?: string };
+> & { parent_app_auto_access?: boolean; reason?: string };
 
 export type EnrolmentRulesUpdate = Omit<
   EnrolmentRules,

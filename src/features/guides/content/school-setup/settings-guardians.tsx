@@ -12,13 +12,15 @@ const PROBLEMS = [
   ["That relationship is already on the list", "The word is one of the fixed relationships, such as Mother, or one your school has already added. Capitals do not make it different."],
   ["A child was imported with fewer guardians than the minimum", "That is expected. An import brings in one guardian per row and warns that the student needs more. Add the others on the student's record or with the guardians import."],
   ["A relationship you removed still shows on a child", "Removing a word stops it being offered. Children already linked with it keep it."],
+  ["The email switch is greyed out and on", "Give parents the parent app automatically is on, and the invitation goes to the guardian's email. Turn that off and the email switch goes back to what your school chose."],
+  ["A guardian was not sent an invitation", "Open the guardian's page and look at Parent app access. A guardian with no email, no child on the roll, or whose access was taken away is not invited automatically. Give access there by hand once the record is right."],
 ] as const;
 
 export default function SettingsGuardiansArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p><strong>Guardians</strong> in <strong>Settings</strong> holds the rules every guardian on the school&apos;s records is checked against: how many each child needs, what a new guardian must give, how one family is recognised across several children, and the relationship words your school uses. The enrolment form, the guardian drawers, both imports and the server all apply the same rules.</p>
+        <p><strong>Guardians</strong> in <strong>Settings</strong> holds the rules every guardian on the school&apos;s records is checked against: how many each child needs, whether they get the parent app automatically, what a new guardian must give, how one family is recognised across several children, and the relationship words your school uses. The enrolment form, the guardian drawers, both imports and the server all apply the same rules.</p>
         <GuideChecklist items={[
           "Your role can view school settings. Saving a change needs the key to update them as well.",
           "Your school's plan includes the students module.",
@@ -32,8 +34,16 @@ export default function SettingsGuardiansArticle() {
         <GuideCallout tone="info" title="An import is not held back">A student import brings in one guardian per row. Where the minimum is higher, each such row is imported with a warning, and the student&apos;s record shows that more guardians are needed. Add them on the record or with the guardians import.</GuideCallout>
       </GuideSection>
 
+      <GuideSection id="parent-app" title="Parent app">
+        <p><strong>Give parents the parent app automatically</strong> is on until your school turns it off. While it is on, each guardian is emailed an invitation to the parent app as soon as a child of theirs is on the roll: when the child is enrolled, admitted from an application or imported, or when the guardian is linked to a child already on the roll.</p>
+        <p>A guardian already on the school&apos;s records is invited the next time one of those happens, or when an email is added to their record. Nobody is sent a second invitation, and a guardian whose access was taken away is never invited again automatically.</p>
+        <GuideCallout tone="info" title="A member of staff who is also a parent">A teacher whose own child attends signs in to the parent app with the account they already have. They are linked to it and sent no invitation.</GuideCallout>
+        <p>Turn it off and guardians get the parent app only when somebody gives it from <strong>Parent app access</strong> on the guardian&apos;s page.</p>
+      </GuideSection>
+
       <GuideSection id="contact-details" title="Contact details">
-        <p>A phone number is always required for a new guardian. Turn on <strong>Email required for a new guardian</strong> and an email is required too: the forms drop &quot;(optional)&quot; from <strong>Email</strong>, and a new guardian without one is refused with <strong>A guardian email is required at this school.</strong></p>
+        <p>A phone number is always required for a new guardian. While <strong>Give parents the parent app automatically</strong> is on, an email is required too, because that is where the invitation goes, and the email switch shows on and greyed out.</p>
+        <p>With the parent app rule off, turn on <strong>Email required for a new guardian</strong> to keep requiring one. Either way, the forms drop &quot;(optional)&quot; from <strong>Email</strong>, and a new guardian without one is refused with <strong>A guardian email is required at this school.</strong></p>
         <p>A guardian already on the school&apos;s records without an email can still be linked to another child, because nothing new is written about them.</p>
         <p>Only a role that can read a guardian&apos;s email in Field Access sees the <strong>Email required for a new guardian</strong> switch, and a role that cannot read it leaves the rule as it stands when it saves. A role that cannot give a guardian&apos;s email is not held to the rule on the forms: the label stays <strong>Email (optional)</strong> for that person.</p>
       </GuideSection>
@@ -61,7 +71,7 @@ export default function SettingsGuardiansArticle() {
 
       <GuideSection id="save-the-rules" title="Save the rules">
         <GuideSteps>
-          <GuideStep title="Make your changes">Change any of the four panels. <strong>Unsaved changes</strong> appears beside the button while something is not saved yet.</GuideStep>
+          <GuideStep title="Make your changes">Change any of the panels. <strong>Unsaved changes</strong> appears beside the button while something is not saved yet.</GuideStep>
           <GuideStep title="Save">Select <strong>Save guardian rules</strong>. XVS confirms with <strong>Guardian rules saved.</strong> and the next guardian added or linked follows them.</GuideStep>
         </GuideSteps>
       </GuideSection>
@@ -78,7 +88,7 @@ export default function SettingsGuardiansArticle() {
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="You are done when">The minimum, the email rule, the way siblings are recognised and your own relationship words are the ones your school agreed, no unsaved changes are left, and the enrolment form asks for guardians the way you set.</GuideCallout>
+        <GuideCallout tone="tip" title="You are done when">The minimum, the parent app rule, the email rule, the way siblings are recognised and your own relationship words are the ones your school agreed, no unsaved changes are left, and the enrolment form asks for guardians the way you set.</GuideCallout>
       </GuideSection>
     </div>
   );
