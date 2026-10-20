@@ -564,7 +564,7 @@ export function AppSearch({
         {canSeeStudents && resultsOpen && longEnough &&
           (settledQuery !== trimmed || studentsFetching) && (
             <p className="px-3 py-2 text-xs text-gray-400" role="status">
-              Searching students...
+              Searching...
             </p>
           )}
 
@@ -572,7 +572,7 @@ export function AppSearch({
           !(canSeeStudents && longEnough && (settledQuery !== trimmed || studentsFetching)) ? (
           <p className="px-3 py-4 text-center text-xs text-gray-400">
             {canSeeStudents && trimmed.length === 1
-              ? "Keep typing to search students."
+              ? "Keep typing to search."
               : "Nothing matches - no action, screen, guide or student by that name."}
           </p>
         ) : view.groups ? (
