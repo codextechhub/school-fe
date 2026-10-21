@@ -1,7 +1,8 @@
 """Sets Lagoon View Academy up to buy through procurement, in the local database only.
 
-It casts the procurement demo video: Mr Bakare asks, Ngozi or Kemi approve first,
-the principal approves at N500,000 and over. Run from backend/apps:
+It casts the procurement demo video: Tolu Fashola, a teacher, asks; Mr Bakare,
+the Head of Sciences she reports to on the organogram, decides first; Ngozi or
+Kemi next; the principal at N500,000 and over. Run from backend/apps:
 
     python manage.py shell < ../../school-fe/.claude/demo-videos/lagoon-procurement-setup.py
 
@@ -45,24 +46,7 @@ def say(text):
 call_command("seed_procurement_approvals", tenant=["lagoon-view"])
 
 with transaction.atomic():
-    # 2. Roles.
-    requester, made = TenantRoleTemplate.objects.get_or_create(
-        tenant=tenant, key="department-requester",
-        defaults={
-            "name": "Department Requester",
-            "description": "Heads of department who ask for what their department needs to buy.",
-        },
-    )
-    for key in (
-        "procurement.requisition.view", "procurement.requisition.create",
-        "procurement.requisition.update", "procurement.requisition.submit",
-        "procurement.catalog_item.view", "workflow.instance.view",
-    ):
-        TenantRolePermission.objects.get_or_create(
-            role=requester, permission=Permission.objects.get(key=key), defaults={"granted": True},
-        )
-    say(f"Department Requester role {'created' if made else 'already there'}")
-
+    # 2. Roles. Teachers raise requisitions through the Teacher role itself.
     procurement_admin = TenantRoleTemplate.objects.get(tenant=tenant, name="Procurement Admin")
 
     def grant(user, role):
@@ -76,7 +60,6 @@ with transaction.atomic():
             )
         say(f"{user.full_name}: {role.name}")
 
-    grant(bakare, requester)
     grant(kemi, procurement_admin)
     grant(ngozi, procurement_admin)
     grant(principal, procurement_admin)
@@ -162,5 +145,41 @@ with transaction.atomic():
             },
         )
     say("suppliers: Labtech Supplies Ltd, Scientia Nigeria Ltd, Unilab Stores")
+
+    # 7. The organogram the line manager step climbs.
+    from schools.vs_staff.models import (
+        StaffOrgNode, StaffPosition, StaffPositionAssignment, StaffProfile,
+    )
+    from schools.vs_staff.services.organogram import StaffOrganogramService
+
+    tolu = U.objects.get(email="tolu.fashola@lagoon-view.example.com")
+    academics, _ = StaffOrgNode.all_objects.get_or_create(
+        tenant=tenant, code="ACAD", defaults={"name": "Academics", "kind": "DIVISION"},
+    )
+    sciences, _ = StaffOrgNode.all_objects.get_or_create(
+        tenant=tenant, code="SCI",
+        defaults={"name": "Sciences", "kind": "DEPARTMENT", "parent": academics, "branch": main},
+    )
+    head_post, _ = StaffPosition.all_objects.get_or_create(
+        tenant=tenant, code="PRIN", defaults={"title": "Principal", "org_node": academics},
+    )
+    hos_post, _ = StaffPosition.all_objects.get_or_create(
+        tenant=tenant, code="HOS",
+        defaults={"title": "Head of Sciences", "org_node": sciences, "reports_to": head_post},
+    )
+    bio_post, _ = StaffPosition.all_objects.get_or_create(
+        tenant=tenant, code="BIO",
+        defaults={"title": "Biology Teacher", "org_node": sciences, "reports_to": hos_post},
+    )
+    academics.head_position, sciences.head_position = head_post, hos_post
+    academics.save()
+    sciences.save()
+    for person, post in ((principal, head_post), (bakare, hos_post), (tolu, bio_post)):
+        staff = StaffProfile.all_objects.get(tenant=tenant, user=person)
+        if not StaffPositionAssignment.all_objects.filter(
+            position=post, staff=staff, end_date__isnull=True,
+        ).exists():
+            StaffOrganogramService.assign_position(staff, post)
+    say("organogram: Tolu Fashola (Biology) -> Oluwaseun Bakare (Head of Sciences) -> Emeka Obi (Principal)")
 
 print("Done.")

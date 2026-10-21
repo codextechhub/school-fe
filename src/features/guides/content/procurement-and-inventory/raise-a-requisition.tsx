@@ -4,7 +4,7 @@ export default function RaiseARequisitionArticle() {
   return (
     <div className="space-y-10">
       <GuideSection id="before-you-start" title="Before you start">
-        <p>A requisition is the school&apos;s internal request to buy something, such as a head of science asking for lab reagents or the stores keeper asking for exercise books. Nothing is ordered from a supplier until it is approved and the bursar turns it into a purchase order.</p>
+        <p>A requisition is the school&apos;s internal request to buy something, such as a biology teacher asking for microscopes or the stores keeper asking for exercise books. Every teacher can raise one, and sees only the requisitions they raised. Nothing is ordered from a supplier until it is approved and the school&apos;s Procurement Admin turns it into a purchase order.</p>
         <GuideChecklist items={[
           "Open Procurement under Operations in the sidebar, then Requisitions.",
           "Know what you need, roughly how many, and what each costs.",
@@ -25,7 +25,8 @@ export default function RaiseARequisitionArticle() {
 
       <GuideSection id="submit-for-approval" title="Submit for approval">
         <p><strong>Save Draft</strong> keeps the requisition to finish later. <strong>Create Requisition</strong> saves it and sends it for approval in one step. A saved draft is sent with <strong>Submit for Approval</strong> in its drawer.</p>
-        <p>Once submitted, the requisition shows <strong>Pending Approval</strong> and cannot be edited. It waits in the approvers&apos; queues and in your <strong>My Submissions</strong> under Workflow.</p>
+        <p>Once submitted, the requisition shows <strong>Pending Approval</strong> and cannot be edited. It goes first to your line manager, the person you report to on the school&apos;s organogram, and then to any further approvals your school has added. It waits in their queues and in your <strong>My Submissions</strong> under Workflow.</p>
+        <GuideCallout tone="info" title="If you report to nobody on the organogram">The request waits at its first step until an administrator chooses who decides it. Ask whoever keeps the school&apos;s organogram to place you on it, so your next request goes straight to your line manager.</GuideCallout>
         <GuideCallout tone="danger" title="If you see &quot;Nobody can approve this&quot;">This means nobody can currently approve the request, so it would wait for ever. <strong>Continue anyway</strong> records it as approved without anyone reviewing it, against your name. Unless your school has agreed that, choose <strong>Leave it waiting</strong> and ask whoever manages approvals to add an approver.</GuideCallout>
       </GuideSection>
 
@@ -42,7 +43,7 @@ export default function RaiseARequisitionArticle() {
         <GuideSteps>
           <GuideStep title="Follow progress">Open the requisition and read <strong>Approval Trail</strong>, or open it from <strong>My Submissions</strong> under Workflow to see which step it is waiting on.</GuideStep>
           <GuideStep title="When it comes back for revision">Its badge reads <strong>Sent back</strong>, in its own colour, on its row and in its drawer. It is listed under the <strong>Sent back</strong> tab, not under <strong>Pending Approval</strong> or any other tab, and <strong>Export</strong> on that tab gives a file of only the requisitions sent back. The drawer shows <strong>Sent back to you</strong> with who sent it back and why. Select <strong>Edit</strong>, make the correction and select <strong>Save changes</strong>, then select <strong>Resume</strong>. The corrected requisition goes back into the same approval, at the step that sent it back, and the approvers see the corrected version. There is no need to withdraw it. Only the person who sent it for approval gets Edit and Resume.</GuideStep>
-          <GuideStep title="When it is approved">The status reads <strong>Approved</strong>, and the bursar or procurement officer can raise a purchase order from it.</GuideStep>
+          <GuideStep title="When it is approved">The status reads <strong>Approved</strong>, and the Procurement Admin can raise a purchase order from it.</GuideStep>
         </GuideSteps>
         <GuideCallout tone="info" title="A rejected requisition is closed">A final rejection shows <strong>Rejected</strong> and cannot be reopened. Raise a new requisition if the need remains.</GuideCallout>
       </GuideSection>
@@ -51,7 +52,7 @@ export default function RaiseARequisitionArticle() {
         <GuideChecklist items={[
           "New Requisition is missing: your role does not include raising requisitions.",
           "Edit is missing: only a Draft, or a requisition sent back to you, can be edited. While it is with its approvers, nobody can change it.",
-          "The budget panel says no budget is configured: ask the bursar, or continue and let the approvers decide.",
+          "The budget panel says no budget is configured: ask the Finance Admin, or continue and let the approvers decide.",
           "An item is not in the catalogue: type its description instead.",
         ]} />
       </GuideSection>
