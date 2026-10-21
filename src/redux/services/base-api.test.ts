@@ -197,8 +197,8 @@ describe("TENANT_NOT_LIVE handling", () => {
 });
 
 /**
- * A refused read is left to the screen that asked. Chukwuemeka, a bursar,
- * opens Cost & Dimension Analysis; the report loads, but the dimension list
+ * A refused read is left to the screen that asked. Chukwuemeka, a Finance
+ * Admin, opens Cost & Dimension Analysis; the report loads, but the dimension list
  * behind one filter is refused. He must not be told he was refused something
  * he never asked for.
  */
@@ -216,6 +216,38 @@ describe("a refused read", () => {
     expect(result.error?.status).toBe(403);
     expect(toastError).not.toHaveBeenCalled();
     expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * A read that finds nothing is left to the screen too. Mr Bakare approves
+ * Tolu's requisition; the vote refreshes the approval still open in his
+ * drawer, and the server answers that it no longer waits on him. He must not
+ * see a red "not found" straight after "Approved". A save aimed at a missing
+ * record still toasts.
+ */
+describe("a 404", () => {
+  const missing = {
+    success: false,
+    message: "No pending Procurement approval with this id exists in the selected entity.",
+    error: {},
+  };
+
+  it("on a read stays quiet and leaves the error to the query", async () => {
+    respondWith(404, missing);
+
+    const result = await baseQueryInterceptor("/procurement/approvals/7/", apiStub("query"), {});
+
+    expect(result.error?.status).toBe(404);
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it("on an action still toasts", async () => {
+    respondWith(404, missing);
+
+    await baseQueryInterceptor({ url: "/procurement/approvals/7/actions/", method: "POST" }, apiStub("mutation"), {});
+
+    expect(toastError).toHaveBeenCalledOnce();
   });
 });
 

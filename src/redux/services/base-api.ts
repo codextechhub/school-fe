@@ -320,7 +320,7 @@ export const isAuthRoute = (args: string | FetchArgs): boolean => {
 };
 
 /**
- * The app's response interceptor. Of its rules, two concern refusals, and
+ * The app's response interceptor. Of its rules, three concern refusals, and
  * they share one principle: only a refused action raises a toast.
  *
  * Screens load more than their own list: a report asks for the fiscal periods,
@@ -330,6 +330,13 @@ export const isAuthRoute = (args: string | FetchArgs): boolean => {
  * and a screen that works reads as broken. The query's own error state is
  * where a refused read belongs; a refused save, post or send still toasts,
  * because the reader asked for it.
+ *
+ * A read that finds nothing (404) follows the same rule. The common case is a
+ * record leaving the reader's reach while its drawer is still mounted: an
+ * approver votes, the vote refreshes the approval they were looking at, and
+ * the server rightly answers that it no longer waits on them. A toast there
+ * reports a failure straight after a success. A save or delete aimed at a
+ * missing record still toasts.
  *
  * The same holds for a conflict (409), where the server refuses an action
  * because of the state of the record: a kept record cannot be deleted, a
@@ -517,6 +524,8 @@ export const baseQueryInterceptor: BaseQueryFn<
   }
 
   if (res?.status === 404) {
+    // A read that finds nothing is the screen's to answer: see the doc block above.
+    if (api.type === "query") return result;
     if (!isAuthRoute(args)) notify(res?.data?.message || "Resource not found.");
     return result;
   }
