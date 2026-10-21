@@ -81,7 +81,7 @@ with transaction.atomic():
     grant(ngozi, procurement_admin)
     grant(principal, procurement_admin)
 
-    # 3. Who approves: the bursar or purchasing first, the principal at N500,000 and over.
+    # 3. Who approves: a Finance or Procurement Admin first, the principal at N500,000 and over.
     for code, people in (
         ("procurement-approver", (ngozi, kemi)),
         ("procurement-senior-approver", (principal,)),
