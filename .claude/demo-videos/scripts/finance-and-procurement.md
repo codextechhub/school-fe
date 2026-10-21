@@ -27,12 +27,23 @@ statements and the school's books.
 | 3 | 0:20 - 0:34 | Finance Admin | When fees fall due | The school picks the rule once. Every bill after that takes its due date from it. | Finance Settings, Fees: she picks "End of the term billed" and the preview shows the date a bill raised today would fall due. Save. |
 | 4 | 0:34 - 0:50 | Finance Admin | What a term costs | One fee structure holds every charge: tuition, levies, the library. | Fee Structures, opens "Standard Fees": Tuition ₦15,000, Technology levy ₦2,500, Library & resources ₦1,000, total ₦18,687.50 a pupil. |
 | 5 | 0:50 - 1:10 | Finance Admin | Bill a whole class | Choose the term and the class, check the preview, and every pupil is billed at once. | Generate invoices: First Term 2026/2027, ticks JSS1 A, Preview shows the pupils to bill, the total and the due date. "Bill N pupils". |
-| 6 | 1:10 - 1:20 | Finance Admin | Each pupil's bill | Chidinma joined JSS1 A this week. Her bill is ready, with its lines and its due date. | Opens Chidinma Eze's new invoice: lines, ₦18,687.50, due date, the Settlements tab empty. |
+| 6 | 1:10 - 1:20 | Finance Admin | Each pupil's bill, sent to the guardian | Chidinma joined JSS1 A this week. Her bill is ready, and her mother has it too. | Opens Chidinma Eze's new invoice: lines, ₦18,687.50, due date, the Settlements tab empty. |
 | 7 | 1:20 - 1:42 | Parent app (phone) | Parents pay from their phone | Patricia sees Tunde's balance and pays it by card in a few taps. | Patricia's Fees: Tunde owes ₦1,687.50. Pay bill, Card, Pay in full, the test checkout, the receipt. |
 | 8 | 1:42 - 1:52 | Finance Admin | Online payments post themselves | No one types it in. The payment is matched to Tunde's bill and receipted. | Collections log: Tunde's card payment, Succeeded. Tunde's invoice now reads Paid. |
 | 9 | 1:52 - 2:08 | Finance Admin | Paid at the school office | Ebere's father pays the rest in cash. Ngozi records it and the bill is settled. | Record receipt: Ebere Bello, Cash, ₦4,187.50, Cash & Bank. Apply to open items, the bill closes. Print receipt. |
 | 10 | 2:08 - 2:20 | Finance Admin | Every pupil's statement | Bills and payments, line by line, with what is still owed. | Customers, Ebere Bello, Statement of Account: the term's bill, her earlier payments and today's cash, closing balance ₦0.00. |
 | 11 | 2:20 - 2:30 | Finance Admin | And the school's books | Each payment posts itself to the ledger. Nothing is keyed twice. | Journal Entries: the cash receipt just recorded, debit Cash & Bank, credit Receivables. Back to the overview with collections up. |
+
+**The invoice reaches the guardian.** When a fee is raised for a pupil, the
+invoice is sent to the pupil's guardian as well: Chidinma's bill reaches her
+mother, Ngozi Eze, the moment the class is billed. Scene 6 shows it arriving,
+and scene 7 opens on the parent app with the new bill already waiting.
+
+*Not built yet.* Today raising a fee sends the guardian nothing. The invoice
+email goes only to a billing email on the pupil's finance record, which billing
+never fills, so it fails silently, and the parent app shows the bill only when
+the parent happens to open Fees. This has to be built before scene 6 can be
+filmed.
 
 **Why these pupils.** Chidinma Eze is the pupil enrolled in the school-side
 video, so the two videos join up. Tunde Adeleke owes exactly ₦1,687.50 and
