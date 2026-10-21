@@ -82,7 +82,7 @@ with transaction.atomic():
         entity=entity, name="Lagoon View main account",
         defaults={
             "bank_name": "Demo Bank", "account_number": "2034517786", "gl_account": cash,
-            "is_active": True, "is_primary": True, "is_primary_collection": True,
+            "branch": main, "is_active": True, "is_primary": True, "is_primary_collection": True,
         },
     )
     if not JournalEntry.objects.filter(entity=entity, reference="LV-OPENING-BANK").exists():
