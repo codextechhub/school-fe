@@ -8,6 +8,18 @@
  * tap shows a ring where the finger or pointer lands, and the pointer leaves
  * the app afterwards so nothing is left looking hovered.
  *
+ * One recording can move between the two (:func:`show`), so a video that
+ * follows a bursar at her desk and then a parent on their phone is one take.
+ * Each app keeps its own sign-in, because each frame loads from its own
+ * address. On the phone, :func:`banner` drops a notification over the screen,
+ * in the words the app's push carries, because a recording cannot receive a
+ * real push.
+ *
+ * The phone's screen, the browser window and the page clip rather than hide
+ * what overflows: a tap scrolls its target into view, and a box that only
+ * hides its overflow can still be scrolled, which slid the app up under the
+ * drawn status bar.
+ *
  * Filmed in Playwright's own Chromium where one is downloaded: the installed
  * Chrome films a 1080-pixel stage short at the bottom, a strip the recorder
  * fills with grey. CHROMIUM names an executable, CHANNEL a browser channel.
@@ -36,7 +48,7 @@ const SHARED_CSS = `
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
   body {
-    overflow: hidden; color: #fff;
+    overflow: clip; color: #fff;
     font-family: "Geist Variable", Geist, system-ui, Helvetica, sans-serif;
     background: radial-gradient(90% 80% at 30% 35%, #1b3c77 0%, #102958 55%, #081a3c 100%);
   }
@@ -54,6 +66,16 @@ const SHARED_CSS = `
   .caption { transition: opacity .35s ease, transform .35s ease; }
   .caption.out { opacity: 0; transform: translateY(10px); }
   iframe { border: 0; display: block; background: #f5f7fc; }
+  .push {
+    position: absolute; z-index: 5; top: 54px; left: 12px; right: 12px; padding: 14px 16px; border-radius: 22px;
+    display: grid; grid-template-columns: 38px 1fr; gap: 4px 12px; align-items: center;
+    background: #f4f6fbee; backdrop-filter: blur(16px); box-shadow: 0 12px 34px #0b183466; color: #1b2840;
+    transform: translateY(-160%); opacity: 0; visibility: hidden;
+    transition: transform .5s cubic-bezier(.2,.8,.2,1), opacity .3s ease, visibility 0s linear .5s;
+  }
+  .push.in { transform: translateY(0); opacity: 1; visibility: visible; transition: transform .5s cubic-bezier(.2,.8,.2,1), opacity .2s ease; }
+  .push img { grid-row: span 2; width: 38px; height: 38px; border-radius: 10px; }
+  .push b { font-size: 15px; font-weight: 650; } .push span { font-size: 14px; color: #3a475e; }
   .tap {
     position: fixed; z-index: 10; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%;
     background: #ffffff55; border: 3px solid #ffffffd0; box-shadow: 0 0 0 6px #4a659d55;
@@ -69,7 +91,7 @@ const PHONE_HTML = (src, school, label) => `<!doctype html><html><head><meta cha
   h1 { font-size: 76px; } p { font-size: 30px; max-width: 680px; }
   .phone { position: relative; width: 430px; height: 884px; padding: 20px; border-radius: 64px;
     background: linear-gradient(145deg, #2a2f3a, #0d1017); box-shadow: 0 40px 90px #00000070, inset 0 0 0 2px #ffffff1c; }
-  .screen { position: relative; width: 390px; height: 844px; overflow: hidden; border-radius: 46px; background: #f5f7fc; }
+  .screen { position: relative; width: 390px; height: 844px; overflow: clip; border-radius: 46px; background: #f5f7fc; }
   .status { position: relative; display: flex; align-items: center; justify-content: space-between;
     height: 46px; padding: 6px 30px 0 34px; color: #1b2840; font-size: 15px; font-weight: 650; background: #f5f7fc; }
   .status::after { content: ""; position: absolute; top: 11px; left: 50%; width: 104px; height: 28px; margin-left: -52px; border-radius: 20px; background: #05070b; }
@@ -87,6 +109,7 @@ const PHONE_HTML = (src, school, label) => `<!doctype html><html><head><meta cha
   <div class="phone"><div class="screen">
     <div class="status"><span>9:41</span><span class="icons"><span class="bars"><i style="height:4px"></i><i style="height:6px"></i><i style="height:8px"></i><i style="height:11px"></i></span><span class="battery"></span></span></div>
     <iframe id="app" name="app" src="${src}"></iframe>
+    <div class="push" id="push"><img id="push-icon" alt=""><b id="push-title"></b><span id="push-line"></span></div>
   </div></div>
 </body></html>`;
 
@@ -96,7 +119,7 @@ const BROWSER_HTML = (src, school, label, address) => `<!doctype html><html><hea
   .caption { display: contents; }
   .lead { display: grid; gap: 10px; }
   h1 { font-size: 56px; } p { font-size: 26px; padding-bottom: 6px; }
-  .window { position: relative; justify-self: center; width: 1680px; border-radius: 16px; overflow: hidden;
+  .window { position: relative; justify-self: center; width: 1680px; border-radius: 16px; overflow: clip;
     background: #e9edf4; box-shadow: 0 40px 90px #00000070, 0 0 0 1px #ffffff26; }
   .chrome { display: flex; align-items: center; gap: 16px; height: 44px; padding: 0 18px; background: #dfe4ec; }
   .dots { display: flex; gap: 8px; } .dots i { width: 12px; height: 12px; border-radius: 50%; background: #c3cad6; }
@@ -121,6 +144,13 @@ const BROWSER_HTML = (src, school, label, address) => `<!doctype html><html><hea
  * the frame; `storage` is localStorage set on the app's origin before it loads
  * (offers already answered, as on a device after its first day).
  */
+/** The stage page for one layout: the phone, or the browser window. */
+function stageHtml({ device = "phone", start, school, label }) {
+  return device === "browser"
+    ? BROWSER_HTML(start, school, label, new URL(start).host.replace(/:\d+$/, ".xvs.codexng.com").replace(".localhost.xvs", ".xvs"))
+    : PHONE_HTML(start, school, label);
+}
+
 export async function openStage({ base, start, device = "phone", school, label, steps, outDir, storage = {} }) {
   fs.mkdirSync(outDir, { recursive: true });
   const browser = await chromium.launch(browserOptions());
@@ -135,16 +165,36 @@ export async function openStage({ base, start, device = "phone", school, label, 
       // The stage page has no storage of its own to set.
     }
   }, storage);
-  const stageUrl = `${base}/__demo_stage__`;
-  const html = device === "browser"
-    ? BROWSER_HTML(start, school, label, new URL(start).host.replace(/:\d+$/, ".xvs.codexng.com").replace(".localhost.xvs", ".xvs"))
-    : PHONE_HTML(start, school, label);
-  await context.route(stageUrl, (route) => route.fulfill({ contentType: "text/html", body: html }));
   const page = await context.newPage();
-  await page.goto(stageUrl);
+  // Seconds into the recording: where the first caption starts the cut, and where finish ends it.
+  const t0 = Date.now();
+  const at = () => (Date.now() - t0) / 1000;
+  let trimStart = null;
+  const cuts = [];
   const app = page.frameLocator("#app");
+  const routed = new Map();
+
+  /**
+   * Shows *layout* on the stage: ``{device, base, start, label}``, any left
+   * out kept from the layout before. The stage page is served on the app's own
+   * address, so its frame shares that app's sign-in cookies.
+   */
+  let current = { device, base, start, school, label };
+  const show = async (layout = {}) => {
+    current = { ...current, ...layout };
+    const url = `${current.base}/__demo_stage__`;
+    if (!routed.has(url)) {
+      await context.route(`${url}*`, (route) => route.fulfill({
+        contentType: "text/html", body: routed.get(url),
+      }));
+    }
+    routed.set(url, stageHtml(current));
+    await page.goto(`${url}?at=${Date.now()}`);
+  };
+  await show();
 
   const caption = async (n, title, line) => {
+    if (trimStart === null) trimStart = Math.max(0, at() - 0.3);
     await page.evaluate(([step, t, l]) => {
       const box = document.getElementById("caption");
       const lineEl = document.getElementById("line");
@@ -159,6 +209,16 @@ export async function openStage({ base, start, device = "phone", school, label, 
       }, 350);
     }, [`Step ${n} of ${steps}`, title, line]);
     await pause(1200);
+  };
+
+  /** Sets the caption at once, without its fade: a part that continues the scene the part before it ended on. */
+  const captionNow = async (n, title, line) => {
+    if (trimStart === null) trimStart = Math.max(0, at() - 0.1);
+    await page.evaluate(([step, t, l]) => {
+      document.getElementById("step").textContent = step;
+      document.getElementById("title").textContent = t;
+      document.getElementById("line").textContent = l;
+    }, [`Step ${n} of ${steps}`, title, line]);
   };
 
   const tap = async (locator, hold = 450) => {
@@ -181,6 +241,33 @@ export async function openStage({ base, start, device = "phone", school, label, 
 
   const frame = () => page.frame({ name: "app" });
 
+  /**
+   * Runs *work* and leaves the wait out of the film: whatever *work* waits
+   * for (the server posting a class's invoices) shows for ``keep`` seconds at
+   * each end and is cut in between.
+   */
+  const cutWhile = async (work, keep = 1) => {
+    const from = at() + keep;
+    const result = await work();
+    const to = at() - keep;
+    if (to > from) cuts.push([from, to]);
+    return result;
+  };
+
+  /** Drops a phone notification over the screen for *ms*, as the app's push reads. */
+  const banner = async (title, line, { icon = "", ms = 3200 } = {}) => {
+    await page.evaluate(([t, l, i]) => {
+      document.getElementById("push-title").textContent = t;
+      document.getElementById("push-line").textContent = l;
+      const img = document.getElementById("push-icon");
+      if (i) img.src = i; else img.style.display = "none";
+      document.getElementById("push").classList.add("in");
+    }, [title, line, icon]);
+    await pause(ms);
+    await page.evaluate(() => document.getElementById("push").classList.remove("in"));
+    await pause(600);
+  };
+
   /** Scrolls the app's page smoothly, as a thumb or a wheel would. */
   const scroll = async (by, ms = 1400) => {
     await frame().evaluate(async ([distance, duration]) => {
@@ -199,12 +286,20 @@ export async function openStage({ base, start, device = "phone", school, label, 
     }, [by, ms]);
   };
 
+  /**
+   * Stops the recording and returns its path. Beside it, ``<path>.json`` holds
+   * the span to keep (from just before the first caption to now), which
+   * to-mp4.mjs plays when it joins parts into one film.
+   */
   const finish = async () => {
     const video = page.video();
+    const trimEnd = at();
     await context.close();
     await browser.close();
-    return video.path();
+    const file = await video.path();
+    fs.writeFileSync(`${file}.json`, JSON.stringify({ trimStart: trimStart ?? 0, trimEnd, cuts }));
+    return file;
   };
 
-  return { page, context, app, frame, caption, tap, scroll, finish };
+  return { page, context, app, frame, caption, captionNow, tap, scroll, finish, show, banner, cutWhile };
 }
