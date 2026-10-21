@@ -27,7 +27,8 @@ import {
  *                       16=publish 17=import  18=export  19=apply
  *                       20=mark    21=mark any class    22=remind
  *                       23=enter   24=enter any sheet   25=submit
- *                       26=issue   27=post
+ *                       26=issue   27=post   28=send   29=inspect
+ *                       30=office
  *
  * ── Adding a permission ───────────────────────────────────────────────────────
  *   1. Pick the next free code in the right MM RR range.
@@ -106,6 +107,23 @@ const REGISTRY: Record<string, string> = {
   "101801": "school.notices.view",
   "101827": "school.notices.post",
   "101927": "school.class_notices.post",
+
+  // ── school / messages  (MM=10, RR=20 to RR=24) ─────────────────────────────
+  // Conversations between staff, with families and pupils, in groups and as
+  // broadcasts. RR=20 is the inbox itself, RR=21 the staff end of family and
+  // pupil conversations, RR=22 and RR=23 groups and broadcasts, and RR=24 the
+  // welfare reading of pupil conversations. The three `inspect` keys read a
+  // conversation the holder takes no part in, read-only and audited.
+  "102001": "school.messages.view",
+  "102028": "school.messages.send",
+  "102018": "school.messages.export",
+  "102128": "school.family_messages.send",
+  "102130": "school.family_messages.office",
+  "102202": "school.message_groups.create",
+  "102229": "school.message_groups.inspect",
+  "102328": "school.message_broadcasts.send",
+  "102329": "school.message_broadcasts.inspect",
+  "102429": "school.message_welfare.inspect",
 
   // ── school / staff records  (MM=10, RR=11) ─────────────────────────────────
   // Employment history, qualifications and contract documents, kept apart from
@@ -487,6 +505,18 @@ export const P = {
   BROWSE_NOTICES:          "101801",  // read the school's notices to pupils
   POST_NOTICES:            "101827",  // post notices to any audience in the holder's reach
   POST_CLASS_NOTICES:      "101927",  // post notices to the classes the holder teaches
+
+  // ── Messages ───────────────────────────────────────────────────────────────
+  VIEW_MESSAGES:           "102001",  // read the conversations the holder takes part in
+  SEND_MESSAGES:           "102028",  // start a staff conversation, write, reply to a broadcast
+  EXPORT_MESSAGES:         "102018",  // download a conversation the holder takes part in
+  SEND_FAMILY_MESSAGES:    "102128",  // the staff end of parent and pupil conversations
+  BE_SCHOOL_OFFICE:        "102130",  // be the office contact families reach at the holder's branches
+  CREATE_MESSAGE_GROUP:    "102202",  // create a staff group
+  SEND_BROADCAST:          "102328",  // send a broadcast to staff
+  INSPECT_MESSAGE_GROUPS:  "102229",  // read any group in reach, read-only, audited
+  INSPECT_BROADCASTS:      "102329",  // read any broadcast in reach, read-only, audited
+  INSPECT_PUPIL_CONVERSATIONS: "102429",  // read any pupil conversation in reach, read-only, audited
 
   // ── Staff Management ───────────────────────────────────────────────────────
   // The backend resource is still `teachers`, and these keys govern every

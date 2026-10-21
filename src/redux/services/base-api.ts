@@ -604,6 +604,10 @@ export const baseApi = createApi({
     "PortalAccess",
     // Notices the school posts to its pupils, read and written by staff.
     "Notices",
+    // Conversations, their messages and the unread counts. Sending or reading
+    // moves all three, so they are invalidated together.
+    "Messages",
+    "MessageUnread",
     // JWT-protected photographs and logos are cached as local blob URLs. The
     // source path can stay unchanged when its bytes are replaced, so uploads
     // invalidate that path explicitly rather than showing the old image.

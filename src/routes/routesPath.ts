@@ -140,6 +140,17 @@ export const routesPath = {
     // Notices the school posts to its pupils: drafted, published and
     // withdrawn by staff, read by pupils in their portal.
     NOTICES: "/notices",
+    // Conversations between staff, with families and pupils, in groups and as
+    // broadcasts. The oversight screens read the ones the holder takes no part
+    // in, read-only and audited.
+    MESSAGES: {
+      INDEX: "/messages",
+      DETAIL: "/messages/:id",
+      DETAIL_ID: (id: string | number) => `/messages/${id}`,
+      OVERSIGHT: "/messages/oversight",
+      OVERSIGHT_DETAIL: "/messages/oversight/:id",
+      OVERSIGHT_DETAIL_ID: (id: string | number) => `/messages/oversight/${id}`,
+    },
     // The school's own support desk. Its staff raise tickets here and whoever
     // holds the triage key works them; only what they escalate reaches CodeX.
     // Open before go-live too - a school being set up is exactly when it needs

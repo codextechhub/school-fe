@@ -29,6 +29,8 @@ export const FIELD_RESOURCE = {
   ACADEMICS_ELECTIVES: "academics.electives",
   /** A notice the school posts to its pupils. */
   NOTICES: "school.notices",
+  /** Conversations, groups and broadcasts between staff, families and pupils. */
+  MESSAGES: "school.messages",
 } as const;
 
 /** A student's medical fields, in the order every screen shows them. */

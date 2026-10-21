@@ -1,3 +1,5 @@
+import { P } from "@/permissions";
+
 import type { GuideRecord } from "../types";
 import { A, OWNER, R } from "./shared";
 
@@ -226,5 +228,40 @@ export const GETTING_STARTED_GUIDES = [
     risk: "low",
     status: "published",
     article: () => import("../content/getting-started/notifications"),
+  },
+  {
+    id: "school.getting-started.messages",
+    slug: "message-colleagues-parents-and-pupils",
+    title: "Message colleagues, parents and pupils",
+    summary: "Send direct messages, write to a pupil's parent or the pupil, run staff groups, send broadcasts with or without replies, and know what school leaders can inspect.",
+    category: "getting-started",
+    tags: ["messages", "inbox", "direct message", "group", "broadcast", "parents", "pupils", "unread", "oversight"],
+    aliases: ["chat", "message a teacher", "message a parent", "message a pupil", "staff group", "announce to staff", "reply privately", "private reply", "one-way broadcast", "inspect a group", "inspect messages", "unread messages"],
+    audiences: ["all-users", "teacher", "school-administrator", "branch-administrator"],
+    routes: [R.MESSAGES.INDEX, R.MESSAGES.DETAIL, R.MESSAGES.OVERSIGHT, R.MESSAGES.OVERSIGHT_DETAIL],
+    actionIds: ["view-messages", "new-message", "view-message-oversight"],
+    access: { mode: "any", permissions: [P.VIEW_MESSAGES] },
+    primaryRoute: R.MESSAGES.INDEX,
+    sections: [
+      { id: "before-you-start", title: "Before you start" },
+      { id: "read-and-reply", title: "Read and reply" },
+      { id: "start-a-message", title: "Start a message" },
+      { id: "groups", title: "Staff groups" },
+      { id: "broadcasts", title: "Broadcasts and replies" },
+      { id: "what-leaders-can-inspect", title: "What leaders can inspect" },
+      { id: "common-problems", title: "Common problems" },
+      { id: "completion-check", title: "Completion check" },
+    ],
+    relatedGuideIds: [
+      "school.getting-started.notifications",
+      "school.students.post-notices",
+      "school.roles.field-access",
+    ],
+    estimatedMinutes: 5,
+    owner: OWNER,
+    reviewedAt: "2026-10-21",
+    risk: "low",
+    status: "published",
+    article: () => import("../content/getting-started/messages"),
   },
 ] as const satisfies readonly GuideRecord[];

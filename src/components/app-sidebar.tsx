@@ -25,6 +25,7 @@ import {
   BookOpen,
   BookOpenText,
   Megaphone,
+  MessageSquareText,
   Briefcase,
   Headset,
   MailCheck,
@@ -53,6 +54,7 @@ import { usePermissions } from "@/hooks/use-permissions";
 import { useBranchLens } from "@/hooks/use-branch-lens";
 import { useCapabilities } from "@/hooks/use-capabilities";
 import { useConsoleDoors } from "@/hooks/use-console-doors";
+import { useMessageUnread } from "@/hooks/use-message-unread";
 import { P, type PermissionCode } from "@/permissions";
 import { useAppSelector } from "@/redux/store";
 import { selectSchool, selectUser } from "@/redux/features/auth/auth-slice";
@@ -211,6 +213,10 @@ export function AppSidebar({
   const { data: mySheets } = useGetMySheetsQuery(undefined, {
     skip: onboarding || readsResultsHub || !hasPermission(P.MODERATE_SHEETS) || !hasCapability("gradebook"),
   });
+  // Messages waiting for the reader. Closed before go-live with the screen.
+  const unreadMessages = useMessageUnread(
+    !onboarding && hasPermission(P.VIEW_MESSAGES),
+  );
   const offersModeration = readsResultsHub
     ? (gradebookSettings?.data.moderated_programs.length ?? 1) > 0
     : !!mySheets?.data.duties.some((duty) => duty.kind === "HEAD_OF_DEPARTMENT");
@@ -594,6 +600,23 @@ export function AppSidebar({
     //
     // Last, below everything a person actually came here to do.
     help: [
+      ...(onboarding
+        ? []
+        : [
+            {
+              // Conversations with colleagues, families and pupils. Gated like
+              // the screen, on reading the inbox; the badge is the unread
+              // total and is absent when there is nothing to read or the
+              // reader's role may not see read status.
+              title: "Messages",
+              url: routesPath.PROTECTED.MESSAGES.INDEX,
+              icon: MessageSquareText,
+              isActive: location.startsWith(routesPath.PROTECTED.MESSAGES.INDEX),
+              childActive: false,
+              permission: P.VIEW_MESSAGES,
+              badge: unreadMessages > 0 ? unreadMessages : undefined,
+            },
+          ]),
       {
         // The bell reaches this too, but a bell is for what arrived while you
         // were looking elsewhere. Somebody going back to read a go-live

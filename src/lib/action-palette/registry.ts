@@ -119,6 +119,42 @@ const SCHOOL_ACTIONS: ActionDef[] = [
     capability: "student_portal",
     run: { to: `${R.NOTICES}?action=new` },
   },
+  {
+    // Gated like the screen and its sidebar item.
+    id: "view-messages",
+    label: "View messages",
+    aliases: ["inbox", "chat", "conversations", "direct messages", "unread messages"],
+    section: "Overview",
+    group: "Messages",
+    kind: "view",
+    gate: { perm: P.VIEW_MESSAGES },
+    run: { to: R.MESSAGES.INDEX },
+  },
+  {
+    // The screen's New message drawer, gated on either key that lets the
+    // sender start a conversation (a colleague, or a parent or pupil), as the
+    // drawer is.
+    id: "new-message",
+    label: "New message",
+    aliases: ["write a message", "send a message", "message a colleague", "message a parent", "start a chat"],
+    section: "Overview",
+    group: "Messages",
+    kind: "do",
+    gate: { any: [P.SEND_MESSAGES, P.SEND_FAMILY_MESSAGES] },
+    run: { to: `${R.MESSAGES.INDEX}?action=new` },
+  },
+  {
+    // Read-only inspection, offered to a holder of any of the three inspect
+    // keys, as the Oversight button on the Messages screen is.
+    id: "view-message-oversight",
+    label: "View message oversight",
+    aliases: ["inspect messages", "inspect groups", "inspect broadcasts", "pupil conversations", "welfare messages"],
+    section: "Overview",
+    group: "Messages",
+    kind: "view",
+    gate: { any: [P.INSPECT_MESSAGE_GROUPS, P.INSPECT_BROADCASTS, P.INSPECT_PUPIL_CONVERSATIONS] },
+    run: { to: R.MESSAGES.OVERSIGHT },
+  },
 
   // ── People ─────────────────────────────────────────────────────────────────
   //

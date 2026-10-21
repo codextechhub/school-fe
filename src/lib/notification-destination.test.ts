@@ -23,6 +23,8 @@ describe("canOpenNotification", () => {
       "/export/files",
       "/workflow/approvals",
       "/finance/receivables/invoices",
+      "/messages",
+      "/messages/41",
     ]) {
       expect(canOpenNotification(url), url).toBe(true);
     }
