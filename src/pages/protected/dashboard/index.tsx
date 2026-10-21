@@ -174,18 +174,18 @@ function ProgressRing({ percent }: { percent: number }) {
 
   return (
     <div
-      className="grid size-23 shrink-0 place-items-center rounded-full"
+      className="grid size-17 shrink-0 place-items-center rounded-full"
       style={{
         background: `conic-gradient(rgba(255,255,255,.96) ${safePercent}%, rgba(255,255,255,.16) ${safePercent}% 100%)`,
       }}
       role="img"
       aria-label={`${safePercent}% of the ${words.term} completed`}
     >
-      <div className="grid size-17 place-items-center rounded-full bg-[#173D4A] text-center shadow-inner">
-        <span className="font-mont text-xl font-semibold leading-none tabular-nums">
+      <div className="grid size-12 place-items-center rounded-full bg-[#173D4A] text-center shadow-inner">
+        <span className="font-mont text-sm font-semibold leading-none tabular-nums">
           {safePercent}%
         </span>
-        <span className="mt-0.5 text-[9px] uppercase tracking-[0.12em] text-white/55">
+        <span className="text-[8px] uppercase tracking-[0.08em] text-white/55">
           taught
         </span>
       </div>
@@ -278,7 +278,7 @@ export default function Dashboard() {
   const termPercent = teachable > 0 ? Math.round((taught / teachable) * 100) : 0;
   const terms = str?.viewed_session?.terms ?? [];
 
-  // The date and greeting follow the school's clock, not the reader's device.
+  // Use the school's clock for the date and greeting.
   const { formatDay, prefs } = useSchoolDisplay();
   const schoolNow = nowIn(prefs.timeZone, new Date(useNow()));
   const today = formatDay(schoolNow.date, { weekday: "long", month: "long", year: false });
@@ -444,7 +444,7 @@ export default function Dashboard() {
   return (
     <PageShell className="space-y-5 pb-10 sm:space-y-6">
       <section
-        className="relative isolate overflow-hidden rounded-3xl px-5 py-6 text-white shadow-[0_18px_45px_rgba(14,49,60,0.18)] sm:px-7 sm:py-7"
+        className="relative isolate overflow-hidden rounded-2xl px-4 py-4 text-white shadow-[0_12px_30px_rgba(14,49,60,0.15)] sm:px-6 sm:py-5"
         style={{
           backgroundImage: [
             "linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px)",
@@ -458,24 +458,21 @@ export default function Dashboard() {
       >
         <div className="hero-ambient pointer-events-none absolute -right-20 -top-24 size-64 rounded-full bg-white/10 blur-3xl" />
         <div className="hero-ambient-delayed pointer-events-none absolute -bottom-24 left-[34%] size-56 rounded-full bg-white/[0.06] blur-3xl" />
-        <HeroBuildings className="pointer-events-none absolute bottom-0 right-3 hidden h-[78%] max-w-[46%] text-white/[0.12] md:block" />
-        <HeroBuildings crop="centre" className="pointer-events-none absolute bottom-0 right-1 h-[60%] text-white/[0.08] sm:hidden" />
+        <HeroBuildings className="pointer-events-none absolute bottom-0 right-3 hidden h-[85%] max-w-[40%] text-white/[0.08] lg:block" />
 
-        <div className="relative grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-          <div className="min-w-0 sm:max-w-xl">
+        <div className="relative grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-5">
+          <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-[11px] font-medium text-white/65">
               <CalendarDays className="size-3.5" />
               {today}
             </p>
-            <h1 className="mt-2 font-mont text-2xl font-semibold tracking-tight sm:text-[30px]">
+            <h1 className="mt-1 font-mont text-xl font-semibold tracking-tight sm:text-2xl">
               {greeting(schoolNow.hour)}
               {user?.first_name ? `, ${user.first_name}` : ""}.
             </h1>
-            {/* Said only once it is known. While the term is loading, and for a
-                role that cannot read the calendar at all, "no term covers today"
-                would be a claim about the school rather than about the reader. */}
+            {/* Only describe the academic state when the calendar is available. */}
             {canSeeCalendar && (
-              <p className="mt-2 max-w-lg text-[13px] leading-5 text-white/70 text-pretty">
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-white/70 text-pretty">
                 {calendar.isError
                   ? "Your calendar summary could not be loaded. The rest of your workspace is still available below."
                   : academicLoading
@@ -488,13 +485,13 @@ export default function Dashboard() {
               </p>
             )}
             {heroActions.length > 0 && (
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-2">
                 {heroActions.slice(0, 2).map((action) => (
                   <Link
                     key={action.label}
                     to={action.to}
                     className={cn(
-                      "inline-flex h-9 items-center gap-1.5 rounded-xl px-3.5 text-xs font-semibold transition-colors",
+                      "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors",
                       action.primary
                         ? "bg-white text-[#173D4A] hover:bg-white/90"
                         : "border border-white/20 bg-white/10 text-white hover:bg-white/15",
@@ -509,12 +506,12 @@ export default function Dashboard() {
           </div>
 
           {canSeeCalendar && (
-            <div className="flex min-w-0 items-center gap-4 rounded-2xl border border-white/12 bg-white/[0.08] p-3.5 backdrop-blur-sm lg:w-65">
+            <div className="flex min-w-0 items-center gap-3 rounded-xl border border-white/12 bg-white/[0.08] p-2.5 backdrop-blur-sm lg:w-60">
               {academicLoading ? (
-                <Shimmer className="size-23 shrink-0 rounded-full bg-white/15" />
+                <Shimmer className="size-17 shrink-0 rounded-full bg-white/15" />
               ) : calendar.isError ? (
-                <span className="grid size-23 shrink-0 place-items-center rounded-full bg-white/10 text-white/75">
-                  <AlertTriangle className="size-6" />
+                <span className="grid size-17 shrink-0 place-items-center rounded-full bg-white/10 text-white/75">
+                  <AlertTriangle className="size-5" />
                 </span>
               ) : (
                 <ProgressRing percent={termPercent} />
@@ -523,14 +520,14 @@ export default function Dashboard() {
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-white/55">
                   {words.Term} progress
                 </p>
-                <p className="mt-1.5 truncate text-sm font-semibold text-white">
+                <p className="mt-0.5 text-xs font-semibold text-white">
                   {calendar.isError
                     ? "Unavailable"
                     : academicLoading
                       ? "Loading…"
                       : term?.name ?? `Between ${words.terms}`}
                 </p>
-                <p className="mt-1 text-[11px] leading-4 text-white/60">
+                <p className="text-[11px] leading-4 text-white/60">
                   {calendar.isError
                     ? "Refresh to try again"
                     : academicLoading
