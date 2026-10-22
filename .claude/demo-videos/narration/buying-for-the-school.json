@@ -1,0 +1,17 @@
+{
+  "film": "buying-for-the-school",
+  "voice": "Daniel",
+  "scenes": [
+    "Buying for the school: ten microscopes, from request to payment.",
+    "Any teacher can ask for what their class needs. Tolu Fashola teaches Biology. She raises a requisition for ten microscopes and picks the Science lab budget, and the panel shows what the lab can still spend. She adds the item, gives her reason, and submits it for approval.",
+    "It goes first to the person she reports to on the school's organogram: Mr Bakare, the Head of Sciences. He approves.",
+    "Next, finance. Ngozi, the Finance Admin, finds the request in her approvals, checks it, and approves.",
+    "At eight hundred and fifty thousand naira, it is over the school's limit of five hundred thousand, so the principal approves it last.",
+    "Now Kemi, the Procurement Admin, buys it. She turns the approved request into a request for quotation, and invites three suppliers. When their quotes are in, she compares them side by side. Labtech has the lowest bid, at eighty-two thousand naira a microscope, so she awards it, and that creates the purchase order.",
+    "The purchase order goes for approval, set to email the supplier automatically once it is approved. Every document after the request is approved the same way. The Vendor Email tab then shows the order was sent to Labtech.",
+    "Ten microscopes arrive. One has a cracked lens, so Kemi accepts nine, rejects one, notes why, and posts the goods receipt.",
+    "Labtech's invoice comes in. Ngozi records it against the order, and the system runs a three-way match: what was ordered, what was received, and what is being billed. It passes, because the bill is for the nine accepted, at the agreed price. She sends it for approval, and once approved, it is posted.",
+    "Now Ngozi pays Labtech. She picks the supplier, the school's bank account, and the bill to settle. The payment is approved, then posted, and the ledger updates itself, so nobody enters it twice.",
+    "Finally, the principal can see the whole trail: who asked, who approved each step, and what the school has spent with each supplier."
+  ]
+}

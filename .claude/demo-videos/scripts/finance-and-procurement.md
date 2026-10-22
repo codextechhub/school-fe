@@ -33,9 +33,9 @@ statements and the school's books.
 | 7 | 1:14 - 1:30 | Parent app (phone) | Sent to her father at once | Mr Bello is told on his phone and emailed the invoice. His app already shows it. | A push banner on the phone: "New bill for Zainab". Mr Bello's parent app: Home shows what is due across his three children, Fees shows Zainab's ₦18,687.50. |
 | 8 | 1:30 - 1:52 | Parent app (phone) | Parents pay from their phone | Patricia sees Tunde's balance and pays it by card in a few taps. | Patricia's Fees: Tunde owes ₦1,687.50. Pay bill, Card, Pay in full, the test checkout, the receipt. |
 | 9 | 1:52 - 2:02 | Finance Admin | Online payments post themselves | No one types it in. The payment is matched to Tunde's bill and receipted. | Collections log: Tunde's card payment, Succeeded. Tunde's invoice now reads Paid. |
-| 10 | 2:02 - 2:16 | Finance Admin | Paid at the school office | Ebere's father, Mr Bello again, pays the rest in cash. The bill is settled and he is emailed the receipt. | Ebere Bello's account: Record payment, ₦4,187.50, Cash, Cash & Bank. The open bill closes. |
-| 11 | 2:16 - 2:28 | Finance Admin | Every pupil's statement | Bills and payments, line by line, with what is still owed. | Customers, Ebere Bello, Statement of Account: the term's bill, her earlier payments and today's cash, closing balance ₦0.00. |
-| 12 | 2:28 - 2:40 | Finance Admin | And the school's books | Each payment posts itself to the ledger. Nothing is keyed twice. | Journal Entries: the cash receipt just recorded, debit Cash & Bank, credit Receivables. Back to the overview with collections up. |
+| 10 | 1:41 - 1:56 | Finance Admin | Paid at the school office | Mr Bello pays Femi's term fees in cash. The bill is settled and he is emailed the receipt. | Femi Bello's account: Record payment, the ₦18,687.50 balance already filled in, Cash, Cash & Bank. The bill closes. |
+| 11 | 1:56 - 2:25 | Finance Admin, and a parent's phone | Or scan and pay at the desk | The desk shows a code for Amaka's bill. Her mother scans it and pays on her own phone. | Amaka Adeleke's invoice, Settlements, Collect at the desk: a payment code and "Waiting for payment". A phone slides in beside the window: its camera on the code, the payment page, a card. The desk turns to "Paid" and books the receipt. |
+| 12 | 2:25 - 2:40 | Finance Admin | Statements, and the school's books | Each bill and payment lands on the pupil's statement and posts itself to the ledger. | Amaka's statement, then Journal Entries with the desk payment's posting. |
 
 **The invoice reaches the guardian.** Every invoice, receipt, statement, note
 and overdue reminder for a pupil goes to the pupil's primary guardian: by email
@@ -45,12 +45,19 @@ shows the push as a banner on the drawn phone, in the push's own words, and then
 the bill waiting in his app. Local email goes to the backend's log rather than
 an inbox, so the email itself is named in the caption rather than shown.
 
+**The voiceover.** Each film carries a narration read by the macOS "Daniel"
+voice, written in `narration/<film>.json`, one entry per scene. It explains a
+little more than the caption does: who is acting, what the screen is doing for
+them, and what happens next. `voiceover.py` lays each entry at its scene's
+start, from the scene times the joiner writes beside the film.
+
 **Why these people.** JSS2 A is the class whose pupils are on this year's roll
 in the local data: most of the school's pupils have already been promoted into
 next year's classes, so this year's other classes bill only one or two. Mr E.
-Bello is the primary guardian of Zainab and Femi, billed in scene 5, and of
-Ebere, who owes exactly ₦4,187.50 and is paid for in cash in scene 10; he has an
-active parent app account. Tunde Adeleke owes exactly ₦1,687.50, and Patricia is
+Bello is the primary guardian of Zainab and Femi, billed in scene 5; he pays
+Femi's bill in cash in scene 10 and has an active parent app account. Amaka
+Adeleke, billed in the same run, is paid for at the desk in scene 11 by her
+mother, Mrs T. Adeleke. Tunde Adeleke owes exactly ₦1,687.50, and Patricia is
 his primary guardian. Both payments clear a bill on camera.
 
 ---

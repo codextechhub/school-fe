@@ -23,6 +23,15 @@
  * Its ``overlays``, ``[{image, x, y}]``, are drawn over every frame of the
  * part: a clean copy of a fixed piece of the stage (the drawn phone's status
  * bar) laid over a take that filmed it marred.
+ *
+ * Beside the MP4 it writes ``<out>.scenes.json``: the second each scene
+ * starts in the finished film, found by watching the stage's caption (the
+ * band above the browser window, or the column beside the phone) change. A
+ * scene a later part continues with the same caption is one scene. A
+ * voiceover is timed from it.
+ *
+ * With ``AUDIO=<file.wav>`` the WAV becomes the film's sound, encoded as AAC
+ * from its first second.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -63,12 +72,15 @@ for (const [index, name] of inputs.entries()) {
   );
 }
 
+const AUDIO = process.env.AUDIO ? fs.readFileSync(process.env.AUDIO) : null;
+if (AUDIO) await page.route(`${ORIGIN}/audio.wav`, (route) => route.fulfill({ contentType: "audio/wav", body: AUDIO }));
+
 const out = fs.openSync(output, "w");
 await page.exposeFunction("writePiece", (base64) => fs.writeSync(out, Buffer.from(base64, "base64")));
 if (process.env.DEBUG) page.on("console", (message) => console.log(`  ${message.text()}`));
 await page.goto(`${ORIGIN}/convert`);
 
-const result = await page.evaluate(async ([parts, debug]) => {
+const result = await page.evaluate(async ([parts, debug, withAudio]) => {
   const video = document.getElementById("v");
   const load = (src) => new Promise((ready) => {
     video.addEventListener("loadeddata", ready, { once: true });
@@ -78,13 +90,36 @@ const result = await page.evaluate(async ([parts, debug]) => {
   const width = video.videoWidth;
   const height = video.videoHeight;
 
+  const sound = withAudio
+    ? await new AudioContext().decodeAudioData(await (await fetch(`${location.origin}/audio.wav`)).arrayBuffer())
+    : null;
   const muxer = new Mp4Muxer.Muxer({
     target: new Mp4Muxer.ArrayBufferTarget(),
     video: { codec: "avc", width, height, frameRate: 25 },
+    ...(sound ? { audio: { codec: "aac", numberOfChannels: 1, sampleRate: sound.sampleRate } } : {}),
     fastStart: "in-memory",
     firstTimestampBehavior: "offset",
   });
   let failure = null;
+  if (sound) {
+    // The whole track is encoded up front: it is short, and the muxer orders the two tracks itself.
+    const audioEncoder = new AudioEncoder({
+      output: (chunk, meta) => muxer.addAudioChunk(chunk, meta),
+      error: (error) => (failure = error),
+    });
+    audioEncoder.configure({ codec: "mp4a.40.2", sampleRate: sound.sampleRate, numberOfChannels: 1, bitrate: 128_000 });
+    const samples = sound.getChannelData(0);
+    for (let at = 0; at < samples.length; at += 1024) {
+      const slice = samples.slice(at, Math.min(at + 1024, samples.length));
+      const data = new AudioData({
+        format: "f32-planar", sampleRate: sound.sampleRate, numberOfFrames: slice.length,
+        numberOfChannels: 1, timestamp: Math.round((at / sound.sampleRate) * 1e6), data: slice,
+      });
+      audioEncoder.encode(data);
+      data.close();
+    }
+    await audioEncoder.flush();
+  }
   const encoder = new VideoEncoder({
     output: (chunk, meta) => {
       try {
@@ -98,7 +133,30 @@ const result = await page.evaluate(async ([parts, debug]) => {
   encoder.configure({ codec: "avc1.640028", width, height, bitrate: 8_000_000, framerate: 25 });
 
   // The encoder refuses the player's own frames, so each is copied through a canvas first.
-  const canvas = new OffscreenCanvas(width, height).getContext("2d");
+  const canvas = new OffscreenCanvas(width, height).getContext("2d", { willReadFrequently: true });
+  // Scene starts: the caption's band shrunk to a thumbnail, compared frame to frame.
+  const thumb = new OffscreenCanvas(64, 16).getContext("2d", { willReadFrequently: true });
+  const scenes = [0];
+  let lastThumb = null;
+  let lastChange = -10;
+  const watchCaption = (at) => {
+    const bar = canvas.getImageData(955, 214, 10, 4).data;
+    const browserLayout = bar[0] > 230 && bar[1] > 230 && bar[2] > 230;
+    const [sx, sy, sw, sh] = browserLayout ? [110, 30, 1700, 160] : [120, 120, 860, 840];
+    thumb.drawImage(canvas.canvas, sx, sy, sw, sh, 0, 0, 64, 16);
+    const pixels = thumb.getImageData(0, 0, 64, 16).data;
+    const now = new Float32Array(64 * 16);
+    for (let i = 0; i < now.length; i += 1) now[i] = (pixels[i * 4] + pixels[i * 4 + 1] + pixels[i * 4 + 2]) / 3;
+    if (lastThumb) {
+      let diff = 0;
+      for (let i = 0; i < now.length; i += 1) diff += Math.abs(now[i] - lastThumb[i]);
+      if (diff / now.length > 3) {
+        if (at - lastChange > 2) scenes.push(Math.round(at * 100) / 100);
+        lastChange = at;
+      }
+    }
+    lastThumb = now;
+  };
   const DEBUG = debug;
   let frames = 0;
   let offset = 0;
@@ -132,6 +190,7 @@ const result = await page.evaluate(async ([parts, debug]) => {
           for (const overlay of overlays) canvas.drawImage(overlay.bitmap, overlay.x, overlay.y);
           const skipped = part.cuts.reduce((sum, [from, to]) => sum + (t >= to ? to - from : 0), 0);
           const at = offset + (t - part.start - skipped);
+          watchCaption(at);
           const frame = new VideoFrame(canvas.canvas, { timestamp: Math.round(at * 1e6) });
           encoder.encode(frame, { keyFrame: frames % 50 === 0 });
           frame.close();
@@ -177,9 +236,10 @@ const result = await page.evaluate(async ([parts, debug]) => {
     for (let i = 0; i < slice.length; i += 0x8000) binary += String.fromCharCode(...slice.subarray(i, i + 0x8000));
     await window.writePiece(btoa(binary));
   }
-  return { frames, seconds: offset };
-}, [parts.map((p) => ({ start: p.start, end: Number.isFinite(p.end) ? p.end : 1e9, cuts: p.cuts, overlays: p.overlays })), !!process.env.DEBUG]);
+  return { frames, seconds: offset, scenes: scenes.filter((t, i) => i === 0 || t > 0.5) };
+}, [parts.map((p) => ({ start: p.start, end: Number.isFinite(p.end) ? p.end : 1e9, cuts: p.cuts, overlays: p.overlays })), !!process.env.DEBUG, !!AUDIO]);
 
 fs.closeSync(out);
 await browser.close();
+fs.writeFileSync(`${output.replace(/\.mp4$/, "")}.scenes.json`, JSON.stringify({ seconds: result.seconds, scenes: result.scenes }, null, 1));
 console.log(`${output} (${result.frames} frames, ${Math.round(result.seconds)} s from ${inputs.length} part${inputs.length === 1 ? "" : "s"})`);

@@ -1,0 +1,18 @@
+{
+  "film": "school-fees-walkthrough",
+  "voice": "Daniel",
+  "scenes": [
+    "School fees at Lagoon View Academy: from the bill, to the books.",
+    "Ngozi, the Finance Admin, signs in. Her overview shows what the term has billed, what has come in, and what needs her attention.",
+    "First, the school decides when fees fall due. Here, every bill is due at the end of the term it bills.",
+    "One fee structure holds every charge for the term: tuition, the technology levy, and the library.",
+    "To bill a class, Ngozi picks the term and ticks J.S.S. 2 A. The preview lists each pupil, the total, and the due date. Pupils already billed are left alone. One click bills them all.",
+    "Each pupil now has a bill. Zainab's shows every line, the total, and when it is due.",
+    "The moment the bill is raised, Zainab's father, Mr Bello, gets a notification on his phone, and the invoice by email. His parent app already shows what is due across his children. The bill goes to each child's primary guardian.",
+    "Parents can pay straight from the app. Patricia opens Fees, sees what Tunde still owes, and pays it by card in a few taps. Her receipt appears as soon as the payment goes through. A bank transfer to the school's account would be matched the same way.",
+    "Back at the bursary, nobody types that payment in. It was matched to Tunde's bill and receipted automatically.",
+    "Mr Bello comes to the school office to pay Femi's fees in cash. Ngozi records the payment, the balance is already filled in, and the bill is settled. His receipt goes to him by email.",
+    "Parents can also pay at the desk without cash. From Amaka's bill, Ngozi chooses Collect at the desk, and a payment code appears. Amaka's mother scans it with her phone, opens the payment page, and pays by card. The desk is watching, so the moment the money lands, it says Paid, and the receipt is booked. No cash changes hands, and nobody types the payment in.",
+    "Every bill and payment shows on the pupil's statement, line by line. And each one posts itself to the school's ledger, so nothing is entered twice. Ngozi can print a statement, or email it to the family."
+  ]
+}

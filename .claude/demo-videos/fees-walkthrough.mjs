@@ -1,27 +1,38 @@
 /**
- * Films "School fees, from bill to ledger" in four parts, joined by to-mp4.mjs.
+ * Films "School fees, from bill to ledger" in five parts, joined by to-mp4.mjs.
  *
  *   A  the Finance Admin's desk: the overview, when fees fall due, the fee
  *      structure, billing JSS2 A, and Zainab's new bill (browser stage)
  *   B1 Zainab's father, Mr Bello, finds the bill on his phone (phone stage)
  *   B2 Patricia pays Tunde's last balance by card (phone stage)
- *   C  the Finance Admin again: the card payment posted, a cash payment at the
- *      school office, a statement and the books (browser stage)
+ *   C1 the card payment posted, and Mr Bello paying Femi's bill in cash at the
+ *      school office (browser stage)
+ *   C2 Mrs Adeleke scanning the desk's payment code and paying Amaka's bill on
+ *      her phone, then a statement and the books (browser stage, with the
+ *      phone beside the window)
  *
  * Each part signs in before its first caption, and the joined film starts
- * each part at that caption, so a part can be filmed again on its own. Three
- * steps cannot be undone: billing the class (A), the card payment (B2) and the
- * cash payment (C). REHEARSE=1 walks every part and stops short of each.
+ * each part at that caption, so a part can be filmed again on its own. Each
+ * payment and the billing cannot be undone. REHEARSE=1 walks every part and
+ * stops short of each.
  *
  *   cd .claude && PART=A node demo-videos/fees-walkthrough.mjs
- *   node demo-videos/to-mp4.mjs demo-videos/out/fees.mp4 <A.webm> <B1.webm> <B2.webm> <C.webm>
+ *   node demo-videos/to-mp4.mjs demo-videos/out/fees.mp4 <A> <B1> <B2> <C1> <C2>
  *
- * Needs the local backend and school-fe (5174), and for the phone parts the
- * filming backend (demo-backend.py, 8010) with the parent app pointed at it
- * (launch config "parent-fe-demo", 5186). Local data: Lagoon View, with
+ * Needs the local backend and school-fe (5174), and the filming backend
+ * (demo-backend.py, 8010): the phone parts with the parent app pointed at it
+ * (launch config "parent-fe-demo", 5186), and the C parts with DEMO_PAID_DIR
+ * set to the folder passed here as PAID_DIR, so the desk hears "not paid"
+ * until the parent pays. The C parts send the desk's own requests to the
+ * filming backend too. Local data: Lagoon View, with
  * lagoon-procurement-setup.py run and Mr E. Bello's parent account active.
+ *
+ * Amounts already in a field are left as the app filled them: the cash
+ * payment keeps the balance the dialog offers, because typing over a filled
+ * field appends to it.
  */
 import crypto from "node:crypto";
+import fs from "node:fs";
 import path from "node:path";
 
 import { openStage, pause } from "./stage.mjs";
@@ -33,6 +44,11 @@ const FINANCE = { email: "ngozi.ibekwe@lagoon-view.example.com", password: "Scho
 const BELLO = { email: "bello.household@example.ng", password: "Parent@School2026" };
 const PATRICIA = { email: "patricia.okafor@example.ng", password: "Parent@School2026" };
 const FAKE_SECRET = "fake-dev-secret";
+// Two bills from scene 5: Mr Bello pays Femi's in cash, and Mrs Adeleke pays Amaka's by code at the desk.
+const FEMI = "CU-92610213";
+const AMAKA = "CU-92610211";
+const AMAKA_BILL = "IV-92610212";
+const PAID_DIR = process.env.PAID_DIR || "";
 const PART = process.env.PART || "A";
 const REHEARSE = process.env.REHEARSE === "1";
 const OUT_DIR = path.resolve(process.env.OUT_DIR || "demo-videos/out");
@@ -256,13 +272,63 @@ async function partB2() {
   return stage.finish();
 }
 
-async function partC() {
+/** The parent's phone camera, pointed at the code on the bursar's screen. */
+const cameraPage = (qrSvg) => `<!doctype html><html><head><meta charset="utf-8"><style>
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body { background: radial-gradient(120% 80% at 50% 40%, #39414f, #11151c); font-family: system-ui, -apple-system, Helvetica, sans-serif; color: #fff; }
+  .top { padding: 18px; text-align: center; font-size: 14px; font-weight: 600; opacity: .8; }
+  .finder { position: absolute; left: 50%; top: 42%; width: 250px; height: 250px; margin: -125px 0 0 -125px; padding: 14px; border-radius: 22px; background: #fff; }
+  .finder svg { width: 100%; height: 100%; display: block; }
+  .corner { position: absolute; width: 40px; height: 40px; border: 5px solid #ffd60a; }
+  .c1 { left: -14px; top: -14px; border-right: 0; border-bottom: 0; border-radius: 16px 0 0 0; }
+  .c2 { right: -14px; top: -14px; border-left: 0; border-bottom: 0; border-radius: 0 16px 0 0; }
+  .c3 { left: -14px; bottom: -14px; border-right: 0; border-top: 0; border-radius: 0 0 0 16px; }
+  .c4 { right: -14px; bottom: -14px; border-left: 0; border-top: 0; border-radius: 0 0 16px 0; }
+  .pill { position: absolute; left: 24px; right: 24px; bottom: 120px; display: flex; gap: 12px; align-items: center; padding: 14px 18px;
+    border: 0; border-radius: 18px; background: #ffd60a; color: #1a1a1a; text-align: left; font: inherit; }
+  .pill b { display: block; font-size: 15px; } .pill span { font-size: 13px; opacity: .75; }
+</style></head><body>
+  <div class="top">Camera</div>
+  <div class="finder">${qrSvg}<i class="corner c1"></i><i class="corner c2"></i><i class="corner c3"></i><i class="corner c4"></i></div>
+  <button class="pill" id="open"><div><b>Pay Lagoon View Academy</b><span>Open the payment link</span></div></button>
+</body></html>`;
+
+/** What the stand-in provider shows the parent once they have paid. */
+const paidPage = (naira) => `<!doctype html><html><head><meta charset="utf-8"><style>
+  body { margin: 0; font-family: system-ui, -apple-system, Helvetica, sans-serif; background: #eef1f6; color: #17223a; }
+  .bar { padding: 18px 20px; background: #17223a; color: #fff; font-size: 14px; font-weight: 600; }
+  main { padding: 60px 24px; display: grid; justify-items: center; gap: 14px; text-align: center; }
+  .tick { width: 76px; height: 76px; border-radius: 50%; background: #1f8f5f; color: #fff; display: grid; place-items: center; font-size: 40px; }
+  h2 { margin: 6px 0 0; font-size: 24px; } p { margin: 0; color: #5b6880; font-size: 15px; }
+</style></head><body><div class="bar">Demo checkout</div>
+<main><div class="tick">✓</div><h2>Payment successful</h2><p>₦${naira} to Lagoon View Academy</p><p>Your receipt is on its way. You can go back to the desk.</p></main></body></html>`;
+
+/** Part C: scenes 9 and 10 (C1), or 11 and 12 (C2), each its own take because each pays a bill. */
+async function partC(half) {
+  if (!PAID_DIR) throw new Error("Part C needs PAID_DIR, the folder the filming backend was started with as DEMO_PAID_DIR.");
   const stage = await openStage({
     base: SCHOOL, start: `${SCHOOL}/login`, device: "browser", school: "Lagoon View Academy",
     label: "Finance Admin", steps: STEPS, outDir: OUT_DIR,
   });
-  const { app, frame, caption, tap, cutWhile } = stage;
+  const { app, context, frame, caption, tap, cutWhile, sidePhone, sidePhoneAway } = stage;
+  // This take's requests go to the filming backend, whose stand-in provider gives the desk a checkout link.
+  await context.route(`${SCHOOL}/v1/**`, async (route) => {
+    const response = await route.fetch({ url: route.request().url().replace(`${SCHOOL}/v1`, API) });
+    await route.fulfill({ response });
+  });
+  const DESK_NAIRA = "18,687.50";
+  await context.route("https://fake.test/**", (route) => {
+    const reference = new URL(route.request().url()).pathname.split("/").pop();
+    route.fulfill({ contentType: "text/html", body: checkoutPage(reference, DESK_NAIRA) });
+  });
+  const phone = () => stage.page.frame({ name: "phone" });
+  await context.exposeFunction("payDemo", async (reference) => {
+    fs.writeFileSync(path.join(PAID_DIR, reference), "");
+    await phone().setContent(paidPage(DESK_NAIRA));
+  });
+
   await signInSchool(app, FINANCE);
+  if (half === "C2") return deskScenes(stage, { phone });
   await frame().goto(`${SCHOOL}/finance/collections`);
   await row(app, "Tunde Adeleke").waitFor({ timeout: 30_000 });
   await pause(1200);
@@ -273,18 +339,19 @@ async function partC() {
 
   // 10. Paid at the school office
   await frame().goto(`${SCHOOL}/finance/receivables/customers`);
-  await row(app, "Ebere Bello").waitFor();
-  await caption(10, "Paid at the school office", "Ebere's father, Mr Bello again, pays the rest in cash. The bill is settled and he is emailed the receipt.");
-  await tap(row(app, "Ebere Bello"));
+  await row(app, FEMI).waitFor();
+  await caption(10, "Paid at the school office", "Mr Bello pays Femi's term fees in cash. The bill is settled and he is emailed the receipt.");
+  await tap(row(app, FEMI));
   await app.getByRole("button", { name: "Record payment" }).waitFor();
   await pause(1600);
   await tap(app.getByRole("button", { name: "Record payment" }));
   const dialog = app.getByRole("dialog", { name: "Record payment" });
   await dialog.getByText("Deposit account (bank / cash)").waitFor();
-  await pause(700);
-  await tap(dialog.locator("input[type=number]").first(), 200);
-  await dialog.locator("input[type=number]").first().pressSequentially("4187.50", { delay: 80 });
-  await pause(500);
+  const amount = dialog.locator("input[type=number]").first();
+  if ((await amount.inputValue()) !== "18687.50") throw new Error(`Femi's balance is not the term's fees: ${await amount.inputValue()}`);
+  await pause(900);
+  await tap(amount, 300);
+  await pause(900);
   await dialog.getByRole("combobox", { name: "Payment method" }).or(dialog.locator("select").first()).first().selectOption({ label: "Cash" });
   await pause(700);
   const account = dialog.getByPlaceholder("Type a bank / cash account…");
@@ -293,33 +360,88 @@ async function partC() {
   await pause(900);
   await tap(app.getByRole("option", { name: /1100/ }).first());
   await pause(1400);
-  const recorded = await irreversible("recording Ebere's cash", async () => {
+  const recorded = await irreversible("recording Femi's cash", async () => {
     await tap(dialog.getByRole("button", { name: "Record payment" }));
     await cutWhile(() => dialog.waitFor({ state: "detached", timeout: 60_000 }));
   });
-  await pause(recorded ? 2200 : 800);
+  await pause(recorded ? 3200 : 800);
   if (!recorded) {
     await dialog.getByRole("button", { name: "Cancel" }).click();
     await pause(600);
   }
-
-  // 11. Every pupil's statement
-  await tap(app.getByRole("tab", { name: /Statement/ }).or(app.getByRole("button", { name: /^Statement/ })).first());
-  await app.getByText("Statement of Account").first().waitFor();
-  await caption(11, "Every pupil's statement", "Bills and payments, line by line, with what is still owed.");
-  await pause(5600);
-
-  // 12. And the school's books
-  await frame().goto(`${SCHOOL}/finance/ledger`);
-  await app.getByText("Journal Entries").first().waitFor();
-  await caption(12, "And the school's books", "Each payment posts itself to the ledger. Nothing is keyed twice.");
-  await pause(1600);
-  await tap(app.locator("tbody tr").filter({ visible: true }).first());
-  await app.getByText("Total Dr").first().waitFor();
-  await pause(5200);
   return stage.finish();
 }
 
-const parts = { A: partA, B1: partB1, B2: partB2, C: partC };
+/** Scenes 11 and 12: Amaka's bill paid by code at the desk, then the statement and the ledger. */
+async function deskScenes(stage, { phone }) {
+  const { app, frame, caption, tap, cutWhile, sidePhone, sidePhoneAway } = stage;
+  await pause(600);
+
+  // 11. Or scan and pay at the desk
+  await frame().goto(`${SCHOOL}/finance/receivables/invoices`);
+  await row(app, AMAKA_BILL).waitFor();
+  await caption(11, "Or scan and pay at the desk", "The desk shows a code for Amaka's bill. Her mother scans it and pays on her own phone.");
+  await tap(row(app, AMAKA_BILL));
+  await app.getByRole("tab", { name: "Settlements" }).or(app.getByRole("button", { name: "Settlements" })).first().waitFor();
+  await pause(1200);
+  await tap(app.getByRole("tab", { name: "Settlements" }).or(app.getByRole("button", { name: "Settlements" })).first());
+  const collect = app.getByRole("button", { name: "Collect at the desk" });
+  await collect.waitFor();
+  await pause(1400);
+  await tap(collect);
+  const desk = app.getByRole("dialog", { name: "Collect at the desk" });
+  await desk.getByRole("button", { name: "Show payment code" }).waitFor();
+  await pause(1800);
+  const shown = await irreversible("starting Amaka's desk collection", async () => {
+    await tap(desk.getByRole("button", { name: "Show payment code" }));
+    await desk.getByText("Waiting for payment").waitFor({ timeout: 30_000 });
+  });
+  if (shown) {
+    await pause(2400);
+    const qr = await desk.locator("svg:has(> title)").first().evaluate((svg) => svg.outerHTML);
+    const link = await desk.locator("input[readonly]").first().inputValue();
+    const camera = await sidePhone({ html: cameraPage(qr) });
+    await pause(2200);
+    await tap(camera.locator("#open"));
+    await phone().goto(link);
+    const checkout = stage.page.frameLocator("#phone");
+    await checkout.locator(".checkout-pay").waitFor();
+    await pause(1200);
+    for (const [field, value] of [["#card", "4111 1111 1111 1111"], ["#expiry", "12 / 28"], ["#cvv", "123"]]) {
+      await tap(checkout.locator(field), 200);
+      await checkout.locator(field).pressSequentially(value, { delay: 45 });
+    }
+    await pause(700);
+    await tap(checkout.locator(".checkout-pay"));
+    await checkout.getByText("Payment successful").waitFor();
+    await pause(1600);
+    await cutWhile(() => desk.getByText(/^Paid$/).first().waitFor({ timeout: 60_000 }), 1.5);
+    await pause(1800);
+    await sidePhoneAway();
+    await pause(2400);
+    await tap(desk.getByRole("button", { name: "Done" }));
+  } else {
+    await desk.getByRole("button", { name: "Cancel" }).click();
+  }
+  await pause(1000);
+
+  // 12. Every account, and the school's books
+  await frame().goto(`${SCHOOL}/finance/receivables/customers`);
+  await row(app, AMAKA).waitFor();
+  await caption(12, "Statements, and the school's books", "Each bill and payment lands on the pupil's statement and posts itself to the ledger.");
+  await tap(row(app, AMAKA));
+  await tap(app.getByRole("tab", { name: /Statement/ }).or(app.getByRole("button", { name: /^Statement/ })).first());
+  await app.getByText("Statement of Account").first().waitFor();
+  await pause(4600);
+  await frame().goto(`${SCHOOL}/finance/ledger`);
+  await app.getByText("Journal Entries").first().waitFor();
+  await pause(1400);
+  await tap(app.locator("tbody tr").filter({ visible: true }).first());
+  await app.getByText("Total Dr").first().waitFor();
+  await pause(4800);
+  return stage.finish();
+}
+
+const parts = { A: partA, B1: partB1, B2: partB2, C1: () => partC("C1"), C2: () => partC("C2") };
 if (!parts[PART]) throw new Error(`PART must be one of ${Object.keys(parts).join(", ")}`);
 console.log(await parts[PART]());

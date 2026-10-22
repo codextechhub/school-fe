@@ -15,6 +15,12 @@
  * in the words the app's push carries, because a recording cannot receive a
  * real push.
  *
+ * The browser window also carries a phone of its own, hidden until
+ * :func:`sidePhone` slides it in beside the window, drawn at its own size
+ * because Playwright places taps wrongly inside a scaled frame: a parent paying at the
+ * bursar's counter, on their phone, while the desk screen stays open in the
+ * window behind and keeps its state. :func:`sidePhoneAway` slides it out.
+ *
  * The phone's screen, the browser window and the page clip rather than hide
  * what overflows: a tap scrolls its target into view, and a box that only
  * hides its overflow can still be scrolled, which slid the app up under the
@@ -127,6 +133,15 @@ const BROWSER_HTML = (src, school, label, address) => `<!doctype html><html><hea
   .address { flex: 1; max-width: 640px; margin: 0 auto; height: 28px; border-radius: 8px; background: #fff;
     color: #3a475e; font-size: 14px; display: flex; align-items: center; justify-content: center; }
   iframe { width: 1680px; height: 744px; }
+  .side { position: absolute; z-index: 6; right: 70px; bottom: 30px; width: 380px; height: 760px; padding: 18px; border-radius: 56px;
+    background: linear-gradient(145deg, #2a2f3a, #0d1017); box-shadow: 0 40px 90px #000000a0, inset 0 0 0 2px #ffffff1c;
+    transform: translateX(140%); transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+  .side.in { transform: translateX(0); }
+  .side .screen { position: relative; width: 344px; height: 724px; overflow: clip; border-radius: 40px; background: #f5f7fc; }
+  .side .status { display: flex; align-items: center; justify-content: space-between; height: 42px; padding: 6px 28px 0 30px;
+    color: #1b2840; font-size: 14px; font-weight: 650; background: #f5f7fc; position: relative; }
+  .side .status::after { content: ""; position: absolute; top: 10px; left: 50%; width: 92px; height: 26px; margin-left: -46px; border-radius: 18px; background: #05070b; }
+  .side iframe { width: 344px; height: 682px; }
 </style></head><body>
   <section class="top">
     <div class="lead"><div class="brand"><i>${school}</i><b>${label}</b></div>
@@ -135,6 +150,8 @@ const BROWSER_HTML = (src, school, label, address) => `<!doctype html><html><hea
   </section>
   <div class="window"><div class="chrome"><span class="dots"><i></i><i></i><i></i></span><span class="address">${address}</span><span style="width:52px"></span></div>
     <iframe id="app" name="app" src="${src}"></iframe></div>
+  <div class="side" id="side"><div class="screen"><div class="status"><span>9:41</span><span></span></div>
+    <iframe id="phone" name="phone" src="about:blank"></iframe></div></div>
 </body></html>`;
 
 /**
@@ -171,6 +188,8 @@ export async function openStage({ base, start, device = "phone", school, label, 
   const at = () => (Date.now() - t0) / 1000;
   let trimStart = null;
   const cuts = [];
+  // When each caption appeared, in seconds of the recording: where a voiceover's lines start.
+  const captions = [];
   const app = page.frameLocator("#app");
   const routed = new Map();
 
@@ -195,6 +214,7 @@ export async function openStage({ base, start, device = "phone", school, label, 
 
   const caption = async (n, title, line) => {
     if (trimStart === null) trimStart = Math.max(0, at() - 0.3);
+    captions.push({ n, title, at: at() });
     await page.evaluate(([step, t, l]) => {
       const box = document.getElementById("caption");
       const lineEl = document.getElementById("line");
@@ -213,15 +233,21 @@ export async function openStage({ base, start, device = "phone", school, label, 
 
   /** Sets the caption at once, without its fade: a part that continues the scene the part before it ended on. */
   const captionNow = async (n, title, line) => {
-    if (trimStart === null) trimStart = Math.max(0, at() - 0.1);
     await page.evaluate(([step, t, l]) => {
       document.getElementById("step").textContent = step;
       document.getElementById("title").textContent = t;
       document.getElementById("line").textContent = l;
     }, [`Step ${n} of ${steps}`, title, line]);
+    // The part starts once the caption is up, so the join shows no blank caption.
+    if (trimStart === null) trimStart = at() + 0.1;
+    captions.push({ n, title, at: at(), continued: true });
   };
 
-  const tap = async (locator, hold = 450) => {
+  /**
+   * Taps *locator*, drawing the ring where it lands. ``force`` skips
+   * Playwright's own checks that the target can take the click.
+   */
+  const tap = async (locator, hold = 450, { force = false } = {}) => {
     await locator.scrollIntoViewIfNeeded();
     const box = await locator.boundingBox();
     if (box) {
@@ -235,7 +261,7 @@ export async function openStage({ base, start, device = "phone", school, label, 
       }, [box.x + box.width / 2, box.y + box.height / 2]);
       await pause(hold);
     }
-    await locator.click();
+    await locator.click({ force });
     await page.mouse.move(60, 1040);
   };
 
@@ -268,6 +294,24 @@ export async function openStage({ base, start, device = "phone", school, label, 
     await pause(600);
   };
 
+  /**
+   * Slides the browser layout's phone in, showing *src* (an address, or a
+   * page given as ``{html}``), and returns a locator for what it shows.
+   */
+  const sidePhone = async (src) => {
+    const phone = page.frame({ name: "phone" });
+    if (typeof src === "string") await phone.goto(src);
+    else await phone.setContent(src.html);
+    await page.evaluate(() => document.getElementById("side").classList.add("in"));
+    await pause(800);
+    return page.frameLocator("#phone");
+  };
+
+  const sidePhoneAway = async () => {
+    await page.evaluate(() => document.getElementById("side").classList.remove("in"));
+    await pause(800);
+  };
+
   /** Scrolls the app's page smoothly, as a thumb or a wheel would. */
   const scroll = async (by, ms = 1400) => {
     await frame().evaluate(async ([distance, duration]) => {
@@ -289,7 +333,8 @@ export async function openStage({ base, start, device = "phone", school, label, 
   /**
    * Stops the recording and returns its path. Beside it, ``<path>.json`` holds
    * the span to keep (from just before the first caption to now), which
-   * to-mp4.mjs plays when it joins parts into one film.
+   * to-mp4.mjs plays when it joins parts into one film, and when each caption
+   * appeared.
    */
   const finish = async () => {
     const video = page.video();
@@ -297,9 +342,9 @@ export async function openStage({ base, start, device = "phone", school, label, 
     await context.close();
     await browser.close();
     const file = await video.path();
-    fs.writeFileSync(`${file}.json`, JSON.stringify({ trimStart: trimStart ?? 0, trimEnd, cuts }));
+    fs.writeFileSync(`${file}.json`, JSON.stringify({ trimStart: trimStart ?? 0, trimEnd, cuts, captions }));
     return file;
   };
 
-  return { page, context, app, frame, caption, captionNow, tap, scroll, finish, show, banner, cutWhile };
+  return { page, context, app, frame, caption, captionNow, tap, scroll, finish, show, banner, cutWhile, sidePhone, sidePhoneAway };
 }
