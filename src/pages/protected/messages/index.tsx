@@ -12,7 +12,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { PageHeader } from "@/components/layout/page-header";
-import { PageShell } from "@/components/layout/page-shell";
+import { cn } from "@/lib/utils";
+import { useHeaderHiddenOnPhone } from "@/components/layout/dashboard-header";
 import { useActionParam } from "@/hooks/use-action-param";
 import { useDebounce } from "@/hooks/use-debounce";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -22,6 +23,7 @@ import { useGetInboxQuery } from "@/redux/services/messages/messages-api";
 import type { InboxKind } from "@/redux/services/messages/messages-types";
 
 import { ConversationView } from "./conversation-view";
+import { FittedPage } from "./fitted-page";
 import { InboxList } from "./inbox-list";
 import { NewBroadcastDrawer } from "./new-broadcast-drawer";
 import { NewGroupDrawer } from "./new-group-drawer";
@@ -38,8 +40,16 @@ type Composing = "message" | "group" | "broadcast" | null;
  *
  * From a large tablet up the list and the conversation sit side by side. On a
  * phone and a narrow tablet one fills the screen: the list, or the open
- * conversation with a Back button above it. The open conversation is the
- * address (`/messages/:id`), so a notification, a reload and the browser's Back
+ * conversation with a Back button in its head.
+ *
+ * The page is fitted to the visible screen and never scrolls as a whole. The
+ * inbox list and the open conversation each scroll inside their own box, and a
+ * phone gives the open conversation the whole screen, edge to edge, in place of
+ * the page heading and the app header bar, so the conversation's own head and
+ * Back arrow are the top of the screen. The bar returns on the list and, from
+ * `lg` up, stays.
+ *
+ * The open conversation is the address (`/messages/:id`), so a notification, a reload and the browser's Back
  * all land where the reader expects, and the filters stay put while they move
  * between conversations.
  *
@@ -89,18 +99,21 @@ export default function MessagesPage() {
     },
   );
 
+  const parsed = Number(params.id);
+  const selectedId = params.id && Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  useHeaderHiddenOnPhone(canView && selectedId != null);
+
   useActionParam("new", canMessage, () => setComposing("message"));
 
   if (!canView) return <PageAccessDenied />;
 
-  const parsed = Number(params.id);
-  const selectedId = params.id && Number.isInteger(parsed) && parsed > 0 ? parsed : null;
   const openConversation = (id: number) => navigate(M.DETAIL_ID(id));
   const closeConversation = () => navigate(M.INDEX);
 
   return (
-    <PageShell grid className="content-start gap-4">
+    <FittedPage ownsTop={selectedId != null} className={cn(selectedId != null && "max-lg:p-0")}>
       <PageHeader
+        className={cn("shrink-0", selectedId != null && "max-lg:hidden")}
         title="Messages"
         description="Talk to colleagues, parents and pupils, in groups and by broadcast."
         actions={
@@ -142,7 +155,7 @@ export default function MessagesPage() {
         }
       />
 
-      <div className="grid h-[calc(100dvh-10.5rem)] min-h-[30rem] min-w-0 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
         <InboxList
           className={selectedId != null ? "hidden lg:flex" : "flex"}
           kind={kind}
@@ -173,20 +186,19 @@ export default function MessagesPage() {
 
         <section
           aria-label="Conversation"
-          className={`min-h-0 min-w-0 overflow-hidden rounded-md border border-border bg-white ${
-            selectedId != null ? "flex" : "hidden lg:flex"
-          }`}
+          className={cn(
+            "min-h-0 min-w-0 overflow-hidden rounded-md border border-border bg-white",
+            selectedId != null ? "flex max-lg:rounded-none max-lg:border-0" : "hidden lg:flex",
+          )}
         >
           {selectedId != null ? (
-            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-              <ConversationView
-                key={selectedId}
-                id={selectedId}
-                onBack={closeConversation}
-                onOpenConversation={openConversation}
-                onGone={closeConversation}
-              />
-            </div>
+            <ConversationView
+              key={selectedId}
+              id={selectedId}
+              onBack={closeConversation}
+              onOpenConversation={openConversation}
+              onGone={closeConversation}
+            />
           ) : (
             <div className="grid flex-1 content-center justify-items-center gap-2 p-6 text-center">
               <span className="grid size-12 place-items-center rounded-full bg-pry-01 text-primary">
@@ -215,6 +227,6 @@ export default function MessagesPage() {
       {composing === "broadcast" ? (
         <NewBroadcastDrawer onClose={() => setComposing(null)} onOpened={openConversation} />
       ) : null}
-    </PageShell>
+    </FittedPage>
   );
 }

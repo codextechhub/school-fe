@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { FieldAccessMap } from "@/components/finance-ui";
+import { DashboardHeaderContext, appHeaderPhoneClass } from "@/components/layout/dashboard-header";
 import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { P } from "@/permissions";
 import type {
@@ -12,6 +13,7 @@ import type {
   ConversationRow,
   OversightRow,
   StaffContact,
+  ThreadUpdates,
 } from "@/redux/services/messages/messages-types";
 
 /**
@@ -78,6 +80,7 @@ const contacts: StaffContact[] = [
   { user_id: 22, name: "Chinedu Eze", label: "Bursar" },
 ];
 let oversightRows: OversightRow[] = [];
+let updatesReply: ThreadUpdates = { results: [], has_more: false };
 let branchLens = { applies: false, canChoose: false, wholeSchool: true, pinnedBranch: null as number | null };
 const calls = {
   send: vi.fn(),
@@ -86,6 +89,7 @@ const calls = {
   createGroup: vi.fn(),
   broadcast: vi.fn(),
   markRead: vi.fn(),
+  updates: vi.fn(),
   inbox: [] as Array<{ args: unknown; skip?: boolean }>,
 };
 const ok = (data: unknown = { id: 99 }) => ({ unwrap: () => Promise.resolve({ success: true, message: "", data }) });
@@ -118,7 +122,7 @@ vi.mock("@/redux/services/messages/messages-api", () => {
   const empty = { data: undefined, isLoading: false, isFetching: false, isError: false, refetch: vi.fn() };
   const pagination = { currentPage: 1, pageSize: 20, totalItems: 2, totalPages: 1, next: null, previous: null };
   return {
-    THREAD_POLL_MS: 15000,
+    THREAD_POLL_MS: 10000,
     UNREAD_POLL_MS: 60000,
     conversationExportPath: (id: number) => `/v1/messages/conversations/${id}/export/`,
     useGetInboxQuery: (args: unknown, options?: { skip?: boolean }) => {
@@ -131,6 +135,7 @@ vi.mock("@/redux/services/messages/messages-api", () => {
       data: { data: { results: [...thread].reverse(), has_more: false, next_before: null } },
     }),
     useLazyGetConversationMessagesQuery: () => [vi.fn(), { isFetching: false }],
+    useLazyGetConversationUpdatesQuery: () => [calls.updates, { isFetching: false }],
     useGetOversightListQuery: () => ({
       ...empty,
       data: { data: oversightRows, pagination: { ...pagination, totalItems: oversightRows.length } },
@@ -222,6 +227,9 @@ describe("messages screens", () => {
     );
 
   beforeEach(() => {
+    updatesReply = { results: [], has_more: false };
+    calls.updates.mockReset();
+    calls.updates.mockImplementation(() => ({ unwrap: () => Promise.resolve(updatesReply) }));
     for (const fn of [calls.send, calls.reply, calls.start, calls.createGroup, calls.broadcast, calls.markRead]) {
       fn.mockReset();
       fn.mockReturnValue(ok());
@@ -839,6 +847,260 @@ describe("messages screens", () => {
       expect(text()).toContain("Term dates are out");
       expect(document.querySelector("textarea")).toBeNull();
       expect(calls.markRead).not.toHaveBeenCalled();
+    });
+  });
+  describe("the app header bar", () => {
+    const hide = vi.fn();
+    const withChrome = (entry: string) =>
+      render(
+        <DashboardHeaderContext.Provider
+          value={{ setTitle: vi.fn(), setBack: vi.fn(), setHiddenOnPhone: hide }}
+        >
+          <MemoryRouter initialEntries={[entry]}>
+            <Routes>
+              <Route path="/messages" element={<MessagesPage />}>
+                <Route path=":id" />
+              </Route>
+              <Route path="/messages/oversight" element={<MessageOversightPage />}>
+                <Route path=":id" />
+              </Route>
+            </Routes>
+          </MemoryRouter>
+        </DashboardHeaderContext.Provider>,
+      );
+    const lastAsk = () => hide.mock.calls[hide.mock.calls.length - 1]?.[0];
+
+    beforeEach(() => {
+      hide.mockReset();
+      detail = { ...PARENT_ROW };
+    });
+
+    it("is hidden on a phone while a conversation is open, and the Back arrow stays", async () => {
+      await withChrome("/messages/41");
+
+      expect(lastAsk()).toBe(true);
+      expect(document.querySelector('[aria-label="Back to messages"]')).toBeTruthy();
+    });
+
+    it("is shown on the inbox list", async () => {
+      await withChrome("/messages");
+
+      expect(hide).toHaveBeenCalled();
+      expect(lastAsk()).toBe(false);
+    });
+
+    it("is hidden in an inspected conversation, with its Back arrow", async () => {
+      held = new Set([P.INSPECT_MESSAGE_GROUPS]);
+      oversightRows = [];
+      await withChrome("/messages/oversight/52");
+
+      expect(lastAsk()).toBe(true);
+      expect(document.querySelector('[aria-label="Back to the list"]')).toBeTruthy();
+    });
+
+    it("is shown on the oversight list", async () => {
+      held = new Set([P.INSPECT_MESSAGE_GROUPS]);
+      oversightRows = [];
+      await withChrome("/messages/oversight");
+
+      expect(hide).toHaveBeenCalled();
+      expect(lastAsk()).toBe(false);
+    });
+
+    it("is never asked to hide for a role that cannot open Messages", async () => {
+      held = new Set();
+      await withChrome("/messages/41");
+      expect(lastAsk()).toBe(false);
+    });
+
+    it("restores the bar when the screen is left", async () => {
+      await withChrome("/messages/41");
+      hide.mockReset();
+      await act(async () => root.render(null));
+      expect(hide).toHaveBeenCalledWith(false);
+    });
+
+    it("hides the bar only below lg, and only on the location that asked", () => {
+      expect(appHeaderPhoneClass("a1", "a1")).toBe("max-lg:hidden");
+      expect(appHeaderPhoneClass("a1", "b2")).toBe("");
+      expect(appHeaderPhoneClass(null, "a1")).toBe("");
+      expect(appHeaderPhoneClass("a1", "a1")).not.toMatch(/(^|\s)hidden/);
+    });
+  });
+  describe("read receipts", () => {
+    const MINE = 900;
+    const sentReceipt = { state: "sent", read_count: 0, recipient_count: 1 } as const;
+    const open = (extra: Partial<ConversationDetail> = {}, receipt: ChatMessage["receipt"] = sentReceipt) => {
+      detail = { ...PARENT_ROW, receipts: true, ...extra };
+      thread = [
+        { id: MINE, body: "Hello Mrs Bello", sender: { user_id: 7, name: "Adaeze Okafor" }, sent_at: "2026-10-21T08:00:00Z", mine: true, receipt },
+        { id: 903, body: "Good morning", sender: { user_id: 88, name: "Mrs Funke Bello" }, sent_at: "2026-10-21T08:30:00Z", mine: false },
+      ];
+      return render(
+        <ConversationView id={detail.id} onBack={() => {}} onOpenConversation={() => {}} onGone={() => {}} />,
+      );
+    };
+    const marks = () => Array.from(document.querySelectorAll('[aria-label="Sent"], [aria-label="Read"], [aria-label^="Sent. "], [aria-label^="Read. "]'));
+    const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it("draws one tick on a sent message and two on a read one, only on the reader's own", async () => {
+      await open();
+      expect(marks()).toHaveLength(1);
+      expect(marks()[0].getAttribute("aria-label")).toBe("Sent");
+
+      await open({}, { state: "read", read_count: 1, recipient_count: 1 });
+      expect(document.querySelector('[aria-label="Read"]')).toBeTruthy();
+    });
+
+    it("draws no ticks where the school has receipts off", async () => {
+      await open({ receipts: false });
+      expect(marks()).toHaveLength(0);
+    });
+
+    it("draws no ticks where the conversation does not say receipts apply", async () => {
+      await open({ receipts: undefined });
+      expect(marks()).toHaveLength(0);
+    });
+
+    it("draws no ticks where Read receipts is hidden for the role", async () => {
+      fieldAccess = { [MESSAGES]: { hidden: ["read_receipts"], read_only: [] } };
+      await open();
+      expect(marks()).toHaveLength(0);
+    });
+
+    it("offers Read by n of m in a group, and not in a direct conversation", async () => {
+      await open({ kind: "GROUP", display_name: "JSS1 form teachers" }, { state: "sent", read_count: 2, recipient_count: 5 });
+      const mark = document.querySelector('button[aria-label="Sent. Read by 2 of 5"]') as HTMLButtonElement;
+      expect(mark).toBeTruthy();
+      await act(async () => mark.click());
+      expect(text()).toContain("Read by 2 of 5");
+
+      await open();
+      expect(document.querySelector('button[aria-label^="Sent"]')).toBeNull();
+      expect(document.querySelector('[aria-label="Sent"]')).toBeTruthy();
+    });
+
+    it("shows the message as sending with a clock, then as stored with its tick", async () => {
+      await open();
+      let release: (value: unknown) => void = () => {};
+      calls.send.mockReturnValue({
+        unwrap: () =>
+          new Promise((resolve) => {
+            release = resolve;
+          }),
+      });
+      await typeInto(document.querySelector("textarea") as HTMLTextAreaElement, "On my way");
+      await submit(document.querySelector("form"));
+
+      expect(document.querySelector('[aria-label="Sending"]')).toBeTruthy();
+      expect(text()).toContain("On my way");
+
+      await act(async () => {
+        release({
+          data: { id: 905, body: "On my way", mine: true, sent_at: "2026-10-21T09:00:00Z", receipt: sentReceipt },
+        });
+      });
+
+      expect(document.querySelector('[aria-label="Sending"]')).toBeNull();
+      expect(document.querySelectorAll('[aria-label="Sent"]')).toHaveLength(2);
+      expect(text().match(/On my way/g)).toHaveLength(1);
+    });
+
+    it("keeps a refused message as Not sent with the draft, and retries with the same token", async () => {
+      await open();
+      calls.send.mockReturnValueOnce({ unwrap: () => Promise.reject(new Error("offline")) });
+      const box = document.querySelector("textarea") as HTMLTextAreaElement;
+      await typeInto(box, "On my way");
+      await submit(document.querySelector("form"));
+
+      expect(text()).toContain("Not sent. Tap to retry.");
+      expect(box.value).toBe("On my way");
+      const firstToken = (calls.send.mock.calls[0][0] as { client_token: string }).client_token;
+
+      const retry = buttons("On my wayNot sent. Tap to retry.")[0];
+      await act(async () => retry.click());
+
+      expect(calls.send).toHaveBeenCalledTimes(2);
+      expect((calls.send.mock.calls[1][0] as { client_token: string }).client_token).toBe(firstToken);
+      expect(text()).not.toContain("Not sent. Tap to retry.");
+    });
+
+    it("drops the Not sent bubble when the draft is edited", async () => {
+      await open();
+      calls.send.mockReturnValueOnce({ unwrap: () => Promise.reject(new Error("offline")) });
+      const box = document.querySelector("textarea") as HTMLTextAreaElement;
+      await typeInto(box, "On my way");
+      await submit(document.querySelector("form"));
+      expect(text()).toContain("Not sent. Tap to retry.");
+
+      await typeInto(box, "On my way home");
+      expect(text()).not.toContain("Not sent. Tap to retry.");
+    });
+
+    it("asks what changed every ten seconds, after the newest message held", async () => {
+      vi.useFakeTimers();
+      await open();
+      expect(calls.updates).not.toHaveBeenCalled();
+
+      await advance(10_000);
+      expect(calls.updates).toHaveBeenCalledTimes(1);
+      expect(calls.updates).toHaveBeenCalledWith({ id: 41, after: 903 });
+      await advance(10_000);
+      expect(calls.updates).toHaveBeenCalledTimes(2);
+    });
+
+    it("turns a tick from the receipts a poll brings, and adds the new messages once", async () => {
+      vi.useFakeTimers();
+      await open();
+      updatesReply = {
+        results: [{ id: 905, body: "Ok see you", sender: { user_id: 88, name: "Mrs Funke Bello" }, mine: false, sent_at: "2026-10-21T08:40:00Z" }],
+        has_more: false,
+        receipts: [{ id: MINE, state: "read", read_count: 1, recipient_count: 1 }],
+      };
+
+      await advance(10_000);
+      await advance(10_000);
+
+      expect(document.querySelector('[aria-label="Read"]')).toBeTruthy();
+      expect(text().match(/Ok see you/g)).toHaveLength(1);
+    });
+
+    it("asks nothing while the tab is hidden, once on return, and nothing after the screen is left", async () => {
+      vi.useFakeTimers();
+      const state = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
+      await open();
+
+      await advance(30_000);
+      expect(calls.updates).not.toHaveBeenCalled();
+
+      state.mockReturnValue("visible");
+      await act(async () => {
+        document.dispatchEvent(new Event("visibilitychange"));
+      });
+      expect(calls.updates).toHaveBeenCalledTimes(1);
+
+      await act(async () => root.render(null));
+      calls.updates.mockClear();
+      await advance(30_000);
+      expect(calls.updates).not.toHaveBeenCalled();
+    });
+
+    it("does not poll an inspected conversation", async () => {
+      vi.useFakeTimers();
+      held = new Set([P.INSPECT_MESSAGE_GROUPS]);
+      detail = { ...GROUP_ROW, inspection: true, read_only: true, receipts: true };
+      thread = [{ id: 1, body: "Term dates are out", mine: true, receipt: sentReceipt }];
+      await renderPage("/messages/oversight/52");
+
+      await advance(30_000);
+
+      expect(calls.updates).not.toHaveBeenCalled();
+      expect(marks()).toHaveLength(0);
     });
   });
 });

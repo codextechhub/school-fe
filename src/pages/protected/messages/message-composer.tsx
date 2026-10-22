@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useImperativeHandle, useRef, useState } from "react";
 import { Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,12 @@ import { writeErrorMessage } from "@/utils/api-error";
 
 import { BODY_MAX, COUNTER_FROM, SEND_REFUSED } from "./messages-copy";
 import { useSendToken } from "./use-send-token";
+
+/** How the last send of a composer stands, for the thread to show beside the draft. */
+export type OutboxStatus = { state: "idle" } | { state: "sending" | "failed"; body: string };
+
+/** What a parent can ask of a composer: send the same words again, same token. */
+export type ComposerHandle = { retry: () => void };
 
 /**
  * The box a message is written in, with Send beside it.
@@ -18,8 +24,15 @@ import { useSendToken } from "./use-send-token";
  * server has accepted the message, so a refused send leaves the words to
  * retry.
  *
+ * `onStatus` reports a send in flight, a refused one, and the return to idle
+ * when it lands or the words are edited, so the thread can show the message as
+ * Sending or as Not sent beside the draft. `ref.retry()` sends the same words
+ * with the same token again.
+ *
  * Send is Ctrl or Cmd with Enter; a plain Enter is a new line, which is what a
- * phone keyboard needs. A counter appears near the 4,000 character limit.
+ * phone keyboard needs. The text is 16px on a phone, because iOS zooms the page
+ * when a smaller box takes focus and the zoom would push the conversation's
+ * head off the screen. A counter appears near the 4,000 character limit.
  */
 export function MessageComposer({
   send,
@@ -27,6 +40,8 @@ export function MessageComposer({
   submitLabel = "Send",
   autoFocus = false,
   onSent,
+  onStatus,
+  ref,
   className,
 }: {
   send: (body: string, clientToken: string) => Promise<unknown>;
@@ -34,6 +49,8 @@ export function MessageComposer({
   submitLabel?: string;
   autoFocus?: boolean;
   onSent?: () => void;
+  onStatus?: (status: OutboxStatus) => void;
+  ref?: React.Ref<ComposerHandle>;
   className?: string;
 }) {
   const [text, setText] = useState("");
@@ -41,6 +58,7 @@ export function MessageComposer({
   const [sending, setSending] = useState(false);
   const token = useSendToken();
   const inFlight = useRef(false);
+  const failedRef = useRef(false);
 
   const trimmed = text.trim();
   const tooLong = trimmed.length > BODY_MAX;
@@ -51,18 +69,25 @@ export function MessageComposer({
     inFlight.current = true;
     setSending(true);
     setError("");
+    failedRef.current = false;
+    onStatus?.({ state: "sending", body: trimmed });
     try {
       await send(trimmed, token.tokenFor(trimmed));
       token.clear();
       setText("");
+      onStatus?.({ state: "idle" });
       onSent?.();
     } catch (failure) {
       setError(writeErrorMessage(failure, SEND_REFUSED));
+      failedRef.current = true;
+      onStatus?.({ state: "failed", body: trimmed });
     } finally {
       inFlight.current = false;
       setSending(false);
     }
   };
+
+  useImperativeHandle(ref, () => ({ retry: () => void submit() }));
 
   return (
     <form
@@ -84,14 +109,20 @@ export function MessageComposer({
           rows={2}
           autoFocus={autoFocus}
           placeholder={label}
-          onChange={(event) => setText(event.target.value)}
+          onChange={(event) => {
+            setText(event.target.value);
+            if (failedRef.current) {
+              failedRef.current = false;
+              onStatus?.({ state: "idle" });
+            }
+          }}
           onKeyDown={(event) => {
             if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
               event.preventDefault();
               void submit();
             }
           }}
-          className="max-h-40 min-h-[2.75rem] min-w-0 flex-1 resize-y rounded-lg border border-white-02 bg-white px-3 py-2 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
+          className="max-h-40 min-h-[2.75rem] min-w-0 flex-1 resize-y rounded-lg border border-white-02 bg-white px-3 py-2 text-base outline-none md:text-sm transition-colors focus:border-primary focus:ring-2 focus:ring-primary/15"
         />
         <Button type="submit" disabled={!canSend} className="shrink-0">
           <Send aria-hidden="true" /> {sending ? "Sending" : submitLabel}

@@ -94,11 +94,29 @@ export interface ConversationDetail extends ConversationRow {
   participants?: Participant[];
   recipients?: Participant[];
   recipient_count?: number;
+  /**
+   * Whether the screen draws read ticks on the reader's own messages. Absent
+   * where the role may not read Read receipts, and false where the school has
+   * switched receipts off.
+   */
+  receipts?: boolean;
 }
 
 export interface MessageSender {
   user_id: number;
   name?: string;
+}
+
+/**
+ * Whether the people a sender wrote to have read the message.
+ *
+ * `sent` until every reader has read it, then `read`. In a group or a broadcast
+ * `read_count` over `recipient_count` is "Read by 12 of 40".
+ */
+export interface Receipt {
+  state: "sent" | "read";
+  read_count: number;
+  recipient_count: number;
 }
 
 export interface ChatMessage {
@@ -107,6 +125,19 @@ export interface ChatMessage {
   sender?: MessageSender | null;
   sent_at?: string;
   mine?: boolean;
+  /** Only on the reader's own messages, and only where receipts apply to them. */
+  receipt?: Receipt;
+}
+
+/**
+ * What the polling form of the thread answers with: messages newer than the
+ * one held, oldest first, and the current receipts of the reader's recent own
+ * messages (absent where receipts do not apply).
+ */
+export interface ThreadUpdates {
+  results: ChatMessage[];
+  has_more: boolean;
+  receipts?: Array<Receipt & { id: number }>;
 }
 
 /**
@@ -180,6 +211,12 @@ export interface MessagesArgs {
   id: number;
   before?: number | null;
   limit?: number;
+}
+
+export interface UpdatesArgs {
+  id: number;
+  /** The newest message id the screen holds. */
+  after: number;
 }
 
 /** Start a conversation: find-or-create on the pair, then send `body`. */

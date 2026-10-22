@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils";
 import { P } from "@/permissions";
 import { selectUser } from "@/redux/features/auth/auth-slice";
 import {
-  THREAD_POLL_MS,
   conversationExportPath,
   useGetConversationMessagesQuery,
   useGetConversationQuery,
@@ -18,12 +17,17 @@ import {
   useReplyToBroadcastMutation,
   useSendMessageMutation,
 } from "@/redux/services/messages/messages-api";
-import type { ChatMessage, ConversationDetail } from "@/redux/services/messages/messages-types";
+import type {
+  ChatMessage,
+  ConversationDetail,
+  Receipt,
+  ThreadUpdates,
+} from "@/redux/services/messages/messages-types";
 import { useAppSelector } from "@/redux/store";
 import { downloadAuthorisedFile } from "@/utils/attachment-download";
 
 import { ConversationAvatar } from "./conversation-avatar";
-import { MessageComposer } from "./message-composer";
+import { MessageComposer, type ComposerHandle, type OutboxStatus } from "./message-composer";
 import { MessageThread } from "./message-thread";
 import {
   CANNOT_SEND_COPY,
@@ -35,16 +39,34 @@ import {
 } from "./messages-copy";
 import { PeopleSheet } from "./people-sheet";
 import { useMessageAccess } from "./use-message-access";
+import { useThreadPoll } from "./use-thread-poll";
 
 const PAGE = 50;
 
 /**
  * One open conversation: its head, its thread and the way to answer it.
  *
- * The newest page of the thread refreshes while the tab is in front; earlier
- * pages are fetched on request with the `before` cursor and kept apart, so a
- * refresh never throws away what the reader scrolled back to read. Opening a
- * conversation, and each newer message after it, moves the read mark.
+ * The three are a fixed column that fills the pane it is placed in. The head
+ * and the footer keep their height, only the thread scrolls, the head clears the
+ * notch on a phone where it is the top of the screen, and the footer clears the
+ * home bar.
+ *
+ * The newest page of the thread loads once; while the tab is in front the
+ * conversation then asks the server every few seconds what changed since the
+ * newest message held (`useThreadPoll`), which brings new messages and the
+ * current receipts of the reader's own. Earlier pages are fetched on request
+ * with the `before` cursor and kept apart, so nothing a refresh brings throws
+ * away what the reader scrolled back to read.
+ *
+ * The read mark moves only to what the reader has seen: the newest message is
+ * marked read while they are at the bottom of the thread, and a message that
+ * arrives while they read higher up waits behind the New messages pill until
+ * they scroll or tap down to it.
+ *
+ * With receipts on for the conversation and visible to the role, the reader's
+ * own messages carry ticks, a message still being sent shows as a clock, and
+ * one the server refused stays in the thread as Not sent with the draft kept in
+ * the box, ready to retry with the same client token.
  *
  * What stands in place of the composer depends on the conversation. A
  * participant who may write sees the box. A broadcast recipient sees the
@@ -69,12 +91,13 @@ export function ConversationView({
   const conversation = detailQuery.data?.data;
   const { shows, writes } = useMessageAccess(conversation);
 
-  const latest = useGetConversationMessagesQuery(
-    { id, limit: PAGE },
-    { pollingInterval: THREAD_POLL_MS, skipPollingIfUnfocused: true, refetchOnFocus: true },
-  );
+  const latest = useGetConversationMessagesQuery({ id, limit: PAGE });
   const [fetchOlder, olderState] = useLazyGetConversationMessagesQuery();
   const [older, setOlder] = useState<ChatMessage[]>([]);
+  const [arrived, setArrived] = useState<ChatMessage[]>([]);
+  const [polled, setPolled] = useState<Record<number, Receipt>>({});
+  const [outbox, setOutbox] = useState<OutboxStatus>({ state: "idle" });
+  const composer = useRef<ComposerHandle>(null);
   const [cursor, setCursor] = useState<{ before: number | null; hasMore: boolean } | null>(null);
 
   const [sendMessage] = useSendMessageMutation();
@@ -85,20 +108,51 @@ export function ConversationView({
   const [exporting, setExporting] = useState(false);
 
   const page = latest.data?.data;
-  const messages = mergeThread(older, page?.results ?? []);
+  const ticks = conversation?.receipts === true && shows("read_receipts");
+  const messages = mergeThread(older, arrived, page?.results ?? []).map((message) => {
+    if (!message.mine) return message;
+    if (!ticks) {
+      const { receipt: _hidden, ...plain } = message;
+      return plain;
+    }
+    return polled[message.id] ? { ...message, receipt: polled[message.id] } : message;
+  });
   const hasMore = cursor ? cursor.hasMore : (page?.has_more ?? false);
   const before = cursor ? cursor.before : (page?.next_before ?? null);
 
-  const newest = page?.results[0];
-  const marked = useRef(0);
+  const held = useRef(messages);
   useEffect(() => {
-    if (!newest || !conversation) return;
-    if (newest.id <= marked.current) return;
-    const first = marked.current === 0;
-    marked.current = newest.id;
-    if (!first && newest.mine) return;
-    void markRead({ id, up_to: newest.id });
-  }, [newest, conversation, id, markRead]);
+    held.current = messages;
+  });
+  const marked = useRef(0);
+  const onSeen = useCallback(
+    (seenId: number) => {
+      if (!conversation || seenId <= marked.current) return;
+      const first = marked.current === 0;
+      marked.current = seenId;
+      if (!first && held.current.find((message) => message.id === seenId)?.mine) return;
+      void markRead({ id, up_to: seenId });
+    },
+    [conversation, id, markRead],
+  );
+
+  const onUpdates = useCallback((updates: ThreadUpdates) => {
+    if (updates.results.length > 0) setArrived((current) => mergeThread(current, updates.results));
+    const fresh = updates.receipts;
+    if (fresh) {
+      setPolled((current) => {
+        const next = { ...current };
+        for (const { id: messageId, ...receipt } of fresh) next[messageId] = receipt;
+        return next;
+      });
+    }
+  }, []);
+  useThreadPoll({
+    id,
+    newestId: messages[messages.length - 1]?.id ?? 0,
+    enabled: Boolean(conversation) && page != null,
+    onUpdates,
+  });
 
   const loadOlder = useCallback(async () => {
     if (before == null) return;
@@ -113,7 +167,7 @@ export function ConversationView({
 
   if (detailQuery.isError && !conversation) {
     return (
-      <div className="grid h-full content-center justify-items-center gap-3 p-6 text-center">
+      <div className="grid flex-1 content-center justify-items-center gap-3 p-6 text-center">
         <p className="text-sm font-semibold text-black-01">This conversation is not available</p>
         <p className="max-w-xs text-xs leading-5 text-gray-06">
           It may have been removed, or you may no longer be part of it.
@@ -143,6 +197,15 @@ export function ConversationView({
     }
   };
 
+  /** Sends into this thread and shows the stored message at once, receipt included. */
+  const sendHere = async (body: string, clientToken: string) => {
+    const result = await sendMessage({ id, body, client_token: clientToken }).unwrap();
+    const stored = result.data;
+    if (stored && typeof stored.body === "string") {
+      setArrived((current) => mergeThread(current, [stored]));
+    }
+  };
+
   const footer = conversation ? (
     isRecipient ? (
       <BroadcastReply
@@ -167,10 +230,10 @@ export function ConversationView({
         ) : null}
         {conversation.can_send && shows("body") && writes("body") ? (
           <MessageComposer
+            ref={composer}
             label="Follow up on this broadcast"
-            send={async (body, clientToken) => {
-              await sendMessage({ id, body, client_token: clientToken }).unwrap();
-            }}
+            send={sendHere}
+            onStatus={setOutbox}
           />
         ) : null}
       </>
@@ -179,17 +242,13 @@ export function ConversationView({
     ) : bodyHidden || !writes("body") ? (
       <Notice>{CANNOT_SEND_COPY}</Notice>
     ) : (
-      <MessageComposer
-        send={async (body, clientToken) => {
-          await sendMessage({ id, body, client_token: clientToken }).unwrap();
-        }}
-      />
+      <MessageComposer ref={composer} send={sendHere} onStatus={setOutbox} />
     )
   ) : null;
 
   return (
-    <div className="flex h-full min-h-0 min-w-0 flex-col">
-      <header className="flex min-w-0 items-center gap-2 border-b border-border bg-white px-3 py-2.5">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <header className="flex min-w-0 shrink-0 items-center gap-2 border-b border-border bg-white px-3 py-2.5 max-lg:pt-[calc(0.625rem+env(safe-area-inset-top))]">
         <Button
           type="button"
           size="icon"
@@ -258,9 +317,17 @@ export function ConversationView({
         }
         showTimes={shows("sent_at")}
         bodyHidden={bodyHidden}
+        receipts={ticks}
+        withCount={conversation?.kind === "GROUP" || conversation?.kind === "BROADCAST"}
+        outbox={
+          outbox.state === "idle"
+            ? null
+            : { body: outbox.body, state: outbox.state, onRetry: () => composer.current?.retry() }
+        }
+        onSeen={onSeen}
       />
 
-      {footer}
+      {footer ? <div className="shrink-0 bg-white pb-[env(safe-area-inset-bottom)]">{footer}</div> : null}
 
       {peopleOpen && conversation ? (
         <PeopleSheet

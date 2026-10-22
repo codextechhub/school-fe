@@ -8,6 +8,7 @@ import type {
   InboxKind,
   OversightKind,
   Participant,
+  Receipt,
 } from "@/redux/services/messages/messages-types";
 
 /** The longest message the server accepts, in characters after trimming. */
@@ -175,3 +176,12 @@ export function openedId(data: unknown): number | null {
   const record = (data ?? {}) as Partial<ConversationRow> & { conversation?: Partial<ConversationRow> };
   return record.id ?? record.conversation?.id ?? null;
 }
+
+export type TickState = "sending" | "sent" | "read";
+
+/** The tick a message shows, from its receipt: read once every reader has read it. */
+export const tickStateOf = (receipt: Receipt): TickState => (receipt.state === "read" ? "read" : "sent");
+
+/** "Read by 3 of 5", the sentence a group or broadcast sender sees. */
+export const readByCopy = (receipt: Receipt) =>
+  `Read by ${receipt.read_count} of ${receipt.recipient_count}`;

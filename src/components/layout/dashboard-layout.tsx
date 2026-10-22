@@ -17,6 +17,7 @@ import {
   DashboardHeaderContext,
   resolveHeaderTitle,
   resolveHeaderBack,
+  appHeaderPhoneClass,
   type BackSpec,
   type HeaderOverride,
 } from "./dashboard-header";
@@ -49,6 +50,7 @@ import { ProxySessionBanner } from "@/components/proxy-session-banner";
 import { P, resolvePermissionKey } from "@/permissions";
 import { exitProxySession } from "@/utils/proxy-session";
 import { useSchoolWords } from "@/hooks/use-school-words";
+import { cn } from "@/lib/utils";
 import { labelInSchoolWords } from "@/lib/school-words";
 import { HeaderAccountAvatar } from "./header-account-avatar";
 import { OtherAppsMenuItems } from "./other-apps-menu";
@@ -201,7 +203,21 @@ export default function DashboardLayout() {
       }),
     [location.key],
   );
-  const headerApi = useMemo(() => ({ setTitle, setBack }), [setTitle, setBack]);
+  // The location a screen asked for the header bar to be hidden on a phone.
+  const [phoneHiddenKey, setPhoneHiddenKey] = useState<string | null>(null);
+  const setHiddenOnPhone = useCallback(
+    (hidden: boolean) =>
+      setPhoneHiddenKey((current) => {
+        if (hidden) return location.key;
+        // Cleanup of the screen being left runs after the next one has asked.
+        return current === location.key ? null : current;
+      }),
+    [location.key],
+  );
+  const headerApi = useMemo(
+    () => ({ setTitle, setBack, setHiddenOnPhone }),
+    [setTitle, setBack, setHiddenOnPhone],
+  );
   const words = useSchoolWords();
   const title = resolveHeaderTitle(
     handleTitle && labelInSchoolWords(handleTitle, words),
@@ -317,7 +333,12 @@ export default function DashboardLayout() {
           {/* `relative`: the search box is centred on the header itself rather
               than laid out between its neighbours, and on a phone it expands
               over the header. Both are absolute children of this element. */}
-          <header className="relative flex h-15 shrink-0 items-center gap-3 px-3 lg:gap-4 lg:px-5 bg-white border border-l-0 border-white-02">
+          <header
+            className={cn(
+              "relative flex h-15 shrink-0 items-center gap-3 px-3 lg:gap-4 lg:px-5 bg-white border border-l-0 border-white-02",
+              appHeaderPhoneClass(phoneHiddenKey, location.key),
+            )}
+          >
             {/* Left: the toggle, the back affordance and the page title. It
                 takes the slack so the controls stay pinned right, and stops
                 short of the centred search box rather than sliding under it:

@@ -10,7 +10,8 @@ export type MessageField =
   | "child"
   | "reply_mode"
   | "sent_at"
-  | "read_status";
+  | "read_status"
+  | "read_receipts";
 
 /**
  * Field Access for the Messages screens, in the two questions they ask.

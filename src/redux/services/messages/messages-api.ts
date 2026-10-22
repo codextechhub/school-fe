@@ -19,7 +19,9 @@ import type {
   SendMessageBody,
   StartConversationBody,
   StaffContact,
+  ThreadUpdates,
   UnreadCounts,
+  UpdatesArgs,
 } from "./messages-types";
 
 /**
@@ -30,9 +32,10 @@ import type {
  */
 const messageTenant = () => ({ tenant: currentSchoolSlug() });
 
-/** The unread count and the open thread refresh this often while the tab is in front. */
+/** The unread count refreshes this often while the tab is in front. */
 export const UNREAD_POLL_MS = 60_000;
-export const THREAD_POLL_MS = 15_000;
+/** An open conversation asks for what changed this often while the tab is in front. */
+export const THREAD_POLL_MS = 10_000;
 
 /**
  * The route a conversation's CSV export is fetched from.
@@ -61,6 +64,17 @@ function unwrapPage(raw: unknown): Envelope<MessagePage> {
       has_more: page.has_more ?? false,
       next_before: page.next_before ?? null,
     },
+  };
+}
+
+/** The polling answer whether the server wraps it in the envelope or not. */
+function unwrapUpdates(raw: unknown): ThreadUpdates {
+  const body = (raw ?? {}) as { data?: Partial<ThreadUpdates> } & Partial<ThreadUpdates>;
+  const page = body.data ?? body;
+  return {
+    results: page.results ?? [],
+    has_more: page.has_more ?? false,
+    ...(page.receipts ? { receipts: page.receipts } : {}),
   };
 }
 
@@ -111,6 +125,19 @@ export const messagesApi = baseApi.injectEndpoints({
       extraOptions: { silent: true },
       providesTags: (_r, _e, { id, before }) =>
         before == null ? [{ type: "Messages", id: `thread-${id}` }] : [],
+    }),
+
+    // What changed since the newest message held. Never cached for reuse: each
+    // call is a fresh question about the same conversation.
+    getConversationUpdates: builder.query<ThreadUpdates, UpdatesArgs>({
+      query: ({ id, after }) => ({
+        url: `/messages/conversations/${id}/messages/`,
+        method: "GET",
+        params: { ...messageTenant(), after },
+      }),
+      transformResponse: unwrapUpdates,
+      extraOptions: { silent: true },
+      keepUnusedDataFor: 0,
     }),
 
     getUnreadCount: builder.query<Envelope<UnreadCounts>, void>({
@@ -308,6 +335,7 @@ export const {
   useGetConversationQuery,
   useGetConversationMessagesQuery,
   useLazyGetConversationMessagesQuery,
+  useLazyGetConversationUpdatesQuery,
   useGetUnreadCountQuery,
   useGetStaffContactsQuery,
   useGetFamilyContactsQuery,

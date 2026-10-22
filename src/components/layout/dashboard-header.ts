@@ -56,11 +56,28 @@ export function resolveHeaderTitle(
 export type DashboardHeaderApi = {
   setTitle: (title?: string) => void;
   setBack: (back?: () => void) => void;
+  /** Hide (or restore) the app header bar below `lg`, for the current location. */
+  setHiddenOnPhone: (hidden: boolean) => void;
 };
 
 // Outside the layout (unit tests, isolated renders) the setters are inert
 // rather than throwing, so a page component stays mountable on its own.
-const INERT: DashboardHeaderApi = { setTitle: () => {}, setBack: () => {} };
+const INERT: DashboardHeaderApi = {
+  setTitle: () => {},
+  setBack: () => {},
+  setHiddenOnPhone: () => {},
+};
+
+/**
+ * The classes that take the app header bar off the screen on a phone.
+ *
+ * The bar is hidden only below `lg`, where a screen is a single pane that
+ * brings its own header and its own way back. From `lg` up the bar stays, so a
+ * two-pane screen keeps the page title, the search box and the account menu.
+ */
+export function appHeaderPhoneClass(hiddenKey: string | null, locationKey: string): string {
+  return hiddenKey === locationKey ? "max-lg:hidden" : "";
+}
 
 export const DashboardHeaderContext = createContext<DashboardHeaderApi | null>(null);
 
@@ -117,4 +134,22 @@ export function useDashboardBack(handler?: () => void): void {
     setBack(() => latest.current?.());
     return () => setBack(undefined);
   }, [setBack, enabled]);
+}
+
+/**
+ * Hide the app header bar on a phone while this screen says so.
+ *
+ * For a screen whose single-pane layout supplies its own top bar with a back
+ * arrow, such as an open conversation: the screen's header becomes the top of
+ * the page, as in a chat app. The request is stamped with the location it was
+ * made under, so it dies the moment the reader navigates and the bar returns on
+ * the next screen even if this one forgets to clear it. The bar is never hidden
+ * from `lg` up.
+ */
+export function useHeaderHiddenOnPhone(hidden: boolean): void {
+  const { setHiddenOnPhone } = useDashboardHeader();
+  useEffect(() => {
+    setHiddenOnPhone(hidden);
+    return () => setHiddenOnPhone(false);
+  }, [setHiddenOnPhone, hidden]);
 }

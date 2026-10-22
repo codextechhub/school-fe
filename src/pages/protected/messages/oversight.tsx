@@ -5,8 +5,8 @@ import { toast } from "sonner";
 
 import PageAccessDenied from "@/components/custom/page-access-denied";
 import { SegmentedToggle } from "@/components/custom/segmented-toggle";
+import { useHeaderHiddenOnPhone } from "@/components/layout/dashboard-header";
 import { PageHeader } from "@/components/layout/page-header";
-import { PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -28,6 +28,7 @@ import type {
 } from "@/redux/services/messages/messages-types";
 
 import { ConversationAvatar } from "./conversation-avatar";
+import { FittedPage } from "./fitted-page";
 import { MessageThread } from "./message-thread";
 import {
   OVERSIGHT_BANNER,
@@ -59,6 +60,9 @@ const TAB_KEYS: Record<OversightKind, PermissionCode> = {
  * trail: the thread has no composer, nothing is marked read, and nothing
  * refreshes on its own, so one opening is one inspection.
  *
+ * An opened conversation takes the whole screen on a phone, app header bar
+ * included, the way an open conversation in Messages does.
+ *
  * Staff-to-staff direct conversations and guardian conversations never appear
  * here, and a broadcast's private replies are not part of the broadcast.
  */
@@ -80,16 +84,19 @@ export default function MessageOversightPage() {
     { skip: tab == null },
   );
 
-  if (tab == null) return <PageAccessDenied />;
-
   const parsed = Number(params.id);
   const selectedId = params.id && Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+  useHeaderHiddenOnPhone(tab != null && selectedId != null);
+
+  if (tab == null) return <PageAccessDenied />;
+
   const rows = list.data?.data ?? [];
   const pagination = list.data?.pagination;
 
   return (
-    <PageShell grid className="content-start gap-4">
+    <FittedPage ownsTop={selectedId != null} className={cn(selectedId != null && "max-lg:p-0")}>
       <PageHeader
+        className={cn("shrink-0", selectedId != null && "max-lg:hidden")}
         title="Message oversight"
         description="Read groups, broadcasts and pupil conversations you are not part of. Every opening is recorded."
         actions={
@@ -103,7 +110,7 @@ export default function MessageOversightPage() {
         }
       />
 
-      <div className="grid h-[calc(100dvh-10.5rem)] min-h-[30rem] min-w-0 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
+      <div className="grid min-h-0 min-w-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]">
         <section
           aria-label="Conversations to inspect"
           className={cn(
@@ -206,7 +213,7 @@ export default function MessageOversightPage() {
           aria-label="Inspection"
           className={cn(
             "min-h-0 min-w-0 overflow-hidden rounded-md border border-border bg-white",
-            selectedId != null ? "flex" : "hidden lg:flex",
+            selectedId != null ? "flex max-lg:rounded-none max-lg:border-0" : "hidden lg:flex",
           )}
         >
           {selectedId != null ? (
@@ -229,7 +236,7 @@ export default function MessageOversightPage() {
           )}
         </section>
       </div>
-    </PageShell>
+    </FittedPage>
   );
 }
 
@@ -359,7 +366,7 @@ function InspectedConversation({
 
   return (
     <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <header className="flex min-w-0 items-center gap-2 border-b border-border bg-white px-3 py-2.5">
+      <header className="flex min-w-0 shrink-0 items-center gap-2 border-b border-border bg-white px-3 py-2.5 max-lg:pt-[calc(0.625rem+env(safe-area-inset-top))]">
         <Button
           type="button"
           size="icon"
@@ -395,7 +402,7 @@ function InspectedConversation({
 
       <div
         role="note"
-        className="flex items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
+        className="flex shrink-0 items-start gap-2.5 border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900"
       >
         <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
         <p className="min-w-0 break-words">{OVERSIGHT_BANNER}</p>
