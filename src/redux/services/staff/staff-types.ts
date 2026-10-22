@@ -1002,6 +1002,12 @@ export interface StaffLeaveFiled {
  * A palette hit. Capped at ten and **carries no email address**: this is the
  * most casually visible surface in the module.
  */
+/** One row of the names-only staff list: the person's account id and display name. */
+export interface StaffName {
+  id: number;
+  name: string;
+}
+
 export interface StaffSearchHit {
   id: number;
   name: string;

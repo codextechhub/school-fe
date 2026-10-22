@@ -30,6 +30,7 @@ import type {
   StaffQualificationWrite,
   StaffRoles,
   StaffRoster,
+  StaffName,
   StaffSearchHit,
   StaffStatusChange,
   StaffStatusOptions,
@@ -156,6 +157,20 @@ export const staffApi = baseApi.injectEndpoints({
      */
     getMyStaffRecord: builder.query<Envelope<{ id: number }>, void>({
       query: () => ({ url: `/i/me/staff/mine/`, method: "GET" }),
+      extraOptions: { silent: true },
+      providesTags: ["SchoolStaff"],
+    }),
+
+    /**
+     * The school's active staff by account id and name, and nothing else: the
+     * list every staff picker offers (an expense claim's claimant, a payroll
+     * roster row's staff member, an approver). Answered to anyone holding a key
+     * that drives one of those pickers, so a finance officer who may not open
+     * the directory can still pick Tolu by name. Capped by the server; `q`
+     * narrows it by name. Closed before go-live.
+     */
+    getStaffNames: builder.query<Envelope<StaffName[]>, { q?: string } | void>({
+      query: (args) => ({ url: `/i/me/staff/names/`, method: "GET", params: { ...(args ?? {}) } }),
       extraOptions: { silent: true },
       providesTags: ["SchoolStaff"],
     }),
@@ -643,6 +658,7 @@ export const {
   useCreateStaffMutation,
   useUpdateStaffMutation,
   useSearchStaffQuery,
+  useGetStaffNamesQuery,
   useGetMyStaffRecordQuery,
   useLazySearchStaffQuery,
   useResendStaffInvitationMutation,

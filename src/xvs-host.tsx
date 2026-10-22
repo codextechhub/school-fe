@@ -37,7 +37,9 @@ import { ExportButton } from "@/components/custom/export-button";
 import { returnInitial } from "@/utils/helpers";
 
 import { useGetMyBranchesQuery } from "@/redux/services/branches/branches-api";
-import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
+import { useGetStaffNamesQuery } from "@/redux/services/staff/staff-api";
+import { selectPermissions } from "@/redux/features/auth/auth-slice";
+import { useAppSelector } from "@/redux/store";
 import { useGetSchoolRolesQuery } from "@/redux/services/roles/roles-api";
 import { useGetOrgPositionsQuery } from "@/redux/services/staff/organogram-api";
 import { usePermissions } from "@/hooks/use-permissions";
@@ -52,32 +54,46 @@ export function useBranches(): HostQueryResult<HostBranch> {
   return { data: data?.data, isLoading, isError };
 }
 
-/** Everyone this caller may name on an approval.
+/** The account keys that drive a staff picker, as the names list answers to them. */
+const STAFF_PICKER_KEYS = [
+  "finance.expenseclaim.create",
+  "finance.salary.create",
+  "finance.salary.update",
+  "workflow.template.update",
+  "workflow.group.create",
+  "workflow.group.update",
+  "workflow.approvers.assign",
+] as const;
+
+/** Everyone this caller may name in a staff picker: the school's active staff.
  *
- *  Three fields need translating rather than passing through. `id` is the
- *  ACCOUNT, `user_id` on the staff row - not the row's own `id`, which is the
- *  employment record and a different number entirely. Everything the contract
- *  hands this id to speaks accounts: the workflow API returns `requested_by`
- *  and its approver lists as account ids, and the approver-group endpoint takes
- *  one. Passing the staff id made every name in the workflow screens fall back
- *  to "User 60", because no lookup ever matched, and would have added the wrong
- *  person to an approver group had the two sequences ever overlapped. It is
- *  also stringified, because an id that is sometimes a number and sometimes a
- *  string is how a Map lookup starts silently missing. `role` is plural on the
- *  record, because one person may hold several, and the contract shows one
- *  beside a name to make an approver identifiable, so the first is what it
- *  gets. And `status` is the ACCOUNT's, not the employment record's: the
- *  contract uses it to gate delegation, and whether somebody may be handed
- *  another person's approvals is a question about whether their login works.
- *  A teacher on maternity leave still signs in; a suspended account does not.
+ *  Read from the names-only list (`/v1/i/me/staff/names/`) rather than the
+ *  staff directory, because the people who pick staff mostly may not open the
+ *  directory: Ngozi, a finance admin, records Tolu Fashola's expense claim and
+ *  sets up payroll without the staff key, and through the directory every
+ *  picker she met was empty. The list answers to the keys in
+ *  `STAFF_PICKER_KEYS`; a reader holding none of them is not asked, and gets an
+ *  empty directory rather than a refusal.
+ *
+ *  The list carries an account id and a name and nothing else, so `email` and
+ *  `role` are empty here and a picker shows the name alone. `id` is the
+ *  ACCOUNT, stringified: everything the contract hands it to speaks accounts
+ *  (an expense claim's claimant, a payroll roster row's staff member, the
+ *  workflow API's requesters and approvers), and a Map keyed by a value that
+ *  is sometimes a number and sometimes a string silently misses. `status` is
+ *  "ACTIVE" for every row, because the server lists only people still employed
+ *  whose account is active.
  */
 export function useDirectory(): HostQueryResult<HostPerson> {
-  const { data, isLoading, isError } = useGetStaffListQuery();
-  const rows = data?.data.map((s) => ({
-    // A viewer who may not read a staff email gets "" rather than the address.
-    id: String(s.user_id), full_name: s.full_name, email: s.email ?? "",
-    role: s.roles[0] ?? "", status: s.account_status,
-  }));
+  const permissions = useAppSelector(selectPermissions);
+  const mayPick = STAFF_PICKER_KEYS.some((key) => permissions.includes(key));
+  const { data, isLoading, isError } = useGetStaffNamesQuery(undefined, { skip: !mayPick });
+  if (!mayPick) return { data: [], isLoading: false, isError: false };
+  const rows = Array.isArray(data?.data)
+    ? data.data.map((person) => ({
+        id: String(person.id), full_name: person.name, email: "", role: "", status: "ACTIVE",
+      }))
+    : undefined;
   return { data: rows, isLoading, isError };
 }
 
