@@ -236,7 +236,10 @@ export async function openStage({ base, start, device = "phone", school, label, 
     await page.evaluate(([step, t, l]) => {
       document.getElementById("step").textContent = step;
       document.getElementById("title").textContent = t;
-      document.getElementById("line").textContent = l;
+      const lineEl = document.getElementById("line");
+      lineEl.textContent = l;
+      // The same class caption() leaves on the line, so a continued caption sits where it did.
+      lineEl.classList.add("caption");
     }, [`Step ${n} of ${steps}`, title, line]);
     // The part starts once the caption is up, so the join shows no blank caption.
     if (trimStart === null) trimStart = at() + 0.1;

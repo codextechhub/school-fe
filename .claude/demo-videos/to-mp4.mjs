@@ -31,7 +31,8 @@
  * voiceover is timed from it.
  *
  * With ``AUDIO=<file.wav>`` the WAV becomes the film's sound, encoded as AAC
- * from its first second.
+ * from its first second, and the scene times are left as they were. A scene
+ * file can be corrected by hand before the voiceover is built from it.
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -241,5 +242,6 @@ const result = await page.evaluate(async ([parts, debug, withAudio]) => {
 
 fs.closeSync(out);
 await browser.close();
-fs.writeFileSync(`${output.replace(/\.mp4$/, "")}.scenes.json`, JSON.stringify({ seconds: result.seconds, scenes: result.scenes }, null, 1));
+// A join that adds the sound keeps the scene times the sound was timed from.
+if (!AUDIO) fs.writeFileSync(`${output.replace(/\.mp4$/, "")}.scenes.json`, JSON.stringify({ seconds: result.seconds, scenes: result.scenes }, null, 1));
 console.log(`${output} (${result.frames} frames, ${Math.round(result.seconds)} s from ${inputs.length} part${inputs.length === 1 ? "" : "s"})`);
