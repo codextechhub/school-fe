@@ -25,9 +25,11 @@
  * bar) laid over a take that filmed it marred.
  *
  * Beside the MP4 it writes ``<out>.scenes.json``: the second each scene
- * starts in the finished film, found by watching the stage's caption (the
- * band above the browser window, or the column beside the phone) change. A
- * scene a later part continues with the same caption is one scene. A
+ * starts in the finished film. Parts filmed by a stage that logs its captions
+ * (``captions`` in the sidecar) are timed from that log, mapped through each
+ * part's trim and cuts; a caption that continues the scene before it starts
+ * nothing. Older parts fall back to watching the stage's caption change on
+ * screen, which a switch between the phone and the browser also trips. A
  * voiceover is timed from it.
  *
  * With ``AUDIO=<file.wav>`` the WAV becomes the film's sound, encoded as AAC
@@ -51,6 +53,7 @@ const parts = inputs.map((name) => {
   const trim = fs.existsSync(side) ? JSON.parse(fs.readFileSync(side, "utf8")) : {};
   return {
     start: trim.trimStart ?? 0, end: trim.trimEnd ?? Infinity, cuts: trim.cuts ?? [],
+    captions: trim.captions ?? null,
     overlays: (trim.overlays ?? []).map((overlay) => ({
       ...overlay, data: fs.readFileSync(path.resolve(path.dirname(name), overlay.image)).toString("base64"),
     })),
@@ -164,8 +167,10 @@ const result = await page.evaluate(async ([parts, debug, withAudio]) => {
   // The part being played. A part that ends on its "ended" event leaves its
   // frame callback registered, and that callback must not act on the next part.
   let playing = -1;
+  const partOffsets = [];
   for (const [index, part] of parts.entries()) {
     playing = index;
+    partOffsets.push(offset);
     const overlays = await Promise.all(part.overlays.map(async (overlay) => ({
       ...overlay,
       bitmap: await createImageBitmap(await (await fetch(`data:image/png;base64,${overlay.data}`)).blob()),
@@ -237,11 +242,27 @@ const result = await page.evaluate(async ([parts, debug, withAudio]) => {
     for (let i = 0; i < slice.length; i += 0x8000) binary += String.fromCharCode(...slice.subarray(i, i + 0x8000));
     await window.writePiece(btoa(binary));
   }
-  return { frames, seconds: offset, scenes: scenes.filter((t, i) => i === 0 || t > 0.5) };
+  return { frames, seconds: offset, partOffsets, scenes: scenes.filter((t, i) => i === 0 || t > 0.5) };
 }, [parts.map((p) => ({ start: p.start, end: Number.isFinite(p.end) ? p.end : 1e9, cuts: p.cuts, overlays: p.overlays })), !!process.env.DEBUG, !!AUDIO]);
 
 fs.closeSync(out);
 await browser.close();
+/** Scene starts from the parts' caption logs, or null when a part has none. */
+function loggedScenes() {
+  if (parts.some((part) => !part.captions)) return null;
+  const starts = [];
+  parts.forEach((part, index) => {
+    for (const shown of part.captions) {
+      if (shown.continued) continue;
+      const t = Math.max(shown.at, part.start);
+      const skipped = part.cuts.reduce((sum, [from, to]) => sum + (t >= to ? to - from : 0), 0);
+      starts.push(Math.round((result.partOffsets[index] + t - part.start - skipped) * 100) / 100);
+    }
+  });
+  return starts;
+}
+const logged = loggedScenes();
+if (logged) result.scenes = logged;
 // A join that adds the sound keeps the scene times the sound was timed from.
 if (!AUDIO) fs.writeFileSync(`${output.replace(/\.mp4$/, "")}.scenes.json`, JSON.stringify({ seconds: result.seconds, scenes: result.scenes }, null, 1));
 console.log(`${output} (${result.frames} frames, ${Math.round(result.seconds)} s from ${inputs.length} part${inputs.length === 1 ? "" : "s"})`);

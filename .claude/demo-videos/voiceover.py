@@ -3,7 +3,9 @@
     python3 demo-videos/voiceover.py demo-videos/narration/<film>.json demo-videos/out/<film>.scenes.json out.wav
 
 The narration file names the macOS voice and gives one entry per scene, in
-order; the scenes file is the one to-mp4.mjs writes beside the film, so the
+order. An entry is the scene's text, or a list of ``[seconds, text]`` pairs
+for a long scene whose actions each deserve their own line, each starting
+that many seconds into the scene; the scenes file is the one to-mp4.mjs writes beside the film, so the
 lines follow the film as it was cut. Each entry is spoken by ``say`` at an
 ordinary pace, and spoken faster, up to a limit, when it would run into the
 next scene. A line still too long at the limit is reported rather than
@@ -52,18 +54,23 @@ def main(narration_path: str, scenes_path: str, out_path: str) -> None:
     ends = starts[1:] + [timeline["seconds"]]
     track = bytearray(int(timeline["seconds"] * RATE) * 2)
     with tempfile.TemporaryDirectory() as folder:
-        for number, (text, start, end) in enumerate(zip(lines, starts, ends), start=1):
-            room = end - start - LEAD_IN - GAP
-            pace = PACE
-            frames = spoken(text, narration["voice"], pace, folder)
-            while len(frames) / 2 / RATE > room and pace < FASTEST:
-                pace = min(FASTEST, pace + 8)
+        for number, (entry, start, end) in enumerate(zip(lines, starts, ends), start=1):
+            pieces = [(0.0, entry)] if isinstance(entry, str) else [(float(t), text) for t, text in entry]
+            for index, (offset, text) in enumerate(pieces):
+                begin = start + offset
+                finish = start + pieces[index + 1][0] if index + 1 < len(pieces) else end
+                room = finish - begin - LEAD_IN - GAP
+                pace = PACE
                 frames = spoken(text, narration["voice"], pace, folder)
-            length = len(frames) / 2 / RATE
-            status = "ok" if length <= room else f"TOO LONG by {length - room:.1f}s"
-            print(f"scene {number:2}: {length:5.1f}s of {room:5.1f}s at {pace} wpm  {status}")
-            at = int((start + LEAD_IN) * RATE) * 2
-            track[at:at + len(frames)] = frames[: max(0, len(track) - at)]
+                while len(frames) / 2 / RATE > room and pace < FASTEST:
+                    pace = min(FASTEST, pace + 8)
+                    frames = spoken(text, narration["voice"], pace, folder)
+                length = len(frames) / 2 / RATE
+                status = "ok" if length <= room else f"TOO LONG by {length - room:.1f}s"
+                label = f"{number}{'abcdefgh'[index] if len(pieces) > 1 else ''}"
+                print(f"scene {label:>3}: {length:5.1f}s of {room:5.1f}s at {pace} wpm  {status}")
+                at = int((begin + LEAD_IN) * RATE) * 2
+                track[at:at + len(frames)] = frames[: max(0, len(track) - at)]
     with wave.open(out_path, "wb") as out:
         out.setnchannels(1)
         out.setsampwidth(2)

@@ -1,0 +1,77 @@
+{
+  "film": "more-than-fees",
+  "voice": "Tessa",
+  "scenes": [
+    "More than fees: the rest of a bursar's month at Lagoon View Academy.",
+    "Ngozi starts the day on the finance overview: cash in the bank, what families owe, and how much of the term's billing has come in. Another tab shows how long the cash would last.",
+    "The board approved a budget for the year. Every naira spent is measured against it, so Ngozi can see the Science lab has used twenty-two percent of its plan after the new microscopes.",
+    [
+      [
+        0,
+        "Tolu, a teacher, paid for lab chemicals with her own money. Ngozi records the claim: who it is for, what was bought, the Science lab budget it comes from, and a photo of the receipt. Then she sends it for approval."
+      ],
+      [
+        27.5,
+        "The claim reaches the principal's approvals inbox, with every line and the total. He approves it."
+      ],
+      [
+        40.0,
+        "Back in finance, Ngozi pays Tolu from the school's bank account. The claim now shows submitted, approved and reimbursed."
+      ]
+    ],
+    "Small payments come out of a cash float kept in the office. Ngozi records a voucher for drinks at the P.T.A. meeting, then tops the float back up from the bank to its fifty thousand naira limit.",
+    [
+      [
+        0,
+        "Payroll works out each salary from the person's pay structure. Ngozi generates October's run from the staff list: gross pay, income tax, pension and net pay for all ten staff. She sends it for approval."
+      ],
+      [
+        23.8,
+        "A second person must approve every payroll run. The principal approves it."
+      ],
+      [
+        36.5,
+        "Ngozi pays the net wages from the school's bank account, and the run is marked paid."
+      ]
+    ],
+    "The tax and pension taken from salaries are set aside, ready to file and pay to each authority. Last month's are already filed and paid.",
+    [
+      [
+        0,
+        "Ngozi matches the bank's statement to the school's books, line by line. Auto-match pairs most of them at once."
+      ],
+      [
+        12,
+        "The bank also charged a transfer fee that the books did not know about. Ngozi books it as an adjusting entry, which posts it and matches the line."
+      ],
+      [
+        26,
+        "Three fee payments of the same amount came in on nearby days, so she pairs those by hand. Now the statement and the books agree to the kobo, and she completes the reconciliation."
+      ]
+    ],
+    [
+      [
+        0,
+        "Daniel has won a full scholarship for the term. Ngozi enters it against his bill. Because it is a large award, she cannot post it on her own, and the system says so."
+      ],
+      [
+        26.8,
+        "Kemi, a second person in finance, opens the scholarship and posts it. Daniel's bill is cleared."
+      ]
+    ],
+    [
+      [
+        0,
+        "A library charge was billed to Musa in error. A credit note takes it off his bill, with the reason recorded."
+      ],
+      [
+        22,
+        "Temitope's family asked to pay over time. A payment plan splits her bill into three monthly instalments, each with its own due date."
+      ]
+    ],
+    "Bills past their due date are grouped by how late they are. Reminders go out on the school's schedule, by email and in the parent app, and each one is recorded when it is sent.",
+    "The fixed asset register holds the bus, the generator, the laptops and the lab equipment. Each loses a little value every month, and running depreciation records it in the books.",
+    "Every report comes from the same ledger: the trial balance, the income statement and the balance sheet, ready to print or export for the board.",
+    "At month end, Ngozi checks September's close list and closes the month, so nothing more can be posted into it. The audit trail records every change, and who made it."
+  ]
+}

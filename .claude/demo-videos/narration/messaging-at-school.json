@@ -1,0 +1,25 @@
+{
+  "film": "messaging-at-school",
+  "voice": "Tessa",
+  "scenes": [
+    "Messaging at Lagoon View Academy.",
+    "Tolu's inbox keeps everything in one place: messages with colleagues, conversations with parents and pupils, staff groups, and announcements.",
+    "To write to a parent, Tolu searches for the pupil. She can only find children she teaches, and for Femi she sees his father, Mr Bello. She writes about today's practical and sends it.",
+    [
+      [
+        0,
+        "On Mr Bello's phone, a notification arrives straight away. He opens the parent app, reads Tolu's message, and replies."
+      ],
+      [
+        24.5,
+        "Back on Tolu's screen, his reply is there, and two ticks show he has read her message."
+      ]
+    ],
+    "A parent first chooses which child a message is about. For Femi, Mr Bello can reach his class teacher, his subject teachers and the school office. Nobody else.",
+    "Pupils can ask their teachers too. Femi writes to Tolu from the student portal, and the screen reminds him that his parent and the school can read his messages. His father sees the conversation in the parent app, but cannot write in it.",
+    "Staff can work in groups. The branch admin creates a group for the JSS2 teachers, adds the people who teach the class, and writes the first message.",
+    "For news that every member of staff needs, he sends an announcement instead. He allows replies, so each answer comes back to him privately, and nobody else sees it.",
+    "Tolu answers the announcement. Her reply opens a private conversation with the sender, and the rest of the staff never see it.",
+    "To keep everyone safe, the principal can read groups, announcements and pupils' conversations. He cannot write in them, and every time he opens one, it is recorded in the audit trail."
+  ]
+}

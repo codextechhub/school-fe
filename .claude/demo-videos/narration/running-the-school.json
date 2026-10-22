@@ -1,0 +1,34 @@
+{
+  "film": "running-the-school",
+  "voice": "Tessa",
+  "scenes": [
+    "Running the school, at Lagoon View Academy.",
+    "The principal starts on the dashboard: the work waiting on the school, things worth checking, and the school in numbers.",
+    "Families apply first. The principal reviews Ifeanyi Chukwu's application, notes why he is accepted, and puts him on the roll.",
+    "A new pupil can also be enrolled in five short steps. The principal enters Kelechi Nwosu's details, places him in J.S.S. 1 A at the Main Branch, and links his mother, Ada Nwosu, who already has a daughter at the school. The admission number is suggested, and a final check shows everything before it is saved.",
+    "Every pupil has one record. Femi's shows his guardians, his class, his attendance for the term, his results and his history, all in one place.",
+    "The school also sees families. Mr Bello's record lists every child he is responsible for.",
+    "Teaching duties show who teaches every subject in every class, and which ones still have no teacher, so gaps are fixed before the term runs on.",
+    "The calendar holds the terms, the mid-term break and the exam week, and every other screen follows it.",
+    "Timetables bring periods, rooms and teachers together. When the principal tries to give Chinedu a J.S.S. 2 A lesson at a time he already teaches J.S.S. 1 A, the clash is flagged straight away, so it never reaches a classroom. Each teacher's week is built from the class timetables.",
+    "Each morning, Tolu takes her class register on her phone. She marks the two pupils who came late, with the time they arrived, marks everyone else present, and submits.",
+    "If a mark was wrong, it is not simply changed. Tolu asked for Musa's absence to be marked excused, with the reason, and the principal approves it. The original mark stays in the register's history.",
+    "Tolu enters her Basic Science scores: two class tests and the exam. Totals, grades and remarks are worked out as she types, and when every pupil has a score, she submits the sheet.",
+    [
+      [
+        0,
+        "Before results go out, the Head of Sciences moderates the sheet, comparing it with the other classes taking the same subject, and approves it."
+      ],
+      [
+        13,
+        "With every subject in, Tolu submits the class's broadsheet to the principal."
+      ],
+      [
+        25,
+        "The principal adds his comments, then approves and publishes. Each family is emailed that the report card is ready."
+      ]
+    ],
+    "On Mr Bello's phone, a notification says Femi's result is ready. In the parent app he sees Femi's position, every subject's score and grade, his teacher's remark, and the full report card.",
+    "At the end of the session, promotion moves each pupil up, keeps them back, or graduates them. Anything that cannot simply move up, like a class with nowhere to go yet, is listed first, so nothing happens by surprise."
+  ]
+}

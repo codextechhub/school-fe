@@ -98,6 +98,20 @@ with transaction.atomic():
         JournalLine.objects.create(entry=entry, account=Account.objects.get(entity=entity, code="3200"),
                                    debit=0, credit=6_000_000_00, description="Brought forward")
         post_journal(entry, actor_user=ngozi)
+    # The first term's fees, banked before the school's books moved here, so two months of salaries leave it in credit.
+    if not JournalEntry.objects.filter(entity=entity, reference="LV-OPENING-FEES").exists():
+        date = datetime.date(2026, 10, 1)
+        entry = JournalEntry.objects.create(
+            entity=entity, date=date,
+            period=FiscalPeriod.objects.get(entity=entity, is_closing=False, start_date__lte=date, end_date__gte=date),
+            narration="Term fees banked before the books moved here", reference="LV-OPENING-FEES", source="BANK",
+            branch=main,
+        )
+        JournalLine.objects.create(entry=entry, account=cash, debit=12_000_000_00, credit=0,
+                                   description="Fees already in the bank")
+        JournalLine.objects.create(entry=entry, account=Account.objects.get(entity=entity, code="3200"),
+                                   debit=0, credit=12_000_000_00, description="Brought forward")
+        post_journal(entry, actor_user=ngozi)
     say(f"bank account: {bank.name}, {bank.bank_name} {bank.account_number}")
 
     # 5. Cost centres, a lab expense account and the year's approved plan.
@@ -153,12 +167,13 @@ with transaction.atomic():
     from schools.vs_staff.services.organogram import StaffOrganogramService
 
     tolu = U.objects.get(email="tolu.fashola@lagoon-view.example.com")
+    # Looked up by name and kind: the app stores a node's code with its kind's prefix (DV-ACAD, DT-SCI).
     academics, _ = StaffOrgNode.all_objects.get_or_create(
-        tenant=tenant, code="ACAD", defaults={"name": "Academics", "kind": "DIVISION"},
+        tenant=tenant, name="Academics", kind="DIVISION", defaults={"code": "ACAD"},
     )
     sciences, _ = StaffOrgNode.all_objects.get_or_create(
-        tenant=tenant, code="SCI",
-        defaults={"name": "Sciences", "kind": "DEPARTMENT", "parent": academics, "branch": main},
+        tenant=tenant, name="Sciences", kind="DEPARTMENT",
+        defaults={"code": "SCI", "parent": academics, "branch": main},
     )
     head_post, _ = StaffPosition.all_objects.get_or_create(
         tenant=tenant, code="PRIN", defaults={"title": "Principal", "org_node": academics},
