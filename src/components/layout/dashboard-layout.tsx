@@ -2,6 +2,8 @@ import { Separator } from "@/components/ui/separator";
 import { ApprovalConfirmDialog } from "@/components/approval-confirm-dialog";
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { WorkspaceToaster } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { takeAccessReloadNotice, useReloadOnNextMove } from "@/lib/access-reload";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppSidebar } from "../app-sidebar";
 import { schoolFinanceNav, schoolProcurementNav } from "./console-nav-for-school";
@@ -253,6 +255,7 @@ export default function DashboardLayout() {
 
   useTokenRefresh();
   useRouteAcknowledgement();
+  useReloadOnNextMove();
   const { handleLogout, isLoggingOut } = useLogout();
   const { isOpen: openLogout, toggleClick: toggleLogout } = useToggleModal(false);
 
@@ -567,11 +570,24 @@ export default function DashboardLayout() {
   );
 }
 
-// The toasts have to know how wide the sidebar currently is to centre
-// themselves over the page content, and `useSidebar` only works inside the
-// provider - hence a child component rather than a hook call in DashboardLayout.
+/**
+ * The workspace's toaster, centred over the page content.
+ *
+ * It has to know how wide the sidebar is, and `useSidebar` only works inside
+ * the provider, hence a child component rather than a hook call in
+ * DashboardLayout. It also shows the message an access change carried across
+ * its reload: the effect runs after the toaster below it has mounted, so the
+ * toast is not fired into nothing.
+ */
 function DashboardToaster() {
   const { state } = useSidebar();
+
+  useEffect(() => {
+    const notice = takeAccessReloadNotice();
+    if (!notice) return;
+    if (notice.kind === "info") toast.info(notice.message);
+    else toast.success(notice.message);
+  }, []);
 
   return <WorkspaceToaster sidebarState={state} />;
 }

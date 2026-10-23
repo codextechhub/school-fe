@@ -16,6 +16,12 @@ import type { LinkPreview, LoginResponse, OtherApp, PasswordPolicy } from "./aut
 import { currentSchoolSlug } from "@/utils/school-host";
 import { setAccessToken } from "@/utils/access-token";
 import { getCsrfToken } from "@/utils/csrf";
+import { isIdentitySwapInProgress } from "@/utils/identity-swap";
+import { accessChangePending, accessDiffers, markAccessChanged } from "@/lib/access-reload";
+import type { RootStateType } from "@/redux/store";
+
+/** Whether `/me` has answered once since this page loaded. */
+let meAnsweredThisPage = false;
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -195,11 +201,50 @@ export const authApi = baseApi.injectEndpoints({
       query: (body) => ({ url: `/user/auth/password/change/`, method: "POST", body }),
       extraOptions: { silent: true },
     }),
+    /**
+     * The effective identity, re-read on mount, every minute and on focus.
+     *
+     * The first answer after a page load is applied in place. A later one
+     * giving the same person different access is not applied: it marks the
+     * change, and the app reloads at the person's next move to another page,
+     * so a role withdrawn by an administrator takes its menus and screens with
+     * it without tearing a half-filled form away (see `access-reload`). An
+     * identity swap changes the person on purpose and is applied as it is.
+     */
     getMe: builder.query<MeResponse, void>({
       query: () => ({ url: `/user/auth/me/`, method: "GET" }),
-      async onQueryStarted(_, { queryFulfilled, dispatch }) {
+      async onQueryStarted(_, { queryFulfilled, dispatch, getState }) {
         try {
           const { data } = await queryFulfilled;
+          // Same person, different access since this page loaded: reload at the next move.
+          const held = (getState() as RootStateType).auth;
+          const incoming = {
+            permissions: data.data.permissions ?? [],
+            field_access: data.data.field_access ?? {},
+            branch_reach: data.data.branch_reach ?? null,
+          };
+          const firstAnswer = !meAnsweredThisPage;
+          meAnsweredThisPage = true;
+          const samePerson =
+            !firstAnswer &&
+            !isIdentitySwapInProgress() &&
+            held.user?.id != null &&
+            held.user.id === data.data.user?.id;
+          if (
+            samePerson &&
+            (accessChangePending() ||
+              accessDiffers(
+                {
+                  permissions: held.permissions ?? [],
+                  field_access: held.field_access ?? {},
+                  branch_reach: held.branch_reach ?? null,
+                },
+                incoming,
+              ))
+          ) {
+            markAccessChanged();
+            return;
+          }
           // `/me` is the authority on WHO the session currently acts as - not
           // just what it may do. While a proxy session is active it returns the
           // TARGET's identity, so applying the whole context (user + school
@@ -223,6 +268,27 @@ export const authApi = baseApi.injectEndpoints({
     }),
   }),
 });
+
+/**
+ * Re-read the signed-in person's access once an access-changing save succeeds.
+ *
+ * Used as `onQueryStarted` on every endpoint that grants, withdraws or edits a
+ * role or its fields. Most of the time the change was made to somebody else
+ * and `/me` comes back the same, so nothing happens; when it touched the
+ * person making it, `getMe` marks the change and the app reloads at their next
+ * move. A failed save changed nothing and is not followed up.
+ */
+export async function recheckOwnAccess(
+  _arg: unknown,
+  { queryFulfilled, dispatch }: { queryFulfilled: Promise<unknown>; dispatch: (action: unknown) => unknown },
+) {
+  try {
+    await queryFulfilled;
+  } catch {
+    return;
+  }
+  dispatch(authApi.endpoints.getMe.initiate(undefined, { forceRefetch: true, subscribe: false }));
+}
 
 export const {
   useLoginMutation,

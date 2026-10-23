@@ -1,6 +1,7 @@
 import { recordQuery, type RecordArg } from "@/lib/as-at";
 
 import { baseApi } from "../base-api";
+import { recheckOwnAccess } from "../auth/auth-api";
 import type { Envelope } from "../onboarding/onboarding-types";
 import type {
   ClassTeacherResult,
@@ -592,6 +593,7 @@ export const staffApi = baseApi.injectEndpoints({
     >({
       query: (body) => ({ url: `/i/me/staff/roles/bulk/`, method: "POST", body }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       invalidatesTags: ["SchoolStaff", "Roles"],
     }),
 

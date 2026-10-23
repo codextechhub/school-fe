@@ -6,6 +6,7 @@ import { ArrowLeft, Lock, Pencil, Search, Trash2, UsersRound } from "lucide-reac
 import { PageShell } from "@/components/layout/page-shell";
 import PageAccessDenied from "@/components/custom/page-access-denied";
 import { AssignRolePanel } from "./assign-role-panel";
+import { RoleHolders } from "./role-holders";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -79,7 +80,8 @@ function grantedGroups(role: SchoolRoleDetail, modules: CatalogueModule[]) {
  * Editing, retiring and deleting are offered only where the reader covers every
  * branch the role reaches (see `roleReadOnly`); anyone else holding those keys
  * reads the role with the reason instead. Giving the role to somebody is a
- * grant, judged by the grant's own reach in `AssignRolePanel`.
+ * grant, judged by the grant's own reach in `AssignRolePanel`; taking it away
+ * from one person or several is `RoleHolders`, judged the same way.
  */
 export default function RoleView() {
   const { key = "" } = useParams();
@@ -263,18 +265,21 @@ export default function RoleView() {
       {tab === "people" && (
         <section className="max-w-4xl rounded-xl border border-border bg-white p-4 sm:p-6">
           <div className="flex items-center gap-2"><UsersRound className="size-5 text-primary" /><h2 className="text-lg font-semibold">People with this role</h2></div>
-          <p className="mt-1 text-sm text-gray-01">See each person's reach from this role.</p>
-          {holders.isLoading ? <Skeleton className="mt-5 h-32 w-full" /> : (
-            <div className="mt-5 space-y-2">
-              {(holders.data ?? []).map((holder) => (
-                <div key={holder.id} className="flex min-w-0 flex-wrap items-center justify-between gap-2 rounded-lg border border-border px-4 py-3">
-                  <div className="min-w-0"><p className="font-medium text-black-01">{holder.user_name}</p><p className="break-all text-xs text-gray-05">{holder.user_email}</p></div>
-                  <Badge variant="inactive">{holder.branch == null ? reachLabel : branches.data?.find((entry) => entry.id === holder.branch)?.name ?? `Branch ${holder.branch}`}</Badge>
-                </div>
-              ))}
-              {holders.isError && <p role="alert" className="rounded-lg bg-gray-04 p-4 text-sm text-gray-01">We could not load the people holding this role.</p>}
-              {!holders.isError && !holders.data?.length && <p className="rounded-lg bg-gray-04 p-4 text-sm text-gray-01">Nobody holds this role yet.</p>}
-            </div>
+          <p className="mt-1 text-sm text-gray-01">See each person's reach from this role, and remove one or several of them from it.</p>
+          {holders.isLoading ? <Skeleton className="mt-5 h-32 w-full" /> : holders.isError ? (
+            <p role="alert" className="mt-5 rounded-lg bg-gray-04 p-4 text-sm text-gray-01">We could not load the people holding this role.</p>
+          ) : !holders.data?.length ? (
+            <p className="mt-5 rounded-lg bg-gray-04 p-4 text-sm text-gray-01">Nobody holds this role yet.</p>
+          ) : (
+            <RoleHolders
+              roleKey={detail.key}
+              roleName={detail.name}
+              roleBranchIds={branchIds}
+              holders={holders.data}
+              canRemove={hasPermission(P.ASSIGN_ROLE)}
+              branchName={(id) => branches.data?.find((entry) => entry.id === id)?.name ?? `Branch ${id}`}
+              reachLabel={reachLabel}
+            />
           )}
           {hasPermission(P.ASSIGN_ROLE) && <div className="mt-5"><AssignRolePanel roleId={detail.id} roleName={detail.name} roleBranchIds={branchIds} heldBy={(holders.data ?? []).map((holder) => holder.user_id)} onAssigned={holders.refetch} /></div>}
         </section>

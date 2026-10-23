@@ -42,6 +42,8 @@ const { LOGIN } = routesPath.AUTH;
 const MAX_AUTO_RETRIES = 4;
 const RETRY_BASE_DELAY_MS = 3000;
 const RETRY_MAX_DELAY_MS = 24000;
+/** How often an open tab re-reads `/me` to notice access changed elsewhere. */
+const ACCESS_CHECK_INTERVAL_MS = 60_000;
 
 export default function Authenticated() {
   const [{ idleTooLong }] = useState(evaluateGate);
@@ -110,8 +112,9 @@ export default function Authenticated() {
   //
   // refetchOnFocus re-runs it the moment the user tabs back, closing the window
   // where a background tab keeps acting on permissions/tenant that were revoked
-  // or changed server-side while it sat idle. This is the app's one live query
-  // and it is a single cheap request, so no polling is needed alongside it. The
+  // or changed server-side while it sat idle. A one-minute poll, paused while
+  // the tab is hidden, catches a change made while somebody is looking at the
+  // screen; access that changed reloads the app (see getMe). The
   // gate short-circuits to "ready" while a tenant is present, so a background
   // refetch never flips the mounted app back to a spinner, and the slice's
   // update reducers no-op when the context comes back unchanged (the common
@@ -125,6 +128,8 @@ export default function Authenticated() {
   } = useGetMeQuery(undefined, {
     skip: restoreState !== "ready",
     refetchOnFocus: true,
+    pollingInterval: ACCESS_CHECK_INTERVAL_MS,
+    skipPollingIfUnfocused: true,
   });
 
   const restorableImpersonation = authContextResponse?.data.active_impersonation;

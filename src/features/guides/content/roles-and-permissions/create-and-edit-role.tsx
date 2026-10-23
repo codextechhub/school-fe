@@ -60,6 +60,15 @@ export default function CreateAndEditRoleArticle() {
         </GuideSteps>
       </GuideSection>
 
+      <GuideSection id="remove-people-from-the-role" title="Remove people from the role">
+        <GuideSteps>
+          <GuideStep title="Choose who">On the role&apos;s <strong>People</strong> tab, select <strong>Remove</strong> beside one person, or tick several (or <strong>Select all</strong>) and select <strong>Remove from role</strong>.</GuideStep>
+          <GuideStep title="Give the reason">Say why they are being removed, then select <strong>Remove</strong>. The reason is kept on each person&apos;s history with the role they held.</GuideStep>
+        </GuideSteps>
+        <p>You cannot tick or remove yourself here, nor anyone whose grant reaches beyond your branches. Removing a role leaves the person&apos;s other roles as they are.</p>
+        <GuideCallout tone="tip" title="When a change reaches the person">Anyone whose access changed, you included, gets a fresh XVS the next time they move to another page, within about a minute of the change. A form they are halfway through is left alone until then.</GuideCallout>
+      </GuideSection>
+
       <GuideSection id="take-a-role-out-of-use" title="Take a role out of use or delete it">
         <p><strong>Take out of use</strong> stops the role being used while keeping its record; <strong>Put back in use</strong> reverses it. On a custom role that nobody has ever held, <strong>Delete role</strong> removes it for good after you confirm.</p>
         <GuideCallout tone="danger" title="Deleting cannot be undone">If the role has ever been held, <strong>Delete role</strong> is greyed out. Take it out of use instead. School roles cannot be deleted.</GuideCallout>

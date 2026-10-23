@@ -1,5 +1,6 @@
 import type { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 import { baseApi } from "../base-api";
+import { recheckOwnAccess } from "../auth/auth-api";
 import type { Envelope, PaginatedEnvelope } from "../onboarding/onboarding-types";
 import { getTenantSlug } from "@/utils/tenant-context";
 import { fetchAllPages } from "@/utils/fetch-all-pages";
@@ -122,6 +123,7 @@ export const rolesApi = baseApi.injectEndpoints({
         body: { changes },
       }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       invalidatesTags: (_result, _error, { key }) => [{ type: "RoleFieldAccess", id: key }],
     }),
 
@@ -151,6 +153,7 @@ export const rolesApi = baseApi.injectEndpoints({
         body,
       }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       invalidatesTags: (_result, _error, { userId }) => [{ type: "UserFieldAccessOverrides", id: userId }],
     }),
 
@@ -163,12 +166,14 @@ export const rolesApi = baseApi.injectEndpoints({
         method: "DELETE",
       }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       invalidatesTags: (_result, _error, { userId }) => [{ type: "UserFieldAccessOverrides", id: userId }],
     }),
 
     createSchoolRole: builder.mutation<Envelope<SchoolRoleDetail>, NewRole>({
       query: (body) => ({ url: `${scope()}/roles/`, method: "POST", body }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       // The onboarding gate reads the role baseline to decide whether the
       // roles step can close, so a role added here can change the checklist.
       invalidatesTags: ["Roles", "Onboarding"],
@@ -192,6 +197,7 @@ export const rolesApi = baseApi.injectEndpoints({
         body,
       }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       invalidatesTags: (_r, _e, { key }) => [
         "Roles",
         { type: "Roles", id: key },
@@ -214,6 +220,7 @@ export const rolesApi = baseApi.injectEndpoints({
         body,
       }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       invalidatesTags: (_result, _error, { key }) => [
         "Roles",
         { type: "Roles", id: key },
@@ -227,6 +234,7 @@ export const rolesApi = baseApi.injectEndpoints({
         method: "DELETE",
       }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       invalidatesTags: ["Roles", "Onboarding"],
     }),
 
@@ -291,6 +299,7 @@ export const rolesApi = baseApi.injectEndpoints({
         body,
       }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       // The staff list carries a Role column and the profile carries the reach,
       // so both move when a grant does.
       invalidatesTags: ["Roles", "SchoolStaff"],
@@ -313,6 +322,7 @@ export const rolesApi = baseApi.injectEndpoints({
         body: { reason_note },
       }),
       extraOptions: { silent: true },
+      onQueryStarted: recheckOwnAccess,
       invalidatesTags: ["Roles", "SchoolStaff"],
     }),
 
