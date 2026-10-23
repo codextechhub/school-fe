@@ -209,7 +209,13 @@ export function AssignRolePanel({
         </div>
       )}
 
-      {!staff.isLoading && people.length === 0 && (
+      {staff.isError && (
+        <p role="alert" className="px-3 py-6 text-center text-[13px] text-gray-06">
+          We could not load the staff list, so there is nobody to choose from.
+        </p>
+      )}
+
+      {!staff.isLoading && !staff.isError && people.length === 0 && (
         <p className="px-3 py-6 text-center text-[13px] text-gray-06">
           {search.trim()
             ? `Nobody on the roll matches "${search.trim()}".`

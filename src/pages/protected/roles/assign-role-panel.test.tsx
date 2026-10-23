@@ -23,8 +23,9 @@ vi.mock("@/redux/services/roles/roles-api", () => ({
   useGetRoleGrantsWaitingQuery: () => ({ data: waitingRows }),
   isPendingGrant: () => pendingAnswer,
 }));
+let staffFails = false;
 vi.mock("@/redux/services/staff/staff-api", () => ({
-  useGetStaffListQuery: () => ({
+  useGetStaffListQuery: () => staffFails ? { isLoading: false, isError: true } : ({
     isLoading: false,
     data: {
       data: [
@@ -58,6 +59,7 @@ describe("AssignRolePanel", () => {
     reader = BELLO;
     pendingAnswer = false;
     waitingRows = [];
+    staffFails = false;
     assign.mockReset();
     assign.mockReturnValue({ unwrap: () => Promise.resolve({ data: {} }) });
     container = document.createElement("div");
@@ -142,5 +144,14 @@ describe("AssignRolePanel", () => {
 
     expect(pendingButton()).toBeUndefined();
     expect([...container.querySelectorAll("button")].filter((b) => b.textContent === "Give")).toHaveLength(1);
+  });
+
+  it("says the staff list failed rather than that nobody is on the roll", async () => {
+    staffFails = true;
+    await render([]);
+    await act(async () => button("Give this role to somebody")!.click());
+
+    expect(container.textContent).toContain("We could not load the staff list");
+    expect(container.textContent).not.toContain("nobody on the roll");
   });
 });
