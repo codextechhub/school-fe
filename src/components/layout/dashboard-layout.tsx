@@ -18,6 +18,7 @@ import {
   resolveHeaderTitle,
   resolveHeaderBack,
   appHeaderPhoneClass,
+  headerIconButtonClass,
   type BackSpec,
   type HeaderOverride,
 } from "./dashboard-header";
@@ -422,7 +423,7 @@ export default function DashboardLayout() {
                   setSupportPrefill({});
                   setSupportOpen(true);
                 }}
-                className="size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-pry-01 hover:text-primary"
+                className={headerIconButtonClass}
               >
                 <Headset className="size-4.5 stroke-[2.15]" />
               </button>
@@ -588,7 +589,7 @@ function AppSearchFallback() {
       </div>
       <span
         aria-hidden="true"
-        className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 lg:hidden"
+        className={cn(headerIconButtonClass, "lg:hidden")}
       >
         <Search className="size-4.5 stroke-[2.15]" />
       </span>
@@ -609,7 +610,7 @@ function HeaderIconFallback({ label }: { label: string }) {
   return (
     <span
       aria-label={label}
-      className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-05"
+      className={cn(headerIconButtonClass, "text-gray-05")}
     >
       <Loader2 className="size-4 animate-spin" />
     </span>

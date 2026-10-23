@@ -69,6 +69,17 @@ const INERT: DashboardHeaderApi = {
 };
 
 /**
+ * The round icon button in the app header: search, notifications, support.
+ *
+ * One class for all of them, outlined with the same thin ring as the account
+ * avatar beside them, so the row reads as one set and a new button cannot
+ * arrive looking different. The ring is drawn outside the box and takes no
+ * space from it.
+ */
+export const headerIconButtonClass =
+  "grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 ring-1 ring-white-02 transition-colors hover:bg-pry-01 hover:text-primary hover:ring-primary/25";
+
+/**
  * The classes that take the app header bar off the screen on a phone.
  *
  * The bar is hidden only below `lg`, where a screen is a single pane that

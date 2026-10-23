@@ -14,6 +14,8 @@ import {
   useMarkNotificationsReadMutation,
 } from "@/redux/services/notifications/notifications-api";
 import { routesPath } from "@/routes/routesPath";
+import { headerIconButtonClass } from "@/components/layout/dashboard-header";
+import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/utils/relative-date";
 
 /**
@@ -44,7 +46,7 @@ export function NotificationsBell() {
           type="button"
           data-guide="header.notifications"
           aria-label={count > 0 ? `Notifications, ${count} unread` : "Notifications"}
-          className="relative size-8.5 rounded-full bg-gray-04 grid place-content-center text-gray-01 hover:bg-gray-03"
+          className={cn(headerIconButtonClass, "relative")}
         >
           {svgIcons.notificationBell}
           {count > 0 && (

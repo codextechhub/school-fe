@@ -45,6 +45,7 @@ import {
   rankDefaultActions,
 } from "./action-palette-model";
 import { usePaletteSchool } from "./use-palette-school";
+import { headerIconButtonClass } from "./dashboard-header";
 
 /** The one wording for this box: placeholder, aria-label and mobile trigger. */
 const SEARCH_LABEL = "Search your workspace";
@@ -684,7 +685,7 @@ export function AppSearch({
         aria-label={SEARCH_LABEL}
         aria-expanded={mobileOpen}
         onClick={() => (mobileOpen ? closeSearch() : focusSearch())}
-        className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 hover:bg-pry-01 hover:text-primary xl:hidden"
+        className={cn(headerIconButtonClass, "xl:hidden")}
       >
         <Search className="size-4.5 stroke-[2.15]" />
       </button>
@@ -709,7 +710,7 @@ export function AppSearch({
             aria-label="Close search"
             onMouseDown={(event) => event.preventDefault()}
             onClick={closeSearch}
-            className="grid size-8.5 shrink-0 place-content-center rounded-full bg-gray-04 text-gray-01 hover:bg-pry-01 hover:text-primary"
+            className={headerIconButtonClass}
           >
             <X className="size-4.5" />
           </button>
