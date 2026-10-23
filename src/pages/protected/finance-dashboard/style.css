@@ -15,8 +15,8 @@
 
 .finance-dashboard .finance-view-tabs > span {
   border-radius: 999px;
-  background: #365fba;
-  box-shadow: 0 2px 7px rgb(35 74 145 / 14%);
+  background: var(--primary);
+  box-shadow: 0 2px 7px rgb(74 101 157 / 14%);
 }
 
 .finance-dashboard .finance-view-tab {
