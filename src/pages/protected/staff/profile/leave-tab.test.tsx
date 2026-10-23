@@ -1,8 +1,20 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { StaffLeave } from "@/redux/services/staff/staff-types";
+import type { FieldAccessMap } from "@/components/finance-ui";
+import type { StaffLeave, StaffLeaveRequest } from "@/redux/services/staff/staff-types";
 
+let fieldAccess: FieldAccessMap = {};
+
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({
+    fieldAccess,
+    hasPermission: () => true,
+    hasAnyPermission: () => true,
+    hasAllPermissions: () => true,
+    hasModuleAccess: () => true,
+  }),
+}));
 vi.mock("@/redux/services/staff/staff-api", () => ({}));
 vi.mock("@/components/custom/field-access-overrides", () => ({ default: () => null }));
 
@@ -39,6 +51,10 @@ const OKAFOR: StaffLeave = {
 };
 
 describe("LeaveTab", () => {
+  beforeEach(() => {
+    fieldAccess = {};
+  });
+
   const text = () =>
     new DOMParser().parseFromString(renderToStaticMarkup(<LeaveTab leave={OKAFOR} />), "text/html")
       .body.textContent ?? "";
@@ -84,5 +100,61 @@ describe("LeaveTab", () => {
     );
     expect(markup).toContain("Days taken");
     expect(markup).not.toContain("Leave balance");
+  });
+  it("leaves out the balances, the totals and the days-over chip the server did not send", () => {
+    const { balances: _b, days_taken: _d, balance_session: _s, balance_note: _n, ...bare } = OKAFOR;
+    const { over_allowance_by: _o, ...request } = OKAFOR.leave[0];
+    const markup = renderToStaticMarkup(
+      <LeaveTab leave={{ ...(bare as StaffLeave), leave: [request as StaffLeaveRequest] }} />,
+    );
+    expect(markup).not.toContain("Leave balance");
+    expect(markup).not.toContain("Days taken");
+    expect(markup).not.toContain("over allowance");
+    expect(markup).toContain("Annual");
+  });
+
+  it("treats an absent balances key as nothing to show, never as zero", () => {
+    const { balances: _b, days_taken: _d, ...bare } = OKAFOR;
+    const markup = renderToStaticMarkup(<LeaveTab leave={bare as StaffLeave} />);
+    expect(markup).not.toContain("Leave balance");
+    expect(markup).not.toContain("None taken");
+    expect(markup).toContain("Annual");
+  });
+
+  it("removes the dates, days, status and note lines the server did not send", () => {
+    const {
+      start_date: _s, end_date: _e, resumption_date: _r, resumption_is_estimate: _re, days: _d,
+      status: _st, display_status: _ds, note: _n, approval: _a, ...bare
+    } = { ...OKAFOR.leave[0], note: "Family event", approval: { instance_id: null, stage: null, pending_with: [] } };
+    const markup = renderToStaticMarkup(<LeaveTab leave={{ ...OKAFOR, leave: [bare as StaffLeaveRequest] }} />);
+    expect(markup).not.toContain("Oct 2026");
+    expect(markup).not.toContain("Resumption date");
+    expect(markup).not.toContain("4 days");
+    expect(markup).not.toContain("Pending</span>");
+    expect(markup).not.toContain("Pending with");
+    expect(markup).not.toContain("Family event");
+    expect(markup).toContain("Annual");
+  });
+
+  it("draws a request's own details in full even when the map hides them, because the server sent them", () => {
+    fieldAccess = { "school.leave": { hidden: ["days", "status", "note"] } };
+    const markup = renderToStaticMarkup(<LeaveTab leave={{ ...OKAFOR, leave: [{ ...OKAFOR.leave[0], note: "Family event" }] }} />);
+    expect(markup).toContain("4 days");
+    expect(markup).toContain("Family event");
+  });
+
+  it("copes with the session and the note being absent while the balances are present", () => {
+    const { balance_session: _s, balance_note: _n, ...bare } = OKAFOR;
+    const markup = renderToStaticMarkup(<LeaveTab leave={bare as StaffLeave} />);
+    expect(markup).toContain("Days taken");
+    expect(markup).not.toContain("undefined");
+  });
+
+  it("copes with an approval block that has no approver list", () => {
+    const request = { ...OKAFOR.leave[0], approval: { instance_id: "abc", stage: "Leave approval" } };
+    const markup = renderToStaticMarkup(
+      <LeaveTab leave={{ ...OKAFOR, leave: [request as unknown as StaffLeaveRequest] }} />,
+    );
+    expect(markup).toContain("No approver assigned yet");
   });
 });

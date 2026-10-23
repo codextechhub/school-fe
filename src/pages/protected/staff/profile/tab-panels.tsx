@@ -16,7 +16,9 @@ import { ViewDocument } from "@/components/custom/view-document";
 import PermissionGate from "@/components/custom/permission-gate";
 import { LiveOnly } from "@/components/custom/as-at-control";
 import FieldAccessOverrides, { personBranchIds } from "@/components/custom/field-access-overrides";
+import { useFieldAccess } from "@/components/finance-ui/field-access";
 import { useReaderReach } from "@/hooks/use-reader-reach";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { P } from "@/permissions";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -831,6 +833,15 @@ const LEAVE_TYPE_LABEL: Record<string, string> = {
  * balances shown, the all-session totals stay as one quiet line underneath.
  * Each request opens in place to show the current approval holder, its note,
  * and permitted actions without sending a reader to a second screen.
+ *
+ * **Field Access** (`school.leave`) decides every figure and line. A field the
+ * reader may not read is absent from the payload and is left out whole: no
+ * label, no empty cell, no zero. The `balance` switch covers the balances, the
+ * days-taken totals, the session and note, and the days-over chip; `dates`,
+ * `days`, `note`, `status` and `leave_type` each cover their own line on a
+ * request, and hiding the type also removes the balances. A request row is
+ * drawn from the keys it carries rather than from the role's map, because a
+ * person always reads their own leave in full.
  */
 export function LeaveTab({
   leave,
@@ -856,11 +867,14 @@ export function LeaveTab({
   cancelling?: boolean;
   historyAction?: React.ReactNode;
 }) {
+  const access = useFieldAccess(FIELD_RESOURCE.LEAVE, leave);
   const session = leave.balance_session ?? null;
+  const balancesVisible = !access.isHidden("balances") && leave.balances != null;
+  const daysTakenVisible = !access.isHidden("days_taken") && leave.days_taken != null;
   const shown = (leave.balances ?? []).filter(
     (row) => row.allowance != null || row.taken > 0 || row.pending > 0,
   );
-  const allSessions = leave.days_taken
+  const allSessions = (daysTakenVisible ? leave.days_taken : [])
     .map((row) => `${(LEAVE_TYPE_LABEL[row.leave_type] ?? row.leave_type).toLowerCase()} ${dayCount(row.days)}`)
     .join(", ");
 
@@ -896,12 +910,12 @@ export function LeaveTab({
           {historyAction}
         </div>
       </div>
-      {session ? (
+      {balancesVisible && session ? (
         <section>
           <h3 className="mb-1 text-sm font-semibold text-black-01">
             Leave balance, {session.name}
           </h3>
-          <SectionNote>{leave.balance_note}</SectionNote>
+          {leave.balance_note && <SectionNote>{leave.balance_note}</SectionNote>}
           {shown.length ? (
             <ul className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
               {shown.map((row) => (
@@ -920,10 +934,10 @@ export function LeaveTab({
             </p>
           )}
         </section>
-      ) : (
+      ) : daysTakenVisible ? (
         <section>
           <h3 className="mb-1 text-sm font-semibold text-black-01">Days taken</h3>
-          <SectionNote>{leave.balance_note}</SectionNote>
+          {leave.balance_note && !access.isHidden("balances") && <SectionNote>{leave.balance_note}</SectionNote>}
           {leave.days_taken.length ? (
             <div className="flex flex-wrap gap-2">
               {leave.days_taken.map((row) => (
@@ -940,7 +954,7 @@ export function LeaveTab({
             <p className="text-[13px] text-gray-05">None taken.</p>
           )}
         </section>
-      )}
+      ) : null}
 
       <section>
         <h3 className="mb-3 text-sm font-semibold text-black-01">Requests</h3>
@@ -953,40 +967,54 @@ export function LeaveTab({
               >
                 <details className="group">
                   <summary className="flex min-w-0 cursor-pointer list-none flex-wrap items-center gap-2.5 [&::-webkit-details-marker]:hidden">
-                  <span className="text-sm font-medium text-black-01">
-                    {row.leave_type_label}
-                  </span>
-                  <span className="text-xs text-gray-05">
-                    {formatDate(row.start_date)} to {formatDate(row.end_date)} ·{" "}
-                    {row.days} {row.days === 1 ? "day" : "days"}
-                  </span>
+                  {row.leave_type_label != null && (
+                    <span className="text-sm font-medium text-black-01">
+                      {row.leave_type_label}
+                    </span>
+                  )}
+                  {((row.start_date != null && row.end_date != null) || row.days != null) && (
+                    <span className="text-xs text-gray-05">
+                      {[
+                        row.start_date != null && row.end_date != null
+                          ? `${formatDate(row.start_date)} to ${formatDate(row.end_date)}`
+                          : "",
+                        row.days != null ? dayCount(row.days) : "",
+                      ].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
                   {(row.over_allowance_by ?? 0) > 0 && (
                     <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-800">
                       {dayCount(row.over_allowance_by ?? 0)} over allowance
                     </span>
                   )}
-                  <span
-                    className={cn(
-                      "ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium",
-                      LEAVE_STATUS[row.display_status]?.tone ??
-                        "bg-gray-05/10 text-gray-06-text",
-                    )}
-                  >
-                    {LEAVE_STATUS[row.display_status]?.label ??
-                      row.display_status}
-                  </span>
+                  {row.display_status != null && (
+                    <span
+                      className={cn(
+                        "ml-auto rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        LEAVE_STATUS[row.display_status]?.tone ??
+                          "bg-gray-05/10 text-gray-06-text",
+                      )}
+                    >
+                      {LEAVE_STATUS[row.display_status]?.label ??
+                        row.display_status}
+                    </span>
+                  )}
                   <span className="text-xs text-primary group-open:hidden">Details</span>
                   <span className="hidden text-xs text-primary group-open:inline">Hide details</span>
                   </summary>
                   <div className="mt-3 grid gap-3 border-t border-white-02 pt-3 text-[13px] sm:grid-cols-2">
+                  {"resumption_date" in row && (
                     <div>
                       <span className="block text-xs text-gray-05">{row.resumption_is_estimate ? "Estimated resumption" : "Resumption date"}</span>
                       {row.resumption_date ? formatDate(row.resumption_date) : "Not set"}
                     </div>
+                  )}
+                  {row.days != null && (
                     <div>
                       <span className="block text-xs text-gray-05">Days</span>
                       {dayCount(row.days)}
                     </div>
+                  )}
                     <div>
                       <span className="block text-xs text-gray-05">Requested by</span>
                       {row.requested_by?.name ?? "Not recorded"}
@@ -994,7 +1022,7 @@ export function LeaveTab({
                   {row.status === "PENDING" && (
                     <div className="sm:col-span-2">
                       <span className="block text-xs text-gray-05">Pending with</span>
-                      {row.approval?.pending_with.length
+                      {row.approval?.pending_with?.length
                         ? row.approval.pending_with.join(", ")
                         : row.approval
                           ? "No approver assigned yet"

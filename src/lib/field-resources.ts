@@ -27,6 +27,8 @@ export const FIELD_RESOURCE = {
   GRADEBOOK_AMENDMENT: "gradebook.amendment",
   ACADEMICS_DEPARTMENT: "academics.department",
   ACADEMICS_ELECTIVES: "academics.electives",
+  /** A member of staff's leave requests, balances and the preview of a request. */
+  LEAVE: "school.leave",
   /** A notice the school posts to its pupils. */
   NOTICES: "school.notices",
   /** Conversations, groups and broadcasts between staff, families and pupils. */

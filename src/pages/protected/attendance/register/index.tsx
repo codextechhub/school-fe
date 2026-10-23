@@ -37,6 +37,7 @@ import { MarkDrawers, type MarkDrawer } from "./mark-drawers";
 import { RegisterRowItem, type RowMode } from "./register-rows";
 import { submitBarNote, submitConfirmText, submittedText } from "./submit-text";
 import { timeOnDay } from "../time-on-day";
+import { onLeaveClause } from "../leave-text";
 
 /**
  * One class's morning register for one day.
@@ -269,9 +270,7 @@ function RegisterHeader({
 
   let takenLine: string | null = null;
   if (takenBy?.on_behalf_of) {
-    const leave = takenBy.on_leave
-      ? `, who is on ${takenBy.on_leave.leave_type_label.toLowerCase()} until ${formatDay(takenBy.on_leave.ends_on)}`
-      : "";
+    const leave = onLeaveClause(takenBy.on_leave, formatDay);
     takenLine = `Taken by ${takenBy.submitted_by}, ${time}, on behalf of ${takenBy.on_behalf_of}${leave}.`;
   } else if (takenBy) {
     takenLine = `Submitted ${time} by ${takenBy.submitted_by}.`;

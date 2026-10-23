@@ -213,8 +213,13 @@ export interface TakenBy {
   submitted_at: string;
   /** The class teacher, when somebody else submitted it. */
   on_behalf_of: string | null;
-  /** The class teacher's approved leave on the day, when they were away. */
-  on_leave: { leave_type: string; leave_type_label: string; ends_on: string } | null;
+  /**
+   * The class teacher's approved leave on the day, when they were away.
+   *
+   * The type and the end date are each left out when the reader may not read
+   * them, which leaves the block saying only that the teacher was on leave.
+   */
+  on_leave: { leave_type?: string; leave_type_label?: string; ends_on?: string } | null;
 }
 
 export interface MarkChange {
@@ -600,8 +605,11 @@ export interface StaffRegisterRow {
   mark?: Exclude<AttendanceMark, "E"> | null;
   arrived_at?: string | null;
   note?: string;
-  /** The approved leave covering the day; absent unless the reader may read leave. */
-  leave?: { id: number; type: string; type_label: string; end_date: string } | null;
+  /**
+   * The approved leave covering the day; absent unless the reader may read leave.
+   * The type and the end date are each left out when the reader may not read them.
+   */
+  leave?: { id: number; type?: string; type_label?: string; end_date?: string } | null;
   /** Somebody leaving: the parts of it the reader may read. */
   exit?: { text: string; label?: string; last_working_day?: string; last_working_day_label?: string } | null;
 }

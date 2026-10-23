@@ -51,6 +51,7 @@ import { PersonAvatar } from "@/pages/protected/students/person-avatar";
 import { cn } from "@/lib/utils";
 import { staffRegisterFieldPolicy } from "./staff-register-policy";
 import { staffGroupProgress, summarizeStaffAttendance } from "./staff-register-state";
+import { leaveLinkText } from "../leave-text";
 
 const STAFF_MARKS: AttendanceMark[] = ["P", "L", "A"];
 
@@ -368,7 +369,7 @@ function StaffLock({ row }: { row: StaffRegisterRow }) {
         <Badge variant="inactive" className="rounded-full">On leave</Badge>
         {row.leave && hasPermission(P.VIEW_LEAVE) ? (
           <Link to={`${profile}?tab=leave`} className="text-xs text-primary hover:underline">
-            {row.leave.type_label} leave to {formatDay(row.leave.end_date)}
+            {leaveLinkText(row.leave, formatDay)}
           </Link>
         ) : null}
       </>

@@ -967,6 +967,41 @@ export interface StaffLeave {
 }
 
 /**
+ * What filing a request would do to the person's standing, before it is filed.
+ *
+ * The server counts `days` on the school's working days and its calendar
+ * closures at the person's branch. Every key is optional because Field Access
+ * removes a hidden one from the payload: an absent key is a line the reader
+ * may not see, never a zero. `allowance`, `remaining` and `remaining_after` are
+ * null where the type has no limit. `exclude` on the request keeps a pending
+ * request being edited from counting against itself.
+ */
+export interface StaffLeavePreview {
+  days?: number;
+  resumption_date?: string | null;
+  leave_type?: string | null;
+  allowance?: number | null;
+  /** Null when no leave type was sent or no academic session covers the first day. */
+  taken?: number | null;
+  /** Null under the same conditions as `taken`. */
+  pending?: number | null;
+  remaining?: number | null;
+  remaining_after?: number | null;
+  over_allowance_by?: number;
+  session?: { id: number; name: string } | null;
+}
+
+/** The question a leave preview answers. */
+export interface StaffLeavePreviewArg {
+  id: number;
+  leave_type: LeaveType;
+  start_date: string;
+  end_date: string;
+  /** The pending request being edited, left out of the standing it is judged against. */
+  exclude?: number;
+}
+
+/**
  * What a form may send. Deliberately without `status`.
  *
  * A status a form can set is a status that disagrees with the instance that
@@ -989,7 +1024,8 @@ export interface StaffLeaveWrite {
  */
 export type StaffLeaveWarning =
   | { code: "LEAVE_OVERLAP"; message: string; leave_ids: number[] }
-  | { code: "OVER_ALLOWANCE"; message: string; over_allowance_by: number };
+  | { code: "OVER_ALLOWANCE"; message: string; over_allowance_by: number }
+  | { code: "NO_APPROVER"; message: string; stage: string };
 
 export interface StaffLeaveFiled {
   leave: StaffLeaveRequest;

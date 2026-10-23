@@ -19,6 +19,8 @@ import type {
   StaffSectionHistoryPage,
   StaffLeave,
   StaffLeaveFiled,
+  StaffLeavePreview,
+  StaffLeavePreviewArg,
   StaffLeaveRequest,
   StaffLeaveWarning,
   StaffLeaveWrite,
@@ -397,6 +399,25 @@ export const staffApi = baseApi.injectEndpoints({
       providesTags: ["StaffLeave"],
     }),
 
+    /**
+     * What a request for these dates would count as, and where it would leave
+     * the person against the type's allowance.
+     *
+     * Counted by the server because the days depend on the school's working
+     * days and its calendar closures at the person's branch. Silent: a failed
+     * preview only hides the figure, and filing still works because the server
+     * counts again on submit.
+     */
+    getStaffLeavePreview: builder.query<Envelope<StaffLeavePreview>, StaffLeavePreviewArg>({
+      query: ({ id, leave_type, start_date, end_date, exclude }) => ({
+        url: `/i/me/staff/${id}/leave/preview/`,
+        method: "GET",
+        params: { leave_type, start_date, end_date, ...(exclude != null && { exclude }) },
+      }),
+      extraOptions: { silent: true },
+      providesTags: ["StaffLeave"],
+    }),
+
     assignStaffLeaveGroup: builder.mutation<Envelope<{ leave_group: StaffLeave["leave_group"] }>, { id: number; group_id: string | null }>({
       query: ({ id, group_id }) => ({ url: `/i/me/staff/${id}/leave-group/`, method: "PUT", body: { group_id } }),
       invalidatesTags: ["StaffLeave", "SchoolStaff"],
@@ -680,6 +701,7 @@ export const {
   useUploadStaffDocumentMutation,
   useDeleteStaffDocumentMutation,
   useGetStaffLeaveQuery,
+  useGetStaffLeavePreviewQuery,
   useAssignStaffLeaveGroupMutation,
   useFileStaffLeaveMutation,
   useUpdateStaffLeaveMutation,
