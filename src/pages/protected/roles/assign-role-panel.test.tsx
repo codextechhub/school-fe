@@ -10,11 +10,18 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * because the whole school is not hers to hand out. A role configured for
  * Lekki grants its own branches, so no branch is named. A role reaching Ikeja
  * is not hers to give, and the panel says so instead of offering it.
+ *
+ * A grant sent for approval turns that person's button to a disabled Pending
+ * approval, whether it was sent a moment ago or read back from the server
+ * after a reload, and only at the branch it was asked at.
  */
 const assign = vi.fn();
+let pendingAnswer = false;
+let waitingRows: { user_id: number; branch_id: number | null }[] = [];
 vi.mock("@/redux/services/roles/roles-api", () => ({
   useAssignRoleMutation: () => [assign, { isLoading: false }],
-  isPendingGrant: () => false,
+  useGetRoleGrantsWaitingQuery: () => ({ data: waitingRows }),
+  isPendingGrant: () => pendingAnswer,
 }));
 vi.mock("@/redux/services/staff/staff-api", () => ({
   useGetStaffListQuery: () => ({
@@ -49,6 +56,8 @@ describe("AssignRolePanel", () => {
 
   beforeEach(() => {
     reader = BELLO;
+    pendingAnswer = false;
+    waitingRows = [];
     assign.mockReset();
     assign.mockReturnValue({ unwrap: () => Promise.resolve({ data: {} }) });
     container = document.createElement("div");
@@ -101,6 +110,37 @@ describe("AssignRolePanel", () => {
     await render([]);
     await act(async () => button("Give this role to somebody")!.click());
     expect(container.textContent).toContain("Works beyond your branch");
+    expect([...container.querySelectorAll("button")].filter((b) => b.textContent === "Give")).toHaveLength(1);
+  });
+
+  const pendingButton = () =>
+    [...container.querySelectorAll("button")].find((b) => b.textContent === "Pending approval");
+
+  it("turns Give into a disabled Pending approval once the grant goes for approval", async () => {
+    pendingAnswer = true;
+    await render([]);
+    await openAndGive();
+
+    expect(pendingButton()).toBeDefined();
+    expect(pendingButton()!.disabled).toBe(true);
+    expect([...container.querySelectorAll("button")].filter((b) => b.textContent === "Give")).toHaveLength(0);
+  });
+
+  it("shows a grant already waiting at the reader's branch as Pending approval after a reload", async () => {
+    waitingRows = [{ user_id: 70, branch_id: 2 }];
+    await render([]);
+    await act(async () => button("Give this role to somebody")!.click());
+
+    expect(pendingButton()!.disabled).toBe(true);
+    expect(assign).not.toHaveBeenCalled();
+  });
+
+  it("still offers Give when the waiting grant is at another branch", async () => {
+    waitingRows = [{ user_id: 70, branch_id: 1 }];
+    await render([]);
+    await act(async () => button("Give this role to somebody")!.click());
+
+    expect(pendingButton()).toBeUndefined();
     expect([...container.querySelectorAll("button")].filter((b) => b.textContent === "Give")).toHaveLength(1);
   });
 });

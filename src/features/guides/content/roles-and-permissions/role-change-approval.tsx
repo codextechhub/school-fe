@@ -2,7 +2,7 @@ import { GuideCallout, GuideChecklist, GuideSection, GuideStep, GuideSteps } fro
 
 const PROBLEMS = [
   ["A permission you ticked is not working", "Open the role. If it is listed under Waiting for approval, it has not been granted yet. It takes effect once the request is approved."],
-  ["Someone you gave a role to still cannot do the job", "The grant may be waiting for approval. The message when you gave it said so, and the person's staff profile lists it under Waiting for approval."],
+  ["Someone you gave a role to still cannot do the job", "The grant may be waiting for approval. On the role's People tab their button reads Pending approval, and the person's staff profile lists it under Waiting for approval."],
   ["You cannot find the request", "Look under Workflow in the sidebar: Approvals holds what waits for your decision, and My Submissions holds what you sent."],
   ["A permission is already waiting", "The editor lists it under Waiting for approval and does not warn about it again. Wait for the first request to be decided."],
 ] as const;
@@ -38,7 +38,7 @@ export default function RoleChangeApprovalArticle() {
       </GuideSection>
 
       <GuideSection id="when-you-give-a-role" title="When you give a role to someone">
-        <p>When you select <strong>Give</strong> on a role&apos;s People tab and the grant needs approval, the message says the role is waiting for approval for that person and takes effect once approved in Approvals. Until then the person does not hold the role, and it does not appear on the role&apos;s People tab.</p>
+        <p>When you select <strong>Give</strong> on a role&apos;s People tab and the grant needs approval, the message says the role is waiting for approval for that person and takes effect once approved in Approvals. Their <strong>Give</strong> button turns to <strong>Pending approval</strong> and cannot be selected again until the request is decided. Until then the person does not hold the role, and it does not appear on the role&apos;s People tab.</p>
         <GuideCallout tone="info" title="Only one administrator?">The request still goes through the approval step. When nobody else is on that step, the request comes to you and you can approve it yourself. When someone else is on that step, they decide.</GuideCallout>
       </GuideSection>
 

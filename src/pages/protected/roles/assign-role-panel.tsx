@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Check, Search, UserPlus, X } from "lucide-react";
+import { Check, Clock, Search, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   isPendingGrant,
   useAssignRoleMutation,
+  useGetRoleGrantsWaitingQuery,
 } from "@/redux/services/roles/roles-api";
 import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
 import { writeErrorMessage } from "@/utils/api-error";
@@ -42,6 +43,14 @@ import { canManageRow } from "@/lib/can-manage";
  * A branch-bound reader also gives roles only to people posted inside their
  * branches. Somebody who works across more than their branch is listed, since
  * they appear in the directory, but without a Give button.
+ *
+ * **A grant sent for approval reads Pending approval until it is decided.** A
+ * role carrying restricted permissions the giver does not hold is not granted
+ * on the click: the server raises a request for Approvals instead. That person's
+ * button turns to a disabled Pending approval at once, and stays so across
+ * reloads because the role's waiting grants are read from the server. It is
+ * matched on the reach being given, as the server matches a duplicate: Ada
+ * waiting at Lekki does not stop her being given the role at Ikeja.
  */
 export function AssignRolePanel({
   roleId,
@@ -81,8 +90,19 @@ export function AssignRolePanel({
   // Only once the panel is open: the drawer's People tab is read first and
   // most of the time only read, and the directory is the larger request.
   const staff = useGetStaffListQuery({ page: 1 }, { skip: !open });
+  const waitingGrants = useGetRoleGrantsWaitingQuery({ role: roleId }, { skip: !open });
+  // Sent this visit, so the button turns before the list reloads.
+  const [sent, setSent] = useState<string[]>([]);
 
   const held = useMemo(() => new Set(heldBy.map(String)), [heldBy]);
+  const waiting = useMemo(
+    () =>
+      new Set([
+        ...(waitingGrants.data ?? []).map((row) => waitKey(row.user_id, row.branch_id)),
+        ...sent,
+      ]),
+    [waitingGrants.data, sent],
+  );
 
   const people = useMemo(() => {
     const rows = staff.data?.data ?? [];
@@ -103,6 +123,7 @@ export function AssignRolePanel({
     try {
       const result = await assign({ user: userId, role: roleId, branch: grantBranch }).unwrap();
       if (isPendingGrant(result.data)) {
+        setSent((keys) => [...keys, waitKey(userId, grantBranch)]);
         toast.info(
           `${roleName} for ${name} is waiting for approval. It takes effect once approved in Approvals.`,
         );
@@ -201,6 +222,7 @@ export function AssignRolePanel({
           <ul className="divide-y divide-border">
             {people.map((person) => {
               const already = held.has(String(person.user_id));
+              const pending = waiting.has(waitKey(person.user_id, grantBranch));
               const reachable = wholeSchool || canManageRow(person);
               return (
                 <li
@@ -222,6 +244,17 @@ export function AssignRolePanel({
                       <Check className="size-3.5" />
                       Holds it
                     </span>
+                  ) : pending ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled
+                      className="shrink-0"
+                      title="Waiting for a decision in Approvals"
+                    >
+                      <Clock />
+                      Pending approval
+                    </Button>
                   ) : !reachable ? (
                     <span className="shrink-0 text-right text-xs text-gray-05">
                       Works beyond your branch
@@ -245,4 +278,9 @@ export function AssignRolePanel({
       )}
     </div>
   );
+}
+
+/** One person's grant at one reach; null is the role's own or the whole school. */
+function waitKey(userId: number | string, branchId: number | null) {
+  return `${userId}:${branchId ?? ""}`;
 }

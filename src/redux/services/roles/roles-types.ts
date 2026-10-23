@@ -199,3 +199,18 @@ export interface RoleHolder {
   assigned_at: string;
   assigned_by_name: string | null;
 }
+
+/**
+ * A grant raised for approval and not yet decided, as a role's screen lists it.
+ *
+ * `branch_id` is the reach it was asked at, matched the way the server refuses
+ * a second request: the same person, role and branch, with null matching null.
+ */
+export interface RoleGrantWaiting {
+  id: number;
+  status: "PENDING";
+  user_id: number;
+  role_key: string;
+  branch_id: number | null;
+  submitted_at: string;
+}

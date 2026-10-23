@@ -10,6 +10,7 @@ import type {
   FieldAccessKind,
   FieldAccessMode,
   NewRole,
+  RoleGrantWaiting,
   RoleHolder,
   RoleUpdate,
   RoleFieldAccessChange,
@@ -274,6 +275,28 @@ export const rolesApi = baseApi.injectEndpoints({
     }),
 
     /**
+     * Every grant of one role still waiting for approval.
+     *
+     * Read beside the holders, so a person whose grant is already on the ladder
+     * reads as waiting rather than as somebody still to be given the role. The
+     * server answers a second request for them with a refusal, so offering it
+     * again only leads there.
+     */
+    getRoleGrantsWaiting: builder.query<RoleGrantWaiting[], { role: number }>({
+      queryFn: ({ role }, _api, _extra, baseQuery) =>
+        fetchAllPages<RoleGrantWaiting, FetchBaseQueryError>(async (page) => {
+          const { data, error } = await baseQuery({
+            url: `${scope()}/role-grant-requests/`,
+            method: "GET",
+            params: { role, page, page_size: 100 },
+          });
+          return error ? { error } : { data: data as PaginatedEnvelope<RoleGrantWaiting> };
+        }),
+      extraOptions: { silent: true },
+      providesTags: (_r, _e, { role }) => [{ type: "Roles", id: `waiting-${role}` }],
+    }),
+
+    /**
      * Give one person a role with the role's configured branch reach.
      *
      * **`user` is the ACCOUNT's id, not the staff record's.** They are two
@@ -345,6 +368,7 @@ export const {
   useSetSchoolRoleStatusMutation,
   useGetRoleHoldersQuery,
   useGetAllRoleHoldersQuery,
+  useGetRoleGrantsWaitingQuery,
   useAssignRoleMutation,
   useRevokeRoleAssignmentMutation,
 } = rolesApi;
