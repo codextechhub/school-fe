@@ -1,3 +1,4 @@
+import { generateQueryString } from "@/utils/helpers";
 import { baseApi } from "../base-api";
 import type { Envelope } from "../onboarding/onboarding-types";
 import type {
@@ -14,12 +15,21 @@ export const exportsApi = baseApi.injectEndpoints({
      * A GET, and nothing is produced by it: it comes back with the config, an
      * estimate, and the filters it could NOT carry. The screen shows that
      * before offering to run anything.
+     *
+     * `entity` is required for an entity-scoped dataset (every Finance and
+     * Procurement screen): the server resolves the set of books before it can
+     * estimate, so without it the call is a 400. It is set last so a screen
+     * filter can never shadow it.
      */
     exportFromScreen: builder.query<
       Envelope<FromScreen>,
-      { screen: string; params?: Record<string, string | number | undefined> }
+      {
+        screen: string;
+        params?: Record<string, string | number | undefined>;
+        entity?: string;
+      }
     >({
-      query: ({ screen, params }) => ({
+      query: ({ screen, params, entity }) => ({
         url: `/exports/from-screen/`,
         method: "GET",
         params: {
@@ -29,6 +39,7 @@ export const exportsApi = baseApi.injectEndpoints({
               ([, v]) => v !== undefined && v !== "" && v !== "all",
             ),
           ),
+          ...(entity ? { entity } : {}),
         },
       }),
     }),
@@ -44,13 +55,19 @@ export const exportsApi = baseApi.injectEndpoints({
      * `silent`: the caller says what failed. The Export Centre also defines
      * `runQuickExport` (`dashboard/exports-api.ts`) on the same api, silent,
      * and whichever module loads first supplies the one definition both hooks
-     * use, so the two must agree on who reports a failure.
+     * use, so the two must agree on who reports a failure, and on where
+     * `entity` goes: in the query string, never the body, which the server
+     * does not read for scope.
      */
     runQuickExport: builder.mutation<
       Envelope<QuickExportResult>,
-      ExportConfig & { sync?: boolean }
+      ExportConfig & { sync?: boolean; entity?: string }
     >({
-      query: (body) => ({ url: `/exports/quick/`, method: "POST", body }),
+      query: ({ entity, ...body }) => ({
+        url: `/exports/quick/${generateQueryString(entity ? { entity } : {})}`,
+        method: "POST",
+        body,
+      }),
       extraOptions: { silent: true },
     }),
   }),

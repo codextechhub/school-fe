@@ -54,6 +54,11 @@ import type { FromScreen } from "@/redux/services/exports/exports-types";
  * could act on. Gated rather than removed, so the day a school is granted
  * `exports.catalogue.view` and `exports.run.create` these six buttons appear
  * with no further work.
+ *
+ * **`entity` goes to both calls.** A Finance or Procurement dataset reads one
+ * set of books, and the server resolves which from `?entity=` before it can
+ * estimate or run anything; without it both calls answer 400. Academic screens
+ * read the whole tenant and pass none.
  */
 
 /** The date window when the file covers only the recent part of the list, else null. */
@@ -65,12 +70,15 @@ export function ExportButton({
   screen,
   params,
   label = "Export",
+  entity,
 }: {
   /** The binding key, e.g. "academics.subjects". */
   screen: string;
   /** The screen's live filters, exactly as its own query sends them. */
   params: Record<string, string | number | undefined>;
   label?: string;
+  /** The ledger entity code, for an entity-scoped dataset. */
+  entity?: string;
 }) {
   const tenantIsPending = useAppSelector(selectTenantIsPending);
   const { hasAllPermissions } = usePermissions();
@@ -81,7 +89,7 @@ export function ExportButton({
 
   const start = async () => {
     try {
-      const prepared = await prepare({ screen, params }).unwrap();
+      const prepared = await prepare({ screen, params, entity }).unwrap();
       const data = prepared.data;
       // Nothing lost and nothing left out: run it rather than asking a question with one answer.
       if (!data.unmapped?.length && !partWindow(data)) return execute(data);
@@ -99,7 +107,7 @@ export function ExportButton({
 
   const execute = async (data: FromScreen) => {
     try {
-      const result = await run({ ...data.config, sync: true }).unwrap();
+      const result = await run({ ...data.config, sync: true, entity }).unwrap();
       toast.success(result.message);
     } catch (error) {
       // The run is silent, so its failure is this button's to say.

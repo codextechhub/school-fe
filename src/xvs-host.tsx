@@ -254,18 +254,18 @@ export const AppLogo: ComponentType<{ animate?: boolean; className?: string }> =
  *
  * Adapted rather than widened. ExportButton requires `params` and takes no
  * booleans; the contract makes params optional and allows them. The gap is
- * closed here, in the host, which is what the host module is for. The props the
- * school button has no concept of - entity, variant, disabledReason - are
- * dropped deliberately: a school runs one set of books, so `entity` is
- * meaningless, and the rest are console styling.
+ * closed here, in the host, which is what the host module is for. `entity` is
+ * passed through: every Finance and Procurement dataset is entity-scoped, and
+ * the server refuses to prepare or run one without it. `variant`,
+ * `disabledReason` and the rest are console styling and are dropped.
  */
-export function QuickExportButton({ screen, params, label }: HostExportProps) {
+export function QuickExportButton({ screen, params, label, entity }: HostExportProps) {
   const scalars: Record<string, string | number | undefined> = {};
   for (const [k, v] of Object.entries(params ?? {})) {
     if (v === undefined) continue;
     scalars[k] = typeof v === "boolean" ? String(v) : v;
   }
-  return <ExportButton screen={screen} params={scalars} label={label} />;
+  return <ExportButton screen={screen} params={scalars} label={label} entity={entity} />;
 }
 
 // This app has no staff-photo service, so the avatar is initials only. That is
