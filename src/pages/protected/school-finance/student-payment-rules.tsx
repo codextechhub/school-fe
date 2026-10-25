@@ -15,7 +15,8 @@
  *
  * One rule for every branch, so a branch-bound reader sees it and cannot save
  * it. Reading needs `school.fees.view`; saving needs `school.fees.update` and a
- * whole-school reach, and a refusal from the server (403) is named as that.
+ * whole-school reach. A reader short of either sees one note saying which, and
+ * a refusal from the server (403) is named as a whole-school matter.
  * School-only, as the fee due date beside it: the endpoint is the FAL's.
  *
  * Laid out as every Finance setting is: a name, its control, and the
@@ -91,7 +92,14 @@ function StudentPaymentRulesForm({ rules }: { rules: StudentPaymentRules }) {
         }
       />
 
-      <ReadOnlyNote reason={reason} subject="these rules" />
+      {reason === "reach" ? (
+        <p className="font-mont text-xs leading-5 text-gray-05">
+          You can read these rules. They apply to every branch, so a whole-school finance
+          administrator can change them.
+        </p>
+      ) : (
+        <ReadOnlyNote reason={reason} subject="these rules" />
+      )}
 
       <HintedPanel
         title="Paying in the student portal"
@@ -123,11 +131,6 @@ function StudentPaymentRulesForm({ rules }: { rules: StudentPaymentRules }) {
           onCheckedChange={setCardOn}
           disabled={!canSave}
         />
-        {!canSave ? (
-          <p className="px-4 pb-4 font-mont text-xs leading-5 text-gray-05 sm:px-5">
-            A whole-school finance administrator can change this.
-          </p>
-        ) : null}
         {cardOn ? (
           <div className="px-4 py-4 sm:px-5">
             <SettingField

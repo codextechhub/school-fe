@@ -133,14 +133,27 @@ describe("the student payment rules panel", () => {
     expect(text).toContain("On: they can also pay by card. Turn it on if many of your parents pay from abroad.");
   });
 
-  it("is read-only for a branch-bound bursar, with no Save button", async () => {
+  it("is read-only for a branch-bound bursar, with one whole-school line and no Save button", async () => {
     write = { canSave: false, reason: "reach" };
     await act(async () => root.render(<StudentPaymentRulesSettings />));
     expect(cardSwitch().getAttribute("aria-checked")).toBe("true");
     expect(cardSwitch().disabled || cardSwitch().getAttribute("aria-disabled") === "true").toBe(true);
     expect((minimumBox() as HTMLInputElement).disabled).toBe(true);
     expect(saveButton()).toBeUndefined();
-    expect(container.textContent).toContain("A whole-school finance administrator can change this.");
+    const text = container.textContent ?? "";
+    expect(text).toContain("a whole-school finance administrator can change them.");
+    expect(text).not.toContain("school administrator's to do");
+    expect(text.match(/You can read/g)).toHaveLength(1);
+  });
+
+  it("tells a reader with no update permission only that the school administrator changes it", async () => {
+    write = { canSave: false, reason: "permission" };
+    await act(async () => root.render(<StudentPaymentRulesSettings />));
+    expect(saveButton()).toBeUndefined();
+    const text = container.textContent ?? "";
+    expect(text).toContain("Changing them is the school administrator's to do.");
+    expect(text).not.toContain("whole-school finance administrator");
+    expect(text.match(/You can read/g)).toHaveLength(1);
   });
 
   it("names a 403 from the server as a whole-school matter", async () => {
