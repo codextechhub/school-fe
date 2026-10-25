@@ -1,3 +1,4 @@
+import { classTeacherText } from "@/hooks/use-class-teacher-access";
 import { useState } from "react";
 import { useParams } from "react-router";
 import { ClipboardList, UsersRound } from "lucide-react";
@@ -298,7 +299,9 @@ function RegisterHeader({
         <DayPicker date={date} today={today} onChange={setDate} />
       </div>
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Fact label="Class teacher" value={register.school_class.class_teacher_name ?? "No class teacher"} />
+        {register.school_class.class_teacher_name !== undefined && (
+          <Fact label="Class teacher" value={classTeacherText(register.school_class.class_teacher_name) ?? ""} />
+        )}
         {register.counts && <Fact label="Students" value={`${register.counts.total}`} />}
         {chip && (
           <div className="min-w-0">

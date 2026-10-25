@@ -26,12 +26,18 @@ import type { SchoolClass } from "@/redux/services/academics/academics-types";
  * **A class with nobody is the row worth seeing**, so it is the one drawn in
  * amber. Most schools fill these in September and never look again, which is
  * exactly when the one that was missed goes unnoticed.
+ *
+ * Set and Change need the teaching assignment permission and Write on the
+ * Class teacher Field Access switch (`canChange`); without Write the server
+ * refuses the change.
  */
 export function ClassTeachers({
   classes,
+  canChange,
   onSet,
 }: {
   classes: SchoolClass[];
+  canChange: boolean;
   onSet: (row: SchoolClass) => void;
 }) {
   if (!classes.length) {
@@ -67,11 +73,13 @@ export function ClassTeachers({
               </span>
             )}
           </span>
-          <PermissionGate permission={P.ASSIGN_TEACHING}>
-            <Button variant="ghost" onClick={() => onSet(row)}>
-              {row.class_teacher ? "Change" : "Set"}
-            </Button>
-          </PermissionGate>
+          {canChange && (
+            <PermissionGate permission={P.ASSIGN_TEACHING}>
+              <Button variant="ghost" onClick={() => onSet(row)}>
+                {row.class_teacher ? "Change" : "Set"}
+              </Button>
+            </PermissionGate>
+          )}
         </li>
       ))}
     </ul>

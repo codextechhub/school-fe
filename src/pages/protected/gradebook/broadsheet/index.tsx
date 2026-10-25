@@ -136,7 +136,15 @@ function BroadsheetBody({ sheet, classKey }: { sheet: Broadsheet; classKey: Clas
 
       <PageHeader
         title={`${sheet.class.name} · broadsheet`}
-        description={[sheet.term.name, sheet.class_teacher ? `class teacher ${sheet.class_teacher.name}` : "no class teacher", `${sheet.rows.length} students`].join(" · ")}
+        description={[
+          sheet.term.name,
+          sheet.class_teacher === undefined
+            ? null
+            : sheet.class_teacher
+              ? `class teacher ${sheet.class_teacher.name}`
+              : "no class teacher",
+          `${sheet.rows.length} students`,
+        ].filter(Boolean).join(" · ")}
         actions={
           <div className="flex flex-wrap gap-2 print-hide">
             <Button variant="outline" onClick={() => window.print()}>

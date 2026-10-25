@@ -1,3 +1,4 @@
+import { useClassTeacherAccess } from "@/hooks/use-class-teacher-access";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
@@ -55,6 +56,7 @@ type CoverageView = "grid" | "teachers";
 export default function TeachingDuties() {
   const navigate = useNavigate();
   const [section, setSection] = useState<Section>("coverage");
+  const teacherAccess = useClassTeacherAccess();
   const [view, setView] = useState<CoverageView>("grid");
   const [pairing, setPairing] = useState<CoverageCell | null>(null);
   const [onlyGaps, setOnlyGaps] = useState(false);
@@ -171,11 +173,14 @@ export default function TeachingDuties() {
                   label: "Subject coverage",
                   icon: BookOpenCheck,
                 },
-                {
-                  value: "classTeachers",
-                  label: "Class teachers",
-                  icon: UserRoundCheck,
-                },
+                // A view of nothing but class teachers has nothing to show a reader who may not see them.
+                ...(teacherAccess.hidden
+                  ? []
+                  : [{
+                      value: "classTeachers" as const,
+                      label: "Class teachers",
+                      icon: UserRoundCheck,
+                    }]),
                 {
                   value: "clashes",
                   label: "Timetable clashes",
@@ -362,7 +367,7 @@ export default function TeachingDuties() {
         </Surface>
       )}
 
-      {section === "classTeachers" && (
+      {section === "classTeachers" && !teacherAccess.hidden && (
         <Surface as="section" className="px-4 py-5 sm:px-6">
           <div className="mb-4">
             <h2 className="text-sm font-semibold text-black-01">
@@ -383,6 +388,7 @@ export default function TeachingDuties() {
             <>
               <ClassTeachers
                 classes={classes}
+                canChange={teacherAccess.canChange}
                 onSet={(row: SchoolClass) =>
                   setDrawer({
                     kind: "classTeacher",

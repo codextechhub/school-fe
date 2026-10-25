@@ -158,8 +158,12 @@ export interface SchoolClass extends Scoped {
    * class has one class teacher. `staff_id` is the STAFF record, not the
    * account - a class teacher who has left stops being one when their record
    * says so, rather than when somebody remembers to close a login.
+   *
+   * Absent where Field Access hides the Class teacher switch, which is not the
+   * same as null: hidden is a fact the reader is not told, null is a class
+   * with nobody.
    */
-  class_teacher: { staff_id: number; name: string } | null;
+  class_teacher?: { staff_id: number; name: string } | null;
 }
 
 /** A person named on a record, as `{id, name}`. */

@@ -62,7 +62,8 @@ export interface NotTakenRow {
   class_id: number;
   class_name: string;
   level_name: string;
-  class_teacher_name: string | null;
+  /** Null for a class with no class teacher; absent where Field Access hides who it is. */
+  class_teacher_name?: string | null;
   branch: BranchRef | null;
   reminded: boolean;
 }
@@ -244,7 +245,8 @@ export interface Register {
   school_class: {
     id: number;
     name: string;
-    class_teacher_name: string | null;
+    /** Null for a class with no class teacher; absent where Field Access hides who it is. */
+    class_teacher_name?: string | null;
     branch: BranchRef | null;
   };
   date: string;
@@ -500,7 +502,7 @@ export interface Report {
     class_id: number;
     class_name: string;
     level_name: string;
-    class_teacher_name: string | null;
+    class_teacher_name?: string | null;
     branch: BranchRef | null;
   }[];
   branch_dimension: boolean;

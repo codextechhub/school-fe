@@ -1,3 +1,4 @@
+import { useClassTeacherAccess } from "@/hooks/use-class-teacher-access";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import { ArrowRight, BookOpenCheck, CircleCheck, TriangleAlert } from "lucide-react";
@@ -177,6 +178,7 @@ function CompactMetric({
 
 function ClassTable({ hub, rows }: { hub: Hub; rows: HubClass[] }) {
   const navigate = useNavigate();
+  const teacherHidden = useClassTeacherAccess().hidden;
   const placeHeader = hub.branch_dimension ? "Branch" : "Programme";
 
   return (
@@ -189,7 +191,13 @@ function ClassTable({ hub, rows }: { hub: Hub; rows: HubClass[] }) {
         <span className="text-xs text-gray-06">{rows.length} shown</span>
       </div>
       <CustomTable
-        tableHeaderList={["Class", placeHeader, "Subject sheets", "Stage", "Class teacher"]}
+        tableHeaderList={[
+          "Class",
+          placeHeader,
+          "Subject sheets",
+          "Stage",
+          ...(teacherHidden ? [] : ["Class teacher"]),
+        ]}
         defaultBodyList={rows}
         hidePagination
         emptyText="No class at this stage"
@@ -217,7 +225,7 @@ function ClassTable({ hub, rows }: { hub: Hub; rows: HubClass[] }) {
               )}
             </span>
           ),
-          "Class teacher": row.class_teacher?.name ?? "No class teacher",
+          ...(teacherHidden ? {} : { "Class teacher": row.class_teacher?.name ?? "No class teacher" }),
         }))}
       />
     </Panel>

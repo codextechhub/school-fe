@@ -1,3 +1,4 @@
+import { useClassTeacherAccess } from "@/hooks/use-class-teacher-access";
 import { useState } from "react";
 import { Link } from "react-router";
 import { ClipboardCheck, TriangleAlert } from "lucide-react";
@@ -218,12 +219,13 @@ function NotTakenPanel({
   const showActions = canRemind || canTake;
   const [remind, { isLoading, originalArgs }] = useRemindClassTeacherMutation();
   const scopeHeader = branchDimension ? "Branch" : "Level";
+  const teacherHidden = useClassTeacherAccess().hidden;
 
   const send = async (row: NotTakenRow) => {
     const result = await remind({ classId: row.class_id, date });
     if (!("error" in result)) {
       toast.success("Reminder sent", {
-        description: `${row.class_teacher_name} gets it in the app and by email.`,
+        description: `${row.class_teacher_name ?? "The class teacher"} gets it in the app and by email.`,
       });
     }
   };
@@ -238,11 +240,16 @@ function NotTakenPanel({
         <EmptyLine text="Every register for this day has been taken." />
       ) : (
         <CustomTable
-          tableHeaderList={["Class", "Class teacher", scopeHeader, ...(showActions ? ["Action"] : [])]}
+          tableHeaderList={[
+            "Class",
+            ...(teacherHidden ? [] : ["Class teacher"]),
+            scopeHeader,
+            ...(showActions ? ["Action"] : []),
+          ]}
           defaultBodyList={rows}
           tableBodyList={rows.map((row) => ({
             Class: <span className="font-medium text-black-01">{row.class_name}</span>,
-            "Class teacher": row.class_teacher_name ?? "No class teacher",
+            ...(teacherHidden ? {} : { "Class teacher": row.class_teacher_name ?? "No class teacher" }),
             [scopeHeader]: branchDimension ? row.branch?.name ?? "No branch" : row.level_name,
             ...(showActions
               ? {
@@ -278,10 +285,11 @@ function NotTakenPanel({
 /**
  * Remind, or say why not: already reminded today, or nobody to remind
  * because the class has no class teacher (which the server would refuse).
+ * A name left out by Field Access is not nobody: the reminder still goes.
  */
 function RemindCell({ row, busy, onRemind }: { row: NotTakenRow; busy: boolean; onRemind: () => void }) {
   if (row.reminded) return <Badge variant="inactive" className="rounded-full">Reminded</Badge>;
-  if (!row.class_teacher_name) return <span className="text-xs text-gray-05">Nobody to remind</span>;
+  if (row.class_teacher_name === null) return <span className="text-xs text-gray-05">Nobody to remind</span>;
   return (
     <Button
       variant="outline"

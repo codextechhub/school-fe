@@ -1,3 +1,4 @@
+import { classTeacherText, useClassTeacherAccess } from "@/hooks/use-class-teacher-access";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -69,6 +70,7 @@ type DirectoryEntries = Record<number, DirectoryEntry>;
  * label in the focused panel.
  */
 export default function ClassRegisters() {
+  const teacherHidden = useClassTeacherAccess().hidden;
   const { hasPermission } = usePermissions();
   const access = useFieldAccess(FIELD_RESOURCE.ATTENDANCE_REGISTER);
   const { date, today, setDate } = useAttendanceDay();
@@ -222,7 +224,7 @@ export default function ClassRegisters() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search class or teacher"
+                  placeholder={teacherHidden ? "Search classes" : "Search class or teacher"}
                   className="pl-9"
                 />
               </label>
@@ -251,7 +253,7 @@ export default function ClassRegisters() {
             </div>
 
             <div className="hidden grid-cols-[minmax(180px,1.4fr)_minmax(130px,0.85fr)_110px_20px] gap-3 bg-white-05 px-4 py-2.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-05 md:grid">
-              <span>Class and teacher</span>
+              <span>{teacherHidden ? "Class" : "Class and teacher"}</span>
               {fieldPolicy.showCounts ? <span>Attendance</span> : <span />}
               {fieldPolicy.showStatus ? <span>Status</span> : <span />}
               <span />
@@ -410,8 +412,9 @@ function ClassRegisterRow({
         <span className="min-w-0">
           <span className="block truncate text-sm font-medium text-black-01">{schoolClass.name}</span>
           <span className="mt-0.5 block truncate text-xs text-gray-05">
-            {schoolClass.class_teacher?.name ?? "No class teacher"}
-            {schoolClass.branch_name ? ` · ${schoolClass.branch_name}` : ` · ${schoolClass.level_name}`}
+            {[classTeacherText(schoolClass.class_teacher), schoolClass.branch_name || schoolClass.level_name]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
         </span>
       </span>
@@ -543,12 +546,14 @@ function RegisterFocus({
           {showStatus && <RegisterStatusBadge register={register} />}
         </div>
         <div className="mt-4 flex min-w-0 flex-wrap items-end justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-05">Class teacher</p>
-            <p className="mt-1 truncate text-sm font-medium text-black-01">
-              {register.school_class.class_teacher_name ?? "No class teacher"}
-            </p>
-          </div>
+          {register.school_class.class_teacher_name !== undefined && (
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-gray-05">Class teacher</p>
+              <p className="mt-1 truncate text-sm font-medium text-black-01">
+                {classTeacherText(register.school_class.class_teacher_name)}
+              </p>
+            </div>
+          )}
           <p className="text-xs text-gray-05">
             {register.school_class.branch?.name ?? schoolClass.level_name}
           </p>

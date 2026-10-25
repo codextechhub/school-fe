@@ -872,16 +872,15 @@ export interface ClassTeacherWrite {
 }
 
 /**
- * The designation lives on the class, not on an assignment.
+ * The answer to setting or clearing a class's class teacher.
  *
- * **This is the only way to read it.** No class serializer exposes
- * `SchoolClass.class_teacher`, so the current holder is knowable only from what
- * a write returns. The Class teachers panel needs that field on the academics
- * classes read before it can be built.
+ * The designation lives on the class, not on an assignment. `class_teacher` is
+ * the holder now, null once cleared, and absent where Field Access hides the
+ * Class teacher switch.
  */
 export interface ClassTeacherResult {
   school_class: { id: number; name: string };
-  class_teacher: StaffActor | null;
+  class_teacher?: StaffActor | null;
 }
 
 // ── Leave ──────────────────────────────────────────────────────────────────

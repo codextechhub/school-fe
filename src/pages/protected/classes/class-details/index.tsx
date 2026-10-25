@@ -1,3 +1,4 @@
+import { useClassTeacherAccess } from "@/hooks/use-class-teacher-access";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router";
 import {
@@ -97,8 +98,9 @@ export default function ClassDetails() {
   const mine = canManageRow(klass);
   const canEdit =
     hasPermission(P.MODIFY_CLASS) && !readOnlyYear && klass?.is_active !== false && mine;
+  const teacherAccess = useClassTeacherAccess();
   const canAssignTeacher =
-    hasPermission(P.ASSIGN_TEACHING) && !readOnlyYear && mine;
+    hasPermission(P.ASSIGN_TEACHING) && !readOnlyYear && mine && teacherAccess.canChange;
   const historyHidden = useFieldAccess(FIELD_RESOURCE.ACADEMICS_CLASSES).isHidden(
     "class_teacher_history",
   );
@@ -129,7 +131,9 @@ export default function ClassDetails() {
   }
 
   const teacherHistory = historyHidden ? undefined : klass.class_teacher_history;
-  const teacherNow = teacherHistory ? currentState(teacherHistory) : null;
+  // Without the current holder the history ends at the last closed term, which is not "nobody since".
+  const teacherNow =
+    teacherHistory && !teacherAccess.hidden ? currentState(teacherHistory) : null;
   const seatsUsed = rosterData?.seats_used;
   const capacity = rosterData?.capacity ?? klass.capacity;
   const rosterAvailable = canBrowseStudents && !rosterError;
@@ -208,12 +212,14 @@ export default function ClassDetails() {
         className="grid grid-cols-2 gap-3 lg:grid-cols-4"
         aria-label="Class summary"
       >
-        <SummaryCard
-          icon={UserRoundCheck}
-          label="Class teacher"
-          value={klass.class_teacher?.name ?? "Not assigned"}
-          subdued={!klass.class_teacher}
-        />
+        {!teacherAccess.hidden && (
+          <SummaryCard
+            icon={UserRoundCheck}
+            label="Class teacher"
+            value={klass.class_teacher?.name ?? "Not assigned"}
+            subdued={!klass.class_teacher}
+          />
+        )}
         <SummaryCard
           icon={Users}
           label="Students"
@@ -274,56 +280,60 @@ export default function ClassDetails() {
         </Panel>
 
         <div className="grid min-w-0 content-start gap-5">
-          <Panel
-            as="section"
-            className="overflow-hidden"
-            aria-labelledby="teacher-heading"
-          >
-            <div className="border-b border-border px-4 py-3">
-              <h2 id="teacher-heading" className="font-semibold text-black-01">
-                Class teacher
-              </h2>
-              <p className="mt-0.5 text-xs text-gray-05">
-                The main contact for this class.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 px-4 py-4">
-              <span className="grid size-10 shrink-0 place-content-center rounded-full bg-primary/10 text-primary">
-                <UserRoundCheck className="size-5" />
-              </span>
-              <div className="min-w-0 flex-1">
-                <p
-                  className={cn(
-                    "text-sm font-semibold",
-                    klass.class_teacher ? "truncate text-black-01" : "text-amber-700",
-                  )}
-                >
-                  {klass.class_teacher?.name ?? "No class teacher assigned"}
-                </p>
+          {(!teacherAccess.hidden || teacherHistory) && (
+            <Panel
+              as="section"
+              className="overflow-hidden"
+              aria-labelledby="teacher-heading"
+            >
+              <div className="border-b border-border px-4 py-3">
+                <h2 id="teacher-heading" className="font-semibold text-black-01">
+                  Class teacher
+                </h2>
                 <p className="mt-0.5 text-xs text-gray-05">
-                  {teacherNow?.since
-                    ? sinceLine(teacherNow, !!klass.class_teacher)
-                    : klass.class_teacher
-                      ? "Currently assigned"
-                      : "This class needs a teacher"}
+                  The main contact for this class.
                 </p>
               </div>
-              {canAssignTeacher && klass.is_active && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => setAssigningTeacher(true)}
-                >
-                  {klass.class_teacher ? "Change" : "Assign"}
-                </Button>
+              {!teacherAccess.hidden && (
+                <div className="flex items-center gap-3 px-4 py-4">
+                  <span className="grid size-10 shrink-0 place-content-center rounded-full bg-primary/10 text-primary">
+                    <UserRoundCheck className="size-5" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className={cn(
+                        "text-sm font-semibold",
+                        klass.class_teacher ? "truncate text-black-01" : "text-amber-700",
+                      )}
+                    >
+                      {klass.class_teacher?.name ?? "No class teacher assigned"}
+                    </p>
+                    <p className="mt-0.5 text-xs text-gray-05">
+                      {teacherNow?.since
+                        ? sinceLine(teacherNow, !!klass.class_teacher)
+                        : klass.class_teacher
+                          ? "Currently assigned"
+                          : "This class needs a teacher"}
+                    </p>
+                  </div>
+                  {canAssignTeacher && klass.is_active && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setAssigningTeacher(true)}
+                    >
+                      {klass.class_teacher ? "Change" : "Assign"}
+                    </Button>
+                  )}
+                </div>
               )}
-            </div>
-            {teacherHistory && (
-              <div className="border-t border-border px-4 py-3">
-                <ClassTeacherHistoryList terms={teacherHistory} />
-              </div>
-            )}
-          </Panel>
+              {teacherHistory && (
+                <div className={cn("px-4 py-3", !teacherAccess.hidden && "border-t border-border")}>
+                  <ClassTeacherHistoryList terms={teacherHistory} />
+                </div>
+              )}
+            </Panel>
+          )}
 
           <CapacityPanel
             capacity={capacity}

@@ -68,10 +68,13 @@ export function ClassTeacherDrawer({
         school_class: schoolClassId,
         staff: staffId ? Number(staffId) : null,
       }).unwrap();
+      const holder = result.data.class_teacher;
       toast.success(
-        result.data.class_teacher
-          ? `${result.data.class_teacher.name} is responsible for ${className}.`
-          : `${className} has no class teacher.`,
+        holder === undefined
+          ? `${className} is saved.`
+          : holder
+            ? `${holder.name} is responsible for ${className}.`
+            : `${className} has no class teacher.`,
       );
       onClose();
     } catch (error) {

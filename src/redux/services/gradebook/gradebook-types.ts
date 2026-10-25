@@ -328,7 +328,8 @@ export interface HubClass {
   stage: ClassStage;
   /** The principal sent it back to its class teacher. */
   returned: boolean;
-  class_teacher: Ref | null;
+  /** Null for a class with none; absent where Field Access hides who it is. */
+  class_teacher?: Ref | null;
 }
 
 /** A sheet due this term that is not in, with the reason the platform knows. */
@@ -436,7 +437,8 @@ export interface BroadsheetRow {
 export interface Broadsheet {
   class: Ref;
   term: Ref;
-  class_teacher: Ref | null;
+  /** Null for a class with none; absent where Field Access hides who it is. */
+  class_teacher?: Ref | null;
   stage: ClassStage;
   /** The principal sent the class back to its class teacher, with a note. */
   returned: { by: string | null; at: string; note?: string } | null;
@@ -498,7 +500,8 @@ export interface ApprovalRow {
   class: Ref;
   /** Null at a school with one branch. */
   branch: Ref | null;
-  class_teacher: Ref | null;
+  /** Null for a class with none; absent where Field Access hides who it is. */
+  class_teacher?: Ref | null;
   subjects_in: number;
   subjects_due: number;
   stage: ClassStage;

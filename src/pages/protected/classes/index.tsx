@@ -1,3 +1,4 @@
+import { useClassTeacherAccess } from "@/hooks/use-class-teacher-access";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import {
@@ -65,6 +66,7 @@ export default function Classes() {
   const navigate = useNavigate();
   const { lens, branch, multiBranch, readOnlyYear } = useAcademicsLens();
   const { hasPermission } = usePermissions();
+  const teacherHidden = useClassTeacherAccess().hidden;
 
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState<number | "all">("all");
@@ -328,7 +330,7 @@ export default function Classes() {
             "Level",
             "Arm",
             ...(multiBranch ? ["Scope"] : []),
-            "Class Teacher",
+            ...(teacherHidden ? [] : ["Class Teacher"]),
             "Capacity",
             "Subjects",
             "Status",
@@ -340,7 +342,7 @@ export default function Classes() {
             Level: c.level_name,
             Arm: c.arm || "-",
             ...(multiBranch ? { Scope: c.scope_label ?? "School-wide" } : {}),
-            "Class Teacher": c.class_teacher?.name ?? "Not assigned",
+            ...(teacherHidden ? {} : { "Class Teacher": c.class_teacher?.name ?? "Not assigned" }),
             // Spelled out rather than left blank: no limit is a state the
             // school chose, and an empty cell reads as missing data.
             Capacity: c.capacity != null ? String(c.capacity) : "No limit",
@@ -511,20 +513,22 @@ function ClassCard({
         </div>
       </div>
 
-      <div className="mt-4 flex min-w-0 items-center gap-2 rounded-lg bg-white-03 px-3 py-2.5">
-        <UserRoundCheck className="size-4 shrink-0 text-primary" />
-        <div className="min-w-0">
-          <p className="text-[11px] text-gray-05">Class teacher</p>
-          <p
-            className={cn(
-              "truncate text-sm font-medium",
-              klass.class_teacher ? "text-black-01" : "text-amber-700",
-            )}
-          >
-            {klass.class_teacher?.name ?? "No class teacher assigned"}
-          </p>
+      {klass.class_teacher !== undefined && (
+        <div className="mt-4 flex min-w-0 items-center gap-2 rounded-lg bg-white-03 px-3 py-2.5">
+          <UserRoundCheck className="size-4 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <p className="text-[11px] text-gray-05">Class teacher</p>
+            <p
+              className={cn(
+                "truncate text-sm font-medium",
+                klass.class_teacher ? "text-black-01" : "text-amber-700",
+              )}
+            >
+              {klass.class_teacher?.name ?? "No class teacher assigned"}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="mt-3 grid grid-cols-2 divide-x divide-border rounded-lg border border-border">
         <Stat label="Subjects" value={String(klass.subject_count)} />

@@ -1,3 +1,4 @@
+import { classTeacherText } from "@/hooks/use-class-teacher-access";
 import { useState } from "react";
 import { Link } from "react-router";
 import { ArrowRight, LockKeyhole, Stamp } from "lucide-react";
@@ -258,7 +259,7 @@ function ApprovalRowButton({
   onOpen: () => void;
 }) {
   const { formatDate } = useSchoolDisplay(row.branch?.id ?? null);
-  const teacher = row.class_teacher?.name ?? "No class teacher";
+  const teacher = classTeacherText(row.class_teacher);
   const scope = branchDimension ? row.branch?.name : null;
   const status = row.published_at ? `Published ${formatDate(row.published_at)}` : "Ready for decision";
 
@@ -285,7 +286,7 @@ function ApprovalRowButton({
             </span>
           </span>
           <span className="hidden min-w-0 flex-1 sm:block">
-            <span className="block truncate text-sm text-black-01">{teacher}</span>
+            {teacher && <span className="block truncate text-sm text-black-01">{teacher}</span>}
             <span className="mt-0.5 block text-xs text-gray-06">{status}</span>
           </span>
           {row.held.length > 0 && (
@@ -316,7 +317,7 @@ function ApprovalDetail({
 }) {
   const { formatDate } = useSchoolDisplay(row.branch?.id ?? null);
   const stage = CLASS_STAGE[row.stage];
-  const teacher = row.class_teacher?.name ?? "No class teacher";
+  const teacher = classTeacherText(row.class_teacher);
 
   return (
     <Panel as="section" className="space-y-3 p-4 lg:sticky lg:top-4">
@@ -324,7 +325,7 @@ function ApprovalDetail({
         <div className="min-w-0">
           <h2 className="font-mont text-base font-semibold text-black-01">{row.class.name}</h2>
           <p className="mt-0.5 text-xs text-gray-06">
-            {teacher}{branchDimension && row.branch ? ` · ${row.branch.name}` : ""}
+            {[teacher, branchDimension ? row.branch?.name : null].filter(Boolean).join(" · ")}
           </p>
         </div>
         <Badge variant={stage.variant} className="shrink-0 rounded-full">
@@ -334,7 +335,7 @@ function ApprovalDetail({
 
       <dl className="grid grid-cols-2 gap-2">
         <DetailFact label="Subjects received" value={`${row.subjects_in} of ${row.subjects_due}`} />
-        <DetailFact label="Class teacher" value={teacher} />
+        {teacher && <DetailFact label="Class teacher" value={teacher} />}
         <DetailFact label="Results held" value={String(row.held.length)} />
         <DetailFact
           label={row.published_at ? "Published" : "Decision"}

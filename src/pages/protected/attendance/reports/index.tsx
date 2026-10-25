@@ -1,3 +1,4 @@
+import { useClassTeacherAccess } from "@/hooks/use-class-teacher-access";
 import { useMemo, useState } from "react";
 import { Link } from "react-router";
 import {
@@ -768,6 +769,7 @@ function Chronic({ report }: { report: Report }) {
 /** Every day a class owed a register and none was submitted, newest first, a page at a time. */
 function NotTaken({ report }: { report: Report }) {
   const { formatDay } = useSchoolDisplay();
+  const teacherHidden = useClassTeacherAccess().hidden;
   const [page, setPage] = useState(1);
   const rows = report.not_taken ?? [];
   const scope = report.branch_dimension ? "Branch" : "Level";
@@ -782,7 +784,7 @@ function NotTaken({ report }: { report: Report }) {
         <EmptyLine text="Every register in this term was taken." />
       ) : (
         <CustomTable
-          tableHeaderList={["Date", "Class", "Class teacher", scope]}
+          tableHeaderList={["Date", "Class", ...(teacherHidden ? [] : ["Class teacher"]), scope]}
           defaultBodyList={shown}
           tableBodyList={shown.map((row) => ({
             Date: (
@@ -794,7 +796,7 @@ function NotTaken({ report }: { report: Report }) {
               </Link>
             ),
             Class: row.class_name,
-            "Class teacher": row.class_teacher_name ?? "No class teacher",
+            ...(teacherHidden ? {} : { "Class teacher": row.class_teacher_name ?? "No class teacher" }),
             [scope]: report.branch_dimension ? row.branch?.name ?? "No branch" : row.level_name,
           }))}
           currentPage={page}
