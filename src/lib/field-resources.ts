@@ -25,6 +25,8 @@ export const FIELD_RESOURCE = {
   GRADEBOOK_HOLD: "gradebook.hold",
   GRADEBOOK_SETUP: "gradebook.setup",
   GRADEBOOK_AMENDMENT: "gradebook.amendment",
+  /** A class's past class teachers, and who changed them. */
+  ACADEMICS_CLASSES: "academics.classes",
   ACADEMICS_DEPARTMENT: "academics.department",
   ACADEMICS_ELECTIVES: "academics.electives",
   /** A member of staff's leave requests, balances and the preview of a request. */

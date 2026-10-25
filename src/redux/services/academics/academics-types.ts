@@ -154,13 +154,46 @@ export interface SchoolClass extends Scoped {
   /**
    * The teacher responsible for this class, or null where nobody is.
    *
-   * The designation is M12's and lives on the class because uniqueness is a
-   * property of the class: one class has one class teacher. `staff_id` is the
-   * STAFF record, not the account - a class teacher who has left stops being
-   * one when their record says so, rather than when somebody remembers to
-   * close a login.
+   * It lives on the class because uniqueness is a property of the class: one
+   * class has one class teacher. `staff_id` is the STAFF record, not the
+   * account - a class teacher who has left stops being one when their record
+   * says so, rather than when somebody remembers to close a login.
    */
   class_teacher: { staff_id: number; name: string } | null;
+}
+
+/** A person named on a record, as `{id, name}`. */
+export interface NamedUser {
+  id: number;
+  name: string;
+}
+
+/**
+ * One stretch of somebody being a class's class teacher.
+ *
+ * `ended_at` is null for the person holding the class now. `started_at` is null
+ * where they held it before the school's history of the class begins.
+ * `set_by` and `ended_by` are the administrators who made each change: null
+ * where nobody is recorded, absent where Field Access hides them.
+ */
+export interface ClassTeacherTerm {
+  id: number;
+  staff_id: number;
+  name: string;
+  started_at: string | null;
+  ended_at: string | null;
+  set_by?: NamedUser | null;
+  ended_by?: NamedUser | null;
+}
+
+/**
+ * One class as its own page reads it.
+ *
+ * `class_teacher_history` is this year's terms, newest first, and is absent
+ * where Field Access hides it.
+ */
+export interface SchoolClassDetail extends SchoolClass {
+  class_teacher_history?: ClassTeacherTerm[];
 }
 
 export interface SubjectOffering {

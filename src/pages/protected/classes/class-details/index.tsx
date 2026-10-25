@@ -43,6 +43,11 @@ import type { StudentRow } from "@/redux/services/students/students-types";
 import type { Pagination } from "@/redux/services/onboarding/onboarding-types";
 import { routesPath } from "@/routes/routesPath";
 import { ClassDrawer } from "../class-drawer";
+import { currentState, type CurrentState } from "../class-teacher-history";
+import { ClassTeacherHistoryList } from "../class-teacher-history-list";
+import { useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
+import { formatDate } from "@/pages/protected/students/format";
 import { canManageRow } from "@/lib/can-manage";
 
 /**
@@ -94,6 +99,9 @@ export default function ClassDetails() {
     hasPermission(P.MODIFY_CLASS) && !readOnlyYear && klass?.is_active !== false && mine;
   const canAssignTeacher =
     hasPermission(P.ASSIGN_TEACHING) && !readOnlyYear && mine;
+  const historyHidden = useFieldAccess(FIELD_RESOURCE.ACADEMICS_CLASSES).isHidden(
+    "class_teacher_history",
+  );
 
   async function saveClass(body: ClassWrite) {
     if (!klass) return;
@@ -120,6 +128,8 @@ export default function ClassDetails() {
     );
   }
 
+  const teacherHistory = historyHidden ? undefined : klass.class_teacher_history;
+  const teacherNow = teacherHistory ? currentState(teacherHistory) : null;
   const seatsUsed = rosterData?.seats_used;
   const capacity = rosterData?.capacity ?? klass.capacity;
   const rosterAvailable = canBrowseStudents && !rosterError;
@@ -284,16 +294,18 @@ export default function ClassDetails() {
               <div className="min-w-0 flex-1">
                 <p
                   className={cn(
-                    "truncate text-sm font-semibold",
-                    klass.class_teacher ? "text-black-01" : "text-amber-700",
+                    "text-sm font-semibold",
+                    klass.class_teacher ? "truncate text-black-01" : "text-amber-700",
                   )}
                 >
                   {klass.class_teacher?.name ?? "No class teacher assigned"}
                 </p>
                 <p className="mt-0.5 text-xs text-gray-05">
-                  {klass.class_teacher
-                    ? "Currently assigned"
-                    : "This class needs a teacher"}
+                  {teacherNow?.since
+                    ? sinceLine(teacherNow, !!klass.class_teacher)
+                    : klass.class_teacher
+                      ? "Currently assigned"
+                      : "This class needs a teacher"}
                 </p>
               </div>
               {canAssignTeacher && klass.is_active && (
@@ -306,6 +318,11 @@ export default function ClassDetails() {
                 </Button>
               )}
             </div>
+            {teacherHistory && (
+              <div className="border-t border-border px-4 py-3">
+                <ClassTeacherHistoryList terms={teacherHistory} />
+              </div>
+            )}
           </Panel>
 
           <CapacityPanel
@@ -361,11 +378,19 @@ export default function ClassDetails() {
           className={klass.name}
           currentStaffId={klass.class_teacher?.staff_id ?? null}
           currentName={klass.class_teacher?.name}
+          history={teacherHistory}
           onClose={() => setAssigningTeacher(false)}
         />
       )}
     </PageShell>
   );
+}
+
+/** "Since 3 Feb 2027 · set by Emeka Obi", or the same for a class left with nobody. */
+function sinceLine(now: CurrentState, held: boolean): string {
+  const since = `${held ? "Since" : "Nobody since"} ${formatDate(now.since)}`;
+  if (!now.by) return since;
+  return `${since} · ${held ? "set" : "cleared"} by ${now.by.name}`;
 }
 
 function ClassDetailsSkeleton() {

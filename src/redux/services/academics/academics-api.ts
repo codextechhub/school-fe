@@ -18,6 +18,7 @@ import type {
   ListArgs,
   Program,
   SchoolClass,
+  SchoolClassDetail,
   SessionListArgs,
   SessionWrite,
   StructureTree,
@@ -388,7 +389,7 @@ export const academicsApi = baseApi.injectEndpoints({
       providesTags: ["Classes"],
     }),
 
-    getClass: builder.query<Envelope<SchoolClass>, number>({
+    getClass: builder.query<Envelope<SchoolClassDetail>, number>({
       query: (id) => ({
         url: `/academics/classes/${id}/`,
         method: "GET",

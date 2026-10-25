@@ -49,6 +49,7 @@ export default function TeachingDutiesArticle() {
 
       <GuideSection id="class-teachers" title="Set class teachers">
         <p>Choose <strong>Class teachers</strong>. Each class shows its class teacher, or <strong>No class teacher yet</strong>. Select <strong>Set</strong> or <strong>Change</strong>, type part of a name or staff number in <strong>Class teacher</strong>, pick the person, and select <strong>Save</strong>. To leave a class without one, clear the box and select <strong>Leave it with nobody</strong>.</p>
+        <p>The panel lists who held the class <strong>Earlier this year</strong>, with their dates and who changed it, so you can see who came before. The same list is on the class&apos;s own page in Classes and arms.</p>
         <p>The class teacher looks after the class, its register and its day. Teaching a subject to that class is a separate duty.</p>
       </GuideSection>
 
