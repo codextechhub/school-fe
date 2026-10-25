@@ -1,8 +1,9 @@
 import path from "path"
 import { realpathSync } from "node:fs"
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { appLinkFiles, configFromEnv } from './scripts/app-links'
 
 const pkg = (...segments: string[]) =>
   path.resolve(__dirname, "./node_modules/@xvs/finance", ...segments)
@@ -173,6 +174,34 @@ export const resolveAlias = [
   { find: "@", replacement: path.resolve(__dirname, "./src") },
 ]
 
+/**
+ * Publishes the Android and iPhone app-link files under `.well-known/` in the
+ * build output, from the APP_LINK_* environment variables (scripts/app-links.ts,
+ * docs/app-links.md). With none of them set nothing is emitted, and malformed
+ * values fail the build. Read from the process environment at build time only,
+ * so nothing reaches the JS bundle; the dev server does not serve them.
+ */
+const appLinks = (): Plugin => {
+  let files: Record<string, string> = {}
+  return {
+    name: "xvs-app-links",
+    apply: "build",
+    // Validated before any bundling starts, so bad input fails the build at once.
+    buildStart() {
+      try {
+        files = appLinkFiles(configFromEnv(process.env))
+      } catch (error) {
+        this.error(error instanceof Error ? error.message : String(error))
+      }
+    },
+    generateBundle() {
+      for (const [fileName, source] of Object.entries(files)) {
+        this.emitFile({ type: "asset", fileName, source })
+      }
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   // Fixed port so the two apps can run side by side: 5174 is the school app.
@@ -234,6 +263,7 @@ export default defineConfig({
       },
     }),
     tailwindcss(),
+    appLinks(),
   ],
   // Source, not a built dependency: it resolves @/* against THIS app.
   optimizeDeps: { exclude: PACKAGE_SPECIFIERS, include: PACKAGE_ONLY_DEPS },

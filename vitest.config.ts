@@ -29,6 +29,7 @@ export default defineConfig({
     include: [
       "node_modules/@xvs/finance/src/**/*.test.{ts,tsx}",
       "src/**/*.test.{ts,tsx}",
+      "scripts/**/*.test.ts",
     ],
     env: {
       VITE_BACKEND_URL: "http://test.local/v1",
