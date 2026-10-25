@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import NoSchoolNotice from "@/components/auth/no-school-notice";
 import { currentSchoolSlug } from "@/utils/school-host";
-import { handOverToStudentApp, openStudentAppSignIn } from "@/utils/student-app-handover";
+import { handOverToDeviceApp, openDeviceAppSignIn } from "@/utils/device-app-handover";
 import { openHomeApp } from "@/utils/home-app";
 
 export default function Login() {
@@ -56,15 +56,15 @@ export default function Login() {
             );
             return;
           }
-          // A pupil belongs in the student app: hand the sign-in across and
-          // open it, or send them to its own sign-in if the hand-over fails.
+          // A pupil or a parent belongs in their own app: hand the sign-in
+          // across and open it, or send them to its own sign-in if that fails.
           if (res.data.device_app) {
             const app = res.data.device_app;
-            return handOverToStudentApp().then((opened) => {
-              if (!opened) openStudentAppSignIn(app);
+            return handOverToDeviceApp(app).then((opened) => {
+              if (!opened) openDeviceAppSignIn(app);
             });
           }
-          // A parent with no staff role belongs in the parent app.
+          // A parent with no staff role, opened in the parent app without a device session.
           if (res.data.home_app) return openHomeApp(res.data.home_app);
           navigate(
             signInTarget(consumeReturnTo(), res.data.tenant?.status === "PENDING"),

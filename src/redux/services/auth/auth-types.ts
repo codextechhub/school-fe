@@ -23,7 +23,7 @@ export interface LinkPreview {
   email: string | null
   full_name: string
   sign_in_as?: string
-  /** The student app's address for a pupil; null for staff. */
+  /** The device app's address (student or parent app) for a pupil or parent; null for staff. */
   device_app?: { path: string } | null
   /** The parent app's address for a parent with no staff role; null otherwise. */
   home_app?: { path: string } | null
@@ -61,9 +61,9 @@ export interface LoginResponse extends ResponseMessage {
     /** The branches this user may work in. */
     branch_reach?: BranchReach
     /**
-     * Set for a pupil: their sign-in belongs in the student app at `path`, and
-     * this app writes no session for them (see `handOverToStudentApp`). Null
-     * for staff.
+     * Set for a pupil or a parent: their sign-in belongs in the student or
+     * parent app at `path`, and this app writes no session for them (see
+     * `handOverToDeviceApp`). Null for staff.
      */
     device_app?: { path: string } | null
     /**

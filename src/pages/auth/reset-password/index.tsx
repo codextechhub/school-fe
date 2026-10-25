@@ -14,7 +14,7 @@ import { Link, useNavigate, useParams } from "react-router";
 import { swipAnimateVariant } from "@/utils/animation";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { useFormik } from "formik";
-import { openStudentAppSignIn } from "@/utils/student-app-handover";
+import { openDeviceAppSignIn } from "@/utils/device-app-handover";
 import { openHomeAppSignIn } from "@/utils/home-app";
 
 export default function ResetPassword() {
@@ -60,13 +60,13 @@ export default function ResetPassword() {
 
   // A reset does not sign anybody in. Staff go on to this app's sign-in, a
   // pupil to the student app's, a parent to the parent app's.
-  const studentApp = preview?.data.device_app;
+  const deviceApp = preview?.data.device_app;
   const homeApp = preview?.data.home_app;
   const continueToSignIn = useCallback(() => {
-    if (studentApp) openStudentAppSignIn(studentApp);
+    if (deviceApp) openDeviceAppSignIn(deviceApp);
     else if (homeApp) openHomeAppSignIn(homeApp);
     else navigate(routesPath.AUTH.LOGIN, { replace: true });
-  }, [studentApp, homeApp, navigate]);
+  }, [deviceApp, homeApp, navigate]);
 
   useEffect(() => {
     if (success) {
@@ -230,7 +230,7 @@ export default function ResetPassword() {
               Continue to Login
             </Button>
 
-            {!studentApp && (
+            {!deviceApp && (
               <div className="text-center mt-6">
                 <Link
                   to={routesPath.AUTH.LOGIN}
