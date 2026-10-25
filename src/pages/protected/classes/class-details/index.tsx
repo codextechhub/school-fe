@@ -360,6 +360,7 @@ export default function ClassDetails() {
           schoolClassId={klass.id}
           className={klass.name}
           currentStaffId={klass.class_teacher?.staff_id ?? null}
+          currentName={klass.class_teacher?.name}
           onClose={() => setAssigningTeacher(false)}
         />
       )}

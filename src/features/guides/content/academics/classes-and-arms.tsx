@@ -42,7 +42,7 @@ export default function ClassesAndArmsArticle() {
         <GuideSteps>
           <GuideStep title="Summary">Four cards show the <strong>Class teacher</strong>, the number of <strong>Students</strong>, the <strong>Capacity</strong> and the number of <strong>Subjects</strong>.</GuideStep>
           <GuideStep title="Students in this class">Lists the pupils, and loads more as you scroll inside the panel. Select a pupil to open their record, or <strong>Open full register</strong> for the whole list. You need permission to browse student records to see this panel.</GuideStep>
-          <GuideStep title="Class teacher">Shows who is responsible for the class. <strong>Assign</strong> or <strong>Change</strong> opens a panel to choose a member of staff, or <strong>Nobody</strong>. Being class teacher is separate from teaching the class.</GuideStep>
+          <GuideStep title="Class teacher">Shows who is responsible for the class. <strong>Assign</strong> or <strong>Change</strong> opens a panel to search for a member of staff by name or staff number, or to clear the box and leave it with nobody. Being class teacher is separate from teaching the class.</GuideStep>
           <GuideStep title="Class capacity">Shows how many seats are used and how many remain, or how far the class is over capacity.</GuideStep>
           <GuideStep title="Class information">The level, arm, code and description. Use <strong>Edit class</strong> at the top to change them.</GuideStep>
         </GuideSteps>
