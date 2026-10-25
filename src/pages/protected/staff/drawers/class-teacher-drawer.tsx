@@ -2,14 +2,11 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Info } from "lucide-react";
 
-import { NativeSelect } from "@/components/ui/native-select";
 import { apiErrorMessage } from "@/utils/api-error";
-import {
-  useGetStaffListQuery,
-  useSetClassTeacherMutation,
-} from "@/redux/services/staff/staff-api";
+import { useSetClassTeacherMutation } from "@/redux/services/staff/staff-api";
 
-import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
+import { DrawerShell } from "../../students/drawers/drawer-shell";
+import { StaffSearchSelect } from "../staff-search-select";
 
 /**
  * Who is responsible for a class.
@@ -23,33 +20,28 @@ import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
  * the class yet, and a school should be able to say so rather than leaving the
  * departed person's name against it.
  *
- * The picker lists people who still work here. Somebody resigned or terminated
- * is left out: making them responsible for a class is a mistake nothing
- * downstream would catch, because the designation carries no end date.
+ * The picker searches everybody who still works here (`StaffSearchSelect`),
+ * so a school with more staff than one page of the directory can still reach
+ * the person at the bottom of it.
  */
 export function ClassTeacherDrawer({
   schoolClassId,
   className,
   currentStaffId,
+  currentName,
   onClose,
 }: {
   schoolClassId: number;
   className: string;
   /** Null where nobody holds the class, which is the state worth changing. */
   currentStaffId: number | null;
+  currentName?: string;
   onClose: () => void;
 }) {
-  const { data } = useGetStaffListQuery({ page: 1 });
   const [save, { isLoading: saving }] = useSetClassTeacherMutation();
 
   const [staffId, setStaffId] = useState(
     currentStaffId ? String(currentStaffId) : "",
-  );
-
-  const people = (data?.data ?? []).filter(
-    (person) =>
-      person.employment_status !== "RESIGNED" &&
-      person.employment_status !== "TERMINATED",
   );
 
   async function submit() {
@@ -83,25 +75,19 @@ export function ClassTeacherDrawer({
       saving={saving}
     >
       <div className="grid gap-4">
-        <Field
-          label="Class teacher"
-          hint="Leave it empty where nobody has taken the class yet."
-        >
-          <NativeSelect
-            aria-label="Class teacher"
+        <div className="grid gap-1.5">
+          <StaffSearchSelect
+            id="class-teacher"
+            label="Class teacher"
             value={staffId}
-            onChange={(e) => setStaffId(e.target.value)}
-            className="h-9"
-          >
-            <option value="">Nobody</option>
-            {people.map((person) => (
-              <option key={person.id} value={person.id}>
-                {person.full_name}
-                {person.job_title ? ` - ${person.job_title}` : ""}
-              </option>
-            ))}
-          </NativeSelect>
-        </Field>
+            onChange={setStaffId}
+            currentName={currentName}
+            placeholder="Nobody - search staff by name"
+          />
+          <p className="text-xs text-gray-05">
+            Clear it where nobody has taken the class yet.
+          </p>
+        </div>
 
         <p className="flex items-start gap-2 rounded-lg bg-white-03 px-3.5 py-2.5 text-xs text-gray-01">
           <Info className="mt-px size-3.5 shrink-0 text-primary" />

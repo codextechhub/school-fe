@@ -389,6 +389,7 @@ export default function TeachingDuties() {
                     schoolClassId: row.id,
                     className: row.name,
                     currentStaffId: row.class_teacher?.staff_id ?? null,
+                    currentName: row.class_teacher?.name,
                   })
                 }
               />

@@ -433,6 +433,8 @@ export interface StaffListResponse {
 /** What the directory can be narrowed by. Every filter is the server's. */
 export interface StaffListQuery {
   page?: number;
+  /** Rows per page. The server sends 25 without it and refuses more than 100. */
+  page_size?: number;
   search?: string;
   employment_status?: EmploymentStatus;
   /** Separate from `employment_status`, never merged. They answer differently. */

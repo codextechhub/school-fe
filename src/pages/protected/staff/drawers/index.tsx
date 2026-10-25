@@ -44,6 +44,7 @@ export type StaffDrawerRequest =
       schoolClassId: number;
       className: string;
       currentStaffId: number | null;
+      currentName?: string;
     };
 
 /**
@@ -147,6 +148,7 @@ export function StaffDrawers({
         schoolClassId={request.schoolClassId}
         className={request.className}
         currentStaffId={request.currentStaffId}
+        currentName={request.currentName}
         onClose={onClose}
       />
     );

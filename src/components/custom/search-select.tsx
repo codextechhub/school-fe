@@ -36,7 +36,19 @@ interface SearchSelectProps {
    */
   revealOnSearch?: boolean;
   value?: string;
+  /**
+   * The label for `value` when it is not among `options`, such as a record's
+   * current holder who falls outside the results loaded so far.
+   */
+  selectedLabel?: string;
+  /** A search is in flight: says so in the list without locking the box. */
+  searching?: boolean;
   onChange?: React.ChangeEventHandler<HTMLSelectElement>;
+  /**
+   * Hands the typed text to the caller, who fetches the matching options. The
+   * list then shows what comes back as it is, because a server search matches
+   * more than the label (a staff number, an email).
+   */
   onSearchChange?: (query: string) => void;
   onBlur?: React.FocusEventHandler<HTMLSelectElement>;
 }
@@ -50,6 +62,14 @@ interface SearchSelectProps {
  * Uses the canonical base-ui pattern: object items + itemToStringLabel (so the
  * input shows the LABEL, not the value, and filtering matches the label) +
  * isItemEqualToValue + ComboboxCollection (filtered + mouse-clickable).
+ *
+ * With `onSearchChange` the options are whatever the caller last fetched, and
+ * the chosen one is usually not among the next query's results. Its label is
+ * therefore remembered here, so the box keeps showing the name that was chosen
+ * once the results move on. The selection is also held as one object
+ * per value: the combobox rewrites the input whenever its value changes
+ * identity, so an object rebuilt on each render would snap the box back to the
+ * chosen name in the middle of typing.
  */
 export function SearchSelect({
   id,
@@ -65,10 +85,24 @@ export function SearchSelect({
   clearable = true,
   revealOnSearch = false,
   value = "",
+  selectedLabel,
+  searching = false,
   onChange,
   onSearchChange,
 }: SearchSelectProps) {
-  const selected = options.find((o) => o.value === value) ?? null;
+  // The chosen option's label, kept for when the results move on without it.
+  const [remembered, setRemembered] = React.useState<SearchSelectOption | null>(null);
+  const found = options.find((o) => o.value === value);
+  if (found && (remembered?.value !== found.value || remembered.label !== found.label)) {
+    setRemembered(found);
+  }
+  const selectedText =
+    found?.label ?? (remembered?.value === value ? remembered.label : selectedLabel);
+  // One object per selection: the combobox rewrites the input whenever its value changes identity.
+  const selected = React.useMemo(
+    () => (value && selectedText ? { value, label: selectedText } : null),
+    [value, selectedText],
+  );
   const [query, setQuery] = React.useState("");
   const selectedLabelRef = React.useRef<string | null>(null);
 
@@ -100,6 +134,7 @@ export function SearchSelect({
         items={visibleItems}
         value={selected}
         onValueChange={(item) => {
+          setRemembered(item ?? null);
           selectedLabelRef.current = item?.label ?? null;
           emitChange(item?.value ?? "");
         }}
@@ -111,6 +146,7 @@ export function SearchSelect({
           if (isSelectionLabel) selectedLabelRef.current = null;
         }}
         itemToStringLabel={(item) => item?.label ?? ""}
+        filter={onSearchChange ? null : undefined}
         isItemEqualToValue={(a, b) => a?.value === b?.value}
         disabled={disabled || loading}
       >
@@ -128,7 +164,9 @@ export function SearchSelect({
         />
         <ComboboxContent>
           <ComboboxList>
-            <ComboboxEmpty>{revealOnSearch && !hasQuery ? "Type to search…" : "No matches"}</ComboboxEmpty>
+            <ComboboxEmpty>
+              {searching ? "Searching…" : revealOnSearch && !hasQuery ? "Type to search…" : "No matches"}
+            </ComboboxEmpty>
             <ComboboxCollection>
               {(item: SearchSelectOption) => (
                 <ComboboxItem key={item.value} value={item}>

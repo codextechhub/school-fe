@@ -1,17 +1,15 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Info, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
-import { SearchSelect } from "@/components/custom/search-select";
 import { cn } from "@/lib/utils";
 import { apiErrorMessage } from "@/utils/api-error";
 import { usePermissions } from "@/hooks/use-permissions";
 import { P } from "@/permissions";
 import {
   useAssignTeachingMutation,
-  useGetStaffListQuery,
   useRemoveTeachingMutation,
   useSetTeachingPartMutation,
 } from "@/redux/services/staff/staff-api";
@@ -22,6 +20,7 @@ import type {
 
 import { ConfirmDialog } from "../../students/drawers/confirm-dialog";
 import { DrawerShell, Field } from "../../students/drawers/drawer-shell";
+import { StaffSearchSelect } from "../staff-search-select";
 import { teachingRemovalCopy } from "./removal-copy";
 
 /**
@@ -72,8 +71,6 @@ export function PairingDrawer({
   cell: CoverageCell;
   onClose: () => void;
 }) {
-  const { data: staffData } = useGetStaffListQuery({ page: 1 });
-
   const canAssign = usePermissions().hasPermission(P.ASSIGN_TEACHING);
 
   const [assign, { isLoading: assigning }] = useAssignTeachingMutation();
@@ -92,26 +89,6 @@ export function PairingDrawer({
     // there IS a main teacher the server would refuse a second, so the form
     // opens on the part it can actually save.
     cell.lead ? "ASSISTANT" : "LEAD",
-  );
-
-  // Somebody resigned or terminated is left out: handing them a class is a
-  // mistake nothing downstream would catch, because an assignment carries no
-  // end date of its own.
-  const people = useMemo(
-    () =>
-      (staffData?.data ?? [])
-        .filter(
-          (person) =>
-            person.employment_status !== "RESIGNED" &&
-            person.employment_status !== "TERMINATED",
-        )
-        .map((person) => ({
-          value: String(person.id),
-          label: person.job_title
-            ? `${person.full_name} - ${person.job_title}`
-            : person.full_name,
-        })),
-    [staffData],
   );
 
   const onIt = [
@@ -300,13 +277,12 @@ export function PairingDrawer({
               </h3>
               <div className="grid gap-4">
                 <div>
-                  <SearchSelect
+                  <StaffSearchSelect
+                    id="pairing-teacher"
                     label="Teacher"
                     isRequired
-                    options={people}
                     value={staffId}
-                    onChange={(e) => setStaffId(e.target.value)}
-                    placeholder="Search staff by name"
+                    onChange={setStaffId}
                   />
                 </div>
 
