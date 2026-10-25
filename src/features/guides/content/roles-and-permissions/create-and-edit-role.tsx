@@ -66,6 +66,7 @@ export default function CreateAndEditRoleArticle() {
           <GuideStep title="Give the reason">Say why they are being removed, then select <strong>Remove</strong>. The reason is kept on each person&apos;s history with the role they held.</GuideStep>
         </GuideSteps>
         <p>You cannot tick or remove yourself here, nor anyone whose grant reaches beyond your branches. Removing a role leaves the person&apos;s other roles as they are.</p>
+        <p>A teacher&apos;s role at a branch cannot be removed while they still teach a class there, because they would stop seeing it. The message names the classes: hand them to someone at that branch first. The same applies to narrowing a role to fewer branches or taking it out of use.</p>
         <GuideCallout tone="tip" title="When a change reaches the person">Anyone whose access changed, you included, gets a fresh XVS the next time they move to another page, within about a minute of the change. A form they are halfway through is left alone until then.</GuideCallout>
       </GuideSection>
 
