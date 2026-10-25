@@ -51,6 +51,7 @@ export default function TeachingDutiesArticle() {
         <p>Choose <strong>Class teachers</strong>. Each class shows its class teacher, or <strong>No class teacher yet</strong>. Select <strong>Set</strong> or <strong>Change</strong>, type part of a name or staff number in <strong>Class teacher</strong>, pick the person, and select <strong>Save</strong>. To leave a class without one, clear the box and select <strong>Leave it with nobody</strong>.</p>
         <p>The panel lists who held the class <strong>Earlier this year</strong>, with their dates and who changed it, so you can see who came before. The same list is on the class&apos;s own page in Classes and arms.</p>
         <p>The class teacher looks after the class, its register and its day. Teaching a subject to that class is a separate duty.</p>
+        <GuideCallout tone="info" title="A teacher works at the class's branch">At a school with more than one branch, a class teacher, a subject teacher or a lesson's teacher must hold a role at the class's branch, or they would never see the class. Give them the Teacher role at that branch as well, then set them. Do not make the class school-wide instead: a school-wide class has no branch for its register, so nobody can take it.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="timetable-clashes" title="Timetable clashes">
@@ -62,7 +63,7 @@ export default function TeachingDutiesArticle() {
           { title: "The page says there is no year to show", body: "Teaching duties belong to a running school year. They open when the school goes live and a year is running." },
           { title: "No classes and subjects yet", body: "The year's classes and their subjects are built in Academic Structure. Add them there first." },
           { title: "Set or Change is missing", body: "Setting class teachers needs the teaching assignment permission." },
-          { title: "A change was refused", body: "Your role can read duties but not change them, or the teacher already has that part. The message explains which." },
+          { title: "A change was refused", body: "Your role can read duties but not change them, the teacher already has that part, or the teacher does not work at the class's branch. The message explains which." },
         ]} />
       </GuideSection>
 
