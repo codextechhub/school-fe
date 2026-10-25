@@ -1,6 +1,7 @@
 /**
  * Whether this school's students may pay their own fees in the student portal,
- * and the smallest part payment it accepts. Backend: apps/schools/core/fal,
+ * the smallest card part payment it accepts, and whether families may pay by
+ * card at all. Backend: apps/schools/core/fal,
  * mounted at /v1/school-finance/settings/student-payments/.
  *
  * Fees are normally paid by a family; a student paying their own invoice is
@@ -8,7 +9,10 @@
  * off removes the Pay action from every student's fees screen.
  * `min_part_payment` is kobo, as every amount crossing the API is, and is
  * always a whole number of naira; paying a whole balance is allowed however
- * small it is.
+ * small it is. `family_card_payments` is off unless the school switches it on:
+ * off, families pay by bank transfer to the student's own account number; on,
+ * they may also pay by card. Changing any of the three needs a whole-school
+ * reach; a branch-bound reader gets a 403.
  */
 
 import { baseApi } from "../base-api";
@@ -17,6 +21,7 @@ export interface StudentPaymentRules {
   enabled: boolean;
   /** Kobo. */
   min_part_payment: number;
+  family_card_payments: boolean;
 }
 
 interface ItemResponse<T> {
