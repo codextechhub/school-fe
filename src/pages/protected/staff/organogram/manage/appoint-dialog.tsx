@@ -152,7 +152,7 @@ export function AppointDialog({ position, onClose }: { position: Position | null
                 isRequired
                 containerClass="sm:col-span-2"
                 options={options}
-                loading={searching}
+                searching={searching}
                 value={staffId}
                 onSearchChange={setQuery}
                 onChange={(e) => setStaffId(e.target.value)}

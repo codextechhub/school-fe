@@ -12,6 +12,7 @@ import {
   useGetRoleGrantsWaitingQuery,
 } from "@/redux/services/roles/roles-api";
 import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
+import { useDebounce } from "@/hooks/use-debounce";
 import { writeErrorMessage } from "@/utils/api-error";
 import { useReaderReach } from "@/hooks/use-reader-reach";
 import { canManageRow } from "@/lib/can-manage";
@@ -30,6 +31,11 @@ import { canManageRow } from "@/lib/can-manage";
  * person, and the assignment endpoint wants the account. Staff rows carry
  * `user_id` for this, which is why the picker is built from the directory list
  * rather than from the search endpoint - that one returns neither.
+ *
+ * **The search box asks the directory.** The directory sends 25 people a page,
+ * so filtering one page here would leave the 26th person unfindable. The query
+ * goes to the directory's own search, which matches names, email and staff
+ * number as far as the reader may read them.
  *
  * **The grant's reach is the role's, or the reader's branch.** A role with
  * branches of its own grants all of them, so it is given without naming one.
@@ -89,7 +95,11 @@ export function AssignRolePanel({
   const needsBranch = !configured && !wholeSchool && grantBranch === null;
   // Only once the panel is open: the drawer's People tab is read first and
   // most of the time only read, and the directory is the larger request.
-  const staff = useGetStaffListQuery({ page: 1 }, { skip: !open });
+  const query = useDebounce(search.trim(), 300);
+  const staff = useGetStaffListQuery(
+    { search: query || undefined, page_size: 50 },
+    { skip: !open },
+  );
   const waitingGrants = useGetRoleGrantsWaitingQuery({ role: roleId }, { skip: !open });
   // Sent this visit, so the button turns before the list reloads.
   const [sent, setSent] = useState<string[]>([]);
@@ -104,20 +114,11 @@ export function AssignRolePanel({
     [waitingGrants.data, sent],
   );
 
-  const people = useMemo(() => {
-    const rows = staff.data?.data ?? [];
-    const needle = search.trim().toLowerCase();
-    return rows
-      // Somebody who has left keeps their history and takes no new roles.
-      .filter((row) => row.on_roll)
-      .filter(
-        (row) =>
-          !needle ||
-          row.full_name.toLowerCase().includes(needle) ||
-          (row.email ?? "").toLowerCase().includes(needle) ||
-          (row.job_title ?? "").toLowerCase().includes(needle),
-      );
-  }, [staff.data, search]);
+  // Somebody who has left keeps their history and takes no new roles.
+  const people = useMemo(
+    () => (staff.data?.data ?? []).filter((row) => row.on_roll),
+    [staff.data],
+  );
 
   const give = async (userId: number, name: string) => {
     try {
@@ -165,7 +166,7 @@ export function AssignRolePanel({
             autoFocus
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search staff by name, email or job"
+            placeholder="Search staff by name, email or staff number"
             aria-label="Search staff"
             className="h-9 pl-8 text-[13px]"
           />
