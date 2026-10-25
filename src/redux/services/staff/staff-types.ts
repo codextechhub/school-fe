@@ -122,8 +122,11 @@ export interface StaffListRow {
    * two codes that mean "has left" are decided in one place. A screen drawing
    * a finished row differently reads this rather than re-deriving the rule and
    * getting it half right.
+   *
+   * Under the Employment status switch, so absent for a reader who may not
+   * read it. Absent means unknown, not gone: test for `=== false`.
    */
-  on_roll: boolean;
+  on_roll?: boolean;
   /**
    * What was DECIDED about their employment. Never `ON_LEAVE`.
    *

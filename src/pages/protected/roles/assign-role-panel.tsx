@@ -116,7 +116,7 @@ export function AssignRolePanel({
 
   // Somebody who has left keeps their history and takes no new roles.
   const people = useMemo(
-    () => (staff.data?.data ?? []).filter((row) => row.on_roll),
+    () => (staff.data?.data ?? []).filter((row) => row.on_roll !== false),
     [staff.data],
   );
 

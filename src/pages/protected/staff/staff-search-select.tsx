@@ -15,8 +15,10 @@ import { useGetStaffListQuery } from "@/redux/services/staff/staff-api";
  * list shows what comes back.
  *
  * People who have left are dropped. Handing a resigned teacher a class or a
- * subject is a mistake nothing downstream would catch, because neither carries
- * an end date of its own. Somebody on leave stays: they still hold the post.
+ * subject is a mistake, because neither carries an end date of its own.
+ * Somebody on leave stays: they still hold the post. A reader who may not read
+ * Employment status is not told who has left, so they see everybody and the
+ * server refuses a leaver.
  *
  * `value` is the staff record id as a string, empty for nobody.
  */
@@ -50,7 +52,7 @@ export function StaffSearchSelect({
   const options = useMemo(
     () =>
       (data?.data ?? [])
-        .filter((person) => person.on_roll)
+        .filter((person) => person.on_roll !== false)
         .map((person) => ({
           value: String(person.id),
           label: person.job_title

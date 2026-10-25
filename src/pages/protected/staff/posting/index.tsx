@@ -356,7 +356,7 @@ function RosterPanel({
               selectable={
                 canMove &&
                 view === "posted" &&
-                row.person.on_roll &&
+                row.person.on_roll !== false &&
                 canManage(row.person)
               }
               picked={picked.includes(row.person.id)}
@@ -390,7 +390,7 @@ function RosterRow({
   onToggle: () => void;
   onOpen: () => void;
 }) {
-  const left = !person.on_roll;
+  const left = person.on_roll === false;
   const reason =
     view === "posted"
       ? person.branch_name ? `Posted to ${person.branch_name}` : "Posted here"
