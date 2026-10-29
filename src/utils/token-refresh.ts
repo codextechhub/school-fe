@@ -1,5 +1,6 @@
 import { clearAccessToken, setAccessToken } from "./access-token";
 import { getCsrfToken } from "./csrf";
+import { timeoutSignal } from "./request-timeout";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -47,6 +48,7 @@ const doRefresh = async (): Promise<RefreshOutcome> => {
         ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
       },
       body: "{}",
+      signal: timeoutSignal(),
     });
   } catch {
     return { ok: false, reason: "network_error" };

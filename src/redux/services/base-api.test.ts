@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Both factories are hoisted above the imports, so their spies have to live on
 // a hoisted holder rather than in module-level consts.
@@ -480,5 +480,53 @@ describe("server failures", () => {
     await baseQueryInterceptor({ url: "/students/", method: "POST" }, apiStub("mutation"), {});
 
     expect(toastError).toHaveBeenCalledWith("A server error occurred. Please try again later.");
+  });
+});
+
+describe("a request the server never answers", () => {
+  /** A server that takes the request and never answers it, until the app gives up. */
+  const silent = () => {
+    const fetcher = vi.fn((input: Request | string, init?: RequestInit) => {
+      const signal = input instanceof Request ? input.signal : init?.signal;
+      return new Promise<Response>((_, reject) => {
+        // As a browser does: the fetch fails with the reason the signal gave up.
+        signal?.addEventListener("abort", () => reject(signal.reason));
+      });
+    });
+    vi.stubGlobal("fetch", fetcher);
+    return fetcher;
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it("is given up after 45 seconds and says so", async () => {
+    const fetcher = silent();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    const pending = baseQueryInterceptor("/students/", apiStub("query"), {});
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
+    await vi.advanceTimersByTimeAsync(45_000);
+    const result = await pending;
+    expect(result.error?.status).toBe("TIMEOUT_ERROR");
+    expect(toastError).toHaveBeenCalledWith("The request timed out. Please try again.");
+  });
+
+  it("gives an upload five minutes before giving up", async () => {
+    const fetcher = silent();
+    vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+    let settled = false;
+    const pending = Promise.resolve(baseQueryInterceptor(
+      { url: "/students/1/photo/", method: "POST", body: new FormData() },
+      apiStub("mutation"),
+      {},
+    )).finally(() => { settled = true; });
+    await vi.waitFor(() => expect(fetcher).toHaveBeenCalled());
+    await vi.advanceTimersByTimeAsync(240_000);
+    expect(settled).toBe(false);
+    await vi.advanceTimersByTimeAsync(60_000);
+    const result = await pending;
+    expect(result.error?.status).toBe("TIMEOUT_ERROR");
   });
 });

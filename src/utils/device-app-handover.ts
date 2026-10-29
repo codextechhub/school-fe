@@ -1,4 +1,5 @@
 import { getCsrfToken } from "./csrf";
+import { timeoutSignal } from "./request-timeout";
 
 const baseUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -58,6 +59,7 @@ export async function handOverToDeviceApp(app?: DeviceApp): Promise<boolean> {
         ...(csrf ? { "X-CSRFToken": csrf } : {}),
       },
       body: "{}",
+      signal: timeoutSignal(),
     });
     if (!response.ok) return false;
     const body = (await response.json()) as { data?: { account?: string; app_path?: string } };

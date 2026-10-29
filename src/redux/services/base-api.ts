@@ -32,6 +32,7 @@ import {
 import { isIdentitySwapInProgress, runWithIdentitySwap } from "@/utils/identity-swap";
 import { FINANCE_TAG_TYPES } from "@xvs/finance/redux/tag-types";
 import { getAccessToken } from "@/utils/access-token";
+import { REQUEST_TIMEOUT_MS, UPLOAD_TIMEOUT_MS, timeoutSignal } from "@/utils/request-timeout";
 import { refusalMessage } from "@xvs/finance/lib/api-errors";
 import { selectSchoolDisplay, type DisplayState } from "@/lib/school-display";
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
@@ -137,8 +138,15 @@ const injectTenant = (args: string | FetchArgs, endpoint: string): string | Fetc
   return { ...args, params: { ...(args.params as object), tenant: slug } };
 };
 
+/** An upload is given longer than other requests (see `UPLOAD_TIMEOUT_MS`). */
+const timed = (args: string | FetchArgs): string | FetchArgs =>
+  typeof args !== "string" && args.body instanceof FormData && args.timeout === undefined
+    ? { ...args, timeout: UPLOAD_TIMEOUT_MS }
+    : args;
+
 export const baseQuery = fetchBaseQuery({
   baseUrl,
+  timeout: REQUEST_TIMEOUT_MS,
   prepareHeaders: (headers, { endpoint, getState }) => {
     const accessToken = getAccessToken();
     if (accessToken && !AUTH_ENDPOINTS.has(endpoint)) {
@@ -193,6 +201,7 @@ const fetchFreshMe = async (
           ? { "X-Impersonation-Session": String(impersonation.id) }
           : {}),
       },
+      signal: timeoutSignal(),
     });
     if (!response.ok) return { permissions: null, fieldAccess: null, branchReach: null, tenant: null };
     const data = await response.json();
@@ -368,7 +377,7 @@ export const baseQueryInterceptor: BaseQueryFn<
 
   // Central tenant assertion: every authenticated, non-exempt request carries
   // ?tenant=<the caller's slug> unless it already asserts one.
-  const tenantArgs = injectTenant(args, api.endpoint);
+  const tenantArgs = timed(injectTenant(args, api.endpoint));
   const result = await baseQuery(tenantArgs, api, extraOptions);
   if (!result?.error) return result;
 
