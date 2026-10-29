@@ -108,7 +108,7 @@ export const SCHOOL_SETUP_GUIDES = [
     id: "school.setup.import-initial-data",
     slug: "import-your-school-data-during-setup",
     title: "Import your school's data during setup",
-    summary: "Load students, staff and guardians from spreadsheets, check each upload, and close the data step once all three are fully imported.",
+    summary: "Load students, staff and guardians from spreadsheets, check each upload, and close the data step once a file has imported in full.",
     category: "school-setup",
     tags: ["import", "upload", "datasets", "students", "staff", "guardians", "template", "spreadsheet"],
     aliases: ["upload initial datasets", "bulk upload", "csv", "xlsx", "download template", "finish data setup", "partly imported", "fix rows"],
@@ -119,7 +119,7 @@ export const SCHOOL_SETUP_GUIDES = [
     primaryRoute: R.ONBOARDING.IMPORT,
     sections: [
       { id: "before-you-start", title: "Before you start" },
-      { id: "read-required-datasets", title: "Read the required datasets" },
+      { id: "read-required-datasets", title: "Read the recommended datasets" },
       { id: "staff-imported-during-setup", title: "Staff imported during setup" },
       { id: "import-a-dataset", title: "Import a dataset" },
       { id: "check-your-uploads", title: "Check your uploads" },

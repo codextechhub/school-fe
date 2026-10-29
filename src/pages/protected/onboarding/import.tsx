@@ -10,7 +10,7 @@ import PermissionGate from "@/components/custom/permission-gate";
 import { P } from "@/permissions";
 import { routesPath } from "@/routes/routesPath";
 import { usePermissions } from "@/hooks/use-permissions";
-import { apiErrorMessage, parseApiError } from "@/utils/api-error";
+import { apiErrorMessage } from "@/utils/api-error";
 import BulkImportDrawer from "@/components/custom/bulk-import-drawer";
 import { canRunImport } from "@/components/custom/import-wizard/import-access";
 import {
@@ -31,11 +31,18 @@ import { downloadBlob, fetchAttachmentBlob } from "@/utils/attachment-download";
 /**
  * "Upload Initial Datasets", drawn as the design draws it.
  *
- * The design's shape, top to bottom: a Required datasets card with a progress
- * bar over the three the step is really about, a searchable table of templates
+ * The design's shape, top to bottom: a Recommended datasets card with a
+ * progress bar over the three most schools load, a searchable table of templates
  * to download and import against, the school's own batches, and a short "Before
  * you upload" note. That order is deliberate in the design and kept here - the
- * progress card answers "am I done?" before the tables answer "what do I do?".
+ * progress card answers "how far have we got?" before the tables answer "what
+ * do I do?".
+ *
+ * **The step closes on any one import that fully succeeded**, which is the
+ * backend's condition (`vs_onboarding/services/conditions.py`) and the one the
+ * control room's Mark as done applies. The three datasets on the card are what
+ * most schools load, not a gate: a school whose students file already names a
+ * guardian for each child has no guardians file to send.
  *
  * Three things it does that the design could assume and this cannot.
  *
@@ -61,11 +68,11 @@ import { downloadBlob, fetchAttachmentBlob } from "@/utils/attachment-download";
  */
 
 /**
- * The three datasets this step is about, in the design's order.
+ * The three datasets most schools load first, in the design's order.
  *
- * Named here rather than read from the server because the step's requirements
- * are the step's, not the catalogue's: a school must load all three to close
- * it, whether or not a template exists for each yet.
+ * Named here rather than read from the server because they are this screen's
+ * advice, not the catalogue's. They do not gate the step: see the file's doc
+ * block.
  *
  * The third is `guardians`, which is the dataset the design called "Parents".
  * A guardian row IS a parent record - see `vs_import_data/datasets.py`, where
@@ -75,7 +82,7 @@ import { downloadBlob, fetchAttachmentBlob } from "@/utils/attachment-download";
  * under that name asked for something nothing could ever satisfy: the card sat
  * at "Not available yet" and the step could not be finished.
  */
-const REQUIRED_DATASETS = [
+const RECOMMENDED_DATASETS = [
   { slug: "students", name: "Students" },
   { slug: "staff", name: "Staff" },
   { slug: "guardians", name: "Guardians" },
@@ -108,8 +115,8 @@ const PLACEHOLDER_TEMPLATES = [
 ] as const;
 
 const TEMPLATE_COLUMNS = ["Template", "Dataset", "Columns", "Action"];
-/** Which datasets the step actually requires, for the Required/Optional chip. */
-const REQUIRED_SLUGS = new Set(REQUIRED_DATASETS.map((d) => d.slug as string));
+/** The recommended datasets, for the Recommended/Optional chip. */
+const RECOMMENDED_SLUGS = new Set(RECOMMENDED_DATASETS.map((d) => d.slug as string));
 const BATCH_COLUMNS = ["Batch", "File", "Rows", "Status", "Action"];
 const DATA_KEY = "INITIAL_DATA";
 
@@ -235,14 +242,12 @@ export default function OnboardingImport() {
     for (const extra of live.values()) {
       merged.push(fromServer(extra));
     }
-    // Required first. A live template arrives through the loop above and would
-    // otherwise land at the BOTTOM, under the optional placeholders - so the
-    // one dataset the step actually needs sat below two it does not, purely
-    // because the server had it and the others were hard-coded.
+    // Recommended first, so a live template the loop above appends does not
+    // land under the optional placeholders.
     return merged.sort(
       (a, b) =>
-        Number(REQUIRED_SLUGS.has(b.dataset_type)) -
-        Number(REQUIRED_SLUGS.has(a.dataset_type)),
+        Number(RECOMMENDED_SLUGS.has(b.dataset_type)) -
+        Number(RECOMMENDED_SLUGS.has(a.dataset_type)),
     );
   }, [offered]);
 
@@ -257,15 +262,14 @@ export default function OnboardingImport() {
   }, [rows, query]);
 
   /**
-   * How far the three required datasets have got.
+   * How far the three recommended datasets have got.
    *
    * Only a fully succeeded import counts, which the design states outright: a
-   * partial import reads like success and leaves rows behind, so treating it as
-   * done would close the step on incomplete data.
+   * partial import reads like success and leaves rows behind.
    */
-  const required = useMemo(() => {
+  const recommended = useMemo(() => {
     const rows = batchRowsData;
-    return REQUIRED_DATASETS.map((entry) => {
+    return RECOMMENDED_DATASETS.map((entry) => {
       const mine = rows.filter((b) => b.dataset_type === entry.slug);
       const done = mine.some((b) => b.status === "import_succeeded");
       const partial = mine.some((b) => b.status === "import_partial");
@@ -285,8 +289,9 @@ export default function OnboardingImport() {
     });
   }, [batchRowsData, offered]);
 
-  const doneCount = required.filter((r) => r.done).length;
-  const allDone = doneCount === REQUIRED_DATASETS.length;
+  const doneCount = recommended.filter((r) => r.done).length;
+  /** The backend's condition for the step: any one import that fully succeeded. */
+  const canFinish = batchRowsData.some((b) => b.status === "import_succeeded");
 
   async function finishDataSetup() {
     try {
@@ -294,8 +299,7 @@ export default function OnboardingImport() {
       toast.success("Data setup marked as done.");
       navigate(routesPath.PROTECTED.ONBOARDING.INDEX);
     } catch (error) {
-      const parsed = parseApiError(error);
-      toast.error(apiErrorMessage(parsed, "We could not close that step."));
+      toast.error(apiErrorMessage(error, "We could not close that step."));
     }
   }
 
@@ -317,8 +321,8 @@ export default function OnboardingImport() {
         ),
         // The design's chip says whether the STEP needs this dataset, not what
         // the dataset is called - the name is already in the column beside it.
-        Dataset: REQUIRED_SLUGS.has(template.dataset_type) ? (
-          <Badge variant="blue">Required</Badge>
+        Dataset: RECOMMENDED_SLUGS.has(template.dataset_type) ? (
+          <Badge variant="blue">Recommended</Badge>
         ) : (
           <Badge variant="inactive">Optional</Badge>
         ),
@@ -426,7 +430,7 @@ export default function OnboardingImport() {
           <PermissionGate permission={P.UPDATE_ONBOARDING_TASK}>
             <Button
               className="h-10 shrink-0"
-              disabled={!allDone || transitionState.isLoading}
+              disabled={!canFinish || transitionState.isLoading}
               onClick={() => void finishDataSetup()}
             >
               Finish data setup
@@ -435,26 +439,26 @@ export default function OnboardingImport() {
         }
       />
 
-      {/* Required datasets: the progress card, before either table. */}
+      {/* Recommended datasets: the progress card, before either table. */}
       <section className="bg-white rounded-md border border-white-02 px-3 py-4 sm:px-5 min-w-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-base font-semibold text-black-01 font-mont">
-            Required datasets
+            Recommended datasets
           </p>
           <span className="text-xs font-semibold text-gray-05 font-mont">
-            {doneCount} of {REQUIRED_DATASETS.length} fully imported
+            {doneCount} of {RECOMMENDED_DATASETS.length} fully imported
           </span>
         </div>
 
         <div className="mt-3 h-1.5 rounded-full bg-gray-03 overflow-hidden">
           <span
             className="block h-full rounded-full bg-primary transition-[width] duration-500"
-            style={{ width: `${(doneCount / REQUIRED_DATASETS.length) * 100}%` }}
+            style={{ width: `${(doneCount / RECOMMENDED_DATASETS.length) * 100}%` }}
           />
         </div>
 
         <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-          {required.map((entry) => (
+          {recommended.map((entry) => (
             <div
               key={entry.slug}
               className="flex items-start gap-2.5 rounded-md border border-border px-3 py-2.5 min-w-0"
@@ -476,8 +480,8 @@ export default function OnboardingImport() {
                 <p className="text-[11px] text-gray-05">{entry.state}</p>
                 {entry.partial && (
                   <p className="mt-0.5 text-[11px] text-gray-06 text-pretty">
-                    Some rows did not land, so this does not satisfy the
-                    onboarding step yet.
+                    Some rows did not land, so this import does not count
+                    towards the step.
                   </p>
                 )}
               </div>
@@ -485,9 +489,10 @@ export default function OnboardingImport() {
           ))}
         </div>
 
-        {!allDone && (
+        {!canFinish && (
           <p className="mt-3 text-[11px] text-gray-05">
-            Only a fully succeeded import counts towards this step.
+            The step is done once any one import has fully succeeded. A partly
+            imported file does not count.
           </p>
         )}
       </section>

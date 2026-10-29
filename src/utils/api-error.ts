@@ -36,9 +36,20 @@ const asRecord = (value: unknown): Record<string, unknown> =>
 const asString = (value: unknown): string =>
   typeof value === "string" ? value : "";
 
-/** Parse any RTK Query error (or anything else) into the envelope's parts. */
+/** True for a value {@link parseApiError} already produced. */
+const isParsed = (value: Record<string, unknown>): boolean =>
+  !("data" in value) && "code" in value && "message" in value && "detail" in value;
+
+/**
+ * Parse any RTK Query error (or anything else) into the envelope's parts.
+ *
+ * Passing it something it already parsed returns that unchanged, so every
+ * reader below accepts either the raw rejection or the parsed one. Reading a
+ * parsed error as raw finds no `data` and quietly loses the server's sentence.
+ */
 export function parseApiError(error: unknown): ApiError {
   const outer = asRecord(error);
+  if (isParsed(outer)) return outer as unknown as ApiError;
   const body = asRecord(outer.data);
   const inner = asRecord(body.error);
   return {

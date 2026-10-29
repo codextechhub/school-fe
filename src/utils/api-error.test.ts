@@ -162,3 +162,23 @@ describe("fieldErrorsFor", () => {
     expect(fieldErrorsFor(error, ["role", "branch"])).toEqual({});
   });
 });
+
+describe("an already-parsed error", () => {
+  const rejection = {
+    status: 422,
+    data: {
+      success: false,
+      message: "No data import has completed in full for this school yet.",
+      error: { code: "TASK_CONDITION_NOT_MET", detail: {} },
+    },
+  };
+
+  it("parses to itself, so the server's sentence survives a second read", () => {
+    const parsed = parseApiError(rejection);
+
+    expect(parseApiError(parsed)).toEqual(parsed);
+    expect(apiErrorMessage(parsed, "We could not close that step.")).toBe(
+      "No data import has completed in full for this school yet.",
+    );
+  });
+});

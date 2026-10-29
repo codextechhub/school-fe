@@ -17,14 +17,15 @@ export default function ImportInitialDataArticle() {
         <GuideChecklist items={[
           "Academic Structure is finished, so your classes exist.",
           "Your files are CSV or XLSX and under 50 MB.",
-          "You have one file each for students, staff and guardians.",
+          "You have your students file, and your staff and guardians files if you are loading them now.",
           "You have checked the data before uploading it.",
         ]} />
       </GuideSection>
 
-      <GuideSection id="read-required-datasets" title="Read the required datasets">
-        <p>The <strong>Required datasets</strong> card lists the three this step needs: <strong>Students</strong>, <strong>Staff</strong> and <strong>Guardians</strong> (your parents and other guardians). Each shows <strong>Not started</strong>, <strong>Partly imported</strong>, <strong>Imported</strong> or <strong>Not available yet</strong>, and the bar shows how many are fully imported.</p>
-        <GuideCallout tone="warning" title="Only a full import counts">A partly imported dataset leaves rows behind, so it does not satisfy the step. Deal with the failed rows first.</GuideCallout>
+      <GuideSection id="read-required-datasets" title="Read the recommended datasets">
+        <p>The <strong>Recommended datasets</strong> card lists the three most schools load: <strong>Students</strong>, <strong>Staff</strong> and <strong>Guardians</strong> (your parents and other guardians). Each shows <strong>Not started</strong>, <strong>Partly imported</strong>, <strong>Imported</strong> or <strong>Not available yet</strong>, and the bar shows how many are fully imported.</p>
+        <p>The step itself needs only one file that imported in full. A students file already names a guardian for each child, so a separate guardians file is only for second guardians.</p>
+        <GuideCallout tone="warning" title="Only a full import counts">A partly imported file leaves rows behind, so it does not complete the step. Deal with the failed rows first.</GuideCallout>
       </GuideSection>
 
       <GuideSection id="staff-imported-during-setup" title="Staff imported during setup">
@@ -35,7 +36,7 @@ export default function ImportInitialDataArticle() {
 
       <GuideSection id="import-a-dataset" title="Import a dataset">
         <GuideSteps>
-          <GuideStep title="Find the template">Use <strong>Search templates</strong>. Each row says whether the step needs it (<strong>Required</strong> or <strong>Optional</strong>) and how many columns it has.</GuideStep>
+          <GuideStep title="Find the template">Use <strong>Search templates</strong>. Each row says whether most schools load it (<strong>Recommended</strong> or <strong>Optional</strong>) and how many columns it has.</GuideStep>
           <GuideStep title="Download it if you need the format">Select <strong>Template</strong> to download a blank file with the right columns, and put your data into it.</GuideStep>
           <GuideStep title="Run the import">Select <strong>Import</strong>. The import wizard opens, where you upload the file, check it and confirm. Nothing is written until you confirm.</GuideStep>
         </GuideSteps>
@@ -46,7 +47,7 @@ export default function ImportInitialDataArticle() {
       </GuideSection>
 
       <GuideSection id="finish-data-setup" title="Finish data setup">
-        <p>When all three required datasets show <strong>Imported</strong>, select <strong>Finish data setup</strong>. The step closes and you return to the control room. The button stays disabled until then.</p>
+        <p>Once at least one file has imported in full, select <strong>Finish data setup</strong>. The step closes and you return to the control room. The button stays disabled until then.</p>
       </GuideSection>
 
       <GuideSection id="common-problems" title="Common problems">
@@ -61,7 +62,7 @@ export default function ImportInitialDataArticle() {
       </GuideSection>
 
       <GuideSection id="completion-check" title="Completion check">
-        <GuideCallout tone="tip" title="You are done when">The Required datasets card reads <strong>3 of 3 fully imported</strong> and the data step shows <strong>Done</strong> in the control room.</GuideCallout>
+        <GuideCallout tone="tip" title="You are done when">Every file you meant to load shows <strong>Imported</strong> and the data step shows <strong>Done</strong> in the control room.</GuideCallout>
       </GuideSection>
     </div>
   );
