@@ -446,3 +446,39 @@ describe("which requests count as signing in", () => {
     expect(isAuthRoute({ url: "/gradebook/scales/5/activate/" })).toBe(false);
   });
 });
+
+describe("server failures", () => {
+  it("shows a typed failure's own sentence instead of the generic one", async () => {
+    respondWith(500, {
+      success: false,
+      message: "Activation could not be completed. The school was not changed.",
+      error: { code: "GOLIVE_ACTIVATION_FAILED", detail: { failure_reference: "GL-7F3A" } },
+    });
+
+    await baseQueryInterceptor({ url: "/onboarding/go-live/", method: "POST" }, apiStub("mutation"), {});
+
+    expect(toastError).toHaveBeenCalledWith(
+      "Activation could not be completed. The school was not changed.",
+    );
+  });
+
+  it("keeps the generic sentence for an unhandled server error", async () => {
+    respondWith(500, {
+      success: false,
+      message: "An unexpected error occurred.",
+      error: { code: "SERVER_ERROR" },
+    });
+
+    await baseQueryInterceptor({ url: "/students/", method: "POST" }, apiStub("mutation"), {});
+
+    expect(toastError).toHaveBeenCalledWith("A server error occurred. Please try again later.");
+  });
+
+  it("keeps the generic sentence for a server error with no code", async () => {
+    respondWith(500, { message: "Traceback (most recent call last)" });
+
+    await baseQueryInterceptor({ url: "/students/", method: "POST" }, apiStub("mutation"), {});
+
+    expect(toastError).toHaveBeenCalledWith("A server error occurred. Please try again later.");
+  });
+});
