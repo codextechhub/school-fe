@@ -2,11 +2,17 @@
 
     python3 demo-videos/voiceover.py demo-videos/narration/<film>.json demo-videos/out/<film>.scenes.json out.wav
 
-The narration file names the macOS voice and gives one entry per scene, in
-order. An entry is the scene's text, or a list of ``[seconds, text]`` pairs
-for a long scene whose actions each deserve their own line, each starting
-that many seconds into the scene; the scenes file is the one to-mp4.mjs writes beside the film, so the
-lines follow the film as it was cut. Each entry is spoken by ``say`` at an
+The narration file names the voice and gives one entry per scene, in order.
+A plain name is a macOS voice spoken by ``say`` (``"Tessa"``). A name starting
+``azure:`` is a Microsoft Azure neural voice (``"azure:en-NG-EzinneNeural"``),
+which needs ``AZURE_SPEECH_KEY`` and ``AZURE_SPEECH_REGION`` set to the Speech
+resource's key and region; the key is read from the environment and never
+stored in a file.
+
+An entry is the scene's text, or a list of ``[seconds, text]`` pairs for a
+long scene whose actions each deserve their own line, each starting that many
+seconds into the scene; the scenes file is the one to-mp4.mjs writes beside the
+film, so the lines follow the film as it was cut. Each entry is spoken at an
 ordinary pace, and spoken faster, up to a limit, when it would run into the
 next scene. A line still too long at the limit is reported rather than
 squeezed further, because past that pace it stops being understandable.
@@ -20,7 +26,9 @@ import os
 import subprocess
 import sys
 import tempfile
+import urllib.request
 import wave
+from xml.sax.saxutils import escape
 
 RATE = 44100
 PACE = 178
@@ -29,14 +37,46 @@ LEAD_IN = 0.35
 GAP = 0.45
 
 
+def azure_wav(text: str, voice: str, pace: int, path: str) -> None:
+    """Writes *text* in the Azure neural *voice* to *path* as a 44.1 kHz mono WAV.
+
+    Azure has no words-a-minute setting, so *pace* becomes a rate relative to
+    the ordinary pace: ``PACE`` speaks at the voice's own speed and each step
+    faster speeds it by the same share ``say`` would.
+    """
+    key, region = os.environ.get("AZURE_SPEECH_KEY"), os.environ.get("AZURE_SPEECH_REGION")
+    if not key or not region:
+        sys.exit("Set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION to the Azure Speech resource's key and region.")
+    rate = f"{(pace / PACE - 1) * 100:+.0f}%"
+    ssml = (
+        f'<speak version="1.0" xml:lang="en-NG"><voice name="{voice}">'
+        f'<prosody rate="{rate}">{escape(text)}</prosody></voice></speak>'
+    )
+    request = urllib.request.Request(
+        f"https://{region}.tts.speech.microsoft.com/cognitiveservices/v1",
+        data=ssml.encode("utf-8"),
+        headers={
+            "Ocp-Apim-Subscription-Key": key,
+            "Content-Type": "application/ssml+xml",
+            "X-Microsoft-OutputFormat": "riff-44100hz-16bit-mono-pcm",
+            "User-Agent": "xvs-demo-voiceover",
+        },
+    )
+    with urllib.request.urlopen(request, timeout=60) as response, open(path, "wb") as out:
+        out.write(response.read())
+
+
 def spoken(text: str, voice: str, pace: int, folder: str) -> bytes:
     """Frames of *text* in *voice* at *pace* words a minute, 16-bit mono."""
     path = os.path.join(folder, "line.wav")
-    subprocess.run(
-        ["say", "-v", voice, "-r", str(pace), "--file-format=WAVE",
-         f"--data-format=LEI16@{RATE}", "-o", path, text],
-        check=True,
-    )
+    if voice.startswith("azure:"):
+        azure_wav(text, voice.removeprefix("azure:"), pace, path)
+    else:
+        subprocess.run(
+            ["say", "-v", voice, "-r", str(pace), "--file-format=WAVE",
+             f"--data-format=LEI16@{RATE}", "-o", path, text],
+            check=True,
+        )
     with wave.open(path) as clip:
         assert clip.getnchannels() == 1 and clip.getsampwidth() == 2 and clip.getframerate() == RATE
         return clip.readframes(clip.getnframes())
