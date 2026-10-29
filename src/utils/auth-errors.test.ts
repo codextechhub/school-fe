@@ -18,6 +18,13 @@ describe("humanizeAuthError", () => {
     );
   });
 
+  it("says a link whose account changed since it was sent can no longer be used", () => {
+    const err = { status: 400, data: { message: "This invitation link is no longer valid.", error: { error_code: "INVITATION_NOT_ACTIONABLE" } } };
+    expect(humanizeAuthError(err, "Activation failed. Please try again.")).toBe(
+      "This invite link can no longer be used. Please contact your administrator.",
+    );
+  });
+
   it("maps password policy violations", () => {
     const err = { status: 400, data: { error: { error_code: "PASSWORD_POLICY_VIOLATION" } } };
     expect(humanizeAuthError(err, FALLBACK)).toBe(
