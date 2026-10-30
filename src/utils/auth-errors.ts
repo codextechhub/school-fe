@@ -28,6 +28,13 @@ const CODE_MESSAGES: Record<string, string> = {
     "Your account is not yet activated. Please check your invitation email or contact your administrator.",
   SCHOOL_CONTEXT_REQUIRED: "Invalid credentials. Please try again.",
 
+  // Two-step sign-in
+  TWO_STEP_CODE_INVALID:
+    "That code is not right. Check your authenticator app and try again.",
+  TWO_STEP_CHALLENGE_INVALID:
+    "This sign-in has expired. Enter your email and password again.",
+  TWO_STEP_SET_UP_NOT_STARTED: "Scan the QR code before entering a code.",
+
   // Invitation / activation
   INVITATION_NOT_FOUND:
     "This invite link is invalid or has expired. Please contact your administrator for a new one.",

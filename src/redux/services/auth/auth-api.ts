@@ -12,7 +12,14 @@ import { routesPath } from "@/routes/routesPath";
 import { recordActivity } from "@/utils/session-activity";
 import { resetSessionInvalidation } from "@/utils/token-refresh";
 import { endSession } from "@/utils/end-session";
-import type { LinkPreview, LoginResponse, OtherApp, PasswordPolicy } from "./auth-types";
+import type {
+  LinkPreview,
+  LoginResponse,
+  MyTwoStep,
+  OtherApp,
+  PasswordPolicy,
+  TwoStepSetUpResponse,
+} from "./auth-types";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { setAccessToken } from "@/utils/access-token";
 import { getCsrfToken } from "@/utils/csrf";
@@ -53,6 +60,61 @@ export interface MeResponse {
   };
 }
 
+/**
+ * Make a finished sign-in this app's session, or decline to.
+ *
+ * Shared by the password step and the two-step code step, which answer alike.
+ * A CodeX account is refused here and its cookie revoked; a pupil's or
+ * parent's sign-in belongs in their own app and is not kept; anyone else's
+ * becomes the session.
+ */
+export async function adoptSignIn(
+  data: LoginResponse,
+  dispatch: (action: unknown) => unknown,
+): Promise<void> {
+  // Identity check: this portal is for school accounts only. A Codex
+  // staff login succeeds at the backend (it's the shared endpoint),
+  // but we refuse to open a session here. Write no local state and
+  // fire-and-forget a logout to revoke the cookie the backend issued.
+  // The login page inspects the same
+  // field and renders the console-redirect error.
+  //
+  // Read off the TENANT, not off the user. This used to test
+  // `user.user_type === "CX_STAFF"`, and that column was removed from
+  // the API: the test could no longer be true, so the guard was
+  // silently letting Codex staff open a school session. Which side of
+  // the platform boundary an account sits on is a fact about its
+  // tenant, and the tenant cannot be wrong about itself.
+  if (data.data?.tenant?.kind === "PLATFORM") {
+    const csrfToken = await getCsrfToken();
+    fetch(`${baseUrl}/user/auth/logout/`, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+        accept: "application/json",
+        ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+      },
+      body: "{}",
+    }).catch(() => {
+      // Best-effort revocation leaves the cookie to age out on failure.
+    });
+    return;
+  }
+
+  // A pupil's sign-in is handed to the student app, and a parent's
+  // opens the parent app, by the login page; this app writes no
+  // session for either.
+  if (data.data?.device_app || data.data?.home_app) return;
+
+  // A fresh, valid session - re-enable token refresh in case a prior
+  // session in this JS context invalidated it.
+  resetSessionInvalidation();
+  setAccessToken(data.data?.access || "");
+  recordActivity();
+  dispatch(setAuthUser(data.data));
+}
+
 export const authApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     // `identifier` is an email address or the school's staff ID; the server
@@ -74,55 +136,64 @@ export const authApi = baseApi.injectEndpoints({
       }),
       async onQueryStarted(_, { queryFulfilled, dispatch }) {
         try {
-          const result = await queryFulfilled;
-          const {data} = result;
-
-          // Identity check: this portal is for school accounts only. A Codex
-          // staff login succeeds at the backend (it's the shared endpoint),
-          // but we refuse to open a session here. Write no local state and
-          // fire-and-forget a logout to revoke the cookie the backend issued.
-          // The login page inspects the same
-          // field and renders the console-redirect error.
-          //
-          // Read off the TENANT, not off the user. This used to test
-          // `user.user_type === "CX_STAFF"`, and that column was removed from
-          // the API: the test could no longer be true, so the guard was
-          // silently letting Codex staff open a school session. Which side of
-          // the platform boundary an account sits on is a fact about its
-          // tenant, and the tenant cannot be wrong about itself.
-          if (data?.data?.tenant?.kind === "PLATFORM") {
-            const csrfToken = await getCsrfToken();
-            fetch(`${baseUrl}/user/auth/logout/`, {
-              method: "POST",
-              credentials: "include",
-              headers: {
-                "Content-Type": "application/json",
-                accept: "application/json",
-                ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
-              },
-              body: "{}",
-            }).catch(() => {
-              // Best-effort revocation leaves the cookie to age out on failure.
-            });
-            return;
-          }
-
-          // A pupil's sign-in is handed to the student app, and a parent's
-          // opens the parent app, by the login page; this app writes no
-          // session for either.
-          if (data?.data?.device_app || data?.data?.home_app) return;
-
-          // A fresh, valid session - re-enable token refresh in case a prior
-          // session in this JS context invalidated it.
-          resetSessionInvalidation();
-          setAccessToken(data?.data?.access || "");
-          recordActivity();
-          dispatch(setAuthUser(data?.data));
+          const { data } = await queryFulfilled;
+          await adoptSignIn(data, dispatch);
         } catch {
           // Login failed - the mutation hook surfaces the error to the page;
-          // nothing to clean up because nothing was written yet.
+          // nothing to clean up because nothing was written yet. A refusal
+          // asking for a two-step code is one of these: it carries no session.
         }
       },
+    }),
+    /**
+     * The second step of a sign-in: a code from the authenticator app, or one
+     * backup code, for the challenge the password step was refused with.
+     * Answers as `login` does and is adopted the same way.
+     */
+    twoStepVerify: builder.mutation<
+      LoginResponse,
+      { challenge: string; code?: string; recovery_code?: string }
+    >({
+      query: (body) => ({
+        url: `/user/auth/two-step/verify/`,
+        method: "POST",
+        body,
+        credentials: "include" as const,
+      }),
+      async onQueryStarted(_, { queryFulfilled, dispatch }) {
+        try {
+          const { data } = await queryFulfilled;
+          await adoptSignIn(data, dispatch);
+        } catch {
+          // A wrong code; the page shows it.
+        }
+      },
+    }),
+    /** A new secret to scan, for a sign-in refused with TWO_STEP_SET_UP_REQUIRED. */
+    twoStepSetUp: builder.mutation<TwoStepSetUpResponse, { challenge: string }>({
+      query: (body) => ({
+        url: `/user/auth/two-step/set-up/`,
+        method: "POST",
+        body,
+        credentials: "include" as const,
+      }),
+    }),
+    /**
+     * The first code from the new authenticator. Answers as `login` does, plus
+     * the backup codes. Not adopted here: the page shows the backup codes
+     * first and adopts the sign-in (`adoptSignIn`) when the person has saved
+     * them, because a signed-in app leaves the sign-in page at once.
+     */
+    twoStepConfirm: builder.mutation<
+      LoginResponse & { data: { recovery_codes: string[] } },
+      { challenge: string; code: string }
+    >({
+      query: (body) => ({
+        url: `/user/auth/two-step/set-up/confirm/`,
+        method: "POST",
+        body,
+        credentials: "include" as const,
+      }),
     }),
     logout: builder.mutation<void, void>({
       queryFn: async (_arg, _api, _extraOptions, baseQuery) => {
@@ -200,6 +271,20 @@ export const authApi = baseApi.injectEndpoints({
     >({
       query: (body) => ({ url: `/user/auth/password/change/`, method: "POST", body }),
       extraOptions: { silent: true },
+    }),
+    /** Whether the signed-in person's two-step sign-in is set up, and how many backup codes are left. */
+    getMyTwoStep: builder.query<{ message: string; data: MyTwoStep }, void>({
+      query: () => ({ url: `/user/auth/me/two-step/`, method: "GET" }),
+      providesTags: ["MyTwoStep"],
+    }),
+    /** Ten new backup codes for a code from the app; silent, the card shows a refusal. */
+    renewMyBackupCodes: builder.mutation<
+      { message: string; data: { recovery_codes: string[] } },
+      { code: string }
+    >({
+      query: (body) => ({ url: `/user/auth/me/two-step/recovery-codes/`, method: "POST", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["MyTwoStep"],
     }),
     /**
      * The effective identity, re-read on mount, every minute and on focus.
@@ -292,6 +377,11 @@ export async function recheckOwnAccess(
 
 export const {
   useLoginMutation,
+  useTwoStepVerifyMutation,
+  useTwoStepSetUpMutation,
+  useTwoStepConfirmMutation,
+  useGetMyTwoStepQuery,
+  useRenewMyBackupCodesMutation,
   useLogoutMutation,
   useForgotPasswordMutation,
   usePasswordResetPreviewQuery,

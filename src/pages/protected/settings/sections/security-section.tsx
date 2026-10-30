@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { RotateCcw, ShieldCheck } from "lucide-react";
+import { KeyRound, RotateCcw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { NativeSelect } from "@/components/ui/native-select";
 import {
   PolicyBadge,
@@ -13,7 +14,9 @@ import {
 import { P } from "@/permissions";
 import {
   useGetSchoolSecuritySettingsQuery,
+  useGetTwoStepSettingQuery,
   useUpdateSchoolSecuritySettingsMutation,
+  useUpdateTwoStepSettingMutation,
 } from "@/redux/services/school/school-settings-api";
 import type {
   SecurityCompliance,
@@ -153,6 +156,9 @@ export function SecuritySection() {
           </p>
         </div>
       ) : null}
+
+      {/* A whole-school rule: shown with the school's settings, not a branch's. */}
+      {branch ? null : <TwoStepPanel />}
 
       {data ? (
         // Keyed by scope, so switching branch starts a clean draft.
@@ -311,3 +317,77 @@ function SourceBadge({ source }: { source?: SecuritySourceScope }) {
   if (source === "platform") return <PolicyBadge kind="enforced">XVS baseline</PolicyBadge>;
   return <PolicyBadge kind="default">Default</PolicyBadge>;
 }
+
+/**
+ * Whether administrators and finance staff need a code from an authenticator
+ * app after their password. On unless the school turns it off; turning it off
+ * asks first, because it leaves the school's money and accounts behind a
+ * password alone. A whole-school rule, so a branch-bound reader sees it
+ * without the switch.
+ */
+function TwoStepPanel() {
+  const { canSave } = useSettingsWrite(P.UPDATE_SETTINGS);
+  const query = useGetTwoStepSettingQuery();
+  const [save, { isLoading: saving }] = useUpdateTwoStepSettingMutation();
+  const [confirmingOff, setConfirmingOff] = useState(false);
+  const [error, setError] = useState("");
+  const data = query.data?.data;
+  if (!data) return null;
+
+  const change = async (required: boolean) => {
+    setError("");
+    try {
+      await save({ required }).unwrap();
+      setConfirmingOff(false);
+      toast.success(
+        required
+          ? "Administrators and finance staff will be asked for a code."
+          : "Two-step sign-in is off for your school.",
+      );
+    } catch (failure) {
+      setError(writeErrorMessage(failure, "Two-step sign-in could not be changed."));
+    }
+  };
+
+  return (
+    <SettingsPanel
+      title="Two-step sign-in"
+      description="A code from an authenticator app, such as Google Authenticator, after the password. Someone who learns a password still cannot sign in without the phone."
+    >
+      <SettingsRow
+        icon={KeyRound}
+        label="Ask administrators and finance staff for a code"
+        description="Anyone who can manage your school's accounts, roles or settings, or change its money. Teachers are not asked."
+        badge={data.source === "school" ? <PolicyBadge kind="configured">Set by your school</PolicyBadge> : <PolicyBadge kind="default">On by default</PolicyBadge>}
+        value={
+          <Switch
+            checked={data.required}
+            disabled={!canSave || saving}
+            aria-label="Ask administrators and finance staff for a code"
+            onCheckedChange={(next) => (next ? void change(true) : setConfirmingOff(true))}
+          />
+        }
+      />
+      {confirmingOff ? (
+        <div role="alert" className="mx-4 mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3.5 sm:mx-5">
+          <p className="font-mont text-sm font-semibold text-amber-800">Turn off two-step sign-in?</p>
+          <p className="mt-1 font-mont text-xs leading-5 text-amber-900">
+            Your school&apos;s accounts and money will be protected by passwords alone. Anyone who learns an administrator&apos;s password could sign in as them.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={() => setConfirmingOff(false)} disabled={saving}>
+              Keep it on
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => void change(false)} loading={saving}>
+              Turn it off
+            </Button>
+          </div>
+        </div>
+      ) : null}
+      {error ? (
+        <p role="alert" className="px-4 pb-4 font-mont text-xs text-destructive sm:px-5">{error}</p>
+      ) : null}
+    </SettingsPanel>
+  );
+}
+

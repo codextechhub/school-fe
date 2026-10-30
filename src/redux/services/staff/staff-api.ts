@@ -271,7 +271,11 @@ export const staffApi = baseApi.injectEndpoints({
      */
     staffAccountAction: builder.mutation<
       Envelope<StaffDetail>,
-      { id: number; action: "suspend" | "reactivate" | "unlock"; reason?: string }
+      {
+        id: number;
+        action: "suspend" | "reactivate" | "unlock" | "reset-two-step";
+        reason?: string;
+      }
     >({
       query: ({ id, action, reason }) => ({
         url: `/i/me/staff/${id}/account/${action}/`,

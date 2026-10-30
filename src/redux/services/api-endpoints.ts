@@ -30,6 +30,9 @@ export const PUBLIC_PAYER_ENDPOINTS = new Set([
 // already-authenticated, which can surface as a 500.
 export const AUTH_ENDPOINTS = new Set([
   "login",
+  "twoStepVerify",
+  "twoStepSetUp",
+  "twoStepConfirm",
   "forgotPassword",
   "passwordResetPreview",
   "passwordResetConfirm",
@@ -53,6 +56,8 @@ export const TENANT_EXEMPT_ENDPOINTS = new Set([
   "getMySecurityStats",
   "getMyPasswordResets",
   "changeMyPassword",
+  "getMyTwoStep",
+  "renewMyBackupCodes",
 ]);
 
 /**

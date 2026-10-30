@@ -76,3 +76,32 @@ export interface LoginResponse extends ResponseMessage {
     other_apps?: OtherApp[]
   }
 }
+
+/** The authenticator to set up, for a sign-in refused with TWO_STEP_SET_UP_REQUIRED. */
+export interface TwoStepSetUpResponse extends ResponseMessage {
+  data: {
+    /** The secret, to type in where a camera is not to hand. */
+    secret: string
+    /** The `otpauth://` address the QR code carries. */
+    otpauth_uri: string
+    /** The name the app lists the account under: the school's. */
+    issuer: string
+    account: string
+  }
+}
+
+/** The signed-in person's own two-step sign-in. */
+export interface MyTwoStep {
+  set_up: boolean
+  /** Whether their role, at this school, needs it. */
+  required: boolean
+  recovery_codes_left: number
+}
+
+/** The challenge a sign-in refused for a two-step code carries in `error`. */
+export interface TwoStepChallenge {
+  code: "TWO_STEP_REQUIRED" | "TWO_STEP_SET_UP_REQUIRED"
+  detail: string
+  challenge: string
+  expires_in: number
+}

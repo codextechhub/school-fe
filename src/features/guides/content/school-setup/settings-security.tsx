@@ -54,6 +54,14 @@ export default function SettingsSecurityArticle() {
         </div>
       </GuideSection>
 
+      <GuideSection id="two-step-sign-in" title="Two-step sign-in">
+        <p>Above the six rules, <strong>Two-step sign-in</strong> decides whether administrators and anyone who can change your school&apos;s money type a code from an authenticator app after their password. It is on unless your school turns it off, and teachers are never asked. CodeX staff are always asked, whatever your school chooses.</p>
+        <p>Turning it off asks you to confirm first, because the school&apos;s accounts and money are then protected by passwords alone. It is a whole-school rule, so it is not shown while a branch is picked, and changing it needs a role that reaches the whole school.</p>
+        <GuideCallout tone="info" title="Someone lost their phone">
+          Open their staff profile and select <strong>Reset two-step sign-in</strong>. Their app and backup codes stop working, and they set up a new app the next time they sign in. Nobody can reset their own.
+        </GuideCallout>
+      </GuideSection>
+
       <GuideSection id="stricter-never-looser" title="Stricter, never looser">
         <p>Each rule is bounded by the one above it. Your school can be stricter than the XVS baseline, and a branch can be stricter than the whole school, but neither can be looser. A school that shortens reset links to 2 hours is safer than XVS requires, and allowed. One that stretches invitations beyond what XVS allows is refused.</p>
         <p>The text under each rule names its limit, for example <strong>At most 5 attempts, because the XVS baseline is 5.</strong> For a branch the limit is the school&apos;s own setting rather than the baseline.</p>

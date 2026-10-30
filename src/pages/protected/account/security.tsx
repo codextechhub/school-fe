@@ -8,6 +8,7 @@ import { useAppSelector } from "@/redux/store";
 import { cn } from "@/lib/utils";
 import { formatRelativeDate } from "@/utils/helpers";
 import { ChangePasswordForm } from "./change-password-form";
+import { TwoStepCard } from "./two-step-card";
 
 /**
  * `/account/security`: the signed-in person's own sign-in account.
@@ -21,7 +22,7 @@ import { ChangePasswordForm } from "./change-password-form";
  *
  * While proxying, the session acts as the person being proxied, so a change
  * here would change their password, not the actor's. The form is withheld and
- * the page says how to reach the actor's own.
+ * the page says how to reach the actor's own, and so is the two-step card.
  */
 export default function AccountSecurity() {
   const user = useAppSelector(selectUser);
@@ -66,6 +67,8 @@ export default function AccountSecurity() {
           <ChangePasswordForm />
         </section>
       )}
+
+      {impersonation ? null : <TwoStepCard />}
     </PageShell>
   );
 }

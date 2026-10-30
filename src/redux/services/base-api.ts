@@ -315,6 +315,10 @@ const invalidRequestMessage = (res: unknown): string => {
  */
 const AUTH_URLS = [
   "login",
+  // The second step of a sign-in: a wrong code is the page's to show, and
+  // never a reason to renew a session there is not yet.
+  "two-step/verify",
+  "two-step/set-up",
   "reset-password",
   "password/reset",
   "forgot-password",
@@ -598,6 +602,8 @@ export const baseApi = createApi({
     "StudentPaymentRules",
     // What students may do for themselves in the student portal.
     "StudentPortalRules",
+    // The signed-in person's own two-step sign-in, on Account security.
+    "MyTwoStep",
     "ExportCapabilities",
     "ExportCatalogue",
     "ExportDefinitions",

@@ -29,6 +29,7 @@ export default function ActivateAndSignInArticle() {
           <GuideStep title="Enter Email or staff ID">Use the email address shown during activation, or your staff ID (for example STF/0012).</GuideStep>
           <GuideStep title="Enter Password and select Sign in">A school that is live opens on the <strong>Dashboard</strong>. A school still being set up opens on its onboarding screens. If you were sent to sign in from a page, you may be returned to that page instead.</GuideStep>
         </GuideSteps>
+        <GuideCallout title="A code after your password">If you are an administrator or can change your school&apos;s money, your school may ask for a code from an authenticator app after your password. The first time, the page shows a QR code: scan it with Google Authenticator, Microsoft Authenticator or any app like them, type the 6-digit code the app shows, and save the ten backup codes you are given. After that, type the code your app shows each time you sign in.</GuideCallout>
         <GuideCallout title="What you see after signing in">Your role decides which menus and buttons appear. Signing in proves who you are; it does not add anything to what your role allows.</GuideCallout>
       </GuideSection>
 
@@ -40,6 +41,8 @@ export default function ActivateAndSignInArticle() {
           <li><strong>Your account is locked</strong>: reset your password or ask your administrator to unlock it.</li>
           <li><strong>Your account has been suspended</strong> or <strong>This account has been deactivated</strong>: only your administrator can restore it. A password reset does not.</li>
           <li><strong>Too many attempts. Please wait a moment and try again.</strong>: stop for a minute before the next try.</li>
+          <li><strong>That code is not right</strong>: type the code your authenticator app shows now; each code lasts 30 seconds and works once. Five wrong codes send you back to your password.</li>
+          <li><strong>You lost your phone</strong>: select <strong>Lost your phone? Use a backup code</strong> and type one of your backup codes. If you have none, ask another administrator to reset your two-step sign-in from your staff profile, then set it up again on your new phone.</li>
         </ul>
       </GuideSection>
 

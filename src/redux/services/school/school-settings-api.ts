@@ -9,6 +9,7 @@ import type {
   PayrollScopeData,
   SecuritySettingsData,
   SecuritySettingsPatch,
+  TwoStepSettingData,
 } from "./school-settings-types";
 
 /**
@@ -89,6 +90,20 @@ export const schoolSettingsApi = baseApi.injectEndpoints({
       invalidatesTags: ["SchoolSettings"],
     }),
 
+    getTwoStepSetting: builder.query<Envelope<TwoStepSettingData>, void>({
+      query: () => ({ url: `/i/me/settings/two-step/`, method: "GET" }),
+      providesTags: ["SchoolSettings"],
+    }),
+
+    updateTwoStepSetting: builder.mutation<
+      Envelope<TwoStepSettingData>,
+      { required: boolean; reason?: string }
+    >({
+      query: (body) => ({ url: `/i/me/settings/two-step/`, method: "PATCH", body }),
+      extraOptions: { silent: true },
+      invalidatesTags: ["SchoolSettings"],
+    }),
+
     getDisplaySettings: builder.query<Envelope<DisplaySettingsData>, void>({
       query: () => ({ url: `/i/me/settings/display/`, method: "GET" }),
       providesTags: ["SchoolSettings"],
@@ -137,6 +152,8 @@ export const {
   useUpdateSchoolSecuritySettingsMutation,
   useGetPayrollScopeQuery,
   useUpdatePayrollScopeMutation,
+  useGetTwoStepSettingQuery,
+  useUpdateTwoStepSettingMutation,
   useGetDisplaySettingsQuery,
   useGetBranchTimezoneQuery,
   useUpdateDisplaySettingsMutation,

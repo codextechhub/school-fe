@@ -78,6 +78,13 @@ export interface PayrollScopeData {
   options: PayrollScopeOption[];
 }
 
+/** Whether administrators and finance need a code from an authenticator app to sign in. */
+export interface TwoStepSettingData {
+  required: boolean;
+  /** "default" means nobody has set it, and it is on. */
+  source: "school" | "platform" | "default";
+}
+
 /** Where a display value came from: set at this scope, inherited, or the default. */
 export type DisplaySource = "school" | "branch" | "platform" | "default";
 

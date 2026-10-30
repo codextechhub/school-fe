@@ -14,6 +14,7 @@ import {
   KeyRound,
   Mail,
   ShieldCheck,
+  ShieldOff,
   UserRound,
 } from "lucide-react";
 
@@ -105,6 +106,7 @@ export default function StaffProfile() {
   const tab = params.get("tab") ?? "overview";
   const [drawer, setDrawer] = useState<StaffDrawerRequest | null>(null);
   const [historySection, setHistorySection] = useState<StaffHistorySection | null>(null);
+  const [confirmingTwoStepReset, setConfirmingTwoStepReset] = useState(false);
   const [asAt, setAsAt] = useAsAtParam();
 
   // `currentData`, so another day's answer is never shown under this one.
@@ -164,6 +166,19 @@ export default function StaffProfile() {
     } catch (error) {
       toast.error(
         apiErrorMessage(error, "We could not unlock that account. Try again."),
+      );
+    }
+  }
+
+  async function resetTwoStep() {
+    if (!person) return;
+    try {
+      await accountAction({ id: person.id, action: "reset-two-step" }).unwrap();
+      setConfirmingTwoStepReset(false);
+      toast.success(`${person.full_name} will set up two-step sign-in again at their next sign-in.`);
+    } catch (error) {
+      toast.error(
+        apiErrorMessage(error, "We could not reset their two-step sign-in. Try again."),
       );
     }
   }
@@ -392,6 +407,21 @@ export default function StaffProfile() {
                     </Button>
                   </PermissionGate>
                 )}
+                {/* For a lost phone. Never your own: another administrator resets yours. */}
+                {person.account.can_hold_password &&
+                  person.user_id !== signedInUserId && (
+                    <PermissionGate permission={P.MODIFY_ADMINISTRATOR} disabled={!manageable}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={actingOnAccount}
+                        onClick={() => setConfirmingTwoStepReset(true)}
+                      >
+                        <ShieldOff className="size-4" />
+                        Reset two-step sign-in
+                      </Button>
+                    </PermissionGate>
+                  )}
                 {person.can_resend && (
                   <PermissionGate permission={P.INVITE_TEACHER} disabled={!manageable}>
                     <Button
@@ -465,6 +495,17 @@ export default function StaffProfile() {
       )}
 
       <StaffDrawers request={drawer} onClose={() => setDrawer(null)} onRequest={setDrawer} />
+      {person ? (
+        <ConfirmDialog
+          open={confirmingTwoStepReset}
+          onCancel={() => setConfirmingTwoStepReset(false)}
+          onConfirm={() => void resetTwoStep()}
+          title="Reset two-step sign-in?"
+          body={`Use this when ${person.full_name} has lost the phone with their authenticator app. Their app and backup codes stop working, and they set up a new app the next time they sign in.`}
+          confirmLabel="Reset two-step sign-in"
+          busy={actingOnAccount}
+        />
+      ) : null}
       {person && historySection && <SectionHistoryDrawer
         key={historySection} staffId={person.id} personName={person.full_name}
         section={historySection} branch={person.branch_id} asAt={asAt}

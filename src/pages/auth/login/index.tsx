@@ -7,12 +7,15 @@ import { signInTarget } from "./sign-in-target";
 import { humanizeAuthError } from "@/utils/auth-errors";
 import { loginSchema } from "@/schema/auth";
 import { useFormik } from "formik";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router";
 import NoSchoolNotice from "@/components/auth/no-school-notice";
 import { currentSchoolSlug } from "@/utils/school-host";
 import { handOverToDeviceApp, openDeviceAppSignIn } from "@/utils/device-app-handover";
 import { openHomeApp } from "@/utils/home-app";
+import type { LoginResponse, TwoStepChallenge } from "@/redux/services/auth/auth-types";
+import { TwoStepStep } from "./two-step";
+import { twoStepChallengeOf } from "./two-step-challenge";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,6 +23,8 @@ export default function Login() {
   const [schoolSlug] = useState(() => currentSchoolSlug());
   const [login, { isLoading }] = useLoginMutation();
   const [apiError, setApiError] = useState("");
+  // Set when the password was right and the server wants a two-step code.
+  const [twoStep, setTwoStep] = useState<TwoStepChallenge | null>(null);
   // Read once at mount (lazy initialiser); the effect only clears the flag so
   // a later manual visit to /accounts doesn't re-show a stale banner.
   const [sessionBanner] = useState(
@@ -29,6 +34,40 @@ export default function Login() {
   useEffect(() => {
     sessionStorage.removeItem("_auth_banner");
   }, []);
+
+  /** Where a finished sign-in goes, after the password or after its two-step code. */
+  const afterSignIn = (res: LoginResponse) => {
+    // Identity check: this portal is for school accounts only. The login
+    // succeeds at the shared backend endpoint even for Codex staff, but
+    // auth-api's onQueryStarted writes NO cookies/state for a platform
+    // account (and blacklists the issued pair). Refuse to navigate and
+    // point them to the Console.
+    //
+    // Read off the tenant, not the user: the `user_type` column this used
+    // to test was removed from the API, so the test could no longer be
+    // true and Codex staff were being let through. See auth-api.
+    if (res.data.tenant?.kind === "PLATFORM") {
+      setTwoStep(null);
+      setApiError(
+        "This portal is for school accounts. Codex staff sign in at the Console - intranet.codexng.com.",
+      );
+      return;
+    }
+    // A pupil or a parent belongs in their own app: hand the sign-in
+    // across and open it, or send them to its own sign-in if that fails.
+    if (res.data.device_app) {
+      const app = res.data.device_app;
+      return handOverToDeviceApp(app).then((opened) => {
+        if (!opened) openDeviceAppSignIn(app);
+      });
+    }
+    // A parent with no staff role, opened in the parent app without a device session.
+    if (res.data.home_app) return openHomeApp(res.data.home_app);
+    navigate(
+      signInTarget(consumeReturnTo(), res.data.tenant?.status === "PENDING"),
+      { replace: true },
+    );
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -40,38 +79,10 @@ export default function Login() {
       setApiError("");
       login({ ...values, identifier: values.identifier.trim() })
         .unwrap()
-        .then((res) => {
-          // Identity check: this portal is for school accounts only. The login
-          // succeeds at the shared backend endpoint even for Codex staff, but
-          // auth-api's onQueryStarted writes NO cookies/state for a platform
-          // account (and blacklists the issued pair). Refuse to navigate and
-          // point them to the Console.
-          //
-          // Read off the tenant, not the user: the `user_type` column this used
-          // to test was removed from the API, so the test could no longer be
-          // true and Codex staff were being let through. See auth-api.
-          if (res.data.tenant?.kind === "PLATFORM") {
-            setApiError(
-              "This portal is for school accounts. Codex staff sign in at the Console - intranet.codexng.com.",
-            );
-            return;
-          }
-          // A pupil or a parent belongs in their own app: hand the sign-in
-          // across and open it, or send them to its own sign-in if that fails.
-          if (res.data.device_app) {
-            const app = res.data.device_app;
-            return handOverToDeviceApp(app).then((opened) => {
-              if (!opened) openDeviceAppSignIn(app);
-            });
-          }
-          // A parent with no staff role, opened in the parent app without a device session.
-          if (res.data.home_app) return openHomeApp(res.data.home_app);
-          navigate(
-            signInTarget(consumeReturnTo(), res.data.tenant?.status === "PENDING"),
-            { replace: true },
-          );
-        })
+        .then(afterSignIn)
         .catch((err) => {
+          const challenge = twoStepChallengeOf(err);
+          if (challenge) return setTwoStep(challenge);
           setApiError(
             humanizeAuthError(err, "Invalid credentials. Please try again."),
           );
@@ -79,12 +90,30 @@ export default function Login() {
     },
   });
 
+  // Back to the password: a second step that expired, or "someone else".
+  const startAgain = useCallback((message?: string) => {
+    setTwoStep(null);
+    setApiError(message ?? "");
+  }, []);
+
   // Sign-in has to name the school it is for, and this address names none, so
   // the form is not offered. See NoSchoolNotice.
   if (!schoolSlug) {
     return (
       <div className="w-full">
         <NoSchoolNotice action="sign in" />
+      </div>
+    );
+  }
+
+  if (twoStep) {
+    return (
+      <div className="w-full">
+        <TwoStepStep
+          challenge={twoStep}
+          onSignedIn={afterSignIn}
+          onStartAgain={startAgain}
+        />
       </div>
     );
   }
