@@ -27,6 +27,15 @@ let rules: PromotionRules = RULES;
 const save = vi.fn();
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("@/hooks/use-permissions", () => ({
+  usePermissions: () => ({
+    fieldAccess: {},
+    hasPermission: () => true,
+    hasAnyPermission: () => true,
+    hasAllPermissions: () => true,
+    hasModuleAccess: () => true,
+  }),
+}));
 vi.mock("../use-settings-write", async (importActual) => ({
   ...(await importActual<typeof import("../use-settings-write")>()),
   useSettingsWrite: () => ({ canSave: true, reason: null }),
