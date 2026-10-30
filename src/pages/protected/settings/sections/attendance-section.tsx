@@ -27,6 +27,7 @@ import type {
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { DrawerShell, Field } from "@/pages/protected/students/drawers/drawer-shell";
 import { useSettingsWrite } from "../use-settings-write";
+import { useSettingFields } from "../use-setting-fields";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 const FIELDS = [
@@ -77,6 +78,7 @@ export function AttendanceSection() {
 
 function AttendanceForm({ settings }: { settings: AttendanceSettings }) {
   const { canSave, reason } = useSettingsWrite(P.MANAGE_ATTENDANCE_SETTINGS);
+  const { shown, editable } = useSettingFields({}, canSave);
   const [save, { isLoading: saving }] = useUpdateAttendanceSettingsMutation();
   const [levels, setLevels] = useState<string[]>(settings.lesson_marking_levels);
   const [notices, setNotices] = useState(settings.guardian_notices);
@@ -97,21 +99,22 @@ function AttendanceForm({ settings }: { settings: AttendanceSettings }) {
 
   const sorted = (list: string[]) => [...list].sort().join();
   const changed =
-    sorted(levels) !== sorted(settings.lesson_marking_levels) ||
-    notices !== settings.guardian_notices ||
-    thresholdValue !== settings.chronic_threshold ||
-    windowValue !== settings.edit_window_days;
-  const invalid = Boolean(thresholdProblem || windowProblem);
+    (editable("lesson_marking_levels") && sorted(levels) !== sorted(settings.lesson_marking_levels)) ||
+    (editable("guardian_notices") && notices !== settings.guardian_notices) ||
+    (editable("chronic_threshold") && thresholdValue !== settings.chronic_threshold) ||
+    (editable("edit_window_days") && windowValue !== settings.edit_window_days);
+  const invalid = Boolean((editable("chronic_threshold") && thresholdProblem) ||
+    (editable("edit_window_days") && windowProblem));
 
   const onSave = async () => {
     if (!changed || invalid) return;
     setErrors({});
     try {
       await save({
-        lesson_marking_levels: levels,
-        guardian_notices: notices,
-        chronic_threshold: thresholdValue,
-        edit_window_days: windowValue,
+        ...(editable("lesson_marking_levels") && sorted(levels) !== sorted(settings.lesson_marking_levels) ? { lesson_marking_levels: levels } : {}),
+        ...(editable("guardian_notices") && notices !== settings.guardian_notices ? { guardian_notices: notices } : {}),
+        ...(editable("chronic_threshold") && thresholdValue !== settings.chronic_threshold ? { chronic_threshold: thresholdValue } : {}),
+        ...(editable("edit_window_days") && windowValue !== settings.edit_window_days ? { edit_window_days: windowValue } : {}),
       }).unwrap();
       toast.success("Attendance settings saved.");
     } catch (error) {
@@ -127,7 +130,7 @@ function AttendanceForm({ settings }: { settings: AttendanceSettings }) {
 
   return (
     <div className="space-y-5">
-      <SettingsPanel
+      {shown("lesson_marking_levels") && <SettingsPanel
         title="Lesson marking"
         description="A switch per level. On, each class in the level also has a register for every lesson on its published timetable. Off, a class has one register a day and nothing else."
       >
@@ -143,7 +146,7 @@ function AttendanceForm({ settings }: { settings: AttendanceSettings }) {
                       <span className="font-mont text-sm text-gray-01">{level.name}</span>
                       <Switch
                         checked={on}
-                        disabled={!canSave}
+                        disabled={!editable("lesson_marking_levels")}
                         aria-label={`Lesson marking for ${level.name}`}
                         onCheckedChange={(next) =>
                           setLevels(next ? [...levels, level.code] : levels.filter((code) => code !== level.code))
@@ -164,9 +167,9 @@ function AttendanceForm({ settings }: { settings: AttendanceSettings }) {
           ))}
         </div>
         <ErrorLine text={errors.lesson_marking_levels} padded />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel title="Guardian notices">
+      {shown("guardian_notices") && <SettingsPanel title="Guardian notices">
         <label className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
           <span className="min-w-0">
             <span className="block font-mont text-sm font-medium text-gray-01">Email the guardian when a child is absent</span>
@@ -177,17 +180,17 @@ function AttendanceForm({ settings }: { settings: AttendanceSettings }) {
           </span>
           <Switch
             checked={notices}
-            disabled={!canSave}
+            disabled={!editable("guardian_notices")}
             onCheckedChange={setNotices}
             aria-label="Email the guardian when a child is absent"
           />
         </label>
         <ErrorLine text={errors.guardian_notices} padded />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel title="Rules">
+      {(shown("chronic_threshold") || shown("edit_window_days")) && <SettingsPanel title="Rules">
         <div className="grid grid-cols-1 gap-5 px-4 py-4 sm:grid-cols-2 sm:px-5">
-          <label className="block min-w-0">
+          {shown("chronic_threshold") && <label className="block min-w-0">
             <span className="font-mont text-sm font-medium text-gray-01">Chronic-absence threshold</span>
             <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
               In percent. A student whose rate for the term is below it is on the chronic-absence
@@ -199,14 +202,14 @@ function AttendanceForm({ settings }: { settings: AttendanceSettings }) {
               inputMode="numeric"
               min={50}
               max={100}
-              disabled={!canSave}
+              disabled={!editable("chronic_threshold")}
               aria-invalid={thresholdProblem ? true : undefined}
               value={threshold}
               onChange={(event) => setThreshold(event.target.value)}
             />
             <ErrorLine text={thresholdProblem || errors.chronic_threshold} />
-          </label>
-          <label className="block min-w-0">
+          </label>}
+          {shown("edit_window_days") && <label className="block min-w-0">
             <span className="font-mont text-sm font-medium text-gray-01">Days a register stays open to changes</span>
             <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
               After a register is submitted, the person who took it can change a row for this many
@@ -219,15 +222,15 @@ function AttendanceForm({ settings }: { settings: AttendanceSettings }) {
               inputMode="numeric"
               min={0}
               max={14}
-              disabled={!canSave}
+              disabled={!editable("edit_window_days")}
               aria-invalid={windowProblem ? true : undefined}
               value={editWindow}
               onChange={(event) => setEditWindow(event.target.value)}
             />
             <ErrorLine text={windowProblem || errors.edit_window_days} />
-          </label>
+          </label>}
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
       {canSave ? (
         <div className="flex flex-wrap items-center justify-end gap-3">
@@ -262,6 +265,7 @@ function groupByProgramme(levels: SettingsLevel[]): [string, SettingsLevel[]][] 
  */
 function ReasonCodes() {
   const { canSave } = useSettingsWrite(P.MANAGE_ATTENDANCE_SETTINGS);
+  const { shown, editable } = useSettingFields({ name: "reason_code_name" }, canSave);
   const { data, isLoading } = useGetReasonCodesQuery();
   const [setRetired, retiring] = useSetReasonCodeRetiredMutation();
   const [adding, setAdding] = useState(false);
@@ -270,13 +274,14 @@ function ReasonCodes() {
   const toggle = async (code: ReasonCode) => {
     const result = await setRetired({ id: code.id, retired: !code.retired });
     if ("error" in result) return;
-    toast.success(code.retired ? `${code.name} restored` : `${code.name} retired`, {
+    toast.success(code.retired ? `${code.name ?? "Reason"} restored` : `${code.name ?? "Reason"} retired`, {
       description: code.retired
         ? "It can be chosen again."
         : "It stays on the marks that used it and is offered on no new one.",
     });
   };
 
+  if (!["name", "retired", "requires_note", "used_this_term"].some(shown)) return null;
   return (
     <SettingsPanel
       title="Reasons for excused absences"
@@ -287,22 +292,22 @@ function ReasonCodes() {
         {codes.map((code) => (
           <li key={code.id} className="flex min-w-0 flex-wrap items-center gap-3 px-4 py-3 sm:px-5">
             <span className="min-w-0 flex-1">
-              <span className="block font-mont text-sm font-medium text-gray-01">{code.name}</span>
+              {shown("name") && <span className="block font-mont text-sm font-medium text-gray-01">{code.name}</span>}
               <span className="block font-mont text-xs text-gray-05">
                 {[
-                  code.retired
+                  shown("retired") && code.retired
                     ? "Kept on the marks that used it, offered on no new mark"
-                    : code.used_this_term !== undefined
+                    : shown("used_this_term") && code.used_this_term !== undefined
                       ? `${code.used_this_term} mark${code.used_this_term === 1 ? "" : "s"} this term`
                       : null,
-                  code.requires_note ? "Needs a note" : null,
+                  shown("requires_note") && code.requires_note ? "Needs a note" : null,
                 ].filter(Boolean).join(" · ")}
               </span>
             </span>
-            <Badge variant={code.retired ? "inactive" : "active"} className="rounded-full">
+            {shown("retired") && <Badge variant={code.retired ? "inactive" : "active"} className="rounded-full">
               {code.retired ? "Retired" : "In use"}
-            </Badge>
-            {canSave && (
+            </Badge>}
+            {editable("retired") && (
               <Button
                 variant="outline"
                 size="sm"
@@ -315,27 +320,27 @@ function ReasonCodes() {
           </li>
         ))}
       </ul>
-      {canSave && (
+      {editable("name") && (
         <div className="px-4 py-3 sm:px-5">
           <Button variant="outline" size="sm" onClick={() => setAdding(true)}>
             Add a reason
           </Button>
         </div>
       )}
-      {adding && <AddReasonDrawer onClose={() => setAdding(false)} />}
+      {adding && <AddReasonDrawer onClose={() => setAdding(false)} canEditNote={editable("requires_note")} />}
     </SettingsPanel>
   );
 }
 
 /** A new reason: its name, and whether choosing it asks for a note. */
-function AddReasonDrawer({ onClose }: { onClose: () => void }) {
+function AddReasonDrawer({ onClose, canEditNote }: { onClose: () => void; canEditNote: boolean }) {
   const [name, setName] = useState("");
   const [needsNote, setNeedsNote] = useState(false);
   const [add, { isLoading }] = useAddReasonCodeMutation();
   const trimmed = name.trim();
 
   const submit = async () => {
-    const result = await add({ name: trimmed, requires_note: needsNote });
+    const result = await add({ name: trimmed, ...(canEditNote ? { requires_note: needsNote } : {}) });
     if ("error" in result) return;
     toast.success(`${trimmed} added`, { description: "It is offered the next time a child is marked Excused." });
     onClose();
@@ -355,7 +360,7 @@ function AddReasonDrawer({ onClose }: { onClose: () => void }) {
       <Field label="Name" required hint="At most 60 characters. For example, Exam leave.">
         <Input value={name} maxLength={60} onChange={(event) => setName(event.target.value)} />
       </Field>
-      <label className="flex items-start gap-2.5 font-mont text-sm text-gray-01">
+      {canEditNote && <label className="flex items-start gap-2.5 font-mont text-sm text-gray-01">
         <Checkbox checked={needsNote} onCheckedChange={(on) => setNeedsNote(on === true)} />
         <span className="min-w-0">
           Needs a note
@@ -363,7 +368,7 @@ function AddReasonDrawer({ onClose }: { onClose: () => void }) {
             Choosing it asks for a sentence saying what happened, as Other does.
           </span>
         </span>
-      </label>
+      </label>}
     </DrawerShell>
   );
 }

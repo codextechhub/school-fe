@@ -27,12 +27,12 @@ export interface SchoolProfile {
   status: string;
 
   // The school's own.
-  ownership_type: string;
+  ownership_type?: string;
   term_structure: string;
   currency: string;
   address?: string;
-  website: string;
-  motto: string;
+  website?: string;
+  motto?: string;
   registration_id?: string;
   logo: string;
 

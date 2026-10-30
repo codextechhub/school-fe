@@ -7,6 +7,7 @@ import { P } from "@/permissions";
 import { NumberRuleSection, type NumberRuleConfig } from "./number-rule-section";
 
 const STAFF_NUMBERS: NumberRuleConfig = {
+  fieldPrefix: "staff_number_",
   title: "Staff IDs",
   description:
     "Whether everybody on the staff must have a staff ID when they are added, and what a valid one looks like at your school. A staff ID also works for signing in.",

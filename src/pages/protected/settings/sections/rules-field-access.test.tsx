@@ -132,7 +132,7 @@ describe("rule screens and Field Access", () => {
       expect(saveEnrolment.mock.calls[0][0]).not.toHaveProperty("binding_required_fields");
     });
 
-    it("sends back the requirement it did not show when the change is elsewhere", async () => {
+    it("leaves hidden requirements to the server when another setting changes", async () => {
       saveEnrolment.mockReturnValue({ unwrap: () => Promise.resolve({}) });
       await render();
 
@@ -143,10 +143,7 @@ describe("rule screens and Field Access", () => {
       });
       await act(async () => button("Save enrolment rules")?.click());
 
-      expect(saveEnrolment.mock.calls[0][0]).toMatchObject({
-        min_age_years: 3,
-        required_fields: ["blood_group", "previous_school"],
-      });
+      expect(saveEnrolment.mock.calls[0][0]).toEqual({ min_age_years: 3 });
     });
 
     it("drops the whole panel when the user can read none of the details", async () => {

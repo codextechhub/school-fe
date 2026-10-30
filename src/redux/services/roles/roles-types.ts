@@ -96,6 +96,7 @@ export interface CatalogueField {
   description: string;
   sensitive: boolean;
   writable: boolean;
+  read_always: boolean;
   default: { read: boolean; write: boolean };
 }
 

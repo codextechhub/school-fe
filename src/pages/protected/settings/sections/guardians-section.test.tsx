@@ -89,7 +89,7 @@ describe("GuardiansSection parent app rule", () => {
     expect(container.textContent).toContain("because the invitation goes to that email");
   });
 
-  it("restores the school's own email choice when the rule is turned off, and saves both", async () => {
+  it("turns off parent access without submitting an unchanged email rule", async () => {
     await render();
     await act(async () => toggle(PARENT_APP)?.click());
 
@@ -97,9 +97,7 @@ describe("GuardiansSection parent app rule", () => {
     expect(toggle(EMAIL)?.disabled).toBe(false);
 
     await act(async () => button("Save guardian rules")?.click());
-    expect(save).toHaveBeenCalledWith(
-      expect.objectContaining({ parent_app_auto_access: false, email_required: false }),
-    );
+    expect(save).toHaveBeenCalledWith({ parent_app_auto_access: false });
   });
 
   it("offers no parent app switch where the server has no such rule", async () => {

@@ -715,7 +715,7 @@ export const studentsApi = baseApi.injectEndpoints({
      */
     updateAdmissionPolicy: builder.mutation<
       Envelope<Omit<AdmissionPolicy, "suggestion">>,
-      Omit<AdmissionPolicy, "suggestion" | "source"> & { branch?: string }
+      Partial<Omit<AdmissionPolicy, "suggestion" | "source">> & { branch?: string }
     >({
       query: ({ branch, ...body }) => ({
         url: `/students/admission-number-policy/`,

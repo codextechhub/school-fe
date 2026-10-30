@@ -635,8 +635,8 @@ export interface AdmissionRules {
 
 export interface AdmissionRulesUpdate {
   /** The whole ordered list; a stage left out is removed. */
-  stages: { id?: number; name: string; is_offer: boolean; offer_valid_days: number | null }[];
-  required_documents_to_confirm: string[];
+  stages?: { id?: number; name: string; is_offer: boolean; offer_valid_days: number | null }[];
+  required_documents_to_confirm?: string[];
   reason?: string;
 }
 
@@ -692,20 +692,20 @@ export type PromotionCapacityMode = "FOLLOW_ENROLMENT" | CapacityMode;
  * What the promotion rules save sends. `pass_mark` is optional: left out it is
  * kept as it is, and null clears it.
  */
-export type PromotionRulesUpdate = Pick<
+export type PromotionRulesUpdate = Partial<Pick<
   PromotionRules,
   "suspended" | "not_placed" | "arms" | "capacity_mode"
-> & { pass_mark?: number | null; reason?: string };
+>> & { pass_mark?: number | null; reason?: string };
 
-export type GuardianRulesUpdate = Pick<
+export type GuardianRulesUpdate = Partial<Pick<
   GuardianRules,
   "min_per_student" | "email_required" | "matching" | "extra_relationships"
-> & { parent_app_auto_access?: boolean; reason?: string };
+>> & { parent_app_auto_access?: boolean; reason?: string };
 
-export type EnrolmentRulesUpdate = Omit<
+export type EnrolmentRulesUpdate = Partial<Omit<
   EnrolmentRules,
   "document_types" | "optional_fields" | "binding_required_fields"
-> & { reason?: string };
+>> & { reason?: string };
 
 /**
  * The editable half of a student record.

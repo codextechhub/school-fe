@@ -17,6 +17,7 @@ import {
 import type { AdmissionRules } from "@/redux/services/students/students-types";
 import { fieldErrors, parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { useSettingsWrite } from "../use-settings-write";
+import { useSettingFields } from "../use-setting-fields";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 const MAX_STAGES = 12;
@@ -69,7 +70,7 @@ export function AdmissionsSection() {
 }
 
 function toDraft(rules: AdmissionRules): DraftStage[] {
-  return [...rules.stages]
+  return [...(rules.stages ?? [])]
     .sort((a, b) => a.position - b.position)
     .map((stage) => ({
       id: stage.id,
@@ -83,9 +84,10 @@ function toDraft(rules: AdmissionRules): DraftStage[] {
 
 function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
   const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
+  const { shown, editable } = useSettingFields({}, canSave);
   const [save, { isLoading: saving }] = useUpdateAdmissionRulesMutation();
   const [stages, setStages] = useState<DraftStage[]>(() => toDraft(rules));
-  const [documents, setDocuments] = useState<string[]>(rules.required_documents_to_confirm);
+  const [documents, setDocuments] = useState<string[]>(rules.required_documents_to_confirm ?? []);
   const [nextKey, setNextKey] = useState(1);
   const [serverError, setServerError] = useState("");
 
@@ -105,14 +107,14 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
     return "";
   };
   const problems = stages.map(problemOf);
-  const invalid = problems.some(Boolean);
+  const invalid = editable("stages") && problems.some(Boolean);
 
   const original = toDraft(rules);
   const shape = (list: DraftStage[]) =>
     JSON.stringify(list.map((s) => [s.id ?? null, s.name.trim(), s.is_offer, s.is_offer ? s.days : ""]));
   const changed =
-    shape(stages) !== shape(original) ||
-    [...documents].sort().join() !== [...rules.required_documents_to_confirm].sort().join();
+    (editable("stages") && shape(stages) !== shape(original)) ||
+    (editable("required_documents_to_confirm") && [...documents].sort().join() !== [...(rules.required_documents_to_confirm ?? [])].sort().join());
 
   const update = (index: number, next: Partial<DraftStage>) =>
     setStages(stages.map((s, i) => (i === index ? { ...s, ...next } : s)));
@@ -133,13 +135,14 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
     setServerError("");
     try {
       await save({
-        stages: stages.map((s) => ({
+        ...(editable("stages") && shape(stages) !== shape(original) ? { stages: stages.map((s) => ({
           ...(s.id ? { id: s.id } : {}),
           name: s.name.trim(),
           is_offer: s.is_offer,
           offer_valid_days: s.is_offer ? Number(s.days) : null,
-        })),
-        required_documents_to_confirm: documents,
+        })) } : {}),
+        ...(editable("required_documents_to_confirm") && [...documents].sort().join() !== [...(rules.required_documents_to_confirm ?? [])].sort().join()
+          ? { required_documents_to_confirm: documents } : {}),
       }).unwrap();
       toast.success("Admission rules saved.");
     } catch (error) {
@@ -150,7 +153,7 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
 
   return (
     <div className="space-y-5">
-      <SettingsPanel
+      {shown("stages") && <SettingsPanel
         title="Admission steps"
         description="In order. With no steps, an applicant is simply waiting until they are put on the roll or their application is closed."
       >
@@ -171,10 +174,10 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
                       placeholder="For example, Interview"
                       value={stage.name}
                       maxLength={60}
-                      disabled={!canSave}
+                      disabled={!editable("stages")}
                       onChange={(e) => update(index, { name: e.target.value })}
                     />
-                    {canSave ? (
+                    {editable("stages") ? (
                       <span className="flex items-center gap-1">
                         <Button variant="ghost" size="icon-sm" aria-label="Move up" disabled={index === 0} onClick={() => move(index, -1)}>
                           <ArrowUp className="size-4" />
@@ -199,7 +202,7 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
                     <label className="flex items-center gap-2 font-mont text-xs text-gray-01">
                       <Switch
                         checked={stage.is_offer}
-                        disabled={!canSave}
+                        disabled={!editable("stages")}
                         onCheckedChange={(on) => update(index, { is_offer: on })}
                         aria-label={`${stage.name || "This step"} is an offer`}
                       />
@@ -214,7 +217,7 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
                           inputMode="numeric"
                           min={1}
                           max={365}
-                          disabled={!canSave}
+                          disabled={!editable("stages")}
                           value={stage.days}
                           onChange={(e) => update(index, { days: e.target.value })}
                         />
@@ -234,16 +237,16 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
               ))}
             </ol>
           )}
-          {canSave ? (
+          {editable("stages") ? (
             <Button variant="outline" onClick={add} disabled={stages.length >= MAX_STAGES}>
               <Plus className="size-4" />
               Add a step
             </Button>
           ) : null}
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("required_documents_to_confirm") && <SettingsPanel
         title="Documents needed before enrolling"
         description="No child joins the roll without these. An applicant is held until they are on their record, a child enrolled directly must have them attached, and a spreadsheet brings children in as applicants. Leave all unticked to enrol at once."
       >
@@ -252,7 +255,7 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
             <label key={doc.value} className="flex min-w-0 items-center gap-2.5 font-mont text-sm text-gray-01">
               <Checkbox
                 checked={documents.includes(doc.value)}
-                disabled={!canSave}
+                disabled={!editable("required_documents_to_confirm")}
                 onCheckedChange={(on) =>
                   setDocuments(on === true ? [...documents, doc.value] : documents.filter((d) => d !== doc.value))
                 }
@@ -261,7 +264,7 @@ function AdmissionsForm({ rules }: { rules: AdmissionRules }) {
             </label>
           ))}
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
       {serverError ? (
         <p role="alert" className="font-mont text-xs text-destructive">{serverError}</p>

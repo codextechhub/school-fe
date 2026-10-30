@@ -1,6 +1,8 @@
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useFieldAccess } from "@/components/finance-ui";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Switch } from "@/components/ui/switch";
@@ -40,7 +42,7 @@ function compiles(pattern: string) {
 
 /** A number rule as both endpoints speak it; staff IDs reuse the admission shape. */
 type NumberPolicy = AdmissionPolicy;
-type PolicyWrite = Omit<NumberPolicy, "suggestion" | "source"> & { branch?: string };
+type PolicyWrite = Partial<Omit<NumberPolicy, "suggestion" | "source">> & { branch?: string };
 
 interface Unwrappable {
   unwrap: () => Promise<unknown>;
@@ -53,6 +55,7 @@ interface Unwrappable {
  * every render of the form that uses it.
  */
 export interface NumberRuleConfig {
+  fieldPrefix: "admission_number_" | "staff_number_";
   title: string;
   description: string;
   loadingLabel: string;
@@ -101,6 +104,7 @@ export interface NumberRuleConfig {
  * without changing it (`useSettingsWrite`).
  */
 export function NumberRuleSection({ config }: { config: NumberRuleConfig }) {
+  const access = useFieldAccess(FIELD_RESOURCE.SCHOOL_SETTINGS);
   const branches = useSettingsBranches();
   // A reader who cannot act for the whole school opens on their own branch.
   const [picked, setPicked] = useState<string | null>(null);
@@ -132,7 +136,7 @@ export function NumberRuleSection({ config }: { config: NumberRuleConfig }) {
             </NativeSelect>
           </div>
           <p className="min-w-0 flex-1 font-mont text-xs leading-5 text-gray-05">
-            {branchName
+            {branchName && !access.isHidden(`${config.fieldPrefix}source`)
               ? policy?.source === "branch"
                 ? `${branchName} has its own rule.`
                 : `${branchName} follows the school's rule. Saving here gives it its own.`
@@ -186,16 +190,19 @@ function NumberRuleForm({
   /** Shown in place of the actions when the reader may not change this rule. */
   readOnly: ReactNode;
 }) {
+  const access = useFieldAccess(FIELD_RESOURCE.SCHOOL_SETTINGS);
+  const shown = (name: string) => !access.isHidden(`${config.fieldPrefix}${name}`);
+  const editable = (name: string) => canSave && shown(name) && !access.isReadOnly(`${config.fieldPrefix}${name}`);
   const [save, { isLoading: saving }] = config.useSave();
   const [reset, { isLoading: resetting }] = config.useReset();
   const [autoIssue, setAutoIssue] = useState(policy.auto_issue ?? false);
-  const simple = parseSimple(policy.pattern);
-  const [required, setRequired] = useState(policy.required);
+  const simple = parseSimple(policy.pattern ?? "");
+  const [required, setRequired] = useState(policy.required ?? false);
   const [mode, setMode] = useState<Mode>(!policy.pattern ? "none" : simple ? "simple" : "custom");
   const [prefix, setPrefix] = useState(simple?.prefix ?? "");
   const [digits, setDigits] = useState(String(simple?.digits ?? 4));
-  const [custom, setCustom] = useState(policy.pattern);
-  const [hint, setHint] = useState(policy.hint);
+  const [custom, setCustom] = useState(policy.pattern ?? "");
+  const [hint, setHint] = useState(policy.hint ?? "");
   const [sample, setSample] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -207,10 +214,10 @@ function NumberRuleForm({
   const example = mode === "simple" && digitsValid ? `${prefix}${"0".repeat(digitsNumber - 1)}1` : "";
 
   const changed =
-    required !== policy.required ||
-    pattern !== policy.pattern ||
-    hint !== policy.hint ||
-    autoIssue !== (policy.auto_issue ?? false);
+    (editable("required") && required !== policy.required) ||
+    (editable("pattern") && pattern !== policy.pattern) ||
+    (editable("hint") && hint !== policy.hint) ||
+    (editable("auto_issue") && autoIssue !== (policy.auto_issue ?? false));
   const sampleResult = sample && patternValid && pattern ? new RegExp(pattern).test(sample) : null;
 
   const onSave = async () => {
@@ -218,10 +225,10 @@ function NumberRuleForm({
     setErrors({});
     try {
       await save({
-        required,
-        pattern,
-        hint: hint.trim(),
-        auto_issue: autoIssue,
+        ...(editable("required") && required !== policy.required ? { required } : {}),
+        ...(editable("pattern") && pattern !== policy.pattern ? { pattern } : {}),
+        ...(editable("hint") && hint !== policy.hint ? { hint: hint.trim() } : {}),
+        ...(editable("auto_issue") && autoIssue !== (policy.auto_issue ?? false) ? { auto_issue: autoIssue } : {}),
         branch: branch || undefined,
       }).unwrap();
       toast.success(branchName ? `Rule saved for ${branchName}.` : config.savedToast);
@@ -237,17 +244,17 @@ function NumberRuleForm({
   return (
     <SettingsPanel>
       <div className="space-y-5 px-4 py-5 sm:px-5">
-        <label className="flex items-start justify-between gap-4">
+        {shown("required") && <label className="flex items-start justify-between gap-4">
           <span className="min-w-0">
             <span className="block font-mont text-sm font-medium text-gray-01">{config.requiredLabel}</span>
             <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">{config.requiredHelp}</span>
           </span>
-          <Switch checked={required} disabled={!canSave} onCheckedChange={setRequired} aria-label={config.requiredLabel} />
-        </label>
+          <Switch checked={required} disabled={!editable("required")} onCheckedChange={setRequired} aria-label={config.requiredLabel} />
+        </label>}
 
-        <div className="space-y-3">
+        {shown("pattern") && <div className="space-y-3">
           <p className="font-mont text-sm font-medium text-gray-01">What a valid number looks like</p>
-          <fieldset disabled={!canSave} className="min-w-0">
+          <fieldset disabled={!editable("pattern")} className="min-w-0">
             <SegmentedToggle<Mode>
               value={mode}
               onChange={setMode}
@@ -264,7 +271,7 @@ function NumberRuleForm({
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <label className="block min-w-0">
                 <span className="font-mont text-xs text-gray-01">Starts with</span>
-                <Input className="mt-1" value={prefix} placeholder={config.prefixPlaceholder} disabled={!canSave} onChange={(e) => setPrefix(e.target.value)} />
+                <Input className="mt-1" value={prefix} placeholder={config.prefixPlaceholder} disabled={!editable("pattern")} onChange={(e) => setPrefix(e.target.value)} />
               </label>
               <label className="block min-w-0">
                 <span className="font-mont text-xs text-gray-01">Then this many digits</span>
@@ -275,7 +282,7 @@ function NumberRuleForm({
                   min={1}
                   max={12}
                   value={digits}
-                  disabled={!canSave}
+                  disabled={!editable("pattern")}
                   aria-invalid={digitsValid ? undefined : true}
                   onChange={(e) => setDigits(e.target.value)}
                 />
@@ -292,7 +299,7 @@ function NumberRuleForm({
               <Input
                 className="mt-1 font-mono"
                 value={custom}
-                disabled={!canSave}
+                disabled={!editable("pattern")}
                 placeholder="^BSS/[0-9]{4}$"
                 aria-invalid={patternValid ? undefined : true}
                 onChange={(e) => setCustom(e.target.value)}
@@ -319,34 +326,34 @@ function NumberRuleForm({
               ) : null}
             </label>
           ) : null}
-        </div>
+        </div>}
 
-        <label className="block">
+        {shown("hint") && <label className="block">
           <span className="font-mont text-sm font-medium text-gray-01">{config.hintLabel}</span>
           <Input
             className="mt-1"
             value={hint}
             maxLength={200}
-            disabled={!canSave}
+            disabled={!editable("hint")}
             placeholder={example ? `For example ${example}` : "Optional"}
             onChange={(e) => setHint(e.target.value)}
           />
           {errors.hint ? (
             <span role="alert" className="mt-1 block font-mont text-[11px] text-destructive">{errors.hint}</span>
           ) : null}
-        </label>
+        </label>}
 
-        <label className="flex items-start justify-between gap-4">
+        {shown("auto_issue") && <label className="flex items-start justify-between gap-4">
           <span className="min-w-0">
             <span className="block font-mont text-sm font-medium text-gray-01">Issue numbers automatically</span>
             <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">{config.autoIssueHelp}</span>
           </span>
-          <Switch checked={autoIssue} disabled={!canSave} onCheckedChange={setAutoIssue} aria-label="Issue numbers automatically" />
-        </label>
+          <Switch checked={autoIssue} disabled={!editable("auto_issue")} onCheckedChange={setAutoIssue} aria-label="Issue numbers automatically" />
+        </label>}
 
         {canSave ? (
         <div className="flex flex-wrap items-center justify-end gap-3">
-          {branch && policy.source === "branch" ? (
+          {branch && policy.source === "branch" && ["required", "pattern", "hint", "auto_issue"].every(editable) ? (
             <Button
               variant="outline"
               disabled={resetting || saving}

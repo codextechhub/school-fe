@@ -86,6 +86,7 @@ const field = (
   description: "",
   sensitive: false,
   writable: true,
+  read_always: false,
   default: { read: true, write: true },
   module,
   resource,

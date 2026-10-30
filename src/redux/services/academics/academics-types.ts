@@ -480,9 +480,9 @@ export interface AcademicRules {
 
 /** A change to the rules. Needs whole-school reach and settings rights. */
 export interface AcademicRulesUpdate {
-  term_word: TermWord;
-  term_names: string[];
-  default_arms: string[];
+  term_word?: TermWord;
+  term_names?: string[];
+  default_arms?: string[];
   /** Kept on the audit record. */
   reason?: string;
 }

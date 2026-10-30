@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import * as Yup from "yup";
 import { useFormik } from "formik";
 import { toast } from "sonner";
 import { Link } from "react-router";
@@ -40,8 +41,8 @@ type ProfileField = keyof SchoolProfileUpdate;
  * uses (Term or Semester) and the parts of its year are its own to change in
  * Settings, Academic structure, and the note under the field says so.
  * Choice options travel with the record so the form uses values the server
- * accepts. Field Access can hide Address and Registration number entirely or
- * leave them visible and read-only; submissions contain only writable changes.
+ * accepts. Field Access removes hidden profile fields and submissions contain
+ * only writable changes.
  */
 export function SchoolProfileForm({
   profile,
@@ -75,7 +76,11 @@ export function SchoolProfileForm({
       motto: profile.motto ?? "",
       registration_id: profile.registration_id ?? "",
     },
-    validationSchema: schoolProfileSchema,
+    validationSchema: schoolProfileSchema.shape({
+      ownership_type: access.isHidden("ownership_type")
+        ? Yup.string()
+        : Yup.string().required("Ownership type is required"),
+    }),
     enableReinitialize: true,
     onSubmit: async (values, helpers) => {
       // Send only changed fields the caller may write.
@@ -117,16 +122,18 @@ export function SchoolProfileForm({
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <CustomNativeSelect
-          id="ownership_type"
-          disabled={!open("ownership_type")}
-          label="Ownership type"
-          isRequired
-          options={profile.options.ownership_type}
-          placeholder="How is the school owned?"
-          {...formik.getFieldProps("ownership_type")}
-          error={formik.touched.ownership_type ? formik.errors.ownership_type : ""}
-        />
+        {!access.isHidden("ownership_type") ? (
+          <CustomNativeSelect
+            id="ownership_type"
+            disabled={!open("ownership_type")}
+            label="Ownership type"
+            isRequired
+            options={profile.options.ownership_type}
+            placeholder="How is the school owned?"
+            {...formik.getFieldProps("ownership_type")}
+            error={formik.touched.ownership_type ? formik.errors.ownership_type : ""}
+          />
+        ) : null}
         <div className="min-w-0">
           <CustomNativeSelect
             id="term_structure"
@@ -174,22 +181,26 @@ export function SchoolProfileForm({
             error={formik.touched.address ? formik.errors.address : ""}
           />
         ) : null}
-        <CustomInput
-          id="website"
-          disabled={!open("website")}
-          label="Website"
-          placeholder="https://example.com"
-          {...formik.getFieldProps("website")}
-          error={formik.touched.website ? formik.errors.website : ""}
-        />
-        <CustomInput
-          id="motto"
-          disabled={!open("motto")}
-          label="Motto"
-          placeholder="Optional"
-          {...formik.getFieldProps("motto")}
-          error={formik.touched.motto ? formik.errors.motto : ""}
-        />
+        {!access.isHidden("website") ? (
+          <CustomInput
+            id="website"
+            disabled={!open("website")}
+            label="Website"
+            placeholder="https://example.com"
+            {...formik.getFieldProps("website")}
+            error={formik.touched.website ? formik.errors.website : ""}
+          />
+        ) : null}
+        {!access.isHidden("motto") ? (
+          <CustomInput
+            id="motto"
+            disabled={!open("motto")}
+            label="Motto"
+            placeholder="Optional"
+            {...formik.getFieldProps("motto")}
+            error={formik.touched.motto ? formik.errors.motto : ""}
+          />
+        ) : null}
       </div>
 
       <p className="text-xs text-gray-05">

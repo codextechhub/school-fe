@@ -81,6 +81,27 @@ describe("school profile Field Access", () => {
     expect(document.body.textContent).not.toContain("REG-BRIGHT-14");
   });
 
+  it("removes hidden ownership and public text fields", () => {
+    mocks.fieldAccess = {
+      "school.profile": {
+        hidden: ["ownership_type", "website", "motto"],
+        read_only: [],
+        open_on_create: [],
+      },
+    };
+    const {
+      ownership_type: _ownership,
+      website: _website,
+      motto: _motto,
+      ...visible
+    } = PROFILE;
+    const document = render(visible);
+
+    expect(document.querySelector("#ownership_type")).toBeNull();
+    expect(document.querySelector("#website")).toBeNull();
+    expect(document.querySelector("#motto")).toBeNull();
+  });
+
   it("greys fields the record marks read-only", () => {
     const document = render({
       ...PROFILE,

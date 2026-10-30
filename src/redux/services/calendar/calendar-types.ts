@@ -653,13 +653,13 @@ export interface CalendarRules {
 
 /** A change to the rules. Needs settings rights and whole-school reach. */
 export interface CalendarRulesUpdate {
-  teaching_days: number[];
-  week_starts_on: number;
-  closes_school_by_type: Record<string, boolean>;
-  room_required_to_publish: boolean;
-  teacher_duty_match: TeacherDutyMatch;
-  invigilator_roles: string[];
-  default_period_minutes: number | null;
+  teaching_days?: number[];
+  week_starts_on?: number;
+  closes_school_by_type?: Record<string, boolean>;
+  room_required_to_publish?: boolean;
+  teacher_duty_match?: TeacherDutyMatch;
+  invigilator_roles?: string[];
+  default_period_minutes?: number | null;
   /** Kept on the audit record. */
   reason?: string;
 }

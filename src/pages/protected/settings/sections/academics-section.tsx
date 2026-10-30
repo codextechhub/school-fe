@@ -2,12 +2,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { ArrowDown, ArrowUp, Plus, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useFieldAccess } from "@/components/finance-ui";
 import { Input } from "@/components/ui/input";
 import {
   SettingsPanel,
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
 import { cn } from "@/lib/utils";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { P } from "@/permissions";
 import {
   useGetAcademicRulesQuery,
@@ -66,10 +68,13 @@ export function AcademicsSection() {
 
 function AcademicsForm({ rules }: { rules: AcademicRules }) {
   const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
+  const access = useFieldAccess(FIELD_RESOURCE.SCHOOL_SETTINGS);
+  const shown = (name: typeof FIELDS[number]) => !access.isHidden(name);
+  const editable = (name: typeof FIELDS[number]) => canSave && shown(name) && !access.isReadOnly(name);
   const [save, { isLoading: saving }] = useUpdateAcademicRulesMutation();
   const [word, setWord] = useState<TermWord>(rules.term_word);
-  const [terms, setTerms] = useState<string[]>(rules.term_names);
-  const [arms, setArms] = useState<string[]>(rules.default_arms);
+  const [terms, setTerms] = useState<string[]>(rules.term_names ?? []);
+  const [arms, setArms] = useState<string[]>(rules.default_arms ?? []);
   const [armDraft, setArmDraft] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -83,7 +88,7 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
     if (duplicateOf(terms, index)) return `Two ${label}s have this name.`;
     return "";
   };
-  const termsInvalid = terms.some((_, i) => termProblem(i));
+  const termsInvalid = editable("term_names") && terms.some((_, i) => termProblem(i));
 
   const arm = armDraft.trim();
   const armProblem = !arm
@@ -95,12 +100,12 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
         : arms.length >= MAX_ARMS
           ? `A school can list up to ${MAX_ARMS}.`
           : "";
-  const armsProblem = arms.length === 0 ? "List at least one arm." : "";
+  const armsProblem = editable("default_arms") && arms.length === 0 ? "List at least one arm." : "";
 
   const changed =
-    word !== rules.term_word ||
-    terms.map((t) => t.trim()).join("\n") !== rules.term_names.join("\n") ||
-    arms.join("\n") !== rules.default_arms.join("\n");
+    (editable("term_word") && word !== rules.term_word) ||
+    (editable("term_names") && terms.map((t) => t.trim()).join("\n") !== (rules.term_names ?? []).join("\n")) ||
+    (editable("default_arms") && arms.join("\n") !== (rules.default_arms ?? []).join("\n"));
 
   const move = (index: number, by: number) => {
     const target = index + by;
@@ -120,9 +125,11 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
     setErrors({});
     try {
       await save({
-        term_word: word,
-        term_names: terms.map((t) => t.trim()),
-        default_arms: arms,
+        ...(editable("term_word") && word !== rules.term_word ? { term_word: word } : {}),
+        ...(editable("term_names") && terms.map((t) => t.trim()).join("\n") !== (rules.term_names ?? []).join("\n")
+          ? { term_names: terms.map((t) => t.trim()) } : {}),
+        ...(editable("default_arms") && arms.join("\n") !== (rules.default_arms ?? []).join("\n")
+          ? { default_arms: arms } : {}),
       }).unwrap();
       toast.success("Academic structure settings saved.");
     } catch (error) {
@@ -136,7 +143,7 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
 
   return (
     <div className="space-y-5">
-      <SettingsPanel
+      {shown("term_word") && <SettingsPanel
         title="What your school calls them"
         description="The word every screen and message uses for a part of the school year."
       >
@@ -148,7 +155,7 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
               <button
                 key={value}
                 type="button"
-                disabled={!canSave}
+                disabled={!editable("term_word")}
                 aria-pressed={active}
                 onClick={() => setWord(value)}
                 className={cn(
@@ -163,9 +170,9 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
           })}
         </div>
         <ErrorLine text={errors.term_word} />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("term_names") && <SettingsPanel
         title={word === "SEMESTER" ? "Semesters in a year" : "Terms in a year"}
         description={`In order. Every new academic year starts with these ${label}s, and you can still change a year's own ${label}s when you create it. Years already set up keep theirs.`}
       >
@@ -184,11 +191,11 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
                       className="min-w-0 flex-1 basis-40"
                       value={name}
                       maxLength={40}
-                      disabled={!canSave}
+                      disabled={!editable("term_names")}
                       aria-invalid={problem ? true : undefined}
                       onChange={(e) => setTerms(terms.map((t, i) => (i === index ? e.target.value : t)))}
                     />
-                    {canSave ? (
+                    {editable("term_names") ? (
                       <span className="flex items-center gap-1">
                         <Button variant="ghost" size="icon-sm" aria-label="Move up" disabled={index === 0} onClick={() => move(index, -1)}>
                           <ArrowUp className="size-4" />
@@ -215,7 +222,7 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
               );
             })}
           </ol>
-          {canSave ? (
+          {editable("term_names") ? (
             <Button
               variant="outline"
               disabled={terms.length >= MAX_TERMS}
@@ -227,9 +234,9 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
           ) : null}
           <ErrorLine text={errors.term_names} inline />
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("default_arms") && <SettingsPanel
         title="Arms for new classes"
         description="Offered, in this order, when classes are added for a level: JSS1 with A, B and C makes JSS1 A, JSS1 B and JSS1 C. Classes already made keep their names."
       >
@@ -241,7 +248,7 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
                 className="flex items-center gap-1.5 rounded-full border border-white-02 bg-gray-03 py-1 pl-3 pr-1.5 font-mont text-xs text-gray-01"
               >
                 {item}
-                {canSave ? (
+                {editable("default_arms") ? (
                   <button
                     type="button"
                     aria-label={`Remove ${item}`}
@@ -254,7 +261,7 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
               </li>
             ))}
           </ul>
-          {canSave ? (
+          {editable("default_arms") ? (
             <div className="flex max-w-md flex-wrap items-start gap-2">
               <Input
                 className="min-w-0 flex-1"
@@ -277,7 +284,7 @@ function AcademicsForm({ rules }: { rules: AcademicRules }) {
           ) : null}
           <ErrorLine text={armProblem || armsProblem || errors.default_arms} inline />
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
       {canSave ? (
         <div className="flex flex-wrap items-center justify-end gap-3">

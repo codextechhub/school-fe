@@ -1105,10 +1105,10 @@ export interface StaffRules {
   };
 }
 
-export type StaffRulesUpdate = Pick<
+export type StaffRulesUpdate = Partial<Pick<
   StaffRules,
   "starting_role" | "required_documents" | "self_editable_fields" | "hire_requires_approval"
-> & {
-  leave: Pick<StaffRules["leave"], "allowances" | "groups" | "overrides" | "working_days" | "exclude_closures">;
+>> & {
+  leave?: Partial<Pick<StaffRules["leave"], "allowances" | "groups" | "overrides" | "working_days" | "exclude_closures">>;
   reason?: string;
 };

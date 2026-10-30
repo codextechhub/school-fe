@@ -499,7 +499,8 @@ function AddFieldExceptionDrawer({
                   const next = event.target.value;
                   setFieldKey(next);
                   const field = activeResource.fields.find((entry) => entry.key === next);
-                  if (field && !field.writable) setAccess("READ");
+                  if (field?.read_always) setAccess("WRITE");
+                  else if (field && !field.writable) setAccess("READ");
                 }}
               />
             ) : (
@@ -514,7 +515,7 @@ function AddFieldExceptionDrawer({
               label="Access"
               value={access}
               options={[
-                { value: "READ", label: "Read", note: "The Read switch for this field." },
+                { value: "READ", label: "Read", note: "The Read switch for this field.", disabled: selectedField?.read_always },
                 { value: "WRITE", label: "Write", note: "The Write switch for this field.", disabled: selectedField ? !selectedField.writable : false },
               ]}
               onChange={setAccess}
@@ -523,7 +524,7 @@ function AddFieldExceptionDrawer({
               label="Mode"
               value={mode}
               options={[
-                { value: "DENY", label: "Deny", note: "Deny even when a role allows it." },
+                { value: "DENY", label: "Deny", note: "Deny even when a role allows it.", disabled: selectedField?.read_always && access === "READ" },
                 { value: "ALLOW", label: "Allow", note: "Allow even when no role allows it." },
               ]}
               onChange={setMode}

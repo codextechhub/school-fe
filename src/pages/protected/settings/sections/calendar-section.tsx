@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { useFieldAccess } from "@/components/finance-ui";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -9,6 +10,7 @@ import {
   SettingsSectionHeader,
 } from "@/components/settings/settings-layout";
 import { cn } from "@/lib/utils";
+import { FIELD_RESOURCE } from "@/lib/field-resources";
 import { P } from "@/permissions";
 import {
   useGetCalendarRulesQuery,
@@ -91,33 +93,36 @@ export function CalendarSection() {
 
 function CalendarForm({ rules }: { rules: CalendarRules }) {
   const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
+  const access = useFieldAccess(FIELD_RESOURCE.SCHOOL_SETTINGS);
+  const shown = (name: typeof FIELDS[number]) => !access.isHidden(name);
+  const editable = (name: typeof FIELDS[number]) => canSave && shown(name) && !access.isReadOnly(name);
   const [save, { isLoading: saving }] = useUpdateCalendarRulesMutation();
-  const [days, setDays] = useState<number[]>(rules.teaching_days);
+  const [days, setDays] = useState<number[]>(rules.teaching_days ?? []);
   const [weekStart, setWeekStart] = useState<number>(rules.week_starts_on);
-  const [closes, setCloses] = useState<Record<string, boolean>>(rules.closes_school_by_type);
+  const [closes, setCloses] = useState<Record<string, boolean>>(rules.closes_school_by_type ?? {});
   const [roomRequired, setRoomRequired] = useState(rules.room_required_to_publish);
   const [duty, setDuty] = useState<TeacherDutyMatch>(rules.teacher_duty_match);
-  const [invigilators, setInvigilators] = useState<string[]>(rules.invigilator_roles);
+  const [invigilators, setInvigilators] = useState<string[]>(rules.invigilator_roles ?? []);
   const [minutes, setMinutes] = useState(rules.default_period_minutes == null ? "" : String(rules.default_period_minutes));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const daysProblem = days.length === 0 ? "Choose at least one day the school teaches." : "";
-  const invigilatorProblem = invigilators.length === 0 ? "Choose at least one role that may invigilate." : "";
+  const daysProblem = editable("teaching_days") && days.length === 0 ? "Choose at least one day the school teaches." : "";
+  const invigilatorProblem = editable("invigilator_roles") && invigilators.length === 0 ? "Choose at least one role that may invigilate." : "";
   const minutesValue = minutes.trim() === "" ? null : Number(minutes);
   const minutesProblem =
-    minutesValue !== null && (!Number.isInteger(minutesValue) || minutesValue < 10 || minutesValue > 240)
+    editable("default_period_minutes") && minutesValue !== null && (!Number.isInteger(minutesValue) || minutesValue < 10 || minutesValue > 240)
       ? "Use 10 to 240 minutes, or leave it blank."
       : "";
 
   const sorted = (list: (string | number)[]) => [...list].sort().join();
   const changed =
-    sorted(days) !== sorted(rules.teaching_days) ||
-    weekStart !== rules.week_starts_on ||
-    JSON.stringify(closes) !== JSON.stringify(rules.closes_school_by_type) ||
-    roomRequired !== rules.room_required_to_publish ||
-    duty !== rules.teacher_duty_match ||
-    sorted(invigilators) !== sorted(rules.invigilator_roles) ||
-    minutesValue !== rules.default_period_minutes;
+    (editable("teaching_days") && sorted(days) !== sorted(rules.teaching_days ?? [])) ||
+    (editable("week_starts_on") && weekStart !== rules.week_starts_on) ||
+    (editable("closes_school_by_type") && JSON.stringify(closes) !== JSON.stringify(rules.closes_school_by_type ?? {})) ||
+    (editable("room_required_to_publish") && roomRequired !== rules.room_required_to_publish) ||
+    (editable("teacher_duty_match") && duty !== rules.teacher_duty_match) ||
+    (editable("invigilator_roles") && sorted(invigilators) !== sorted(rules.invigilator_roles ?? [])) ||
+    (editable("default_period_minutes") && minutesValue !== rules.default_period_minutes);
   const invalid = Boolean(daysProblem || invigilatorProblem || minutesProblem);
 
   const toggle = <T,>(list: T[], item: T, on: boolean) =>
@@ -128,13 +133,13 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
     setErrors({});
     try {
       await save({
-        teaching_days: [...days].sort((a, b) => a - b),
-        week_starts_on: weekStart,
-        closes_school_by_type: closes,
-        room_required_to_publish: roomRequired,
-        teacher_duty_match: duty,
-        invigilator_roles: invigilators,
-        default_period_minutes: minutesValue,
+        ...(editable("teaching_days") && sorted(days) !== sorted(rules.teaching_days ?? []) ? { teaching_days: [...days].sort((a, b) => a - b) } : {}),
+        ...(editable("week_starts_on") && weekStart !== rules.week_starts_on ? { week_starts_on: weekStart } : {}),
+        ...(editable("closes_school_by_type") && JSON.stringify(closes) !== JSON.stringify(rules.closes_school_by_type ?? {}) ? { closes_school_by_type: closes } : {}),
+        ...(editable("room_required_to_publish") && roomRequired !== rules.room_required_to_publish ? { room_required_to_publish: roomRequired } : {}),
+        ...(editable("teacher_duty_match") && duty !== rules.teacher_duty_match ? { teacher_duty_match: duty } : {}),
+        ...(editable("invigilator_roles") && sorted(invigilators) !== sorted(rules.invigilator_roles ?? []) ? { invigilator_roles: invigilators } : {}),
+        ...(editable("default_period_minutes") && minutesValue !== rules.default_period_minutes ? { default_period_minutes: minutesValue } : {}),
       }).unwrap();
       toast.success("Calendar and timetable settings saved.");
     } catch (error) {
@@ -148,7 +153,7 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
 
   return (
     <div className="space-y-5">
-      <SettingsPanel
+      {shown("teaching_days") && <SettingsPanel
         title="Teaching days"
         description="The days lessons happen. Timetables show these days, and the calendar counts them as teaching days. Staff leave counts its own working days, set in Staff rules."
       >
@@ -160,7 +165,7 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
                 <button
                   key={day.value}
                   type="button"
-                  disabled={!canSave}
+                  disabled={!editable("teaching_days")}
                   aria-pressed={on}
                   aria-label={day.label}
                   onClick={() => setDays(toggle(days, day.value, !on))}
@@ -176,9 +181,9 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
           </div>
           <ErrorLine text={daysProblem || errors.teaching_days} />
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel title="Week starts on" description="The first column of every calendar and date picker.">
+      {shown("week_starts_on") && <SettingsPanel title="Week starts on" description="The first column of every calendar and date picker.">
         <div className="grid grid-cols-2 gap-2.5 px-4 py-4 sm:max-w-sm sm:px-5">
           {[
             { value: 1, label: "Monday" },
@@ -189,7 +194,7 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
               <button
                 key={option.value}
                 type="button"
-                disabled={!canSave}
+                disabled={!editable("week_starts_on")}
                 aria-pressed={active}
                 onClick={() => setWeekStart(option.value)}
                 className={cn(
@@ -203,9 +208,9 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
           })}
         </div>
         <ErrorLine text={errors.week_starts_on} padded />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("closes_school_by_type") && <SettingsPanel
         title="Events that close the school"
         description="When one of these is added to the calendar, it is marked as closing the school, and it can still be changed on the event. Events already on the calendar keep theirs."
       >
@@ -214,7 +219,7 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
             <label key={type.value} className="flex min-w-0 items-center gap-2.5 font-mont text-sm text-gray-01">
               <Checkbox
                 checked={Boolean(closes[type.value])}
-                disabled={!canSave}
+                disabled={!editable("closes_school_by_type")}
                 onCheckedChange={(on) => setCloses({ ...closes, [type.value]: on === true })}
               />
               <span className="min-w-0">{type.label}</span>
@@ -222,9 +227,10 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
           ))}
         </div>
         <ErrorLine text={errors.closes_school_by_type} padded />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel title="Timetables">
+      {(shown("room_required_to_publish") || shown("teacher_duty_match") || shown("default_period_minutes")) && <SettingsPanel title="Timetables">
+        {shown("room_required_to_publish") && <>
         <label className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
           <span className="min-w-0">
             <span className="block font-mont text-sm font-medium text-gray-01">A lesson needs a room before publishing</span>
@@ -235,14 +241,15 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
           </span>
           <Switch
             checked={roomRequired}
-            disabled={!canSave}
+            disabled={!editable("room_required_to_publish")}
             onCheckedChange={setRoomRequired}
             aria-label="A lesson needs a room before publishing"
           />
         </label>
         <ErrorLine text={errors.room_required_to_publish} padded />
+        </>}
 
-        <div className="px-4 py-4 sm:px-5">
+        {shown("teacher_duty_match") && <div className="px-4 py-4 sm:px-5">
           <p className="font-mont text-sm font-medium text-gray-01">The lesson&apos;s teacher and Teaching duties</p>
           <div className="mt-2.5 grid grid-cols-1 gap-2.5 lg:grid-cols-3">
             {rules.teacher_duty_match_options.map((option) => {
@@ -252,7 +259,7 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
                 <button
                   key={value}
                   type="button"
-                  disabled={!canSave}
+                  disabled={!editable("teacher_duty_match")}
                   aria-pressed={active}
                   onClick={() => setDuty(value)}
                   className={cn(
@@ -267,9 +274,9 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
             })}
           </div>
           <ErrorLine text={errors.teacher_duty_match} />
-        </div>
+        </div>}
 
-        <div className="px-4 py-4 sm:px-5">
+        {shown("default_period_minutes") && <div className="px-4 py-4 sm:px-5">
           <label className="block max-w-xs">
             <span className="font-mont text-sm font-medium text-gray-01">Length of a new period</span>
             <span className="mt-0.5 block font-mont text-xs leading-5 text-gray-05">
@@ -282,17 +289,17 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
               min={10}
               max={240}
               placeholder="No default"
-              disabled={!canSave}
+              disabled={!editable("default_period_minutes")}
               aria-invalid={minutesProblem ? true : undefined}
               value={minutes}
               onChange={(e) => setMinutes(e.target.value)}
             />
           </label>
           <ErrorLine text={minutesProblem || errors.default_period_minutes} />
-        </div>
-      </SettingsPanel>
+        </div>}
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("invigilator_roles") && <SettingsPanel
         title="Who may invigilate exams"
         description="People holding any of these roles can be put in charge of an exam room."
       >
@@ -301,7 +308,7 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
             <label key={role.value} className="flex min-w-0 items-center gap-2.5 font-mont text-sm text-gray-01">
               <Checkbox
                 checked={invigilators.includes(role.value)}
-                disabled={!canSave}
+                disabled={!editable("invigilator_roles")}
                 onCheckedChange={(on) => setInvigilators(toggle(invigilators, role.value, on === true))}
               />
               <span className="min-w-0">{role.label}</span>
@@ -309,7 +316,7 @@ function CalendarForm({ rules }: { rules: CalendarRules }) {
           ))}
         </div>
         <ErrorLine text={invigilatorProblem || errors.invigilator_roles} padded />
-      </SettingsPanel>
+      </SettingsPanel>}
 
       {canSave ? (
         <div className="flex flex-wrap items-center justify-end gap-3">

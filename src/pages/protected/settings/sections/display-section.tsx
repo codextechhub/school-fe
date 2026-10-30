@@ -22,6 +22,7 @@ import type {
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { useSettingsBranches } from "../use-settings-branches";
 import { useSettingsWrite } from "../use-settings-write";
+import { useSettingFields } from "../use-setting-fields";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 /** An afternoon time, so the 12-hour card shows "pm" beside the 24-hour one. */
@@ -65,6 +66,7 @@ export function DisplaySection() {
 
 function SchoolDisplayForm({ data }: { data: DisplaySettingsData }) {
   const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
+  const { shown, editable } = useSettingFields({}, canSave);
   const [save, { isLoading: saving }] = useUpdateDisplaySettingsMutation();
   const [dateFormat, setDateFormat] = useState<DateFormat>(data.date_format);
   const [clock, setClock] = useState<ClockStyle>(data.clock);
@@ -76,16 +78,18 @@ function SchoolDisplayForm({ data }: { data: DisplaySettingsData }) {
     [zone, dateFormat, clock],
   );
   const changed =
-    dateFormat !== data.date_format || clock !== data.clock || zone !== data.timezone;
+    (editable("date_format") && dateFormat !== data.date_format) ||
+    (editable("clock") && clock !== data.clock) ||
+    (editable("timezone") && zone !== data.timezone);
 
   const onSave = async () => {
     if (!changed) return;
     setErrors({});
     try {
       await save({
-        ...(dateFormat !== data.date_format ? { date_format: dateFormat } : {}),
-        ...(clock !== data.clock ? { clock } : {}),
-        ...(zone !== data.timezone ? { timezone: zone } : {}),
+        ...(editable("date_format") && dateFormat !== data.date_format ? { date_format: dateFormat } : {}),
+        ...(editable("clock") && clock !== data.clock ? { clock } : {}),
+        ...(editable("timezone") && zone !== data.timezone ? { timezone: zone } : {}),
       }).unwrap();
       toast.success("Display settings saved.");
     } catch (error) {
@@ -99,11 +103,11 @@ function SchoolDisplayForm({ data }: { data: DisplaySettingsData }) {
 
   return (
     <div className="space-y-5">
-      <SettingsPanel title="Dates" description="Every date on screen reads this way.">
+      {shown("date_format") && <SettingsPanel title="Dates" description="Every date on screen reads this way.">
         <Choices
           options={data.date_format_options}
           value={dateFormat}
-          disabled={!canSave}
+          disabled={!editable("date_format")}
           onChange={(value) => setDateFormat(value as DateFormat)}
           sample={(value) =>
             bindFormatters({ timeZone: zone, dateFormat: value as DateFormat, clock }).formatDay(preview.today())
@@ -111,22 +115,22 @@ function SchoolDisplayForm({ data }: { data: DisplaySettingsData }) {
           showLabel={false}
         />
         <ErrorLine text={errors.date_format} />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel title="Times" description="Lessons, events and every time on screen.">
+      {shown("clock") && <SettingsPanel title="Times" description="Lessons, events and every time on screen.">
         <Choices
           options={data.clock_options}
           value={clock}
-          disabled={!canSave}
+          disabled={!editable("clock")}
           onChange={(value) => setClock(value as ClockStyle)}
           sample={(value) =>
             bindFormatters({ timeZone: zone, dateFormat, clock: value as ClockStyle }).formatTime(SAMPLE_TIME)
           }
         />
         <ErrorLine text={errors.clock} />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("timezone") && <SettingsPanel
         title="Your school's time zone"
         description={'When a school day starts and ends, what "today" is, and the time shown on everything that has no branch of its own.'}
       >
@@ -135,7 +139,7 @@ function SchoolDisplayForm({ data }: { data: DisplaySettingsData }) {
             <NativeSelect
               aria-label="Your school's time zone"
               value={zone}
-              disabled={!canSave}
+              disabled={!editable("timezone")}
               onChange={(event) => setZone(event.target.value)}
             >
               {data.options.map((option) => (
@@ -149,9 +153,9 @@ function SchoolDisplayForm({ data }: { data: DisplaySettingsData }) {
           </p>
           <ErrorLine text={errors.timezone} inline />
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      {canSave ? (
+      {canSave && (editable("date_format") || editable("clock") || editable("timezone")) ? (
         <div className="flex flex-wrap items-center justify-end gap-3">
           {changed ? <span className="font-mont text-xs text-gray-05">Unsaved changes</span> : null}
           <Button onClick={onSave} loading={saving} disabled={!changed || saving}>
@@ -180,7 +184,8 @@ function clockOf(now: { hour: number; minute: number }): string {
  */
 function BranchZones({ data }: { data: DisplaySettingsData }) {
   const branches = useSettingsBranches();
-  if (!branches.applies || data.branches.length === 0) return null;
+  const { shown } = useSettingFields({}, false);
+  if (!shown("branch_timezone") || !branches.applies || data.branches.length === 0) return null;
   return (
     <SettingsPanel
       title="Branches in another time zone"
@@ -212,6 +217,7 @@ function BranchZoneRow({
   schoolZone: string;
 }) {
   const { canSave } = useSettingsWrite(P.UPDATE_SETTINGS, branch.id);
+  const { editable } = useSettingFields({}, canSave);
   const [save, { isLoading: saving }] = useUpdateDisplaySettingsMutation();
   const [reset, { isLoading: resetting }] = useResetBranchTimezoneMutation();
   const [zone, setZone] = useState(branch.timezone);
@@ -244,7 +250,7 @@ function BranchZoneRow({
           {own ? `Its own zone: ${labelOf(branch.timezone)}` : `Follows the school: ${labelOf(schoolZone)}`}
         </span>
       </span>
-      {canSave ? (
+      {editable("branch_timezone") ? (
         <span className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
           <span className="w-full sm:w-64">
             <NativeSelect

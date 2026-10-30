@@ -28,6 +28,7 @@ import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-er
 import { useSettingsWrite, type ReadOnlyReason } from "../use-settings-write";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 import { useSettingsBranches } from "../use-settings-branches";
+import { useSettingFields } from "../use-setting-fields";
 
 const FIELDS: Array<{
   key: SecuritySettingKey;
@@ -199,8 +200,9 @@ function SecurityForm({
   branchPicker: boolean;
 }) {
   const [save, { isLoading: saving }] = useUpdateSchoolSecuritySettingsMutation();
+  const { shown, editable } = useSettingFields({}, canSave);
   const [draft, setDraft] = useState<Record<SecuritySettingKey, string>>(
-    () => Object.fromEntries(FIELD_KEYS.map((key) => [key, String(data.settings[key])])) as Record<SecuritySettingKey, string>,
+    () => Object.fromEntries(FIELD_KEYS.map((key) => [key, String(data.settings[key] ?? "")])) as Record<SecuritySettingKey, string>,
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -214,8 +216,9 @@ function SecurityForm({
     return "";
   };
 
-  const changed = FIELD_KEYS.filter((key) => Number(draft[key]) !== data.settings[key]);
-  const invalid = FIELD_KEYS.some((key) => problem(key) !== "");
+  const visibleFields = FIELDS.filter((field) => shown(field.key));
+  const changed = FIELD_KEYS.filter((key) => editable(key) && Number(draft[key]) !== data.settings[key]);
+  const invalid = FIELD_KEYS.some((key) => editable(key) && problem(key) !== "");
 
   const submit = async (patch: Partial<Record<SecuritySettingKey, number | null>>, done: string) => {
     setErrors({});
@@ -244,7 +247,7 @@ function SecurityForm({
       title="Rules"
       description={`These apply to ${scopeName}. Every change is recorded with who made it.`}
     >
-      {FIELDS.map((field) => {
+      {visibleFields.map((field) => {
         const compliance = data.compliance[field.key];
         const { min, max } = bounds(compliance);
         const error = errors[field.key] || problem(field.key);
@@ -264,14 +267,14 @@ function SecurityForm({
                     inputMode="numeric"
                     min={min}
                     max={max}
-                    disabled={!canSave}
+                    disabled={!editable(field.key)}
                     aria-invalid={error ? true : undefined}
                     className="w-24"
                     value={draft[field.key]}
                     onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
                   />
                   <span className="w-16 text-left font-mont text-xs font-normal text-gray-05">{field.suffix}</span>
-                  {canSave && data.overrides[field.key] ? (
+                  {editable(field.key) && data.overrides[field.key] ? (
                     <Button
                       variant="outline"
                       size="sm"

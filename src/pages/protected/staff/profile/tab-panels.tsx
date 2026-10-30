@@ -868,6 +868,7 @@ export function LeaveTab({
   historyAction?: React.ReactNode;
 }) {
   const access = useFieldAccess(FIELD_RESOURCE.LEAVE, leave);
+  const staffAccess = useFieldAccess(FIELD_RESOURCE.STAFF);
   const session = leave.balance_session ?? null;
   const balancesVisible = !access.isHidden("balances") && leave.balances != null;
   const daysTakenVisible = !access.isHidden("days_taken") && leave.days_taken != null;
@@ -881,9 +882,10 @@ export function LeaveTab({
   return (
     <div className="grid gap-5">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {!staffAccess.isHidden("leave_group") &&
         <div className="order-2 flex w-full min-w-0 items-center gap-2 sm:order-1 sm:mr-auto sm:w-auto">
           <span className="shrink-0 text-sm font-medium text-black-01">Leave group</span>
-          {onAssignGroup && groupOptions ? (
+          {onAssignGroup && groupOptions && !staffAccess.isReadOnly("leave_group") ? (
             <div className="min-w-0 flex-1 sm:w-44 sm:flex-none lg:w-56">
               <NativeSelect
                 aria-label="Leave group"
@@ -899,7 +901,7 @@ export function LeaveTab({
           ) : (
             <span className="min-w-0 truncate text-[13px] text-gray-05">{leave.leave_group?.name ?? "Default allowance"}</span>
           )}
-        </div>
+        </div>}
         <div className="order-1 flex w-full items-center justify-end gap-2 sm:order-2 sm:w-auto">
           {onFile && (
             <Button variant="outline" onClick={onFile}>

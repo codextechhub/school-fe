@@ -654,7 +654,7 @@ export const staffApi = baseApi.injectEndpoints({
 
     updateStaffNumberPolicy: builder.mutation<
       Envelope<Omit<StaffNumberPolicy, "suggestion">>,
-      Omit<StaffNumberPolicy, "suggestion" | "source"> & { branch?: string }
+      Partial<Omit<StaffNumberPolicy, "suggestion" | "source">> & { branch?: string }
     >({
       query: ({ branch, ...body }) => ({
         url: `/i/me/staff/number-policy/`,

@@ -7,6 +7,7 @@ import { P } from "@/permissions";
 import { NumberRuleSection, type NumberRuleConfig } from "./number-rule-section";
 
 const ADMISSION_NUMBERS: NumberRuleConfig = {
+  fieldPrefix: "admission_number_",
   title: "Admission numbers",
   description:
     "Whether every child must have an admission number when they are enrolled, and what a valid one looks like at your school.",

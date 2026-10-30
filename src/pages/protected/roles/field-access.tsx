@@ -236,7 +236,11 @@ export default function FieldAccess() {
                           </Badge>
                         </div>
                       </div>
-                      <label className="flex items-center gap-2 text-xs text-gray-01">Read <Switch checked={value.read} disabled={!canManage} onCheckedChange={(on) => change(field, "read", on)} /></label>
+                      {field.read_always ? (
+                        <span className="text-xs text-gray-01">Always readable</span>
+                      ) : (
+                        <label className="flex items-center gap-2 text-xs text-gray-01">Read <Switch checked={value.read} disabled={!canManage} onCheckedChange={(on) => change(field, "read", on)} /></label>
+                      )}
                       {field.writable && <label className="flex items-center gap-2 text-xs text-gray-01">Write <Switch checked={value.write} disabled={!canManage} onCheckedChange={(on) => change(field, "write", on)} /></label>}
                       {canManage && (
                         <Button variant="ghost" size="sm" disabled={field.source === "default" && !drafts[field.key]} onClick={() => reset(field)}>

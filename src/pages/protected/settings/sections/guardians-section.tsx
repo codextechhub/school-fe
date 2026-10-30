@@ -22,6 +22,7 @@ import {
 } from "@/redux/services/students/students-types";
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { useSettingsWrite } from "../use-settings-write";
+import { useSettingFields } from "../use-setting-fields";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 const MATCHING_TEXT: Record<GuardianRules["matching"], string> = {
@@ -86,20 +87,21 @@ export function GuardiansSection() {
 
 function GuardiansForm({ rules }: { rules: GuardianRules }) {
   const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
+  const { shown, editable } = useSettingFields({}, canSave);
   const [save, { isLoading: saving }] = useUpdateGuardianRulesMutation();
   const emailRuleOffered = !useFieldAccess(FIELD_RESOURCE.GUARDIANS).isHidden("email");
 
-  const [minimum, setMinimum] = useState(String(rules.min_per_student));
+  const [minimum, setMinimum] = useState(String(rules.min_per_student ?? ""));
   const [autoAccess, setAutoAccess] = useState(rules.parent_app_auto_access ?? false);
   const [emailRequired, setEmailRequired] = useState(rules.email_required);
   const [matching, setMatching] = useState(rules.matching);
-  const [extras, setExtras] = useState<string[]>(rules.extra_relationships);
+  const [extras, setExtras] = useState<string[]>(rules.extra_relationships ?? []);
   const [draft, setDraft] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const min = Number(minimum);
   const minProblem =
-    !Number.isInteger(min) || min < 1 || min > 4 ? "Choose 1 to 4 guardians." : "";
+    editable("min_per_student") && (!Number.isInteger(min) || min < 1 || min > 4) ? "Choose 1 to 4 guardians." : "";
 
   const taken = (word: string) =>
     extras.some((e) => e.toLowerCase() === word.toLowerCase()) ||
@@ -116,11 +118,11 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
           : "";
 
   const changed =
-    min !== rules.min_per_student ||
-    autoAccess !== (rules.parent_app_auto_access ?? false) ||
-    emailRequired !== rules.email_required ||
-    matching !== rules.matching ||
-    extras.join("\n") !== rules.extra_relationships.join("\n");
+    (editable("min_per_student") && min !== rules.min_per_student) ||
+    (editable("parent_app_auto_access") && autoAccess !== (rules.parent_app_auto_access ?? false)) ||
+    (editable("email_required") && emailRequired !== rules.email_required) ||
+    (editable("matching") && matching !== rules.matching) ||
+    (editable("extra_relationships") && extras.join("\n") !== (rules.extra_relationships ?? []).join("\n"));
 
   const add = () => {
     if (!word || draftProblem) return;
@@ -133,11 +135,11 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
     setErrors({});
     try {
       await save({
-        min_per_student: min,
-        email_required: emailRequired,
-        parent_app_auto_access: autoAccess,
-        matching,
-        extra_relationships: extras,
+        ...(editable("min_per_student") && min !== rules.min_per_student ? { min_per_student: min } : {}),
+        ...(editable("email_required") && emailRequired !== rules.email_required ? { email_required: emailRequired } : {}),
+        ...(editable("parent_app_auto_access") && autoAccess !== (rules.parent_app_auto_access ?? false) ? { parent_app_auto_access: autoAccess } : {}),
+        ...(editable("matching") && matching !== rules.matching ? { matching } : {}),
+        ...(editable("extra_relationships") && extras.join("\n") !== (rules.extra_relationships ?? []).join("\n") ? { extra_relationships: extras } : {}),
       }).unwrap();
       toast.success("Guardian rules saved.");
     } catch (error) {
@@ -151,7 +153,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
 
   return (
     <div className="space-y-5">
-      <SettingsPanel
+      {shown("min_per_student") && <SettingsPanel
         title="Guardians per child"
         description="A child cannot be enrolled with fewer, and the last ones cannot be unlinked. An import still brings in one per row, and marks the record for the rest."
       >
@@ -164,16 +166,16 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
               inputMode="numeric"
               min={1}
               max={4}
-              disabled={!canSave}
+              disabled={!editable("min_per_student")}
               value={minimum}
               onChange={(e) => setMinimum(e.target.value)}
             />
           </label>
           <ErrorLine text={minProblem || errors.min_per_student} />
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      {rules.parent_app_auto_access !== undefined ? (
+      {shown("parent_app_auto_access") && rules.parent_app_auto_access !== undefined ? (
         <SettingsPanel title="Parent app">
           <label className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
             <span className="min-w-0">
@@ -186,7 +188,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
             </span>
             <Switch
               checked={autoAccess}
-              disabled={!canSave}
+              disabled={!editable("parent_app_auto_access")}
               onCheckedChange={setAutoAccess}
               aria-label="Give parents the parent app automatically"
             />
@@ -195,7 +197,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
         </SettingsPanel>
       ) : null}
 
-      {emailRuleOffered ? (
+      {emailRuleOffered && shown("email_required") ? (
         <SettingsPanel title="Contact details">
           <label className="flex items-start justify-between gap-4 px-4 py-4 sm:px-5">
             <span className="min-w-0">
@@ -208,7 +210,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
             </span>
             <Switch
               checked={autoAccess || emailRequired}
-              disabled={!canSave || autoAccess}
+              disabled={!editable("email_required") || autoAccess}
               onCheckedChange={setEmailRequired}
               aria-label="Email required for a new guardian"
             />
@@ -217,7 +219,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
         </SettingsPanel>
       ) : null}
 
-      <SettingsPanel
+      {shown("matching") && <SettingsPanel
         title="Recognising siblings"
         description="When a new child's guardian matches one already at the school, the two children share that guardian."
       >
@@ -229,7 +231,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
               <button
                 key={value}
                 type="button"
-                disabled={!canSave}
+                disabled={!editable("matching")}
                 aria-pressed={active}
                 onClick={() => setMatching(value)}
                 className={cn(
@@ -246,9 +248,9 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
           })}
           <ErrorLine text={errors.matching} />
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("extra_relationships") && <SettingsPanel
         title="Your own relationships"
         description="Words your school uses beyond Mother, Father, Uncle, Aunt, Grandparent, Legal guardian, Sibling and Other. Removing one later leaves the children already linked with it as they are."
       >
@@ -261,7 +263,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
                   className="flex items-center gap-1.5 rounded-full border border-white-02 bg-gray-03 py-1 pl-3 pr-1.5 font-mont text-xs text-gray-01"
                 >
                   {extra}
-                  {canSave ? (
+                  {editable("extra_relationships") ? (
                     <button
                       type="button"
                       aria-label={`Remove ${extra}`}
@@ -277,7 +279,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
           ) : (
             <p className="font-mont text-xs text-gray-05">None yet.</p>
           )}
-          {canSave ? (
+          {editable("extra_relationships") ? (
             <div className="flex max-w-md flex-wrap items-start gap-2">
               <Input
                 className="min-w-0 flex-1"
@@ -300,7 +302,7 @@ function GuardiansForm({ rules }: { rules: GuardianRules }) {
           ) : null}
           <ErrorLine text={draftProblem || errors.extra_relationships} />
         </div>
-      </SettingsPanel>
+      </SettingsPanel>}
 
       {canSave ? (
         <div className="flex flex-wrap items-center justify-end gap-3">

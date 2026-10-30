@@ -11,6 +11,7 @@ import type { FieldAccess, ReadOnlyOptions } from "@/components/finance-ui";
  */
 export const FIELD_RESOURCE = {
   SCHOOL_PROFILE: "school.profile",
+  SCHOOL_SETTINGS: "school.settings",
   BRANCHES: "school.branches",
   STUDENTS: "school.students",
   GUARDIANS: "school.guardians",

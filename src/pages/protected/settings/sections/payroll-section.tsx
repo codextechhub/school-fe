@@ -16,6 +16,7 @@ import {
 import type { PayrollScope } from "@/redux/services/school/school-settings-types";
 import { apiErrorMessage, parseApiError } from "@/utils/api-error";
 import { useSettingsWrite } from "../use-settings-write";
+import { useSettingFields } from "../use-setting-fields";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
 const ICONS: Record<PayrollScope, typeof Landmark> = {
@@ -35,6 +36,7 @@ const ICONS: Record<PayrollScope, typeof Landmark> = {
  */
 export function PayrollSection() {
   const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
+  const { shown, editable } = useSettingFields({ scope: "payroll_scope" }, canSave);
   const query = useGetPayrollScopeQuery();
   const [save, { isLoading: saving }] = useUpdatePayrollScopeMutation();
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -61,6 +63,8 @@ export function PayrollSection() {
       setRefusal(apiErrorMessage(error, "The payroll setting could not be changed."));
     }
   };
+
+  if (!shown("scope")) return <></>;
 
   return (
     <div className="space-y-5">
@@ -95,7 +99,7 @@ export function PayrollSection() {
             value={
               data.scope === option.value ? (
                 <Badge variant="active" className="font-mont text-xs">In use</Badge>
-              ) : canSave ? (
+              ) : editable("scope") ? (
                 <Button
                   variant="outline"
                   size="sm"

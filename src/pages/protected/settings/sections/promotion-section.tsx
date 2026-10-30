@@ -21,6 +21,7 @@ import type {
 } from "@/redux/services/students/students-types";
 import { fieldErrorsFor, parseApiError, writeErrorMessage } from "@/utils/api-error";
 import { useSettingsWrite } from "../use-settings-write";
+import { useSettingFields } from "../use-setting-fields";
 import { readPassMark } from "./pass-mark";
 import { ReadOnlyNote, SectionLoadError, SectionLoading } from "./shared";
 
@@ -146,6 +147,12 @@ export function PromotionSection() {
 
 function PromotionForm({ rules }: { rules: PromotionRules }) {
   const { canSave, reason } = useSettingsWrite(P.UPDATE_SETTINGS);
+  const { shown, editable } = useSettingFields({
+    suspended: "promotion_suspended", not_placed: "promotion_not_placed",
+    arms: "promotion_arms", capacity_mode: "promotion_capacity_mode",
+    pass_mark: "promotion_pass_mark",
+    enrolment_capacity_mode: "enrolment_capacity_mode",
+  }, canSave);
   const [save, { isLoading: saving }] = useUpdatePromotionRulesMutation();
   const [suspended, setSuspended] = useState(rules.suspended);
   const [notPlaced, setNotPlaced] = useState(rules.not_placed);
@@ -155,23 +162,23 @@ function PromotionForm({ rules }: { rules: PromotionRules }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const mark = readPassMark(passMark);
-  const passMarkChanged = !mark.problem && mark.value !== (rules.pass_mark ?? null);
+  const passMarkChanged = editable("pass_mark") && !mark.problem && mark.value !== (rules.pass_mark ?? null);
   const changed =
-    suspended !== rules.suspended ||
-    notPlaced !== rules.not_placed ||
-    arms !== rules.arms ||
-    capacity !== rules.capacity_mode ||
+    (editable("suspended") && suspended !== rules.suspended) ||
+    (editable("not_placed") && notPlaced !== rules.not_placed) ||
+    (editable("arms") && arms !== rules.arms) ||
+    (editable("capacity_mode") && capacity !== rules.capacity_mode) ||
     passMarkChanged;
 
   const onSave = async () => {
-    if (!changed || mark.problem) return;
+    if (!changed || (editable("pass_mark") && mark.problem)) return;
     setErrors({});
     try {
       await save({
-        suspended,
-        not_placed: notPlaced,
-        arms,
-        capacity_mode: capacity,
+        ...(editable("suspended") && suspended !== rules.suspended ? { suspended } : {}),
+        ...(editable("not_placed") && notPlaced !== rules.not_placed ? { not_placed: notPlaced } : {}),
+        ...(editable("arms") && arms !== rules.arms ? { arms } : {}),
+        ...(editable("capacity_mode") && capacity !== rules.capacity_mode ? { capacity_mode: capacity } : {}),
         ...(passMarkChanged ? { pass_mark: mark.value } : {}),
       }).unwrap();
       toast.success("Promotion rules saved.");
@@ -186,39 +193,39 @@ function PromotionForm({ rules }: { rules: PromotionRules }) {
 
   return (
     <div className="space-y-5">
-      <SettingsPanel title="Suspended students" description="A student suspended when the year ends.">
-        <Choices choices={SUSPENDED} value={suspended} onChange={setSuspended} disabled={!canSave} />
+      {shown("suspended") && <SettingsPanel title="Suspended students" description="A student suspended when the year ends.">
+        <Choices choices={SUSPENDED} value={suspended} onChange={setSuspended} disabled={!editable("suspended")} />
         <ErrorLine text={errors.suspended} />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("not_placed") && <SettingsPanel
         title="Students not yet attending"
         description="Confirmed and placed in a class, but not yet marked as attending."
       >
-        <Choices choices={NOT_PLACED} value={notPlaced} onChange={setNotPlaced} disabled={!canSave} />
+        <Choices choices={NOT_PLACED} value={notPlaced} onChange={setNotPlaced} disabled={!editable("not_placed")} />
         <ErrorLine text={errors.not_placed} />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel title="Arms" description="Which class a promoted student lands in at the next level.">
-        <Choices choices={ARMS} value={arms} onChange={setArms} disabled={!canSave} />
+      {shown("arms") && <SettingsPanel title="Arms" description="Which class a promoted student lands in at the next level.">
+        <Choices choices={ARMS} value={arms} onChange={setArms} disabled={!editable("arms")} />
         <ErrorLine text={errors.arms} />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("capacity_mode") && <SettingsPanel
         title="Full classes during promotion"
-        description={`Enrolment is set to "${CAPACITY_LABEL[rules.enrolment_capacity_mode]}".`}
+        description={shown("enrolment_capacity_mode") ? `Enrolment is set to "${CAPACITY_LABEL[rules.enrolment_capacity_mode]}".` : "What happens when a class is full."}
       >
         <Choices
           choices={CAPACITY}
           value={capacity}
           onChange={setCapacity}
-          disabled={!canSave}
+          disabled={!editable("capacity_mode")}
           columns="sm:grid-cols-2 lg:grid-cols-4"
         />
         <ErrorLine text={errors.capacity_mode} />
-      </SettingsPanel>
+      </SettingsPanel>}
 
-      <SettingsPanel
+      {shown("pass_mark") && <SettingsPanel
         title="Pass mark"
         description="A guide for staff, shown beside the outcomes on the promotion screen. It promotes and holds back nobody, and students and families never see it."
       >
@@ -234,19 +241,19 @@ function PromotionForm({ rules }: { rules: PromotionRules }) {
             min={1}
             max={100}
             placeholder="e.g. 50"
-            disabled={!canSave}
+            disabled={!editable("pass_mark")}
             aria-invalid={mark.problem ? true : undefined}
             value={passMark}
             onChange={(event) => setPassMark(event.target.value)}
           />
         </label>
         <ErrorLine text={mark.problem || errors.pass_mark} />
-      </SettingsPanel>
+      </SettingsPanel>}
 
       {canSave ? (
         <div className="flex flex-wrap items-center justify-end gap-3">
           {changed ? <span className="font-mont text-xs text-gray-05">Unsaved changes</span> : null}
-          <Button onClick={onSave} loading={saving} disabled={!changed || saving || Boolean(mark.problem)}>
+          <Button onClick={onSave} loading={saving} disabled={!changed || saving || Boolean(editable("pass_mark") && mark.problem)}>
             Save promotion rules
           </Button>
         </div>
