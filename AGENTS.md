@@ -1,5 +1,48 @@
 # AGENTS.md - school-fe
 
+## The finance and procurement screens are not this app's to edit
+
+Everything under Finance, Procurement and Workflow comes from `@xvs/finance`
+(the `FinPro` repo), shared with the CodeX console. `@/pages/protected/finance/*`
+and its siblings are aliased into `node_modules/@xvs/finance`, in both
+`vite.config.ts` and `tsconfig.app.json`, so a file that looks local is not.
+
+Two rules follow.
+
+**A fix to a shared screen belongs in FinPro.** Edit it there, cut a version with
+its `release.sh`, and let it come back here through the pin. Editing under
+`node_modules` changes nothing durable: the next install overwrites it, and
+because this app holds a real copy rather than a symlink, the edit is invisible
+to the console the whole time it appears to work here.
+
+**A tag that only one application moved onto has released nothing.** The console
+symlinks the FinPro working tree, so an edit is live there the moment it is
+saved, while this app sees nothing until its pin moves and it reinstalls. The two
+apps therefore fail in opposite directions and neither notices alone:
+
+> Finance Settings was offering sections this app does not route. The fix was
+> tagged `v0.1.22`, this app was moved onto it, and console-fe was left pinned to
+> `v0.1.21`. Both typechecked clean, because the console was compiling against
+> its symlink rather than against what it pins. A fresh install anywhere else,
+> CI included, would have fetched `v0.1.21` and quietly not had the fix.
+
+So move both applications in the same change, with `release.sh`, and commit both
+lockfiles.
+
+**A moved pin must match the installed commit.** Older package tags share one
+version, so a plain `npm install` can keep an old copy after the pin moves.
+Run `rm -rf node_modules/@xvs/finance && npm install` if the install check
+reports a mismatch. `npm run dev`, `npm test` and `npm run build` run that check
+first (`scripts/check-finance-install.mjs`), including linked copies and build
+tools installed for the wrong processor.
+
+**A school-only screen stays here.** Anything the console has no use for - the
+fee due policy is the example, because its endpoint is the FAL's and CodeX bills
+nobody school fees - lives under `src/pages/protected/school-finance/` and reaches
+the package through the host contract in `src/xvs-host.tsx`. It must not go under
+`src/pages/protected/finance/`: that path is aliased away to the package, so a
+file placed there is unreachable from this app.
+
 ## Field Access is part of every feature contract
 
 Every new or changed user-visible business field must receive an explicit
@@ -80,7 +123,6 @@ without naming *what* makes it so.
 Finish with a one-line **verdict**: ship / fix-first, and the single most
 important thing to do before shipping.
 
-
 ## Wrapping up: report in plain words
 
 When you finish a task - a build, an investigation, a document, a round of
@@ -94,47 +136,46 @@ an empty heading is worse than no heading, and never pad a section to fill it ou
   produced.
 - **What you decided** - decisions taken and locked, one line each. Only if
   decisions were actually made.
-- **What was fixed** - resolved defects, written in the past tense. Include only
-  when knowing the original cause is useful and it has not already been explained.
-- **What still needs attention** - only defects, risks, or incomplete work that
-  remain after the task. Omit this section entirely when nothing remains.
+- **What we found wrong in the code** - real defects and gaps, grouped under short
+  themes once there are more than about four. **Only if there are findings** - if
+  nothing is wrong, leave this out entirely rather than writing "nothing found".
 - **Where to go next** - the order of the next steps, and which of them are
   unblocked right now.
 
 That list is closed. Do not invent a heading for something that does not fit one
 of them: put it under the heading it belongs to, and if it belongs under none of
-them, leave it out of the breakdown entirely. A section the user did not ask for
-is one they must decode before they can tell whether it needs them.
+them, leave it out of the breakdown entirely. A section I did not ask for is one
+I have to decode before I can tell whether it needs me.
 
 How to write it:
 
-- Plain words beat precise jargon. "Purchases can approve themselves" lands;
-  "`skip_if_no_approvers` permits terminal auto-approval" does not.
+- Plain words beat precise jargon. "The page breaks on a phone" lands; "flex
+  container overflows at the `md` breakpoint" does not.
 - Size things honestly in both directions - say when something feared turns out to
   be a one-line fix, and say when something small turns out to be load-bearing.
 - Put the worst finding where it cannot be missed, even if that breaks the order.
 - Never place resolved problems under a heading that suggests they remain broken.
   When all reported defects were fixed, say so plainly and omit any unresolved-
   findings section.
-- Keep file/line references out of the breakdown; they belong in `todo.md` and in
-  the detail above it.
+- Keep file/line references out of the breakdown; they belong in the detail above
+  it, not in the summary.
 - Don't re-explain what I already know from the conversation.
 
 ## Asking, suggesting and disputing: use a real example
 
-When you need a decision from the user, **ask the question directly**. Do not bury
-it in a paragraph, do not quietly answer it yourself and move on, and do not hand
-over a list of considerations in place of the question.
+When you need a decision from me, **ask the question directly**. Do not bury it in
+a paragraph, do not quietly answer it yourself and move on, and do not hand me a
+list of considerations in place of the question.
 
-Then **show the consequence with a real example** - named people, a named school,
-a specific sequence of events. The example is what makes a choice obvious, so it
-is not decoration and it is not optional.
+Then **show me the consequence with a real example** - named people, a named
+school, a specific sequence of events. The example is what makes a choice
+obvious, so it is not decoration and it is not optional.
 
 This applies equally to three things:
 
-- **questions** - what needs deciding;
-- **suggestions** - something you think should be done;
-- **disputes** - something you think is wrong, including a decision already taken.
+- **questions** - what you need me to decide;
+- **suggestions** - something you think we should do;
+- **disputes** - something you think is wrong, including something I decided.
 
 Write the example the way it would actually happen:
 
@@ -151,7 +192,7 @@ Not:
 
 The second one is true and nobody can act on it. Abstractions hide the size of a
 thing in both directions - they make a small risk sound alarming and a serious one
-sound routine. A concrete case is the only way it can be weighed.
+sound routine. A concrete case is the only way I can weigh it.
 
 Keep it short. One example, the shortest one that still shows the consequence.
 Where a choice has two sides, show the bad case **and** the good case, not only
@@ -181,14 +222,43 @@ Every screen you build or change must render well at desktop **and** small
 widths - a user switching from PC to phone must never get a broken view.
 Horizontal page overflow is a bug, full stop.
 
-House conventions (proven app-wide in console-fe; apply them here):
-- The DashboardLayout children wrapper needs `grid grid-cols-1 min-w-0` so
-  nowrap tables can never stretch a page past the viewport. **Known gap:**
-  this repo's `dashboard-layout.tsx` does NOT have that wrapper yet - port it
-  from console-fe (`src/components/layout/dashboard-layout.tsx`) on the first
-  responsive pass, along with CustomTable's phone-card mode (rows render as
-  stacked label/value cards below `md`; dense tables opt out with
-  `mobile="scroll"`).
+House conventions. These hold in this repo and in console-fe, and the two
+are kept in step - a fix to one of them belongs in both:
+- The DashboardLayout children wrapper is `grid grid-cols-1 min-w-0`, so nowrap
+  tables can never stretch a page past the viewport. CustomTable has phone-card
+  mode: rows render as stacked label/value cards below `md`, and dense tables
+  opt out with `mobile="scroll"`. Both are in place - do not port them again.
+- **Every page's `<main>` is `PageShell`** (`src/components/layout/page-shell.tsx`),
+  never a hand-written class string. It owns the page padding, `min-w-0`, and
+  the grid guard; rhythm (`gap-*`, `space-y-*`), alignment and colour stay with
+  the page.
+  The guard is the reason it exists. The wrapper above protects a BLOCK main and
+  cannot protect a second grid declared inside it, and a grid column with no
+  width is sized to its min-content - so one nowrap table drags the whole page
+  off the right of the screen. **There is therefore no `grid` class to pass:
+  there is a `grid` prop, and it always emits `grid grid-cols-1 min-w-0`.**
+- **Every menu screen's heading is `PageHeader`**
+  (`src/components/layout/page-header.tsx`): the page's `<h1>`, a one-line
+  description, an optional `titleAside` (an `InfoHint`, a pill) and `actions`
+  on the right. It is the Support screen's size, 16px title over a 12px grey
+  description, and a page never sets its own heading size. The shared
+  `@xvs/finance` screens import it from the host the same way they take
+  `PageShell`, so they match too, and console-fe supplies its own with the
+  same props. A test fails on any raw `<h1>` in a page that is not on its
+  exempt list. The exempt ones are deliberate: hero banners (the dashboard
+  greeting, the guides) and record headers that carry a person's or a
+  record's name.
+- **Scrolling boxes use `ScrollArea`** (`src/components/ui/scroll-area.tsx`),
+  not `overflow-y-auto` on the box itself. A native scrollbar takes its width
+  out of the element, so a table shifts its columns the moment it becomes
+  scrollable, and how much it takes depends on the reader's operating system and
+  pointing device - a layout checked on a Mac trackpad was never checked on
+  Windows with a mouse. ScrollArea floats a thin thumb over the content instead.
+  `Table` already routes through it, so every table gets this for free.
+  **The page itself keeps its native scroll**, deliberately: replacing the
+  window's scroller breaks anchor links, `scrollIntoView`, sticky headers and
+  the browser's scroll restoration. `index.css` styles that one thin so the two
+  look like the same scrollbar.
 - Toolbars/action rows get `flex-wrap`; tab strips `max-w-full
   overflow-x-auto` with `whitespace-nowrap` buttons; form grids
   `grid-cols-1 sm:grid-cols-N`; count-KPI strips `grid-cols-2 … lg:grid-cols-4`
@@ -199,9 +269,15 @@ House conventions (proven app-wide in console-fe; apply them here):
   silently stops working.
 
 **Verify, don't assume.** After any screen work run the overflow probe:
-`cd .claude && BASE_URL=<vite-url> ROUTES="/your/routes" node ./mobile-audit.mjs`
-(one-time: `cd .claude && npm init -y && npm i playwright`; pass EMAIL/PASSWORD
-for this app's seeded login). It drives each route logged-in at 390px (phone)
+`cd .claude && BASE_URL=http://<school-slug>.localhost:<port> EMAIL=... PASSWORD=... ROUTES="/your/routes" node ./mobile-audit.mjs`
+(one-time: `cd .claude && npm init -y && npm i playwright`). **BASE_URL names
+the school**: the app reads which school it is from the address, so a bare
+`http://localhost:5174` shows "This address does not belong to a school" instead
+of a login form, and the script stops there. Use the school's slug as a
+subdomain, for example `http://lagoon-view.localhost:5174`. **Pass EMAIL and
+PASSWORD** for an account at that same school: the script's defaults are
+console-fe's seeded operator, so without them it fails at the login form on
+this app and reports nothing. It drives each route logged-in at 390px (phone)
 and 820px (tablet), screenshots both to `/tmp/verify-design/shots-responsive/`,
 and reports page-level horizontal overflow with the offending elements. **Look
 at the phone screenshots** - zero overflow with a crushed side-by-side layout
@@ -277,6 +353,39 @@ turn the doc block into a history of the file.
 This applies to every comment written anywhere in the codebase, tests included,
 and to every comment already sitting beside code being changed: bring it up to
 this standard rather than leaving it as found.
+
+## A new screen is not finished until the search box can reach it
+
+The header search box is the action palette, and it is the fastest route to
+anything in the app. It is also the one that goes stale silently: a screen ships,
+the sidebar gets its link, and the box never hears of it. That is how it ended up
+offering nineteen actions for an app of ninety screens.
+
+So treat it as part of building the screen, not as a follow-up:
+
+- **Mounted a route?** Add an action in `src/lib/action-palette/registry.ts`.
+  Label leads with a verb (`View subjects`), because the matcher expands the
+  leading verb through its synonym groups - "open subjects" and "list subjects"
+  come free, a bare noun matches none of them. Gate it on the **same permission
+  key the screen itself checks**, never a looser one.
+- **Added a create drawer?** Wire `useActionParam("new", <the gate>, open)` on the
+  screen and add a `kind: "do"` action pointing at `<path>?action=new`. The gate
+  argument is required, and it must be the same expression that wraps the Add
+  button - including any read-only-year check. A query param is typed as easily
+  as it is clicked, so a drawer that opens on sight of the address is a way round
+  the screen's own rules.
+- **Genuinely not a destination?** Say so, in `NOT_A_DESTINATION` in
+  `src/lib/action-palette/coverage.test.ts`, with the reason. A redirect or a
+  screen a refusal lands on is a fine answer. "Nobody thought about it" is not.
+
+`coverage.test.ts` enforces all three and names the exact path or file when it
+fails, so you do not have to remember any of this - but reading it here is
+cheaper than discovering it from a red suite.
+
+Two things are exempt and stay that way. Finance and Procurement **view** actions
+are derived from those consoles' own sidebars, so they cannot fall behind. And
+screens whose address needs an id (`/students/:id`) are nobody's palette
+destination, because there is no id to name from a search box.
 
 ## Writing punctuation
 
