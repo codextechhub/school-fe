@@ -26,6 +26,10 @@ import { cn } from "@/lib/utils";
 import { OutlinedNotice } from "@/pages/protected/onboarding/components/outlined-notice";
 import PermissionGate from "@/components/custom/permission-gate";
 import { AsAtBanner, AsAtControl, LiveOnly } from "@/components/custom/as-at-control";
+import {
+  PersonalDataActions,
+  STAFF_LEFT_STATUSES,
+} from "@/components/people/personal-data-actions";
 import { AsAtContext, useAsAt, useAsAtParam } from "@/lib/as-at";
 import Tabs from "@/components/custom/tab";
 import { P } from "@/permissions";
@@ -446,6 +450,14 @@ export default function StaffProfile() {
                     Manage roles
                   </Button>
                 </PermissionGate>
+                {manageable && (
+                  <PersonalDataActions
+                    kind="staff"
+                    id={person.id}
+                    name={person.full_name || "This person"}
+                    canErase={STAFF_LEFT_STATUSES.has(person.employment_status ?? "")}
+                  />
+                )}
                 </LiveOnly>
                 {!manageable && (
                   <p className="text-xs text-gray-05">

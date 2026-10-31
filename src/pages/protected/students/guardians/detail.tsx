@@ -41,6 +41,10 @@ import { PhotoPicker } from "../photo-picker";
 import { StudentStatusBadge } from "../status-badge";
 import { EditGuardianDrawer } from "./edit-guardian-drawer";
 import { ParentAppAccessPanel } from "./parent-app-access-panel";
+import {
+  PersonalDataActions,
+  PUPIL_LEFT_STATUSES,
+} from "@/components/people/personal-data-actions";
 import { CheckNamePill, SiblingsPill } from "./person-card";
 import {
   getGuardianProfileCompleteness,
@@ -189,6 +193,12 @@ export default function GuardianDetail() {
                       Link another child
                     </Button>
                   </PermissionGate>
+                  <PersonalDataActions
+                    kind="guardian"
+                    id={guardian.id}
+                    name={guardian.full_name || "This guardian"}
+                    canErase={wards.every((ward) => PUPIL_LEFT_STATUSES.has(ward.status))}
+                  />
                 </LiveOnly>
               </div>
             </div>

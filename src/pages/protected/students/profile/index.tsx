@@ -64,6 +64,10 @@ import { Dot } from "../guardians/person-card";
 import { HistoryEntryItem } from "./history-entry";
 import { Lifecycle } from "./lifecycle";
 import { PortalAccessPanel } from "./portal-access-panel";
+import {
+  PersonalDataActions,
+  PUPIL_LEFT_STATUSES,
+} from "@/components/people/personal-data-actions";
 import { EmptyRing } from "../empty-ring";
 import { Rows, type Row } from "./rows";
 import {
@@ -323,6 +327,12 @@ export default function StudentProfile() {
                     Link guardian
                   </Button>
                 </PermissionGate>
+                <PersonalDataActions
+                  kind="student"
+                  id={student.id}
+                  name={student.full_name || "This pupil"}
+                  canErase={PUPIL_LEFT_STATUSES.has(student.status)}
+                />
                 </LiveOnly>
               </div>
 
