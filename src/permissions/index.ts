@@ -28,7 +28,7 @@ import {
  *                       20=mark    21=mark any class    22=remind
  *                       23=enter   24=enter any sheet   25=submit
  *                       26=issue   27=post   28=send   29=inspect
- *                       30=office
+ *                       30=office  31=erase
  *
  * ── Adding a permission ───────────────────────────────────────────────────────
  *   1. Pick the next free code in the right MM RR range.
@@ -124,6 +124,8 @@ const REGISTRY: Record<string, string> = {
   "102328": "school.message_broadcasts.send",
   "102329": "school.message_broadcasts.inspect",
   "102429": "school.message_welfare.inspect",
+  "102518": "school.personal_data.export",
+  "102531": "school.personal_data.erase",
 
   // ── school / staff records  (MM=10, RR=11) ─────────────────────────────────
   // Employment history, qualifications and contract documents, kept apart from
@@ -501,6 +503,8 @@ export const P = {
   EXPORT_STUDENTS:         "100318",  // export the directory as it is filtered
   PROMOTE_STUDENTS:        "100307",  // advance a cohort to the next level
   MOVE_STUDENT_BRANCH:     "100320",  // move a pupil to another branch, fee account and all
+  EXPORT_PERSONAL_DATA:    "102518",  // download everything held about one pupil, guardian or staff member
+  ERASE_PERSONAL_DATA:     "102531",  // erase someone who has left, at their request
   GIVE_PORTAL_ACCESS:      "101726",  // give, resend and take away a pupil's portal sign-in
   BROWSE_NOTICES:          "101801",  // read the school's notices to pupils
   POST_NOTICES:            "101827",  // post notices to any audience in the holder's reach
